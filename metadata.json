@@ -1,0 +1,5 @@
+{
+  "name": "brewbindr v0.5",
+  "description": "A comprehensive beer brewing companion for creating recipes in BeerJSON format, tracking brew logs, and recording tasting notes with AI-powered recipe generation and analysis.",
+  "requestFramePermissions": []
+}
