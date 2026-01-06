@@ -1,4 +1,3 @@
-
 import { Recipe, Fermentable, Hop, Culture, MashProfile, MashStep, LibraryIngredient } from "../types";
 
 export interface BeerXmlImportResult {
@@ -51,62 +50,117 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
     return steps;
   };
 
+  // Helper for global parsing
+  const isGlobal = (el: Element) => {
+    let parent = el.parentElement;
+    while (parent) {
+      if (parent.tagName === "RECIPE") return false;
+      parent = parent.parentElement;
+    }
+    return true;
+  };
+
+  // Global Fermentables
+  const fermentables = xmlDoc.getElementsByTagName("FERMENTABLE");
+  for (let i = 0; i < fermentables.length; i++) {
+    const f = fermentables[i];
+    if (isGlobal(f)) {
+      result.fermentables.push({
+        name: getVal(f, "NAME"),
+        type: 'fermentable',
+        color: getNum(f, "COLOR"),
+        yield: getNum(f, "POTENTIAL") ? Math.round((getNum(f, "POTENTIAL") - 1) / 0.046 * 100) : 75
+      });
+    }
+  }
+
+  // Global Hops
+  const globalHops = xmlDoc.getElementsByTagName("HOP");
+  for (let i = 0; i < globalHops.length; i++) {
+    const h = globalHops[i];
+    if (isGlobal(h)) {
+      result.hops.push({
+        name: getVal(h, "NAME"),
+        type: 'hop',
+        alpha: getNum(h, "ALPHA")
+      });
+    }
+  }
+
+  // Global Yeasts
+  const globalYeasts = xmlDoc.getElementsByTagName("YEAST");
+  for (let i = 0; i < globalYeasts.length; i++) {
+    const y = globalYeasts[i];
+    if (isGlobal(y)) {
+      result.cultures.push({
+        name: getVal(y, "NAME"),
+        type: 'culture',
+        form: getVal(y, "FORM").toLowerCase(),
+        attenuation: getNum(y, "ATTENUATION") || 75
+      });
+    }
+  }
+
   // Global Styles
   const styles = xmlDoc.getElementsByTagName("STYLE");
   for (let i = 0; i < styles.length; i++) {
     const s = styles[i];
-    if (s.parentElement?.tagName === "RECIPE") continue;
-    result.styles.push({
-      name: getVal(s, "NAME"),
-      type: 'style',
-      category: getVal(s, "CATEGORY"),
-      og_min: getNum(s, "OG_MIN"),
-      og_max: getNum(s, "OG_MAX"),
-      fg_min: getNum(s, "FG_MIN"),
-      fg_max: getNum(s, "FG_MAX"),
-      ibu_min: getNum(s, "IBU_MIN"),
-      ibu_max: getNum(s, "IBU_MAX"),
-      color_min: getNum(s, "COLOR_MIN"),
-      color_max: getNum(s, "COLOR_MAX"),
-      abv_min: getNum(s, "ABV_MIN"),
-      abv_max: getNum(s, "ABV_MAX")
-    });
+    if (isGlobal(s)) {
+      result.styles.push({
+        name: getVal(s, "NAME"),
+        type: 'style',
+        category: getVal(s, "CATEGORY"),
+        og_min: getNum(s, "OG_MIN"),
+        og_max: getNum(s, "OG_MAX"),
+        fg_min: getNum(s, "FG_MIN"),
+        fg_max: getNum(s, "FG_MAX"),
+        ibu_min: getNum(s, "IBU_MIN"),
+        ibu_max: getNum(s, "IBU_MAX"),
+        color_min: getNum(s, "COLOR_MIN"),
+        color_max: getNum(s, "COLOR_MAX"),
+        abv_min: getNum(s, "ABV_MIN"),
+        abv_max: getNum(s, "ABV_MAX")
+      });
+    }
   }
 
   // Global Miscs
   const miscs = xmlDoc.getElementsByTagName("MISC");
   for (let i = 0; i < miscs.length; i++) {
     const m = miscs[i];
-    if (m.parentElement?.tagName === "RECIPE" || m.parentElement?.tagName === "MISCELLANEOUS") continue;
-    result.miscs.push({
-      name: getVal(m, "NAME"),
-      type: 'misc',
-      misc_type: getVal(m, "TYPE").toLowerCase(),
-      misc_use: getVal(m, "USE").toLowerCase()
-    });
+    if (isGlobal(m)) {
+      result.miscs.push({
+        name: getVal(m, "NAME"),
+        type: 'misc',
+        misc_type: getVal(m, "TYPE").toLowerCase(),
+        misc_use: getVal(m, "USE").toLowerCase()
+      });
+    }
   }
 
   // Global Mashes
   const mashes = xmlDoc.getElementsByTagName("MASH");
   for (let i = 0; i < mashes.length; i++) {
     const m = mashes[i];
-    if (m.parentElement?.tagName === "RECIPE") continue;
-    result.mashes.push({
-      name: getVal(m, "NAME"),
-      type: 'mash_profile',
-      steps: parseMashSteps(m),
-      grain_temp: getNum(m, "GRAIN_TEMP"),
-      sparge_temp: getNum(m, "SPARGE_TEMP"),
-      ph: getNum(m, "PH"),
-      notes: getVal(m, "NOTES")
-    });
+    if (isGlobal(m)) {
+      result.mashes.push({
+        name: getVal(m, "NAME"),
+        type: 'mash_profile',
+        steps: parseMashSteps(m),
+        grain_temp: getNum(m, "GRAIN_TEMP"),
+        sparge_temp: getNum(m, "SPARGE_TEMP"),
+        ph: getNum(m, "PH"),
+        notes: getVal(m, "NOTES")
+      });
+    }
   }
 
+  // Recipes
   const recipes = xmlDoc.getElementsByTagName("RECIPE");
   for (let i = 0; i < recipes.length; i++) {
     const r = recipes[i];
     
-    // Parse Fermentables
+    // Parse Fermentables within recipe
     const recipeFermentables: Fermentable[] = [];
     const fNodes = r.getElementsByTagName("FERMENTABLE");
     for (let j = 0; j < fNodes.length; j++) {
@@ -120,7 +174,7 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
       });
     }
 
-    // Parse Hops
+    // Parse Hops within recipe
     const recipeHops: Hop[] = [];
     const hNodes = r.getElementsByTagName("HOP");
     for (let j = 0; j < hNodes.length; j++) {
@@ -148,7 +202,7 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
       });
     }
 
-    // Parse Cultures
+    // Parse Cultures within recipe
     const recipeCultures: Culture[] = [];
     const yNodes = r.getElementsByTagName("YEAST");
     for (let j = 0; j < yNodes.length; j++) {

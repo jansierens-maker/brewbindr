@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import RecipeCreator from './components/RecipeCreator';
 import BrewLog from './components/BrewLog';
@@ -45,6 +44,18 @@ const EXAMPLES: LibraryIngredient[] = [
   },
 ];
 
+const DEMO_OPTIONS = [
+  { id: 'recipes', name: "Three Recipes", file: "recipes.xml", icon: "fa-beer" },
+  { id: 'hops', name: "Five Hop Varieties", file: "hops.xml", icon: "fa-leaf" },
+  { id: 'grain', name: "Four Fermentables", file: "grain.xml", icon: "fa-seedling" },
+  { id: 'misc', name: "Five Miscellaneous", file: "misc.xml", icon: "fa-cubes" },
+  { id: 'style', name: "Five Beer Styles", file: "style.xml", icon: "fa-list" },
+  { id: 'water', name: "Five Water Profiles", file: "water.xml", icon: "fa-tint" },
+  { id: 'yeast', name: "Five Yeast Profiles", file: "yeast.xml", icon: "fa-flask" },
+  { id: 'equipment', name: "Two Equipment Profiles", file: "equipment.xml", icon: "fa-tools" },
+  { id: 'mash', name: "Five Mash Profiles", file: "mash.xml", icon: "fa-thermometer-half" },
+];
+
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('brew_lang') as Language) || 'en');
   const [view, setView] = useState<View>('recipes');
@@ -60,6 +71,8 @@ const App: React.FC = () => {
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importQueue, setImportQueue] = useState<{ type: 'recipe' | 'library', data: any }[]>([]);
   const [currentDuplicate, setCurrentDuplicate] = useState<{ type: 'recipe' | 'library', data: any } | null>(null);
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
 
@@ -141,7 +154,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `brewmaster-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `brewbindr-backup-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -179,7 +192,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `brewmaster-library-${new Date().toISOString().split('T')[0]}.xml`;
+    a.download = `brewbindr-library-${new Date().toISOString().split('T')[0]}.xml`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -209,20 +222,22 @@ const App: React.FC = () => {
   const startImportFlow = (result: BeerXmlImportResult) => {
     const queue: { type: 'recipe' | 'library', data: any }[] = [];
     result.recipes.forEach(r => queue.push({ type: 'recipe', data: r }));
-    result.fermentables.forEach(f => queue.push({ type: 'library', data: f }));
-    result.hops.forEach(h => queue.push({ type: 'library', data: h }));
-    result.cultures.forEach(c => queue.push({ type: 'library', data: c }));
-    result.mashes.forEach(m => queue.push({ type: 'library', data: m }));
-    result.styles.forEach(s => queue.push({ type: 'library', data: s }));
-    result.miscs.forEach(mi => queue.push({ type: 'library', data: mi }));
+    result.fermentables.forEach(f => queue.push({ type: 'library', data: { ...f, type: 'fermentable' } }));
+    result.hops.forEach(h => queue.push({ type: 'library', data: { ...h, type: 'hop' } }));
+    result.cultures.forEach(c => queue.push({ type: 'library', data: { ...c, type: 'culture' } }));
+    result.mashes.forEach(m => queue.push({ type: 'library', data: { ...m, type: 'mash_profile' } }));
+    result.styles.forEach(s => queue.push({ type: 'library', data: { ...s, type: 'style' } }));
+    result.miscs.forEach(mi => queue.push({ type: 'library', data: { ...mi, type: 'misc' } }));
     
     if (queue.length === 0) {
-      alert("No data found in the XML.");
+      alert("No data found in the selected files.");
       setImportStatus('idle');
       return;
     }
+
     setImportQueue(queue);
     setImportStatus('resolving');
+    // Important: call with state snapshots for consistency
     processQueue(queue, recipes, library);
   };
 
@@ -238,6 +253,7 @@ const App: React.FC = () => {
     } else {
       isDuplicate = currentLib.some(l => l.name.toLowerCase() === next.data.name.toLowerCase() && l.type === next.data.type);
     }
+    
     if (isDuplicate) {
       if (next.type === 'recipe') {
         const nextQ = currentQueue.slice(1);
@@ -252,16 +268,18 @@ const App: React.FC = () => {
       if (next.type === 'recipe') {
         const linked = linkIngredientsToLibrary(next.data, newLib);
         newRecipes.push(linked);
-        setRecipes(newRecipes);
-        setLibrary(newLib);
       } else {
         const newItem = { ...next.data, id: Math.random().toString(36).substr(2, 9) };
         newLib.push(newItem);
-        setLibrary(newLib);
       }
+      // Update state once per step
+      setRecipes(newRecipes);
+      setLibrary(newLib);
+      
       const nextQ = currentQueue.slice(1);
       setImportQueue(nextQ);
-      processQueue(nextQ, newRecipes, newLib);
+      // Wait for state updates before next recursive call
+      setTimeout(() => processQueue(nextQ, newRecipes, newLib), 0);
     }
   };
 
@@ -276,6 +294,7 @@ const App: React.FC = () => {
     return {
       ...recipe,
       ingredients: {
+        ...recipe.ingredients,
         fermentables: recipe.ingredients.fermentables.map(f => ({ 
           ...f, 
           libraryId: getLibId(f.name, 'fermentable', { 
@@ -301,32 +320,30 @@ const App: React.FC = () => {
     let updatedRecipes = [...recipes];
     let updatedLib = [...library];
     const nextQueue = importQueue.slice(1);
+    
     if (action === 'overwrite') {
       if (currentDuplicate.type === 'recipe') {
         const linked = linkIngredientsToLibrary(currentDuplicate.data, updatedLib);
         updatedRecipes = recipes.map(r => r.name.toLowerCase() === linked.name.toLowerCase() ? { ...linked, id: r.id } : r);
-        setRecipes(updatedRecipes);
-        setLibrary(updatedLib);
       } else {
         updatedLib = library.map(l => (l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type) ? { ...currentDuplicate.data, id: l.id } : l);
-        setLibrary(updatedLib);
       }
     } else if (action === 'copy') {
       if (currentDuplicate.type === 'recipe') {
-        const linked = linkIngredientsToLibrary({ ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Kopie)` }, updatedLib);
+        const linked = linkIngredientsToLibrary({ ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)` }, updatedLib);
         linked.id = Math.random().toString(36).substr(2, 9);
         updatedRecipes = [...recipes, linked];
-        setRecipes(updatedRecipes);
-        setLibrary(updatedLib);
       } else {
-        const newItem = { ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Kopie)`, id: Math.random().toString(36).substr(2, 9) };
+        const newItem = { ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)`, id: Math.random().toString(36).substr(2, 9) };
         updatedLib = [...library, newItem];
-        setLibrary(updatedLib);
       }
     }
+
+    setRecipes(updatedRecipes);
+    setLibrary(updatedLib);
     setImportQueue(nextQueue);
     setCurrentDuplicate(null);
-    processQueue(nextQueue, updatedRecipes, updatedLib);
+    setTimeout(() => processQueue(nextQueue, updatedRecipes, updatedLib), 0);
   };
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -358,8 +375,51 @@ const App: React.FC = () => {
     }
   };
 
+  const toggleDemoSelection = (id: string) => {
+    setSelectedDemoIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleConfirmDemoImport = async () => {
+    const selectedFiles = DEMO_OPTIONS.filter(o => selectedDemoIds.includes(o.id));
+    if (selectedFiles.length === 0) return;
+    
+    setShowDemoModal(false);
+    setImportStatus('fetching');
+
+    const aggregatedResult: BeerXmlImportResult = {
+        recipes: [], fermentables: [], hops: [], cultures: [], miscs: [], waters: [], styles: [], equipments: [], mashes: []
+    };
+
+    try {
+        for (const opt of selectedFiles) {
+            const targetUrl = `http://www.beerxml.com/${opt.file}`;
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+            const response = await fetch(proxyUrl);
+            if (!response.ok) continue;
+            const xmlText = await response.text();
+            const result = parseBeerXml(xmlText);
+            
+            // Merge into aggregate
+            aggregatedResult.recipes.push(...result.recipes);
+            aggregatedResult.fermentables.push(...result.fermentables);
+            aggregatedResult.hops.push(...result.hops);
+            aggregatedResult.cultures.push(...result.cultures);
+            aggregatedResult.miscs.push(...result.miscs);
+            aggregatedResult.styles.push(...result.styles);
+            aggregatedResult.mashes.push(...result.mashes);
+        }
+        setImportStatus('parsing');
+        startImportFlow(aggregatedResult);
+    } catch (err) {
+        console.error("Batch import failed", err);
+        alert("Batch import encountered errors.");
+        setImportStatus('idle');
+    }
+    setSelectedDemoIds([]);
+  };
+
   const handleImportDemoData = () => {
-    handleUrlImport('http://www.beerxml.com/recipes.xml');
+    setShowDemoModal(true);
   };
 
   return (
@@ -370,6 +430,64 @@ const App: React.FC = () => {
             <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} />
           </div>
         )}
+
+        {showDemoModal && (
+          <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
+            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-stone-900">Import Demo Data</h3>
+                <button onClick={() => setShowDemoModal(false)} className="text-stone-300 hover:text-stone-900 transition-colors"><i className="fas fa-times text-xl"></i></button>
+              </div>
+              
+              <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
+                <i className="fas fa-info-circle text-amber-600 mt-1"></i>
+                <div>
+                    <p className="text-xs text-amber-900 font-bold leading-relaxed">
+                        Select which sample data sets you want to add to your collection. You can find more samples at <a href="https://beerxml.com" target="_blank" className="underline">BeerXML.com</a> or download BrewDog recipes from <a href="https://brewdogrecipes.com" target="_blank" className="underline">brewdogrecipes.com</a>.
+                    </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                {DEMO_OPTIONS.map(opt => (
+                  <label 
+                    key={opt.id}
+                    className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer group ${selectedDemoIds.includes(opt.id) ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500' : 'bg-stone-50 border-stone-200 hover:bg-white'}`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-all ${selectedDemoIds.includes(opt.id) ? 'bg-amber-500 text-white' : 'bg-white text-stone-400 group-hover:text-amber-500'}`}>
+                      <i className={`fas ${opt.icon}`}></i>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-stone-900 text-sm leading-tight">{opt.name}</p>
+                      <p className="text-[10px] text-stone-400 font-black uppercase tracking-widest mt-0.5">{opt.file}</p>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedDemoIds.includes(opt.id) ? 'bg-amber-500 border-amber-500' : 'bg-white border-stone-200'}`}>
+                      {selectedDemoIds.includes(opt.id) && <i className="fas fa-check text-white text-[10px]"></i>}
+                    </div>
+                    <input 
+                        type="checkbox" 
+                        className="hidden" 
+                        checked={selectedDemoIds.includes(opt.id)}
+                        onChange={() => toggleDemoSelection(opt.id)}
+                    />
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-8 flex gap-4">
+                  <button onClick={() => setShowDemoModal(false)} className="flex-1 py-4 bg-stone-100 text-stone-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-stone-200 transition-all">Cancel</button>
+                  <button 
+                    onClick={handleConfirmDemoImport} 
+                    disabled={selectedDemoIds.length === 0}
+                    className="flex-1 py-4 bg-stone-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-200 disabled:opacity-50"
+                  >
+                    Confirm Import ({selectedDemoIds.length})
+                  </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="print:hidden">
           {importStatus !== 'idle' && (
             <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
@@ -443,7 +561,6 @@ const App: React.FC = () => {
                       </div>
                       <h3 className="text-xl font-bold mb-1 pr-16 truncate group-hover:text-amber-800 transition-colors">{r.name}</h3>
                       
-                      {/* Recipe Notes Preview */}
                       <div className="flex-1">
                         {r.notes && (
                           <p className="text-[10px] text-stone-400 font-medium mb-4 line-clamp-2 italic leading-relaxed">
@@ -478,7 +595,7 @@ const App: React.FC = () => {
             )}
             {view === 'library' && ( <IngredientLibrary ingredients={library} onUpdate={setLibrary} /> )}
             {view === 'admin' && (
-              <AdminView onExport={handleExportData} onExportBeerXml={handleExportLibraryBeerXml} onRestore={handleRestoreData} onFileImport={handleFileImport} onUrlImport={handleUrlImport} xmlUrl={xmlUrl} onXmlUrlChange={setXmlUrl} importStatus={importStatus} />
+              <AdminView onExport={handleExportData} onExportBeerXml={handleExportLibraryBeerXml} onRestore={handleRestoreData} onFileImport={handleFileImport} onUrlImport={handleImportDemoData} xmlUrl={xmlUrl} onXmlUrlChange={setXmlUrl} importStatus={importStatus} />
             )}
             {view === 'tasting' && selectedRecipe && selectedBrewLog && (
               <TastingNotes recipe={selectedRecipe} brewLogId={selectedBrewLog.id} onSave={(note) => { setTastingNotes([note, ...tastingNotes]); setView('brews'); }} />

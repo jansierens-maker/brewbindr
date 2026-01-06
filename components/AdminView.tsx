@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from '../App';
 
@@ -72,10 +71,31 @@ const AdminView: React.FC<AdminViewProps> = ({
               </div>
             </div>
 
-            <div className="pt-4 border-t border-stone-100">
+            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-4">
+              <h4 className="font-bold text-stone-900 text-xs uppercase tracking-widest">BeerXML Samples</h4>
+              <p className="text-xs text-stone-500 leading-relaxed">
+                Looking for recipes or ingredients? You can find extensive samples and guidelines at:
+              </p>
+              <div className="flex flex-col gap-2">
+                <a href="https://beerxml.com" target="_blank" rel="noopener noreferrer" className="text-amber-600 font-bold text-sm hover:underline flex items-center gap-2">
+                  <i className="fas fa-external-link-alt text-xs"></i> BeerXML.com Samples
+                </a>
+                <a href="https://brewdogrecipes.com" target="_blank" rel="noopener noreferrer" className="text-amber-600 font-bold text-sm hover:underline flex items-center gap-2">
+                  <i className="fas fa-external-link-alt text-xs"></i> BrewDog Recipes (BeerXML format)
+                </a>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-stone-100 flex flex-col gap-3">
+              <button 
+                onClick={onUrlImport} 
+                className="w-full bg-amber-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-3"
+              >
+                <i className="fas fa-download"></i> {t('import_demo')}
+              </button>
               <button 
                 onClick={onExportBeerXml} 
-                className="w-full bg-amber-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-3"
+                className="w-full bg-white border border-stone-200 text-stone-600 py-4 rounded-xl font-black hover:bg-stone-50 transition-all flex items-center justify-center gap-3"
               >
                 <i className="fas fa-file-export"></i> {t('export_library_xml')}
               </button>
@@ -115,7 +135,7 @@ const AdminView: React.FC<AdminViewProps> = ({
                 <h4 className="font-bold text-stone-900 text-sm">{t('restore')} Data</h4>
               </div>
               <p className="text-xs text-stone-500 leading-relaxed">
-                Restores your workspace from a previously exported BrewMaster JSON backup. Caution: This may overwrite existing data.
+                Restores your workspace from a previously exported brewbindr JSON backup. Caution: This may overwrite existing data.
               </p>
               <label className="block w-full bg-white border border-stone-200 text-stone-900 py-4 rounded-xl font-bold cursor-pointer hover:bg-stone-100 transition-all shadow-sm text-center text-sm">
                 {t('restore')}

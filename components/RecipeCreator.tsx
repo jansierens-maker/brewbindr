@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
@@ -220,28 +219,40 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
 
       {/* Target Stats Section */}
       <section className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl grid grid-cols-2 lg:grid-cols-4 gap-8 sticky top-24 z-40 border border-stone-800">
-        <div>
+        <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('target_abv')}</p>
           <p className={`text-4xl font-black ${checkInRange(stats.abv, selectedStyleGuideline?.abv_min, selectedStyleGuideline?.abv_max) ? 'text-amber-500' : 'text-red-500'}`}>
             {formatBrewNumber(stats.abv, 'abv', lang)}%
           </p>
+          {selectedStyleGuideline?.abv_min !== undefined && (
+            <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.abv_min}-{selectedStyleGuideline.abv_max}%</p>
+          )}
         </div>
-        <div>
+        <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('target_ibu')}</p>
           <p className={`text-4xl font-black ${checkInRange(stats.ibu, selectedStyleGuideline?.ibu_min, selectedStyleGuideline?.ibu_max) ? 'text-green-500' : 'text-red-500'}`}>
             {stats.ibu}
           </p>
+          {selectedStyleGuideline?.ibu_min !== undefined && (
+            <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.ibu_min}-{selectedStyleGuideline.ibu_max}</p>
+          )}
         </div>
-        <div>
+        <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('color')}</p>
           <div className="flex items-center gap-3">
             <p className="text-4xl font-black">{formatBrewNumber(stats.color, 'default', lang)}</p>
             <div className="w-10 h-6 rounded border border-stone-700 shadow-inner" style={{ backgroundColor: getSRMColor(stats.color) }}></div>
           </div>
+          {selectedStyleGuideline?.color_min !== undefined && (
+            <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.color_min}-{selectedStyleGuideline.color_max} SRM</p>
+          )}
         </div>
-        <div>
+        <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('est_og')}</p>
           <p className="text-4xl font-black">{formatBrewNumber(stats.og, 'og', lang)}</p>
+          {selectedStyleGuideline?.og_min !== undefined && (
+            <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.og_min}-{selectedStyleGuideline.og_max}</p>
+          )}
         </div>
       </section>
 
@@ -409,7 +420,17 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
           />
         </div>
 
-        <button onClick={() => onSave({...recipe, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})} className="w-full bg-stone-900 text-white py-5 rounded-3xl font-black shadow-xl hover:bg-black transition-all uppercase tracking-widest text-lg">{t('save_recipe')}</button>
+        <div className="flex gap-4">
+          {onDelete && recipe.id && (
+            <button 
+              onClick={() => { if(confirm(t('confirm_delete'))) onDelete(recipe.id!); }}
+              className="flex-none bg-stone-100 text-red-600 px-8 py-5 rounded-3xl font-black shadow-sm hover:bg-red-50 transition-all uppercase tracking-widest text-lg"
+            >
+              <i className="fas fa-trash-alt"></i>
+            </button>
+          )}
+          <button onClick={() => onSave({...recipe, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})} className="flex-1 bg-stone-900 text-white py-5 rounded-3xl font-black shadow-xl hover:bg-black transition-all uppercase tracking-widest text-lg">{t('save_recipe')}</button>
+        </div>
       </section>
     </div>
   );

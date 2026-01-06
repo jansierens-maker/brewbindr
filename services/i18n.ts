@@ -1,10 +1,9 @@
-
 export type Language = 'en' | 'nl' | 'fr';
 
 export const translations = {
   en: {
     nav_recipes: "Recipes",
-    nav_brews: "Log",
+    nav_brews: "Brews",
     nav_library: "Library",
     nav_admin: "Data",
     nav_new: "New",
@@ -38,7 +37,7 @@ export const translations = {
     next_step: "NEXT STEP",
     save_exit: "SAVE & EXIT",
     auto_saved: "Auto-saved",
-    history_title: "Brew Log",
+    history_title: "Brews",
     history_subtitle: "Track progress and results of all your brews.",
     no_brews: "No brews found yet.",
     og_label: "OG",
@@ -123,7 +122,7 @@ export const translations = {
   },
   nl: {
     nav_recipes: "Recepten",
-    nav_brews: "Log",
+    nav_brews: "Brouwsels",
     nav_library: "Bibliotheek",
     nav_admin: "Data",
     nav_new: "Nieuw",
@@ -157,7 +156,7 @@ export const translations = {
     next_step: "VOLGENDE STAP",
     save_exit: "OPSLAAN & SLUITEN",
     auto_saved: "Opgeslagen",
-    history_title: "Brouwlog",
+    history_title: "Brouwsels",
     history_subtitle: "Houd de voortgang van al je brouwsels bij.",
     no_brews: "Nog geen brouwsels gevonden.",
     og_label: "OG",
@@ -242,7 +241,7 @@ export const translations = {
   },
   fr: {
     nav_recipes: "Recettes",
-    nav_brews: "Log",
+    nav_brews: "Brassin",
     nav_library: "Bibliothèque",
     nav_admin: "Données",
     nav_new: "Nouveau",
@@ -276,7 +275,7 @@ export const translations = {
     next_step: "ÉTAPE SUIVANTE",
     save_exit: "ENREGISTRER & QUITTER",
     auto_saved: "Enregistré",
-    history_title: "Journal de Brassage",
+    history_title: "Brassins",
     history_subtitle: "Suivez vos brassins et vos résultats.",
     no_brews: "Aucun brassin trouvé.",
     og_label: "DI",
