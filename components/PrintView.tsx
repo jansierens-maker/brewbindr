@@ -20,7 +20,7 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
     : recipe.specifications?.abv?.value;
 
   return (
-    <div className="block print:block bg-white p-8 text-stone-900 text-sm font-sans !visible">
+    <div className="block print:block bg-white p-8 text-stone-900 text-sm font-sans">
       <div className="border-b-4 border-stone-900 pb-4 mb-8 flex justify-between items-end">
         <div>
           <h1 className="text-4xl font-serif font-bold italic text-stone-900">{recipe.name}</h1>

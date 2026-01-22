@@ -78,17 +78,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (printData) {
-      const handleAfterPrint = () => {
-        setPrintData(null);
-        window.removeEventListener('afterprint', handleAfterPrint);
-      };
-      window.addEventListener('afterprint', handleAfterPrint);
       const timer = setTimeout(() => {
         window.print();
-      }, 300);
+      }, 500);
       return () => {
         clearTimeout(timer);
-        window.removeEventListener('afterprint', handleAfterPrint);
       };
     }
   }, [printData]);
@@ -426,8 +420,25 @@ const App: React.FC = () => {
     <LanguageContext.Provider value={{ lang, setLang, t }}>
       <div className="min-h-screen bg-stone-50 text-stone-900 print:bg-white print:p-0">
         {printData && (
-          <div className="absolute inset-0 z-[300] bg-white pointer-events-none print:pointer-events-auto">
-            <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} />
+          <div className="fixed inset-0 z-[300] bg-white overflow-y-auto animate-in fade-in duration-200">
+            <div className="print:hidden sticky top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-stone-100 z-[301] px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <i className="fas fa-print text-stone-400"></i>
+                <span className="text-xs font-black uppercase tracking-widest text-stone-500">{t('print_preview')}</span>
+              </div>
+              <button
+                onClick={() => setPrintData(null)}
+                className="bg-stone-900 text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg flex items-center gap-2"
+              >
+                <i className="fas fa-times"></i>
+                {t('close_preview')}
+              </button>
+            </div>
+            <div className="p-4 md:p-8">
+              <div className="max-w-4xl mx-auto bg-white shadow-2xl ring-1 ring-stone-200 print:shadow-none print:ring-0">
+                <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} />
+              </div>
+            </div>
           </div>
         )}
 
