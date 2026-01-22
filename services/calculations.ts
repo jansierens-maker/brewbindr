@@ -56,7 +56,8 @@ const normalizeUnit = (unit: string | undefined): string => {
   const u = unit.toLowerCase().trim();
   if (u.startsWith('kg') || u.startsWith('kilo')) return 'kilograms';
   if (u.startsWith('lb') || u.startsWith('pound')) return 'pounds';
-  if (u.startsWith('g') && !u.startsWith('gal')) return 'grams';
+  if (u === 'g' || u === 'gram' || u === 'grams') return 'grams';
+  if (u === 'gr' || u === 'grain' || u === 'grains') return 'grains';
   if (u.startsWith('oz') || u.startsWith('ounce')) return 'ounces';
   if (u.startsWith('l') && !u.startsWith('lb')) return 'liters';
   if (u.startsWith('gal')) return 'gallons';
@@ -97,7 +98,11 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
   fermentables.forEach(f => {
     if (!f.amount) return;
     const unit = normalizeUnit(f.amount.unit);
-    const weightKg = unit === 'kilograms' ? f.amount.value : f.amount.value * 0.453592;
+    let weightKg = f.amount.value;
+    if (unit === 'pounds') weightKg = f.amount.value * 0.453592;
+    else if (unit === 'grams') weightKg = f.amount.value / 1000;
+    else if (unit === 'ounces') weightKg = f.amount.value * 0.0283495;
+
     const potential = f.yield?.potential?.value || 1.037;
     const ppg = (potential - 1) * 1000;
     const pkl = ppg * 8.3454;
@@ -116,7 +121,11 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
   fermentables.forEach(f => {
     if (!f.amount) return;
     const unit = normalizeUnit(f.amount.unit);
-    const weightLbs = unit === 'pounds' ? f.amount.value : f.amount.value * 2.20462;
+    let weightLbs = f.amount.value;
+    if (unit === 'kilograms') weightLbs = f.amount.value * 2.20462;
+    else if (unit === 'grams') weightLbs = f.amount.value / 453.592;
+    else if (unit === 'ounces') weightLbs = f.amount.value / 16;
+
     const colorSRM = f.color?.value || 2;
     const volumeGal = batchSizeL / 3.78541;
     mcu += (weightLbs * colorSRM) / (volumeGal || 1);
@@ -129,7 +138,11 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
     if (h.use === 'boil' || h.use === 'first_wort' || h.use === 'whirlpool') {
       const alpha = alphaOverrides?.[h.name] !== undefined ? alphaOverrides[h.name] : (h.alpha_acid?.value || 5);
       const unit = normalizeUnit(h.amount.unit);
-      const weightG = unit === 'grams' ? h.amount.value : h.amount.value * 28.3495;
+      let weightG = h.amount.value;
+      if (unit === 'ounces') weightG = h.amount.value * 28.3495;
+      else if (unit === 'kilograms') weightG = h.amount.value * 1000;
+      else if (unit === 'pounds') weightG = h.amount.value * 453.592;
+
       const time = h.time.value;
       const bignessFactor = 1.65 * Math.pow(0.000125, (og - 1));
       const timeFactor = (1 - Math.exp(-0.04 * time)) / 4.15;
