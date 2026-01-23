@@ -12,6 +12,7 @@ import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
 import { supabaseService } from './services/supabaseService';
+import { supabase } from './services/supabaseClient';
 
 type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
@@ -69,6 +70,8 @@ const App: React.FC = () => {
   const [selectedBrewLog, setSelectedBrewLog] = useState<BrewLogEntry | null>(null);
   
   const [xmlUrl, setXmlUrl] = useState('');
+  const [showFallbackModal, setShowFallbackModal] = useState(false);
+  const [allowLocalStorage, setAllowLocalStorage] = useState(true);
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importQueue, setImportQueue] = useState<{ type: 'recipe' | 'library', data: any }[]>([]);
   const [currentDuplicate, setCurrentDuplicate] = useState<{ type: 'recipe' | 'library', data: any } | null>(null);
@@ -97,6 +100,12 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    if (!supabase) {
+      const dismissed = localStorage.getItem('brewmaster_fallback_dismissed');
+      if (!dismissed) {
+        setShowFallbackModal(true);
+      }
+    }
     const loadData = async () => {
       // First load from localStorage for immediate availability
       const saved = localStorage.getItem('brewmaster_data_v3');
@@ -128,7 +137,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const data = { recipes, brewLogs, tastingNotes, library };
-    localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
+    if (allowLocalStorage) {
+      localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
+    }
 
     // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
     const timer = setTimeout(() => {
@@ -444,9 +455,47 @@ const App: React.FC = () => {
     setShowDemoModal(true);
   };
 
+  const handleDismissFallback = () => {
+    localStorage.setItem('brewmaster_fallback_dismissed', 'true');
+    setShowFallbackModal(false);
+  };
+
+  const handleDeclineFallback = () => {
+    setAllowLocalStorage(false);
+    setShowFallbackModal(false);
+  };
+
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
       <div className="min-h-screen bg-stone-50 text-stone-900 print:bg-white print:p-0">
+        {showFallbackModal && (
+          <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[250] flex items-center justify-center p-6">
+            <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300 text-center">
+              <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i className="fas fa-cloud-slash text-2xl text-amber-600"></i>
+              </div>
+              <h3 className="text-2xl font-black text-stone-900 mb-2">{t('cloud_unavailable')}</h3>
+              <p className="text-stone-500 font-medium mb-8 text-sm leading-relaxed">
+                {t('fallback_message')}
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleDismissFallback}
+                  className="w-full py-4 bg-stone-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg"
+                >
+                  {t('proceed_local')}
+                </button>
+                <button
+                  onClick={handleDeclineFallback}
+                  className="w-full py-3 bg-stone-100 text-stone-500 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-stone-200 transition-all"
+                >
+                  {t('cancel_btn')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {printData && (
           <div className="fixed inset-0 z-[300] bg-white overflow-y-auto animate-in fade-in duration-200">
             <div className="print:hidden sticky top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-stone-100 z-[301] px-6 py-4 flex justify-between items-center">
@@ -561,9 +610,18 @@ const App: React.FC = () => {
           )}
           <header className="bg-white border-b border-stone-200 sticky top-0 z-50 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+              <div className="flex items-center gap-4">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('recipes')}>
                 <div className="bg-amber-500 p-2 rounded-xl text-white shadow-lg"><i className="fas fa-beer-mug-empty text-2xl"></i></div>
                 <h1 className="text-2xl font-black font-serif italic text-stone-900 uppercase">brewbindr</h1>
+              </div>
+
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">
+                <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                  {supabase ? t('cloud_sync') : t('local_mode')}
+                </span>
+              </div>
               </div>
               <nav className="hidden md:flex gap-8">
                 <button onClick={() => setView('recipes')} className={`font-bold transition-all text-sm ${view === 'recipes' ? 'text-amber-600' : 'text-stone-400 hover:text-stone-600'}`}>{t('nav_recipes')}</button>

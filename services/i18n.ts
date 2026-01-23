@@ -120,7 +120,12 @@ export const translations = {
     misc_type: "Type",
     misc_use: "Use",
     style_category: "Category",
-    style_guide: "Style Guide"
+    style_guide: "Style Guide",
+    cloud_sync: "Cloud Sync",
+    local_mode: "Local Mode",
+    cloud_unavailable: "Cloud sync is unavailable",
+    fallback_message: "Your Supabase credentials are not configured. The app will use Local Storage on this device. Do you want to continue?",
+    proceed_local: "Proceed with Local Storage"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -241,7 +246,12 @@ export const translations = {
     misc_type: "Type",
     misc_use: "Gebruik",
     style_category: "Categorie",
-    style_guide: "Stijlgids"
+    style_guide: "Stijlgids",
+    cloud_sync: "Cloud Sync",
+    local_mode: "Lokaal",
+    cloud_unavailable: "Cloud sync is niet beschikbaar",
+    fallback_message: "Je Supabase inloggegevens zijn niet geconfigureerd. De app gebruikt lokale opslag op dit apparaat. Wil je doorgaan?",
+    proceed_local: "Doorgaan met Lokale Opslag"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -362,6 +372,11 @@ export const translations = {
     misc_type: "Type",
     misc_use: "Utilisation",
     style_category: "Catégorie",
-    style_guide: "Style Guide"
+    style_guide: "Style Guide",
+    cloud_sync: "Sync Cloud",
+    local_mode: "Mode Local",
+    cloud_unavailable: "Synchronisation cloud indisponible",
+    fallback_message: "Vos identifiants Supabase ne sont pas configurés. L'application utilisera le stockage local sur cet appareil. Voulez-vous continuer ?",
+    proceed_local: "Continuer avec le stockage local"
   }
 };
