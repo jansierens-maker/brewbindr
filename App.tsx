@@ -71,6 +71,8 @@ const App: React.FC = () => {
   
   const [xmlUrl, setXmlUrl] = useState('');
   const [showFallbackModal, setShowFallbackModal] = useState(false);
+  const [showSyncDetails, setShowSyncDetails] = useState(false);
+  const [tableStatus, setTableStatus] = useState<Record<string, boolean>>({});
   const [allowLocalStorage, setAllowLocalStorage] = useState(true);
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importQueue, setImportQueue] = useState<{ type: 'recipe' | 'library', data: any }[]>([]);
@@ -455,6 +457,33 @@ const App: React.FC = () => {
     setShowDemoModal(true);
   };
 
+  const handleOpenSyncDetails = async () => {
+    setShowSyncDetails(true);
+    if (supabase) {
+      const status = await supabaseService.checkTableHealth();
+      setTableStatus(status);
+    }
+  };
+
+  const SQL_SCHEMA = `
+CREATE TABLE IF NOT EXISTS recipes (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS brew_logs (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS tasting_notes (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS library_ingredients (id TEXT PRIMARY KEY, data JSONB);
+
+-- Enable RLS (Optional, but recommended)
+ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE brew_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasting_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE library_ingredients ENABLE ROW LEVEL SECURITY;
+
+-- Simple permissive policies (Replace with specific ones for production)
+CREATE POLICY "Allow all" ON recipes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON brew_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON tasting_notes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON library_ingredients FOR ALL USING (true) WITH CHECK (true);
+`.trim();
+
   const handleDismissFallback = () => {
     localStorage.setItem('brewmaster_fallback_dismissed', 'true');
     setShowFallbackModal(false);
@@ -468,6 +497,65 @@ const App: React.FC = () => {
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
       <div className="min-h-screen bg-stone-50 text-stone-900 print:bg-white print:p-0">
+        {showSyncDetails && (
+          <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[250] flex items-center justify-center p-6">
+            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-stone-900">{t('sync_details')}</h3>
+                <button onClick={() => setShowSyncDetails(false)} className="text-stone-300 hover:text-stone-900 transition-colors"><i className="fas fa-times text-xl"></i></button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('connection_status')}</p>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="font-bold text-sm">{supabase ? 'Connected' : 'Not Configured'}</span>
+                  </div>
+                </div>
+
+                {supabase && (
+                  <div>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('table_status')}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['recipes', 'brew_logs', 'tasting_notes', 'library_ingredients'].map(table => (
+                        <div key={table} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
+                          <span className="text-xs font-bold text-stone-600">{table}</span>
+                          <span className={`text-[10px] font-black uppercase ${tableStatus[table] ? 'text-green-600' : 'text-red-500'}`}>
+                            {tableStatus[table] === undefined ? '...' : (tableStatus[table] ? t('found') : t('not_found'))}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('sql_instructions')}</p>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(SQL_SCHEMA); alert('SQL copied to clipboard!'); }}
+                      className="text-amber-600 font-black text-[10px] uppercase hover:underline"
+                    >
+                      {t('copy_sql')}
+                    </button>
+                  </div>
+                  <pre className="bg-stone-900 text-stone-100 p-4 rounded-xl text-[10px] font-mono overflow-x-auto h-40">
+                    {SQL_SCHEMA}
+                  </pre>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowSyncDetails(false)}
+                className="w-full mt-8 py-4 bg-stone-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
         {showFallbackModal && (
           <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[250] flex items-center justify-center p-6">
             <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300 text-center">
@@ -616,12 +704,15 @@ const App: React.FC = () => {
                 <h1 className="text-2xl font-black font-serif italic text-stone-900 uppercase">brewbindr</h1>
               </div>
 
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100">
+              <button
+                onClick={handleOpenSyncDetails}
+                className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
+              >
                 <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
                   {supabase ? t('cloud_sync') : t('local_mode')}
                 </span>
-              </div>
+              </button>
               </div>
               <nav className="hidden md:flex gap-8">
                 <button onClick={() => setView('recipes')} className={`font-bold transition-all text-sm ${view === 'recipes' ? 'text-amber-600' : 'text-stone-400 hover:text-stone-600'}`}>{t('nav_recipes')}</button>

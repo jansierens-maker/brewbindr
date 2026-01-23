@@ -24,6 +24,21 @@ import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
  */
 
 export const supabaseService = {
+  async checkTableHealth() {
+    if (!supabase) return { recipes: false, brew_logs: false, tasting_notes: false, library_ingredients: false };
+
+    const tables = ['recipes', 'brew_logs', 'tasting_notes', 'library_ingredients'];
+    const results: Record<string, boolean> = {};
+
+    await Promise.all(tables.map(async (table) => {
+      const { error } = await supabase.from(table).select('id').limit(1);
+      // If error is 42P01, the table does not exist
+      results[table] = !error || error.code !== '42P01';
+    }));
+
+    return results as { recipes: boolean, brew_logs: boolean, tasting_notes: boolean, library_ingredients: boolean };
+  },
+
   async fetchAppData() {
     if (!supabase) return null;
     try {
