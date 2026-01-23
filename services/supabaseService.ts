@@ -25,13 +25,14 @@ import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
 
 export const supabaseService = {
   async checkTableHealth() {
-    if (!supabase) return { recipes: false, brew_logs: false, tasting_notes: false, library_ingredients: false };
+    const client = supabase;
+    if (!client) return { recipes: false, brew_logs: false, tasting_notes: false, library_ingredients: false };
 
     const tables = ['recipes', 'brew_logs', 'tasting_notes', 'library_ingredients'];
     const results: Record<string, boolean> = {};
 
     await Promise.all(tables.map(async (table) => {
-      const { error } = await supabase.from(table).select('id').limit(1);
+      const { error } = await client.from(table).select('id').limit(1);
       // If error is 42P01, the table does not exist
       results[table] = !error || error.code !== '42P01';
     }));
@@ -40,13 +41,14 @@ export const supabaseService = {
   },
 
   async fetchAppData() {
-    if (!supabase) return null;
+    const client = supabase;
+    if (!client) return null;
     try {
       const [recipesRes, logsRes, notesRes, libRes] = await Promise.all([
-        supabase.from('recipes').select('data'),
-        supabase.from('brew_logs').select('data'),
-        supabase.from('tasting_notes').select('data'),
-        supabase.from('library_ingredients').select('data')
+        client.from('recipes').select('data'),
+        client.from('brew_logs').select('data'),
+        client.from('tasting_notes').select('data'),
+        client.from('library_ingredients').select('data')
       ]);
 
       // Check for errors (Supabase returns error object if table missing or access denied)
@@ -67,53 +69,60 @@ export const supabaseService = {
   },
 
   async saveRecipe(recipe: Recipe) {
-    if (!supabase || !recipe.id) return;
-    return supabase.from('recipes').upsert({ id: recipe.id, data: recipe });
+    const client = supabase;
+    if (!client || !recipe.id) return;
+    return client.from('recipes').upsert({ id: recipe.id, data: recipe });
   },
 
   async deleteRecipe(id: string) {
-    if (!supabase) return;
-    return supabase.from('recipes').delete().eq('id', id);
+    const client = supabase;
+    if (!client) return;
+    return client.from('recipes').delete().eq('id', id);
   },
 
   async saveBrewLog(log: BrewLogEntry) {
-    if (!supabase) return;
-    return supabase.from('brew_logs').upsert({ id: log.id, data: log });
+    const client = supabase;
+    if (!client) return;
+    return client.from('brew_logs').upsert({ id: log.id, data: log });
   },
 
   async saveTastingNote(note: TastingNote) {
-    if (!supabase) return;
-    return supabase.from('tasting_notes').upsert({ id: note.id, data: note });
+    const client = supabase;
+    if (!client) return;
+    return client.from('tasting_notes').upsert({ id: note.id, data: note });
   },
 
   async saveLibraryIngredient(item: LibraryIngredient) {
-    if (!supabase) return;
-    return supabase.from('library_ingredients').upsert({ id: item.id, data: item });
+    const client = supabase;
+    if (!client) return;
+    return client.from('library_ingredients').upsert({ id: item.id, data: item });
   },
 
   async deleteLibraryIngredient(id: string) {
-    if (!supabase) return;
-    return supabase.from('library_ingredients').delete().eq('id', id);
+    const client = supabase;
+    if (!client) return;
+    return client.from('library_ingredients').delete().eq('id', id);
   },
 
   async syncAll(data: { recipes: Recipe[], brewLogs: BrewLogEntry[], tastingNotes: TastingNote[], library: LibraryIngredient[] }) {
-    if (!supabase) return;
+    const client = supabase;
+    if (!client) return;
     const { recipes, brewLogs, tastingNotes, library } = data;
 
     // Use bulk upserts for better performance and to respect rate limits
     const tasks = [];
 
     if (recipes.length > 0) {
-      tasks.push(supabase.from('recipes').upsert(recipes.map(r => ({ id: r.id, data: r }))));
+      tasks.push(client.from('recipes').upsert(recipes.map(r => ({ id: r.id, data: r }))));
     }
     if (brewLogs.length > 0) {
-      tasks.push(supabase.from('brew_logs').upsert(brewLogs.map(l => ({ id: l.id, data: l }))));
+      tasks.push(client.from('brew_logs').upsert(brewLogs.map(l => ({ id: l.id, data: l }))));
     }
     if (tastingNotes.length > 0) {
-      tasks.push(supabase.from('tasting_notes').upsert(tastingNotes.map(n => ({ id: n.id, data: n }))));
+      tasks.push(client.from('tasting_notes').upsert(tastingNotes.map(n => ({ id: n.id, data: n }))));
     }
     if (library.length > 0) {
-      tasks.push(supabase.from('library_ingredients').upsert(library.map(i => ({ id: i.id, data: i }))));
+      tasks.push(client.from('library_ingredients').upsert(library.map(i => ({ id: i.id, data: i }))));
     }
 
     try {
