@@ -11,6 +11,7 @@ import { getSRMColor, formatBrewNumber } from './services/calculations';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
+import { supabaseService } from './services/supabaseService';
 
 type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
@@ -96,19 +97,45 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('brewmaster_data_v3');
-    if (saved) {
-      const data = JSON.parse(saved);
-      if (data.recipes) setRecipes(data.recipes);
-      if (data.brewLogs) setBrewLogs(data.brewLogs);
-      if (data.tastingNotes) setTastingNotes(data.tastingNotes);
-      if (data.library) setLibrary(data.library);
-    }
+    const loadData = async () => {
+      // First load from localStorage for immediate availability
+      const saved = localStorage.getItem('brewmaster_data_v3');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          if (data.recipes) setRecipes(data.recipes);
+          if (data.brewLogs) setBrewLogs(data.brewLogs);
+          if (data.tastingNotes) setTastingNotes(data.tastingNotes);
+          if (data.library) setLibrary(data.library);
+        } catch (e) {
+          console.error('Error parsing local data:', e);
+        }
+      }
+
+      // Sync from Supabase for cross-device consistency
+      const remoteData = await supabaseService.fetchAppData();
+      if (remoteData) {
+        // We overwrite local state with remote data.
+        // Note: In a production app, we would use timestamps or a merge strategy to handle conflicts.
+        setRecipes(remoteData.recipes);
+        setBrewLogs(remoteData.brewLogs);
+        setTastingNotes(remoteData.tastingNotes);
+        setLibrary(remoteData.library);
+      }
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
     const data = { recipes, brewLogs, tastingNotes, library };
     localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
+
+    // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
+    const timer = setTimeout(() => {
+      supabaseService.syncAll(data);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, [recipes, brewLogs, tastingNotes, library]);
 
   const handleSaveRecipe = (recipe: Recipe) => {
@@ -126,6 +153,7 @@ const App: React.FC = () => {
     setRecipes(prev => prev.filter(r => r.id !== id));
     setSelectedRecipe(null);
     setView('recipes');
+    supabaseService.deleteRecipe(id);
   };
 
   const handleUpdateBrewLog = (entry: BrewLogEntry) => {
@@ -604,7 +632,17 @@ const App: React.FC = () => {
             {view === 'create' && (
               <RecipeCreator initialRecipe={selectedRecipe || undefined} onSave={handleSaveRecipe} onDelete={handleDeleteRecipe} library={library} />
             )}
-            {view === 'library' && ( <IngredientLibrary ingredients={library} onUpdate={setLibrary} /> )}
+            {view === 'library' && (
+              <IngredientLibrary
+                ingredients={library}
+                onUpdate={(newLib) => {
+                  // Track and handle deletions for Supabase sync
+                  const deleted = library.filter(l => !newLib.find(nl => nl.id === l.id));
+                  deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id));
+                  setLibrary(newLib);
+                }}
+              />
+            )}
             {view === 'admin' && (
               <AdminView onExport={handleExportData} onExportBeerXml={handleExportLibraryBeerXml} onRestore={handleRestoreData} onFileImport={handleFileImport} onUrlImport={handleImportDemoData} xmlUrl={xmlUrl} onXmlUrlChange={setXmlUrl} importStatus={importStatus} />
             )}
