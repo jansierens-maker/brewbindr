@@ -466,22 +466,42 @@ const App: React.FC = () => {
   };
 
   const SQL_SCHEMA = `
+-- Create application tables
 CREATE TABLE IF NOT EXISTS recipes (id TEXT PRIMARY KEY, data JSONB);
 CREATE TABLE IF NOT EXISTS brew_logs (id TEXT PRIMARY KEY, data JSONB);
 CREATE TABLE IF NOT EXISTS tasting_notes (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS library_ingredients (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS fermentables (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS hops (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS cultures (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS styles (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS miscs (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS mash_profiles (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS equipment (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS waters (id TEXT PRIMARY KEY, data JSONB);
 
--- Enable RLS (Optional, but recommended)
+-- Enable Row Level Security (RLS)
 ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE brew_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasting_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE library_ingredients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fermentables ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hops ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cultures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE styles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE miscs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mash_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
+ALTER TABLE waters ENABLE ROW LEVEL SECURITY;
 
--- Simple permissive policies (Replace with specific ones for production)
-CREATE POLICY "Allow all" ON recipes FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON brew_logs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON tasting_notes FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all" ON library_ingredients FOR ALL USING (true) WITH CHECK (true);
+-- Enable permissive policies for anonymous access (adjust for production)
+DO \$\$
+DECLARE
+  t text;
+BEGIN
+  FOR t IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
+  LOOP
+    EXECUTE format('CREATE POLICY "Allow all" ON %I FOR ALL USING (true) WITH CHECK (true)', t);
+  END LOOP;
+END \$\$;
 `.trim();
 
   const handleDismissFallback = () => {
@@ -517,15 +537,17 @@ CREATE POLICY "Allow all" ON library_ingredients FOR ALL USING (true) WITH CHECK
                 {supabase && (
                   <div>
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('table_status')}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['recipes', 'brew_logs', 'tasting_notes', 'library_ingredients'].map(table => (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {Object.keys(tableStatus).length > 0 ? Object.entries(tableStatus).map(([table, found]) => (
                         <div key={table} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
-                          <span className="text-xs font-bold text-stone-600">{table}</span>
-                          <span className={`text-[10px] font-black uppercase ${tableStatus[table] ? 'text-green-600' : 'text-red-500'}`}>
-                            {tableStatus[table] === undefined ? '...' : (tableStatus[table] ? t('found') : t('not_found'))}
+                          <span className="text-[10px] font-bold text-stone-600 truncate mr-2">{table}</span>
+                          <span className={`text-[9px] font-black uppercase flex-shrink-0 ${found ? 'text-green-600' : 'text-red-500'}`}>
+                            {found ? t('found') : t('not_found')}
                           </span>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="col-span-full py-4 text-center text-xs text-stone-400 italic">Checking status...</div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -787,7 +809,7 @@ CREATE POLICY "Allow all" ON library_ingredients FOR ALL USING (true) WITH CHECK
                 onUpdate={(newLib) => {
                   // Track and handle deletions for Supabase sync
                   const deleted = library.filter(l => !newLib.find(nl => nl.id === l.id));
-                  deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id));
+                  deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id, d.type));
                   setLibrary(newLib);
                 }}
               />

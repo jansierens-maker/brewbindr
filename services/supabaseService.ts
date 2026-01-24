@@ -5,62 +5,65 @@ import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
  * Supabase Service for Brewbindr
  *
  * Expected Database Schema:
- *
- * Table: recipes
- * - id: text (primary key)
- * - data: jsonb
- *
- * Table: brew_logs
- * - id: text (primary key)
- * - data: jsonb
- *
- * Table: tasting_notes
- * - id: text (primary key)
- * - data: jsonb
- *
- * Table: library_ingredients
- * - id: text (primary key)
- * - data: jsonb
+ * Tables are created via the Sync Details modal SQL schema instructions.
  */
+
+const TABLE_MAP: Record<string, string> = {
+  'fermentable': 'fermentables',
+  'hop': 'hops',
+  'culture': 'cultures',
+  'style': 'styles',
+  'misc': 'miscs',
+  'mash_profile': 'mash_profiles',
+  'equipment': 'equipment',
+  'water': 'waters'
+};
 
 export const supabaseService = {
   async checkTableHealth() {
     const client = supabase;
-    if (!client) return { recipes: false, brew_logs: false, tasting_notes: false, library_ingredients: false };
+    const tables = ['recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
+    if (!client) {
+      return tables.reduce((acc, table) => ({ ...acc, [table]: false }), {}) as Record<string, boolean>;
+    }
 
-    const tables = ['recipes', 'brew_logs', 'tasting_notes', 'library_ingredients'];
     const results: Record<string, boolean> = {};
 
     await Promise.all(tables.map(async (table) => {
       const { error } = await client.from(table).select('id').limit(1);
-      // If error is 42P01, the table does not exist
-      results[table] = !error || error.code !== '42P01';
+      results[table] = !error;
     }));
 
-    return results as { recipes: boolean, brew_logs: boolean, tasting_notes: boolean, library_ingredients: boolean };
+    return results;
   },
 
   async fetchAppData() {
     const client = supabase;
     if (!client) return null;
     try {
-      const [recipesRes, logsRes, notesRes, libRes] = await Promise.all([
-        client.from('recipes').select('data'),
-        client.from('brew_logs').select('data'),
-        client.from('tasting_notes').select('data'),
-        client.from('library_ingredients').select('data')
-      ]);
+      const tableList = ['recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
+      const requests = tableList.map(t => client.from(t).select('data'));
 
-      // Check for errors (Supabase returns error object if table missing or access denied)
-      if (recipesRes.error || logsRes.error || notesRes.error || libRes.error) {
-        console.warn('Supabase fetch partial error. Some tables might be missing.');
-      }
+      const responses = await Promise.all(requests);
+      const data: any = {};
+
+      tableList.forEach((table, idx) => {
+        data[table] = responses[idx].data?.map(r => r.data) || [];
+      });
+
+      // Merge library tables back into a single array
+      const library: LibraryIngredient[] = [];
+      Object.entries(TABLE_MAP).forEach(([type, table]) => {
+        if (data[table]) {
+          library.push(...data[table]);
+        }
+      });
 
       return {
-        recipes: (recipesRes.data?.map(r => r.data) as Recipe[]) || [],
-        brewLogs: (logsRes.data?.map(l => l.data) as BrewLogEntry[]) || [],
-        tastingNotes: (notesRes.data?.map(n => n.data) as TastingNote[]) || [],
-        library: (libRes.data?.map(i => i.data) as LibraryIngredient[]) || []
+        recipes: data['recipes'] as Recipe[],
+        brewLogs: data['brew_logs'] as BrewLogEntry[],
+        tastingNotes: data['tasting_notes'] as TastingNote[],
+        library
       };
     } catch (err) {
       console.error('Critical error fetching from Supabase:', err);
@@ -80,28 +83,18 @@ export const supabaseService = {
     return client.from('recipes').delete().eq('id', id);
   },
 
-  async saveBrewLog(log: BrewLogEntry) {
-    const client = supabase;
-    if (!client) return;
-    return client.from('brew_logs').upsert({ id: log.id, data: log });
-  },
-
-  async saveTastingNote(note: TastingNote) {
-    const client = supabase;
-    if (!client) return;
-    return client.from('tasting_notes').upsert({ id: note.id, data: note });
-  },
-
   async saveLibraryIngredient(item: LibraryIngredient) {
     const client = supabase;
-    if (!client) return;
-    return client.from('library_ingredients').upsert({ id: item.id, data: item });
+    const table = TABLE_MAP[item.type];
+    if (!client || !table) return;
+    return client.from(table).upsert({ id: item.id, data: item });
   },
 
-  async deleteLibraryIngredient(id: string) {
+  async deleteLibraryIngredient(id: string, type: string) {
     const client = supabase;
-    if (!client) return;
-    return client.from('library_ingredients').delete().eq('id', id);
+    const table = TABLE_MAP[type];
+    if (!client || !table) return;
+    return client.from(table).delete().eq('id', id);
   },
 
   async syncAll(data: { recipes: Recipe[], brewLogs: BrewLogEntry[], tastingNotes: TastingNote[], library: LibraryIngredient[] }) {
@@ -109,7 +102,6 @@ export const supabaseService = {
     if (!client) return;
     const { recipes, brewLogs, tastingNotes, library } = data;
 
-    // Use bulk upserts for better performance and to respect rate limits
     const tasks = [];
 
     if (recipes.length > 0) {
@@ -121,9 +113,20 @@ export const supabaseService = {
     if (tastingNotes.length > 0) {
       tasks.push(client.from('tasting_notes').upsert(tastingNotes.map(n => ({ id: n.id, data: n }))));
     }
-    if (library.length > 0) {
-      tasks.push(client.from('library_ingredients').upsert(library.map(i => ({ id: i.id, data: i }))));
-    }
+
+    // Split library by type for granular storage
+    const libraryByType: Record<string, LibraryIngredient[]> = {};
+    library.forEach(item => {
+      const table = TABLE_MAP[item.type];
+      if (table) {
+        if (!libraryByType[table]) libraryByType[table] = [];
+        libraryByType[table].push(item);
+      }
+    });
+
+    Object.entries(libraryByType).forEach(([table, items]) => {
+      tasks.push(client.from(table).upsert(items.map(i => ({ id: i.id, data: i }))));
+    });
 
     try {
       await Promise.all(tasks);
