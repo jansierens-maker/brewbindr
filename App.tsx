@@ -6,6 +6,8 @@ import IngredientLibrary from './components/IngredientLibrary';
 import BrewHistory from './components/BrewHistory';
 import PrintView from './components/PrintView';
 import AdminView from './components/AdminView';
+import Auth from './components/Auth';
+import Settings from './components/Settings';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber } from './services/calculations';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
@@ -13,8 +15,9 @@ import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExpor
 import { translations, Language } from './services/i18n';
 import { supabaseService } from './services/supabaseService';
 import { supabase } from './services/supabaseClient';
+import { UserProvider, useUser } from './services/userContext';
 
-type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin';
+type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin' | 'settings' | 'auth';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
 
 interface LanguageContextType {
@@ -59,7 +62,16 @@ const DEMO_OPTIONS = [
 ];
 
 const App: React.FC = () => {
-  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('brew_lang') as Language) || 'en');
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
+  );
+};
+
+const AppContent: React.FC = () => {
+  const { user, profile, preferences, isAdmin, loading: authLoading, updatePreferences } = useUser();
+  const lang = preferences.language;
   const [view, setView] = useState<View>('recipes');
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [brewLogs, setBrewLogs] = useState<BrewLogEntry[]>([]);
@@ -79,6 +91,7 @@ const App: React.FC = () => {
   const [currentDuplicate, setCurrentDuplicate] = useState<{ type: 'recipe' | 'library', data: any } | null>(null);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
+  const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
 
@@ -93,9 +106,9 @@ const App: React.FC = () => {
     }
   }, [printData]);
 
-  useEffect(() => {
-    localStorage.setItem('brew_lang', lang);
-  }, [lang]);
+  const setLang = (l: Language) => {
+    updatePreferences({ language: l });
+  };
 
   const t = (key: keyof typeof translations['en']): string => {
     return translations[lang][key] || translations['en'][key] || key;
@@ -109,6 +122,8 @@ const App: React.FC = () => {
       }
     }
     const loadData = async () => {
+      if (authLoading) return;
+
       // First load from localStorage for immediate availability
       const saved = localStorage.getItem('brewmaster_data_v3');
       if (saved) {
@@ -124,20 +139,25 @@ const App: React.FC = () => {
       }
 
       // Sync from Supabase for cross-device consistency
-      const remoteData = await supabaseService.fetchAppData();
+      const remoteData = await supabaseService.fetchAppData(user?.id);
       if (remoteData) {
         // We overwrite local state with remote data.
-        // Note: In a production app, we would use timestamps or a merge strategy to handle conflicts.
         setRecipes(remoteData.recipes);
         setBrewLogs(remoteData.brewLogs);
         setTastingNotes(remoteData.tastingNotes);
         setLibrary(remoteData.library);
       }
+
+      if (isAdmin) {
+        const pending = await supabaseService.fetchPendingSubmissions();
+        setPendingSubmissions(pending);
+      }
     };
     loadData();
-  }, []);
+  }, [user?.id, authLoading, isAdmin]);
 
   useEffect(() => {
+    if (authLoading) return;
     const data = { recipes, brewLogs, tastingNotes, library };
     if (allowLocalStorage) {
       localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
@@ -145,17 +165,17 @@ const App: React.FC = () => {
 
     // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
     const timer = setTimeout(() => {
-      supabaseService.syncAll(data);
+      supabaseService.syncAll(data, user?.id);
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [recipes, brewLogs, tastingNotes, library]);
+  }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading]);
 
   const handleSaveRecipe = (recipe: Recipe) => {
     if (selectedRecipe && selectedRecipe.id) {
-      setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? { ...recipe, id: selectedRecipe.id } : r));
+      setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? { ...recipe, id: selectedRecipe.id, user_id: user?.id } : r));
     } else {
-      const newRecipe = { ...recipe, id: Math.random().toString(36).substr(2, 9) };
+      const newRecipe = { ...recipe, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
       setRecipes(prev => [...prev, newRecipe]);
     }
     setSelectedRecipe(null);
@@ -173,7 +193,7 @@ const App: React.FC = () => {
     setBrewLogs(prev => {
       const exists = prev.find(l => l.id === entry.id);
       if (exists) return prev.map(l => l.id === entry.id ? entry : l);
-      return [entry, ...prev];
+      return [{ ...entry, user_id: user?.id }, ...prev];
     });
   };
 
@@ -302,9 +322,9 @@ const App: React.FC = () => {
       let newLib = [...currentLib];
       if (next.type === 'recipe') {
         const linked = linkIngredientsToLibrary(next.data, newLib);
-        newRecipes.push(linked);
+        newRecipes.push({ ...linked, user_id: user?.id });
       } else {
-        const newItem = { ...next.data, id: Math.random().toString(36).substr(2, 9) };
+        const newItem = { ...next.data, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
         newLib.push(newItem);
       }
       // Update state once per step
@@ -323,7 +343,7 @@ const App: React.FC = () => {
       const existing = tempLib.find(i => i.type === type && i.name.toLowerCase() === name.toLowerCase());
       if (existing) return existing.id;
       const newId = Math.random().toString(36).substr(2, 9);
-      tempLib.push({ id: newId, name, type, ...props } as LibraryIngredient);
+      tempLib.push({ id: newId, name, type, user_id: user?.id, ...props } as LibraryIngredient);
       return newId;
     };
     return {
@@ -359,17 +379,17 @@ const App: React.FC = () => {
     if (action === 'overwrite') {
       if (currentDuplicate.type === 'recipe') {
         const linked = linkIngredientsToLibrary(currentDuplicate.data, updatedLib);
-        updatedRecipes = recipes.map(r => r.name.toLowerCase() === linked.name.toLowerCase() ? { ...linked, id: r.id } : r);
+        updatedRecipes = recipes.map(r => r.name.toLowerCase() === linked.name.toLowerCase() ? { ...linked, id: r.id, user_id: user?.id } : r);
       } else {
-        updatedLib = library.map(l => (l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type) ? { ...currentDuplicate.data, id: l.id } : l);
+        updatedLib = library.map(l => (l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type) ? { ...currentDuplicate.data, id: l.id, user_id: user?.id } : l);
       }
     } else if (action === 'copy') {
       if (currentDuplicate.type === 'recipe') {
         const linked = linkIngredientsToLibrary({ ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)` }, updatedLib);
         linked.id = Math.random().toString(36).substr(2, 9);
-        updatedRecipes = [...recipes, linked];
+        updatedRecipes = [...recipes, { ...linked, user_id: user?.id }];
       } else {
-        const newItem = { ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)`, id: Math.random().toString(36).substr(2, 9) };
+        const newItem = { ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)`, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
         updatedLib = [...library, newItem];
       }
     }
@@ -465,19 +485,85 @@ const App: React.FC = () => {
     }
   };
 
+  const handleApprove = async (id: string, type: string, table?: string) => {
+    await supabaseService.updateItemStatus(id, type, 'approved', table);
+    const pending = await supabaseService.fetchPendingSubmissions();
+    setPendingSubmissions(pending);
+    // Refresh main data
+    const remoteData = await supabaseService.fetchAppData(user?.id);
+    if (remoteData) setLibrary(remoteData.library);
+  };
+
+  const handleReject = async (id: string, type: string, table?: string) => {
+    await supabaseService.updateItemStatus(id, type, 'private', table);
+    const pending = await supabaseService.fetchPendingSubmissions();
+    setPendingSubmissions(pending);
+  };
+
   const SQL_SCHEMA = `
--- Create application tables
-CREATE TABLE IF NOT EXISTS recipes (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS brew_logs (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS tasting_notes (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS fermentables (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS hops (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS cultures (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS styles (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS miscs (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS mash_profiles (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS equipment (id TEXT PRIMARY KEY, data JSONB);
-CREATE TABLE IF NOT EXISTS waters (id TEXT PRIMARY KEY, data JSONB);
+-- Create profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
+  role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm"}'::jsonb
+);
+
+-- Enable RLS on profiles
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- Create application tables with user_id and status
+-- We use TEXT for id to support existing random string IDs, but UUID for user_id
+CREATE TABLE IF NOT EXISTS recipes (
+  id TEXT PRIMARY KEY,
+  data JSONB,
+  user_id UUID REFERENCES auth.users,
+  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
+);
+CREATE TABLE IF NOT EXISTS brew_logs (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
+CREATE TABLE IF NOT EXISTS tasting_notes (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
+CREATE TABLE IF NOT EXISTS fermentables (
+  id TEXT PRIMARY KEY,
+  data JSONB,
+  user_id UUID REFERENCES auth.users,
+  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
+);
+CREATE TABLE IF NOT EXISTS hops (
+  id TEXT PRIMARY KEY,
+  data JSONB,
+  user_id UUID REFERENCES auth.users,
+  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
+);
+CREATE TABLE IF NOT EXISTS cultures (
+  id TEXT PRIMARY KEY,
+  data JSONB,
+  user_id UUID REFERENCES auth.users,
+  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
+);
+CREATE TABLE IF NOT EXISTS styles (
+  id TEXT PRIMARY KEY,
+  data JSONB,
+  user_id UUID REFERENCES auth.users,
+  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
+);
+CREATE TABLE IF NOT EXISTS miscs (
+  id TEXT PRIMARY KEY,
+  data JSONB,
+  user_id UUID REFERENCES auth.users,
+  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
+);
+CREATE TABLE IF NOT EXISTS mash_profiles (
+  id TEXT PRIMARY KEY,
+  data JSONB,
+  user_id UUID REFERENCES auth.users,
+  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
+);
+CREATE TABLE IF NOT EXISTS equipment (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
+CREATE TABLE IF NOT EXISTS waters (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
@@ -492,14 +578,29 @@ ALTER TABLE mash_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
 ALTER TABLE waters ENABLE ROW LEVEL SECURITY;
 
--- Enable permissive policies for anonymous access (adjust for production)
+-- Helper to check if user is admin
+CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
+  SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- RLS Policies for Data Tables
 DO \$\$
 DECLARE
   t text;
+  tables text[] := ARRAY['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
 BEGIN
-  FOR t IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
+  FOR t IN SELECT unnest(tables)
   LOOP
-    EXECUTE format('CREATE POLICY "Allow all" ON %I FOR ALL USING (true) WITH CHECK (true)', t);
+    -- Everyone can read approved items (if the table has a status column)
+    IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
+      EXECUTE format('CREATE POLICY "Allow read approved %I" ON %I FOR SELECT USING (status = ''approved'');', t, t);
+    END IF;
+
+    -- Users can read/write their own items
+    EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t, t);
+
+    -- Admins can do everything
+    EXECUTE format('CREATE POLICY "Allow admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
   END LOOP;
 END \$\$;
 `.trim();
@@ -743,12 +844,16 @@ END \$\$;
                 <button onClick={() => setView('admin')} className={`font-bold transition-all text-sm ${view === 'admin' ? 'text-amber-600' : 'text-stone-400 hover:text-stone-600'}`}>{t('nav_admin')}</button>
               </nav>
               <div className="flex items-center gap-4">
-                <div className="flex bg-stone-100 p-1 rounded-xl">
-                  {(['en', 'nl', 'fr'] as Language[]).map((l) => (
-                    <button key={l} onClick={() => setLang(l)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${lang === l ? 'bg-white text-amber-600 shadow-sm' : 'text-stone-400'}`}> {l} </button>
-                  ))}
+                <div className="flex items-center gap-2">
+                  <div className="hidden sm:flex flex-col items-end mr-2">
+                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{user ? t('logged_in_as') : t('guest_mode')}</p>
+                    <p className="text-[10px] font-bold text-stone-900 truncate max-w-[120px]">{user?.email || t('guest_user')}</p>
+                  </div>
+                  <button onClick={() => setView(user ? 'settings' : 'auth')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'settings' || view === 'auth' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
+                    <i className="fas fa-user"></i>
+                  </button>
+                  <button onClick={() => { setSelectedRecipe(null); setView('create'); }} className="bg-stone-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-md"> <i className="fas fa-plus mr-2"></i>{t('nav_new')} </button>
                 </div>
-                <button onClick={() => { setSelectedRecipe(null); setView('create'); }} className="bg-stone-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-md"> <i className="fas fa-plus mr-2"></i>{t('nav_new')} </button>
               </div>
             </div>
           </header>
@@ -780,14 +885,14 @@ END \$\$;
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
-                        <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">Batch</p><p className="font-bold text-xs">{formatBrewNumber(r.batch_size.value, 'default', lang)} L</p></div>
-                        <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">ABV</p><p className="font-bold text-xs">{formatBrewNumber(r.specifications?.abv?.value, 'abv', lang)}%</p></div>
+                        <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">Batch</p><p className="font-bold text-xs">{formatBrewNumber(r.batch_size.value, 'vol', lang, preferences, r.batch_size.unit)} {preferences.units === 'imperial' ? 'Gal' : 'L'}</p></div>
+                        <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">ABV</p><p className="font-bold text-xs">{formatBrewNumber(r.specifications?.abv?.value, 'abv', lang, preferences)}%</p></div>
                         <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">IBU</p><p className="font-bold text-xs">{r.specifications?.ibu?.value}</p></div>
-                        <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">OG</p><p className="font-bold text-xs">{formatBrewNumber(r.specifications?.og?.value, 'og', lang)}</p></div>
+                        <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">OG</p><p className="font-bold text-xs">{formatBrewNumber(r.specifications?.og?.value, 'og', lang, preferences)}</p></div>
                       </div>
                       <div className="flex gap-2 mt-auto">
                         <button onClick={() => { setSelectedRecipe(r); setSelectedBrewLog(null); setView('log'); }} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">Brew</button>
-                        <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">Edit</button>
+                        {(!r.user_id || r.user_id === user?.id) && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">Edit</button>}
                       </div>
                     </div>
                   ))}
@@ -815,8 +920,22 @@ END \$\$;
               />
             )}
             {view === 'admin' && (
-              <AdminView onExport={handleExportData} onExportBeerXml={handleExportLibraryBeerXml} onRestore={handleRestoreData} onFileImport={handleFileImport} onUrlImport={handleImportDemoData} xmlUrl={xmlUrl} onXmlUrlChange={setXmlUrl} importStatus={importStatus} />
+              <AdminView
+                onExport={handleExportData}
+                onExportBeerXml={handleExportLibraryBeerXml}
+                onRestore={handleRestoreData}
+                onFileImport={handleFileImport}
+                onUrlImport={handleImportDemoData}
+                xmlUrl={xmlUrl}
+                onXmlUrlChange={setXmlUrl}
+                importStatus={importStatus}
+                pendingSubmissions={pendingSubmissions}
+                onApprove={handleApprove}
+                onReject={handleReject}
+              />
             )}
+            {view === 'auth' && <Auth onSuccess={() => setView('recipes')} />}
+            {view === 'settings' && <Settings />}
             {view === 'tasting' && selectedRecipe && selectedBrewLog && (
               <TastingNotes recipe={selectedRecipe} brewLogId={selectedBrewLog.id} onSave={(note) => { setTastingNotes([note, ...tastingNotes]); setView('brews'); }} />
             )}

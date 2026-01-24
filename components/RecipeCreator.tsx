@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, getSRMColor, formatBrewNumber } from '../services/calculations';
+import { calculateRecipeStats, getSRMColor, formatBrewNumber, srmToEbc } from '../services/calculations';
 import { useTranslation } from '../App';
+import { useUser } from '../services/userContext';
 
 interface RecipeCreatorProps {
   onSave: (recipe: Recipe) => void;
@@ -13,6 +14,7 @@ interface RecipeCreatorProps {
 
 const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initialRecipe, library }) => {
   const { t, lang } = useTranslation();
+  const { preferences, user } = useUser();
   const [recipe, setRecipe] = useState<Recipe>(initialRecipe || {
     name: '',
     type: 'all_grain',
@@ -79,9 +81,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
     setRecipe(prev => {
       const newIngredients = { ...prev.ingredients };
       if (type === 'fermentable') {
-        newIngredients.fermentables = [...prev.ingredients.fermentables, { name: '', type: 'grain', amount: { unit: 'kilograms', value: 0 }, color: { value: 2 } }];
+        newIngredients.fermentables = [...prev.ingredients.fermentables, { name: '', type: 'grain', amount: { unit: preferences.units === 'imperial' ? 'pounds' : 'kilograms', value: 0 }, color: { value: 2 } }];
       } else if (type === 'hop') {
-        newIngredients.hops = [...prev.ingredients.hops, { name: '', amount: { unit: 'grams', value: 0 }, use: 'boil', time: { unit: 'minutes', value: 60 }, alpha_acid: { value: 5 } }];
+        newIngredients.hops = [...prev.ingredients.hops, { name: '', amount: { unit: preferences.units === 'imperial' ? 'ounces' : 'grams', value: 0 }, use: 'boil', time: { unit: 'minutes', value: 60 }, alpha_acid: { value: 5 } }];
       } else if (type === 'culture') {
         newIngredients.cultures = [...prev.ingredients.cultures, { name: '', type: 'ale', form: 'dry', attenuation: 75 }];
       } else if (type === 'misc') {
@@ -243,15 +245,17 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
           )}
         </div>
         <div className="flex flex-col">
-          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('color')}</p>
+          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('color')} ({preferences.colorScale.toUpperCase()})</p>
           <div className="flex items-center gap-3">
             <p className={`text-4xl font-black ${getStatColor(stats.color, selectedStyleGuideline?.color_min, selectedStyleGuideline?.color_max)}`}>
-              {formatBrewNumber(stats.color, 'default', lang)}
+              {formatBrewNumber(stats.color, 'color', lang, preferences)}
             </p>
             <div className="w-10 h-6 rounded border border-stone-700 shadow-inner" style={{ backgroundColor: getSRMColor(stats.color) }}></div>
           </div>
           {selectedStyleGuideline?.color_min !== undefined && (
-            <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.color_min}-{selectedStyleGuideline.color_max} SRM</p>
+            <p className="text-[10px] text-stone-500 font-bold mt-1">
+              Range: {preferences.colorScale === 'ebc' ? Math.round(srmToEbc(selectedStyleGuideline.color_min || 0)) : selectedStyleGuideline.color_min}-{preferences.colorScale === 'ebc' ? Math.round(srmToEbc(selectedStyleGuideline.color_max || 0)) : selectedStyleGuideline.color_max} {preferences.colorScale.toUpperCase()}
+            </p>
           )}
         </div>
         <div className="flex flex-col">
@@ -283,7 +287,14 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
             <label className="text-xs font-bold text-stone-400 uppercase">{t('batch_size')}</label>
             <div className="flex items-center gap-2">
               <input type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.batch_size.value} onChange={e => setRecipe({...recipe, batch_size: {...recipe.batch_size, value: parseFloat(e.target.value) || 0}})} />
-              <span className="text-xs font-bold text-stone-400">L</span>
+              <select
+                className="bg-transparent text-xs font-bold text-stone-400 outline-none"
+                value={recipe.batch_size.unit}
+                onChange={e => setRecipe({...recipe, batch_size: {...recipe.batch_size, unit: e.target.value as any}})}
+              >
+                <option value="liters">L</option>
+                <option value="gallons">Gal</option>
+              </select>
             </div>
           </div>
           <div>
@@ -314,7 +325,18 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
                 </select>
                 <div className="flex items-center gap-2">
                   <input className="w-20 p-2 bg-white border rounded-xl text-right font-black" type="number" step="0.001" value={f.amount?.value ?? 0} onChange={e => updateField('fermentable', i, 'amount', parseFloat(e.target.value) || 0)} />
-                  <span className="text-[10px] font-black text-stone-400 uppercase">kg</span>
+                  <select
+                    className="bg-transparent text-[10px] font-black text-stone-400 uppercase outline-none"
+                    value={f.amount.unit}
+                    onChange={e => {
+                      const newList = [...recipe.ingredients.fermentables];
+                      newList[i] = { ...newList[i], amount: { ...newList[i].amount, unit: e.target.value as any } };
+                      setRecipe({ ...recipe, ingredients: { ...recipe.ingredients, fermentables: newList } });
+                    }}
+                  >
+                    <option value="kilograms">kg</option>
+                    <option value="pounds">lb</option>
+                  </select>
                 </div>
                 <button onClick={() => removeIngredient('fermentable', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
@@ -332,8 +354,19 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
                   {library.filter(l => l.type === 'hop').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
                 <div className="flex items-center gap-2">
-                  <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={Math.round(h.amount?.value ?? 0)} onChange={e => updateField('hop', i, 'amount', parseFloat(e.target.value) || 0)} />
-                  <span className="text-[10px] font-black text-stone-400 uppercase">g</span>
+                  <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.amount?.value ?? 0} onChange={e => updateField('hop', i, 'amount', parseFloat(e.target.value) || 0)} />
+                  <select
+                    className="bg-transparent text-[10px] font-black text-stone-400 uppercase outline-none"
+                    value={h.amount.unit}
+                    onChange={e => {
+                      const newList = [...recipe.ingredients.hops];
+                      newList[i] = { ...newList[i], amount: { ...newList[i].amount, unit: e.target.value as any } };
+                      setRecipe({ ...recipe, ingredients: { ...recipe.ingredients, hops: newList } });
+                    }}
+                  >
+                    <option value="grams">g</option>
+                    <option value="ounces">oz</option>
+                  </select>
                 </div>
                 <div className="flex items-center gap-2">
                   <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
@@ -392,8 +425,17 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
                     <div>
                       <label className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_temp')}</label>
                       <div className="flex items-center gap-2">
-                        <input type="number" className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.step_temp} onChange={e => updateMashStep(idx, 'step_temp', parseFloat(e.target.value) || 0)} />
-                        <span className="text-xs font-bold text-stone-400">°C</span>
+                        <input
+                          type="number"
+                          className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold"
+                          value={preferences.units === 'imperial' ? Math.round((s.step_temp * 9/5) + 32) : s.step_temp}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0;
+                            const celsius = preferences.units === 'imperial' ? (val - 32) * 5/9 : val;
+                            updateMashStep(idx, 'step_temp', celsius);
+                          }}
+                        />
+                        <span className="text-xs font-bold text-stone-400">°{preferences.units === 'imperial' ? 'F' : 'C'}</span>
                       </div>
                     </div>
                     <div>
@@ -429,16 +471,40 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
           />
         </div>
 
-        <div className="flex gap-4">
-          {onDelete && recipe.id && (
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-4">
+            {onDelete && recipe.id && (recipe.user_id === user?.id) && (
+              <button
+                onClick={() => { if(confirm(t('confirm_delete'))) onDelete(recipe.id!); }}
+                className="flex-none bg-stone-100 text-red-600 px-8 py-5 rounded-3xl font-black shadow-sm hover:bg-red-50 transition-all uppercase tracking-widest text-lg"
+              >
+                <i className="fas fa-trash-alt"></i>
+              </button>
+            )}
             <button 
-              onClick={() => { if(confirm(t('confirm_delete'))) onDelete(recipe.id!); }}
-              className="flex-none bg-stone-100 text-red-600 px-8 py-5 rounded-3xl font-black shadow-sm hover:bg-red-50 transition-all uppercase tracking-widest text-lg"
+              onClick={() => onSave({...recipe, user_id: user?.id, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
+              className="flex-1 bg-stone-900 text-white py-5 rounded-3xl font-black shadow-xl hover:bg-black transition-all uppercase tracking-widest text-lg"
             >
-              <i className="fas fa-trash-alt"></i>
+              {t('save_recipe')}
+            </button>
+          </div>
+
+          {recipe.id && recipe.user_id === user?.id && recipe.status !== 'approved' && (
+            <button
+              onClick={() => onSave({...recipe, status: 'submitted', specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
+              className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-amber-600 transition-all uppercase tracking-widest text-sm"
+            >
+              <i className="fas fa-cloud-upload-alt mr-2"></i>
+              {recipe.status === 'submitted' ? 'Update Submission' : 'Submit to Public Library'}
             </button>
           )}
-          <button onClick={() => onSave({...recipe, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})} className="flex-1 bg-stone-900 text-white py-5 rounded-3xl font-black shadow-xl hover:bg-black transition-all uppercase tracking-widest text-lg">{t('save_recipe')}</button>
+
+          {recipe.status === 'approved' && (
+             <div className="p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-3 justify-center">
+                <i className="fas fa-check-circle text-green-500"></i>
+                <span className="text-xs font-bold text-green-800 uppercase tracking-widest">This recipe is in the public library</span>
+             </div>
+          )}
         </div>
       </section>
     </div>

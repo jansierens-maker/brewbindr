@@ -4,8 +4,26 @@ export interface BeerJSON {
   recipes: Recipe[];
 }
 
+import { Language } from './services/i18n';
+
+export type ItemStatus = 'private' | 'submitted' | 'approved';
+
+export interface UserPreferences {
+  units: 'metric' | 'imperial';
+  colorScale: 'srm' | 'ebc';
+  language: Language;
+}
+
+export interface UserProfile {
+  id: string;
+  role: 'admin' | 'user';
+  preferences: UserPreferences;
+}
+
 export interface LibraryIngredient {
   id: string;
+  user_id?: string;
+  status?: ItemStatus;
   name: string;
   type: string; // 'fermentable' | 'hop' | 'culture' | 'mash_profile' | 'misc' | 'style'
   color?: number;
@@ -67,6 +85,8 @@ export interface MashProfile {
 
 export interface Recipe {
   id?: string;
+  user_id?: string;
+  status?: ItemStatus;
   name: string;
   type: 'extract' | 'partial_mash' | 'all_grain';
   author: string;
@@ -147,6 +167,7 @@ export interface Water {
 
 export interface BrewLogEntry {
   id: string;
+  user_id?: string;
   recipeId: string;
   date: string; // Original start date
   brewDate?: string;
@@ -174,6 +195,7 @@ export interface BrewLogEntry {
 
 export interface TastingNote {
   id: string;
+  user_id?: string;
   recipeId: string;
   brewLogId: string;
   date: string;

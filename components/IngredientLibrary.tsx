@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { LibraryIngredient, MashStep } from '../types';
 import { useTranslation } from '../App';
+import { useUser } from '../services/userContext';
 
 interface LibraryProps {
   ingredients: LibraryIngredient[];
@@ -13,6 +14,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   onUpdate
 }) => {
   const { t } = useTranslation();
+  const { user } = useUser();
   const [filter, setFilter] = useState<'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style'>('fermentable');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
@@ -34,6 +36,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
 
     const newItem: LibraryIngredient = {
       id: newId,
+      user_id: user?.id,
+      status: 'private',
       name: (filter === 'misc' || filter === 'style') ? defaultName : `${t('new_btn')} ${defaultName}`,
       type: filter as string,
       color: filter === 'fermentable' ? 2 : undefined,
@@ -256,6 +260,20 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                       <button onClick={saveEditing} className="flex-1 bg-amber-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-amber-700">{t('save_btn')}</button>
                       <button onClick={cancelEditing} className="px-4 bg-stone-100 text-stone-400 py-2.5 rounded-xl text-xs font-bold hover:bg-stone-200">{t('cancel_btn')}</button>
                     </div>
+
+                    {user && (item.user_id === user.id || !item.user_id) && item.status !== 'approved' && (
+                       <button
+                        onClick={() => {
+                          onUpdate(ingredients.map(i => i.id === editingId ? { ...i, ...editForm, status: 'submitted' } as LibraryIngredient : i));
+                          setEditingId(null);
+                        }}
+                        className="w-full bg-amber-100 text-amber-700 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-amber-200 transition-all"
+                       >
+                         <i className="fas fa-cloud-upload-alt mr-2"></i>
+                         {item.status === 'submitted' ? 'Update Submission' : 'Submit to Public Library'}
+                       </button>
+                    )}
+
                     <button onClick={() => deleteItem(item)} className="w-full mt-2 py-2 text-red-500 text-[10px] font-black uppercase hover:bg-red-50 rounded-xl transition-all">
                       <i className="fas fa-trash-alt mr-2"></i> {t('delete_ingredient')}
                     </button>
@@ -264,10 +282,16 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
               ) : (
                 <>
                   <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-black text-lg text-stone-900 leading-tight">{item.name}</h4>
-                    <button onClick={() => startEditing(item)} className="text-stone-300 hover:text-amber-500 transition-colors">
-                      <i className="fas fa-edit text-xs"></i>
-                    </button>
+                    <div className="flex flex-col">
+                      <h4 className="font-black text-lg text-stone-900 leading-tight">{item.name}</h4>
+                      {item.status === 'approved' && <span className="text-[8px] font-black text-green-600 uppercase tracking-widest mt-1"><i className="fas fa-check-circle mr-1"></i>Public Library</span>}
+                      {item.status === 'submitted' && <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest mt-1"><i className="fas fa-clock mr-1"></i>Pending Review</span>}
+                    </div>
+                    {(!item.user_id || item.user_id === user?.id) && (
+                      <button onClick={() => startEditing(item)} className="text-stone-300 hover:text-amber-500 transition-colors">
+                        <i className="fas fa-edit text-xs"></i>
+                      </button>
+                    )}
                   </div>
                   <div className="grid grid-cols-1 gap-2 text-[10px] font-black uppercase tracking-widest text-stone-400">
                     {item.type === 'misc' && (
