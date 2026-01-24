@@ -70,6 +70,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
     return val >= min && val <= max;
   };
 
+  const getStatColor = (val: number, min?: number, max?: number) => {
+    if (min === undefined && max === undefined) return 'text-white';
+    return checkInRange(val, min, max) ? 'text-green-500' : 'text-red-500';
+  };
+
   const addIngredient = (type: 'fermentable' | 'hop' | 'culture' | 'misc') => {
     setRecipe(prev => {
       const newIngredients = { ...prev.ingredients };
@@ -221,7 +226,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
       <section className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl grid grid-cols-2 lg:grid-cols-4 gap-8 sticky top-24 z-40 border border-stone-800">
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('target_abv')}</p>
-          <p className={`text-4xl font-black ${checkInRange(stats.abv, selectedStyleGuideline?.abv_min, selectedStyleGuideline?.abv_max) ? 'text-amber-500' : 'text-red-500'}`}>
+          <p className={`text-4xl font-black ${getStatColor(stats.abv, selectedStyleGuideline?.abv_min, selectedStyleGuideline?.abv_max)}`}>
             {formatBrewNumber(stats.abv, 'abv', lang)}%
           </p>
           {selectedStyleGuideline?.abv_min !== undefined && (
@@ -230,7 +235,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
         </div>
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('target_ibu')}</p>
-          <p className={`text-4xl font-black ${checkInRange(stats.ibu, selectedStyleGuideline?.ibu_min, selectedStyleGuideline?.ibu_max) ? 'text-green-500' : 'text-red-500'}`}>
+          <p className={`text-4xl font-black ${getStatColor(stats.ibu, selectedStyleGuideline?.ibu_min, selectedStyleGuideline?.ibu_max)}`}>
             {stats.ibu}
           </p>
           {selectedStyleGuideline?.ibu_min !== undefined && (
@@ -240,7 +245,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('color')}</p>
           <div className="flex items-center gap-3">
-            <p className="text-4xl font-black">{formatBrewNumber(stats.color, 'default', lang)}</p>
+            <p className={`text-4xl font-black ${getStatColor(stats.color, selectedStyleGuideline?.color_min, selectedStyleGuideline?.color_max)}`}>
+              {formatBrewNumber(stats.color, 'default', lang)}
+            </p>
             <div className="w-10 h-6 rounded border border-stone-700 shadow-inner" style={{ backgroundColor: getSRMColor(stats.color) }}></div>
           </div>
           {selectedStyleGuideline?.color_min !== undefined && (
@@ -249,7 +256,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
         </div>
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('est_og')}</p>
-          <p className="text-4xl font-black">{formatBrewNumber(stats.og, 'og', lang)}</p>
+          <p className={`text-4xl font-black ${getStatColor(stats.og, selectedStyleGuideline?.og_min, selectedStyleGuideline?.og_max)}`}>
+            {formatBrewNumber(stats.og, 'og', lang)}
+          </p>
           {selectedStyleGuideline?.og_min !== undefined && (
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.og_min}-{selectedStyleGuideline.og_max}</p>
           )}
