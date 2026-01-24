@@ -10,8 +10,8 @@ const Settings: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-500">
       <div>
-        <h2 className="text-4xl font-black text-stone-900">{t('tools_header')}</h2>
-        <p className="text-stone-500 font-medium mt-1">Manage your brewing preferences and account.</p>
+        <h2 className="text-4xl font-black text-stone-900">{t('settings_label')}</h2>
+        <p className="text-stone-500 font-medium mt-1">{t('settings_desc')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -21,12 +21,12 @@ const Settings: React.FC = () => {
             <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
               <i className="fas fa-ruler-combined text-2xl"></i>
             </div>
-            <h3 className="text-2xl font-black text-stone-900">Units & Color</h3>
+            <h3 className="text-2xl font-black text-stone-900">{t('units_color_title')}</h3>
           </div>
 
           <div className="space-y-6">
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Unit System</p>
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('unit_system_label')}</p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => updatePreferences({ units: 'metric' })}
@@ -36,7 +36,7 @@ const Settings: React.FC = () => {
                       : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
                   }`}
                 >
-                  Metric (kg, L, °C)
+                  {t('metric_desc')}
                 </button>
                 <button
                   onClick={() => updatePreferences({ units: 'imperial' })}
@@ -46,13 +46,13 @@ const Settings: React.FC = () => {
                       : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
                   }`}
                 >
-                  Imperial (lb, gal, °F)
+                  {t('imperial_desc')}
                 </button>
               </div>
             </div>
 
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Color Scale</p>
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('color_scale_label')}</p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => updatePreferences({ colorScale: 'srm' })}
@@ -85,12 +85,12 @@ const Settings: React.FC = () => {
             <div className="bg-blue-100 p-3 rounded-2xl text-blue-600">
               <i className="fas fa-language text-2xl"></i>
             </div>
-            <h3 className="text-2xl font-black text-stone-900">Language</h3>
+            <h3 className="text-2xl font-black text-stone-900">{t('language_label')}</h3>
           </div>
 
           <div className="space-y-6">
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Select Language</p>
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('select_language_label')}</p>
               <div className="grid grid-cols-1 gap-3">
                 {(['en', 'nl', 'fr'] as Language[]).map((l) => (
                   <button
@@ -102,7 +102,7 @@ const Settings: React.FC = () => {
                         : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
                     }`}
                   >
-                    <span>{l === 'en' ? 'English' : l === 'nl' ? 'Nederlands' : 'Français'}</span>
+                    <span>{l === 'en' ? t('english') : l === 'nl' ? t('nederlands') : t('français')}</span>
                     {preferences.language === l && <i className="fas fa-check-circle"></i>}
                   </button>
                 ))}
@@ -117,22 +117,24 @@ const Settings: React.FC = () => {
             <div className="bg-stone-100 p-3 rounded-2xl text-stone-600">
               <i className="fas fa-user-circle text-2xl"></i>
             </div>
-            <h3 className="text-2xl font-black text-stone-900">Account</h3>
+            <h3 className="text-2xl font-black text-stone-900">{t('account_label')}</h3>
           </div>
 
           <div className="flex-1 space-y-4">
             <div>
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Signed in as</p>
-              <p className="font-bold text-stone-900">{user?.email}</p>
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">{t('signed_in_as')}</p>
+              <p className="font-bold text-stone-900">{user?.email || 'Guest'}</p>
             </div>
           </div>
 
-          <button
-            onClick={signOut}
-            className="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-100 transition-all"
-          >
-            <i className="fas fa-sign-out-alt mr-2"></i> Sign Out
-          </button>
+          {user && (
+            <button
+              onClick={signOut}
+              className="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-100 transition-all"
+            >
+              <i className="fas fa-sign-out-alt mr-2"></i> {t('sign_out_btn')}
+            </button>
+          )}
         </div>
       </div>
     </div>
