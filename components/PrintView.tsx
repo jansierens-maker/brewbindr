@@ -2,7 +2,8 @@
 import React from 'react';
 import { Recipe, BrewLogEntry, TastingNote } from '../types';
 import { useTranslation } from '../App';
-import { calculateABV } from '../services/calculations';
+import { calculateABV, formatBrewNumber } from '../services/calculations';
+import { useUser } from '../services/userContext';
 
 interface PrintViewProps {
   recipe?: Recipe;
@@ -11,7 +12,8 @@ interface PrintViewProps {
 }
 
 const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const { preferences } = useUser();
 
   if (!recipe) return null;
 
@@ -79,9 +81,9 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
                   <tr key={i} className="border-b border-stone-100">
                     <td className="py-3 font-bold text-stone-900">{step.name}</td>
                     <td className="py-3 capitalize text-stone-500">{step.type}</td>
-                    <td className="py-3">{step.step_temp}°C</td>
+                    <td className="py-3">{formatBrewNumber(step.step_temp, 'temp', lang, preferences)}°{preferences.units === 'imperial' ? 'F' : 'C'}</td>
                     <td className="py-3">{step.step_time} min</td>
-                    <td className="py-3 text-right">{step.infuse_amount ? `${step.infuse_amount} L` : '-'}</td>
+                    <td className="py-3 text-right">{step.infuse_amount ? `${formatBrewNumber(step.infuse_amount, 'vol', lang, preferences)} ${preferences.units === 'imperial' ? 'Gal' : 'L'}` : '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -107,8 +109,8 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
                   {recipe.ingredients.fermentables.map((f, i) => (
                     <tr key={i} className="border-b border-stone-100">
                       <td className="py-3 font-bold text-stone-900">{f.name}</td>
-                      <td className="py-3">{f.amount?.value ?? 0} {f.amount?.unit ?? 'kg'}</td>
-                      <td className="py-3 text-right">{f.color?.value} SRM</td>
+                      <td className="py-3">{formatBrewNumber(f.amount.value, 'kg', lang, preferences)} {f.amount?.unit === 'pounds' ? 'lb' : 'kg'}</td>
+                      <td className="py-3 text-right">{formatBrewNumber(f.color?.value, 'color', lang, preferences)} {preferences.colorScale.toUpperCase()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -130,8 +132,8 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
                     {recipe.ingredients.hops.map((h, i) => (
                       <tr key={i} className="border-b border-stone-100">
                         <td className="py-3 font-bold text-stone-900">{h.name} ({h.alpha_acid?.value}%)</td>
-                        <td className="py-3">{h.time?.value ?? 0} {h.time?.unit ?? 'min'}</td>
-                        <td className="py-3 text-right">{h.amount?.value ?? 0} {h.amount?.unit ?? 'g'}</td>
+                        <td className="py-3">{h.time?.value ?? 0} min</td>
+                        <td className="py-3 text-right">{formatBrewNumber(h.amount.value, 'g', lang, preferences)} {h.amount?.unit === 'ounces' ? 'oz' : 'g'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -176,7 +178,7 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2 border-b border-stone-100 pb-2">{t('bottling')}</p>
                     <div className="grid grid-cols-1 gap-2 text-xs">
                       <p className="flex justify-between"><span>Date:</span> <span className="font-bold">{log.bottling?.date || '-'}</span></p>
-                      <p className="flex justify-between"><span>Volume:</span> <span className="font-bold">{log.bottling?.bottling_volume} L</span></p>
+                      <p className="flex justify-between"><span>Volume:</span> <span className="font-bold">{formatBrewNumber(log.bottling?.bottling_volume, 'vol', lang, preferences)} {preferences.units === 'imperial' ? 'Gal' : 'L'}</span></p>
                       <p className="flex justify-between"><span>Sugar:</span> <span className="font-bold">{log.bottling?.sugar_amount} g ({log.bottling?.sugar_type})</span></p>
                       <p className="flex justify-between"><span>CO2:</span> <span className="font-bold">{log.bottling?.target_co2} vol</span></p>
                     </div>

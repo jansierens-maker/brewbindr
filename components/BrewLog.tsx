@@ -1,8 +1,9 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, BrewLogEntry } from '../types';
-import { calculateABV, calculatePrimingSugar, calculateRecipeStats } from '../services/calculations';
+import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber } from '../services/calculations';
 import { useTranslation } from '../App';
+import { useUser } from '../services/userContext';
 
 interface BrewLogProps {
   recipe: Recipe;
@@ -12,7 +13,8 @@ interface BrewLogProps {
 }
 
 const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit }) => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const { preferences } = useUser();
   const [activeTab, setActiveTab] = useState<'brew' | 'ferment' | 'lager' | 'bottle'>('brew');
   const [saveIndicator, setSaveIndicator] = useState<boolean>(false);
   
@@ -185,8 +187,18 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 <input type="number" step="0.001" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg" value={entry.measurements.actual_og || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, actual_og: parseFloat(e.target.value)}})} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('volume_fermenter')} (L)</label>
-                <input type="number" step="0.1" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg" value={entry.measurements.actual_volume || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, actual_volume: parseFloat(e.target.value)}})} />
+                <label className="text-xs font-bold text-stone-400 uppercase">{t('volume_fermenter')} ({preferences.units === 'imperial' ? 'Gal' : 'L'})</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg"
+                  value={preferences.units === 'imperial' ? (entry.measurements.actual_volume ? (entry.measurements.actual_volume / 3.78541).toFixed(2) : '') : entry.measurements.actual_volume || ''}
+                  onChange={e => {
+                    const val = parseFloat(e.target.value) || 0;
+                    const liters = preferences.units === 'imperial' ? val * 3.78541 : val;
+                    setEntry({...entry, measurements: {...entry.measurements, actual_volume: liters}});
+                  }}
+                />
               </div>
             </div>
 
@@ -205,7 +217,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                       <div>
                         <p className="font-bold text-stone-900 leading-none mb-1">{s.name}</p>
                         <p className="text-[10px] font-black text-stone-400 uppercase">
-                          {s.step_temp}°C • {s.step_time} min • <span className="text-stone-500">{s.type}</span>
+                          {formatBrewNumber(s.step_temp, 'temp', lang, preferences)}°{preferences.units === 'imperial' ? 'F' : 'C'} • {s.step_time} min • <span className="text-stone-500">{s.type}</span>
                         </p>
                       </div>
                     </div>
@@ -226,7 +238,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 {recipe.ingredients.fermentables.map((f, i) => (
                   <div key={i} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl border border-stone-100">
                     <div className="font-bold text-stone-900">{f.name}</div>
-                    <div className="text-sm font-black text-stone-400 uppercase">{f.amount?.value ?? 0} kg</div>
+                    <div className="text-sm font-black text-stone-400 uppercase">{formatBrewNumber(f.amount.value, 'kg', lang, preferences)} {f.amount.unit === 'pounds' ? 'lb' : 'kg'}</div>
                   </div>
                 ))}
               </div>
@@ -243,7 +255,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                            <div className="font-bold text-stone-900">{h.name}</div>
                         </div>
                         <div className="text-[10px] font-bold text-stone-400 uppercase mt-1">
-                          <i className="fas fa-clock mr-1"></i> {h.time?.value ?? 0} min • {h.amount?.value ?? 0} g
+                          <i className="fas fa-clock mr-1"></i> {h.time?.value ?? 0} min • {formatBrewNumber(h.amount.value, 'g', lang, preferences)} {h.amount.unit === 'ounces' ? 'oz' : 'g'}
                         </div>
                       </div>
                       
@@ -291,8 +303,17 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 <input type="number" step="0.001" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg" value={entry.measurements.actual_fg || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, actual_fg: parseFloat(e.target.value)}})} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">Max Fermentation Temp (°C)</label>
-                <input type="number" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg" value={entry.measurements.fermentation_temp || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, fermentation_temp: parseFloat(e.target.value)}})} />
+                <label className="text-xs font-bold text-stone-400 uppercase">Max Fermentation Temp (°{preferences.units === 'imperial' ? 'F' : 'C'})</label>
+                <input
+                  type="number"
+                  className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg"
+                  value={preferences.units === 'imperial' ? (entry.measurements.fermentation_temp ? Math.round((entry.measurements.fermentation_temp * 9/5) + 32) : '') : entry.measurements.fermentation_temp || ''}
+                  onChange={e => {
+                    const val = parseFloat(e.target.value) || 0;
+                    const celsius = preferences.units === 'imperial' ? (val - 32) * 5/9 : val;
+                    setEntry({...entry, measurements: {...entry.measurements, fermentation_temp: celsius}});
+                  }}
+                />
               </div>
             </div>
             {entry.status === 'fermenting' && <button onClick={() => handleStatusChange('lagering')} className="w-full py-5 bg-stone-900 text-white rounded-2xl font-black text-lg uppercase shadow-xl">{t('next_step')} <i className="fas fa-snowflake ml-2"></i></button>}
@@ -331,8 +352,18 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 <input type="date" className="w-full p-4 bg-stone-50 border rounded-xl font-bold" value={entry.bottling?.date || ''} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, date: e.target.value}})} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('bottling_volume')} (L)</label>
-                <input type="number" step="0.1" className="w-full p-4 bg-stone-50 border rounded-xl font-bold" value={entry.bottling?.bottling_volume || ''} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, bottling_volume: parseFloat(e.target.value)}})} />
+                <label className="text-xs font-bold text-stone-400 uppercase">{t('bottling_volume')} ({preferences.units === 'imperial' ? 'Gal' : 'L'})</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  className="w-full p-4 bg-stone-50 border rounded-xl font-bold"
+                  value={preferences.units === 'imperial' ? (entry.bottling?.bottling_volume ? (entry.bottling.bottling_volume / 3.78541).toFixed(2) : '') : entry.bottling?.bottling_volume || ''}
+                  onChange={e => {
+                    const val = parseFloat(e.target.value) || 0;
+                    const liters = preferences.units === 'imperial' ? val * 3.78541 : val;
+                    setEntry({...entry, bottling: {...entry.bottling!, bottling_volume: liters}});
+                  }}
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

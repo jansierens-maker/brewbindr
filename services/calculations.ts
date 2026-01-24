@@ -1,5 +1,8 @@
 
-import { Recipe } from "../types";
+import { Recipe, UserPreferences } from "../types";
+
+export const srmToEbc = (srm: number) => srm * 1.97;
+export const ebcToSrm = (ebc: number) => ebc / 1.97;
 
 export const getSRMColor = (srm: number): string => {
   if (srm < 2) return '#FFE699';
@@ -20,20 +23,51 @@ export const getSRMColor = (srm: number): string => {
 };
 
 /**
- * Formatteert een getal op basis van taal en specifieke brouw-regels:
- * - Gram: Geen decimalen
- * - Kilogram: Max 3 decimalen
- * - ABV: 1 decimaal
+ * Formats a number based on language and specific brewing rules.
  */
-export const formatBrewNumber = (val: number | undefined, type: 'g' | 'kg' | 'abv' | 'og' | 'default', lang: string): string => {
+export const formatBrewNumber = (
+  val: number | undefined,
+  type: 'g' | 'kg' | 'abv' | 'og' | 'default' | 'temp' | 'vol' | 'color',
+  lang: string,
+  prefs?: UserPreferences,
+  sourceUnit?: string
+): string => {
   if (val === undefined || isNaN(val)) return '-';
   
   const locale = lang === 'en' ? 'en-US' : 'nl-NL';
   let options: Intl.NumberFormatOptions = {};
+  let displayValue = val;
+
+  // Handle color conversion
+  if (type === 'color' && prefs?.colorScale === 'ebc') {
+    displayValue = srmToEbc(val);
+  }
+
+  // Handle unit conversions for display if needed
+  // Note: Most internal values are stored in Metric (L, kg, C) unless sourceUnit is specified
+  if (prefs?.units === 'imperial') {
+    // Only convert if it's not already imperial
+    const isAlreadyImperial = sourceUnit === 'gallons' || sourceUnit === 'pounds' || sourceUnit === 'ounces' || sourceUnit === 'imperial';
+    if (!isAlreadyImperial) {
+      if (type === 'vol') displayValue = val / 3.78541; // L to Gal
+      if (type === 'kg') displayValue = val * 2.20462; // kg to lb
+      if (type === 'g') displayValue = val / 28.3495; // g to oz
+      if (type === 'temp') displayValue = (val * 9/5) + 32; // C to F
+    }
+  } else if (prefs?.units === 'metric') {
+    // Only convert if it IS imperial
+    const isImperial = sourceUnit === 'gallons' || sourceUnit === 'pounds' || sourceUnit === 'ounces' || sourceUnit === 'imperial';
+    if (isImperial) {
+      if (type === 'vol') displayValue = val * 3.78541; // Gal to L
+      if (type === 'kg') displayValue = val / 2.20462; // lb to kg
+      if (type === 'g') displayValue = val * 28.3495; // oz to g
+      if (type === 'temp') displayValue = (val - 32) * 5/9; // F to C
+    }
+  }
 
   switch (type) {
     case 'g':
-      options = { minimumFractionDigits: 0, maximumFractionDigits: 0 };
+      options = { minimumFractionDigits: 0, maximumFractionDigits: prefs?.units === 'imperial' ? 2 : 0 };
       break;
     case 'kg':
       options = { minimumFractionDigits: 0, maximumFractionDigits: 3 };
@@ -44,11 +78,20 @@ export const formatBrewNumber = (val: number | undefined, type: 'g' | 'kg' | 'ab
     case 'og':
       options = { minimumFractionDigits: 3, maximumFractionDigits: 3 };
       break;
+    case 'temp':
+      options = { minimumFractionDigits: 0, maximumFractionDigits: 1 };
+      break;
+    case 'vol':
+      options = { minimumFractionDigits: 1, maximumFractionDigits: 2 };
+      break;
+    case 'color':
+      options = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
+      break;
     default:
       options = { minimumFractionDigits: 0, maximumFractionDigits: 2 };
   }
 
-  return new Intl.NumberFormat(locale, options).format(val);
+  return new Intl.NumberFormat(locale, options).format(displayValue);
 };
 
 const normalizeUnit = (unit: string | undefined): string => {

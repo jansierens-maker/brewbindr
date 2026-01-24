@@ -37,18 +37,42 @@ export const supabaseService = {
     return results;
   },
 
-  async fetchAppData() {
+  async fetchAppData(userId?: string) {
     const client = supabase;
     if (!client) return null;
     try {
       const tableList = ['recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
-      const requests = tableList.map(t => client.from(t).select('data'));
+
+      const requests = tableList.map(t => {
+        let query = client.from(t).select('data, user_id, status');
+
+        // For items that can be public, fetch owned OR approved
+        if (['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'].includes(t)) {
+          if (userId) {
+            query = query.or(`user_id.eq.${userId},status.eq.approved`);
+          } else {
+            query = query.eq('status', 'approved');
+          }
+        } else if (userId) {
+          // For private items (brew logs, etc.), only fetch owned
+          query = query.eq('user_id', userId);
+        } else {
+          // If no user and no public status, return empty
+          return Promise.resolve({ data: [] });
+        }
+
+        return query;
+      });
 
       const responses = await Promise.all(requests);
       const data: any = {};
 
       tableList.forEach((table, idx) => {
-        data[table] = responses[idx].data?.map(r => r.data) || [];
+        data[table] = responses[idx].data?.map((r: any) => ({
+          ...r.data,
+          user_id: r.user_id,
+          status: r.status
+        })) || [];
       });
 
       // Merge library tables back into a single array
@@ -71,10 +95,15 @@ export const supabaseService = {
     }
   },
 
-  async saveRecipe(recipe: Recipe) {
+  async saveRecipe(recipe: Recipe, userId?: string) {
     const client = supabase;
     if (!client || !recipe.id) return;
-    return client.from('recipes').upsert({ id: recipe.id, data: recipe });
+    return client.from('recipes').upsert({
+      id: recipe.id,
+      data: recipe,
+      user_id: userId || recipe.user_id,
+      status: recipe.status || 'private'
+    });
   },
 
   async deleteRecipe(id: string) {
@@ -83,11 +112,16 @@ export const supabaseService = {
     return client.from('recipes').delete().eq('id', id);
   },
 
-  async saveLibraryIngredient(item: LibraryIngredient) {
+  async saveLibraryIngredient(item: LibraryIngredient, userId?: string) {
     const client = supabase;
     const table = TABLE_MAP[item.type];
     if (!client || !table) return;
-    return client.from(table).upsert({ id: item.id, data: item });
+    return client.from(table).upsert({
+      id: item.id,
+      data: item,
+      user_id: userId || item.user_id,
+      status: item.status || 'private'
+    });
   },
 
   async deleteLibraryIngredient(id: string, type: string) {
@@ -97,26 +131,47 @@ export const supabaseService = {
     return client.from(table).delete().eq('id', id);
   },
 
-  async syncAll(data: { recipes: Recipe[], brewLogs: BrewLogEntry[], tastingNotes: TastingNote[], library: LibraryIngredient[] }) {
+  async syncAll(data: { recipes: Recipe[], brewLogs: BrewLogEntry[], tastingNotes: TastingNote[], library: LibraryIngredient[] }, userId?: string) {
     const client = supabase;
     if (!client) return;
     const { recipes, brewLogs, tastingNotes, library } = data;
 
+    // Only sync items owned by the current user OR items without a user_id (migration)
+    const filterOwned = (item: any) => !item.user_id || item.user_id === userId;
+
     const tasks = [];
 
-    if (recipes.length > 0) {
-      tasks.push(client.from('recipes').upsert(recipes.map(r => ({ id: r.id, data: r }))));
+    const ownedRecipes = recipes.filter(filterOwned);
+    if (ownedRecipes.length > 0) {
+      tasks.push(client.from('recipes').upsert(ownedRecipes.map(r => ({
+        id: r.id,
+        data: r,
+        user_id: userId || r.user_id,
+        status: r.status || 'private'
+      }))));
     }
-    if (brewLogs.length > 0) {
-      tasks.push(client.from('brew_logs').upsert(brewLogs.map(l => ({ id: l.id, data: l }))));
+
+    const ownedLogs = brewLogs.filter(filterOwned);
+    if (ownedLogs.length > 0) {
+      tasks.push(client.from('brew_logs').upsert(ownedLogs.map(l => ({
+        id: l.id,
+        data: l,
+        user_id: userId || l.user_id
+      }))));
     }
-    if (tastingNotes.length > 0) {
-      tasks.push(client.from('tasting_notes').upsert(tastingNotes.map(n => ({ id: n.id, data: n }))));
+
+    const ownedNotes = tastingNotes.filter(filterOwned);
+    if (ownedNotes.length > 0) {
+      tasks.push(client.from('tasting_notes').upsert(ownedNotes.map(n => ({
+        id: n.id,
+        data: n,
+        user_id: userId || n.user_id
+      }))));
     }
 
     // Split library by type for granular storage
     const libraryByType: Record<string, LibraryIngredient[]> = {};
-    library.forEach(item => {
+    library.filter(filterOwned).forEach(item => {
       const table = TABLE_MAP[item.type];
       if (table) {
         if (!libraryByType[table]) libraryByType[table] = [];
@@ -125,13 +180,61 @@ export const supabaseService = {
     });
 
     Object.entries(libraryByType).forEach(([table, items]) => {
-      tasks.push(client.from(table).upsert(items.map(i => ({ id: i.id, data: i }))));
+      tasks.push(client.from(table).upsert(items.map(i => ({
+        id: i.id,
+        data: i,
+        user_id: userId || i.user_id,
+        status: i.status || 'private'
+      }))));
     });
 
     try {
       await Promise.all(tasks);
     } catch (err) {
       console.error('Error during bulk sync to Supabase:', err);
+    }
+  },
+
+  async fetchPendingSubmissions() {
+    const client = supabase;
+    if (!client) return [];
+    const tables = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+
+    try {
+      const requests = tables.map(t => client.from(t).select('data, user_id, status').eq('status', 'submitted'));
+      const responses = await Promise.all(requests);
+
+      const pending: any[] = [];
+      responses.forEach((res, idx) => {
+        if (res.data) {
+          pending.push(...res.data.map(r => ({
+            ...r.data,
+            user_id: r.user_id,
+            status: r.status,
+            _table: tables[idx]
+          })));
+        }
+      });
+      return pending;
+    } catch (err) {
+      console.error('Error fetching pending submissions:', err);
+      return [];
+    }
+  },
+
+  async updateItemStatus(id: string, type: string, status: 'private' | 'approved', tableOverride?: string) {
+    const client = supabase;
+    const table = tableOverride || TABLE_MAP[type] || type;
+    if (!client || !table) return;
+
+    // Fetch current data to update the status inside the jsonb too
+    const { data: item } = await client.from(table).select('data').eq('id', id).single();
+    if (item) {
+      const newData = { ...item.data, status };
+      return client.from(table).update({
+        status: status,
+        data: newData
+      }).eq('id', id);
     }
   }
 };
