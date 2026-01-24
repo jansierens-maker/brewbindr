@@ -83,6 +83,11 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Backfill profiles for existing users
+INSERT INTO public.profiles (id)
+SELECT id FROM auth.users
+ON CONFLICT (id) DO NOTHING;
+
 -- Create application tables with user_id and status
 CREATE TABLE IF NOT EXISTS recipes (
   id TEXT PRIMARY KEY,
@@ -203,4 +208,4 @@ This application is optimized for deployment on [Vercel](https://vercel.com).
 4. Vercel will automatically handle the build and deployment of both the frontend and the serverless functions.
 
 ---
-© 2025 Brewbindr. All rights reserved.
+© 2026 Jan Sierens — Brewbindr. All rights reserved.

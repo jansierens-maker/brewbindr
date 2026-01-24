@@ -531,6 +531,11 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Backfill profiles for existing users
+INSERT INTO public.profiles (id)
+SELECT id FROM auth.users
+ON CONFLICT (id) DO NOTHING;
+
 -- Create application tables with user_id and status
 -- We use TEXT for id to support existing random string IDs, but UUID for user_id
 CREATE TABLE IF NOT EXISTS recipes (
