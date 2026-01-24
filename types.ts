@@ -4,11 +4,14 @@ export interface BeerJSON {
   recipes: Recipe[];
 }
 
+import { Language } from './services/i18n';
+
 export type ItemStatus = 'private' | 'submitted' | 'approved';
 
 export interface UserPreferences {
   units: 'metric' | 'imperial';
   colorScale: 'srm' | 'ebc';
+  language: Language;
 }
 
 export interface UserProfile {

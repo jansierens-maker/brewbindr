@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { UserProfile, UserPreferences } from '../types';
+import { Language } from './i18n';
 import { supabase } from './supabaseClient';
 import { authService } from './authService';
 
@@ -14,9 +15,14 @@ interface UserContextType {
   isAdmin: boolean;
 }
 
+const getDefaultLanguage = (): Language => {
+  return (localStorage.getItem('brew_lang') as Language) || 'en';
+};
+
 const defaultPreferences: UserPreferences = {
   units: 'metric',
-  colorScale: 'srm'
+  colorScale: 'srm',
+  language: getDefaultLanguage()
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -76,8 +82,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updatePreferences = async (prefs: Partial<UserPreferences>) => {
-    if (!user || !profile) return;
-    const newPrefs = { ...profile.preferences, ...prefs };
+    const currentPrefs = profile?.preferences || defaultPreferences;
+    const newPrefs = { ...currentPrefs, ...prefs };
+
+    if (prefs.language) {
+      localStorage.setItem('brew_lang', prefs.language);
+    }
+
+    if (!user || !profile) {
+      // If no user, just update local default preferences (simulated)
+      // This helps when user is not logged in
+      setProfile(prev => prev ? { ...prev, preferences: newPrefs } : { id: 'temp', role: 'user', preferences: newPrefs });
+      return;
+    }
+
     const updatedProfile = { ...profile, preferences: newPrefs };
     await authService.updateProfile(updatedProfile);
     setProfile(updatedProfile);

@@ -70,8 +70,8 @@ const App: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { user, profile, preferences, isAdmin, loading: authLoading } = useUser();
-  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('brew_lang') as Language) || 'en');
+  const { user, profile, preferences, isAdmin, loading: authLoading, updatePreferences } = useUser();
+  const lang = preferences.language;
   const [view, setView] = useState<View>('recipes');
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [brewLogs, setBrewLogs] = useState<BrewLogEntry[]>([]);
@@ -106,9 +106,9 @@ const AppContent: React.FC = () => {
     }
   }, [printData]);
 
-  useEffect(() => {
-    localStorage.setItem('brew_lang', lang);
-  }, [lang]);
+  const setLang = (l: Language) => {
+    updatePreferences({ language: l });
+  };
 
   const t = (key: keyof typeof translations['en']): string => {
     return translations[lang][key] || translations['en'][key] || key;
@@ -844,11 +844,6 @@ END \$\$;
                 <button onClick={() => setView('admin')} className={`font-bold transition-all text-sm ${view === 'admin' ? 'text-amber-600' : 'text-stone-400 hover:text-stone-600'}`}>{t('nav_admin')}</button>
               </nav>
               <div className="flex items-center gap-4">
-                <div className="flex bg-stone-100 p-1 rounded-xl">
-                  {(['en', 'nl', 'fr'] as Language[]).map((l) => (
-                    <button key={l} onClick={() => setLang(l)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${lang === l ? 'bg-white text-amber-600 shadow-sm' : 'text-stone-400'}`}> {l} </button>
-                  ))}
-                </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setView(user ? 'settings' : 'auth')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'settings' || view === 'auth' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
                     <i className="fas fa-user"></i>

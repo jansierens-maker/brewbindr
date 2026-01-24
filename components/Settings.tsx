@@ -1,6 +1,7 @@
 import React from 'react';
 import { useUser } from '../services/userContext';
 import { useTranslation } from '../App';
+import { Language } from '../services/i18n';
 
 const Settings: React.FC = () => {
   const { preferences, updatePreferences, signOut, user } = useUser();
@@ -9,7 +10,7 @@ const Settings: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-500">
       <div>
-        <h2 className="text-4xl font-black text-stone-900">Settings</h2>
+        <h2 className="text-4xl font-black text-stone-900">{t('tools_header')}</h2>
         <p className="text-stone-500 font-medium mt-1">Manage your brewing preferences and account.</p>
       </div>
 
@@ -20,7 +21,7 @@ const Settings: React.FC = () => {
             <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
               <i className="fas fa-ruler-combined text-2xl"></i>
             </div>
-            <h3 className="text-2xl font-black text-stone-900">Units & Measurement</h3>
+            <h3 className="text-2xl font-black text-stone-900">Units & Color</h3>
           </div>
 
           <div className="space-y-6">
@@ -73,6 +74,38 @@ const Settings: React.FC = () => {
                 >
                   EBC
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Language Preferences */}
+        <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-100 p-3 rounded-2xl text-blue-600">
+              <i className="fas fa-language text-2xl"></i>
+            </div>
+            <h3 className="text-2xl font-black text-stone-900">Language</h3>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Select Language</p>
+              <div className="grid grid-cols-1 gap-3">
+                {(['en', 'nl', 'fr'] as Language[]).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => updatePreferences({ language: l })}
+                    className={`py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest border-2 transition-all flex items-center justify-between ${
+                      preferences.language === l
+                        ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-sm'
+                        : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
+                    }`}
+                  >
+                    <span>{l === 'en' ? 'English' : l === 'nl' ? 'Nederlands' : 'Français'}</span>
+                    {preferences.language === l && <i className="fas fa-check-circle"></i>}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
