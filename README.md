@@ -6,8 +6,6 @@
 
 A comprehensive beer brewing companion for creating recipes in BeerJSON format, tracking brew logs, and recording tasting notes with AI-powered recipe generation and analysis.
 
-View the app in AI Studio: https://ai.studio/apps/drive/1TPqHXIqz7417bLaQlg5f1YjxVPKowj0p
-
 ## Features
 
 - **AI Recipe Generation**: Generate complete BeerJSON recipes from simple text prompts using Google Gemini.
@@ -159,7 +157,18 @@ END $$;
 ```
 </details>
 
-### 4. Run Locally
+### 4. Administrator Setup
+
+By default, all new users are assigned the `user` role. To promote a user to `admin` (required to access the Admin panel and manage public ingredient submissions):
+
+1. Create an account through the Brewbindr interface.
+2. In your **Supabase Dashboard**, navigate to **Authentication > Users** to find your **User ID** (UUID).
+3. Open the **SQL Editor** in Supabase and run the following command, replacing `YOUR_USER_UUID` with the actual ID:
+   ```sql
+   UPDATE profiles SET role = 'admin' WHERE id = 'YOUR_USER_UUID';
+   ```
+
+### 5. Run Locally
 
 ```bash
 npm run dev
@@ -177,3 +186,6 @@ This application is optimized for deployment on [Vercel](https://vercel.com).
 2. Import the project into Vercel.
 3. Add the required environment variables in the Vercel Project Settings.
 4. Vercel will automatically handle the build and deployment of both the frontend and the serverless functions.
+
+---
+© 2025 Brewbindr. All rights reserved.
