@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { authService } from '../services/authService';
 
-const Auth: React.FC = () => {
+interface AuthProps {
+  onSuccess?: () => void;
+}
+
+const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,6 +22,7 @@ const Auth: React.FC = () => {
         alert('Check your email for the confirmation link!');
       } else {
         await authService.signIn(email, password);
+        if (onSuccess) onSuccess();
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');

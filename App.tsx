@@ -935,7 +935,7 @@ END \$\$;
                 onReject={handleReject}
               />
             )}
-            {view === 'auth' && <Auth />}
+            {view === 'auth' && <Auth onSuccess={() => setView('recipes')} />}
             {view === 'settings' && <Settings />}
             {view === 'tasting' && selectedRecipe && selectedBrewLog && (
               <TastingNotes recipe={selectedRecipe} brewLogId={selectedBrewLog.id} onSave={(note) => { setTastingNotes([note, ...tastingNotes]); setView('brews'); }} />
