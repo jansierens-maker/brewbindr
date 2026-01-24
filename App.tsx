@@ -505,7 +505,7 @@ const AppContent: React.FC = () => {
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
   role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user')),
-  preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm"}'::jsonb
+  preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm", "language": "en"}'::jsonb
 );
 
 -- Enable RLS on profiles
