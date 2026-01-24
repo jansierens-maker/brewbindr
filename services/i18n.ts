@@ -120,7 +120,19 @@ export const translations = {
     misc_type: "Type",
     misc_use: "Use",
     style_category: "Category",
-    style_guide: "Style Guide"
+    style_guide: "Style Guide",
+    cloud_sync: "Cloud Sync",
+    local_mode: "Local Mode",
+    cloud_unavailable: "Cloud sync is unavailable",
+    fallback_message: "Your Supabase credentials are not configured. The app will use Local Storage on this device. Do you want to continue?",
+    proceed_local: "Proceed with Local Storage",
+    sync_details: "Sync Details",
+    table_status: "Table Status",
+    found: "Found",
+    not_found: "Not Found",
+    sql_instructions: "Run this SQL in your Supabase SQL Editor to create the tables:",
+    copy_sql: "Copy SQL",
+    connection_status: "Connection Status"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -241,7 +253,19 @@ export const translations = {
     misc_type: "Type",
     misc_use: "Gebruik",
     style_category: "Categorie",
-    style_guide: "Stijlgids"
+    style_guide: "Stijlgids",
+    cloud_sync: "Cloud Sync",
+    local_mode: "Lokaal",
+    cloud_unavailable: "Cloud sync is niet beschikbaar",
+    fallback_message: "Je Supabase inloggegevens zijn niet geconfigureerd. De app gebruikt lokale opslag op dit apparaat. Wil je doorgaan?",
+    proceed_local: "Doorgaan met Lokale Opslag",
+    sync_details: "Sync Details",
+    table_status: "Tabel Status",
+    found: "Gevonden",
+    not_found: "Niet Gevonden",
+    sql_instructions: "Voer deze SQL uit in je Supabase SQL Editor om de tabellen aan te maken:",
+    copy_sql: "Kopieer SQL",
+    connection_status: "Verbindingsstatus"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -362,6 +386,18 @@ export const translations = {
     misc_type: "Type",
     misc_use: "Utilisation",
     style_category: "Catégorie",
-    style_guide: "Style Guide"
+    style_guide: "Style Guide",
+    cloud_sync: "Sync Cloud",
+    local_mode: "Mode Local",
+    cloud_unavailable: "Synchronisation cloud indisponible",
+    fallback_message: "Vos identifiants Supabase ne sont pas configurés. L'application utilisera le stockage local sur cet appareil. Voulez-vous continuer ?",
+    proceed_local: "Continuer avec le stockage local",
+    sync_details: "Détails de synchronisation",
+    table_status: "Statut des tables",
+    found: "Trouvé",
+    not_found: "Non trouvé",
+    sql_instructions: "Exécutez ce SQL dans votre éditeur SQL Supabase pour créer les tables :",
+    copy_sql: "Copier le SQL",
+    connection_status: "Statut de connexion"
   }
 };

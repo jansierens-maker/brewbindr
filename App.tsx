@@ -11,6 +11,8 @@ import { getSRMColor, formatBrewNumber } from './services/calculations';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
+import { supabaseService } from './services/supabaseService';
+import { supabase } from './services/supabaseClient';
 
 type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
@@ -68,6 +70,10 @@ const App: React.FC = () => {
   const [selectedBrewLog, setSelectedBrewLog] = useState<BrewLogEntry | null>(null);
   
   const [xmlUrl, setXmlUrl] = useState('');
+  const [showFallbackModal, setShowFallbackModal] = useState(false);
+  const [showSyncDetails, setShowSyncDetails] = useState(false);
+  const [tableStatus, setTableStatus] = useState<Record<string, boolean>>({});
+  const [allowLocalStorage, setAllowLocalStorage] = useState(true);
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importQueue, setImportQueue] = useState<{ type: 'recipe' | 'library', data: any }[]>([]);
   const [currentDuplicate, setCurrentDuplicate] = useState<{ type: 'recipe' | 'library', data: any } | null>(null);
@@ -96,19 +102,53 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('brewmaster_data_v3');
-    if (saved) {
-      const data = JSON.parse(saved);
-      if (data.recipes) setRecipes(data.recipes);
-      if (data.brewLogs) setBrewLogs(data.brewLogs);
-      if (data.tastingNotes) setTastingNotes(data.tastingNotes);
-      if (data.library) setLibrary(data.library);
+    if (!supabase) {
+      const dismissed = localStorage.getItem('brewmaster_fallback_dismissed');
+      if (!dismissed) {
+        setShowFallbackModal(true);
+      }
     }
+    const loadData = async () => {
+      // First load from localStorage for immediate availability
+      const saved = localStorage.getItem('brewmaster_data_v3');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          if (data.recipes) setRecipes(data.recipes);
+          if (data.brewLogs) setBrewLogs(data.brewLogs);
+          if (data.tastingNotes) setTastingNotes(data.tastingNotes);
+          if (data.library) setLibrary(data.library);
+        } catch (e) {
+          console.error('Error parsing local data:', e);
+        }
+      }
+
+      // Sync from Supabase for cross-device consistency
+      const remoteData = await supabaseService.fetchAppData();
+      if (remoteData) {
+        // We overwrite local state with remote data.
+        // Note: In a production app, we would use timestamps or a merge strategy to handle conflicts.
+        setRecipes(remoteData.recipes);
+        setBrewLogs(remoteData.brewLogs);
+        setTastingNotes(remoteData.tastingNotes);
+        setLibrary(remoteData.library);
+      }
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
     const data = { recipes, brewLogs, tastingNotes, library };
-    localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
+    if (allowLocalStorage) {
+      localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
+    }
+
+    // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
+    const timer = setTimeout(() => {
+      supabaseService.syncAll(data);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, [recipes, brewLogs, tastingNotes, library]);
 
   const handleSaveRecipe = (recipe: Recipe) => {
@@ -126,6 +166,7 @@ const App: React.FC = () => {
     setRecipes(prev => prev.filter(r => r.id !== id));
     setSelectedRecipe(null);
     setView('recipes');
+    supabaseService.deleteRecipe(id);
   };
 
   const handleUpdateBrewLog = (entry: BrewLogEntry) => {
@@ -416,9 +457,155 @@ const App: React.FC = () => {
     setShowDemoModal(true);
   };
 
+  const handleOpenSyncDetails = async () => {
+    setShowSyncDetails(true);
+    if (supabase) {
+      const status = await supabaseService.checkTableHealth();
+      setTableStatus(status);
+    }
+  };
+
+  const SQL_SCHEMA = `
+-- Create application tables
+CREATE TABLE IF NOT EXISTS recipes (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS brew_logs (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS tasting_notes (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS fermentables (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS hops (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS cultures (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS styles (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS miscs (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS mash_profiles (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS equipment (id TEXT PRIMARY KEY, data JSONB);
+CREATE TABLE IF NOT EXISTS waters (id TEXT PRIMARY KEY, data JSONB);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE brew_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasting_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fermentables ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hops ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cultures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE styles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE miscs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mash_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
+ALTER TABLE waters ENABLE ROW LEVEL SECURITY;
+
+-- Enable permissive policies for anonymous access (adjust for production)
+DO \$\$
+DECLARE
+  t text;
+BEGIN
+  FOR t IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
+  LOOP
+    EXECUTE format('CREATE POLICY "Allow all" ON %I FOR ALL USING (true) WITH CHECK (true)', t);
+  END LOOP;
+END \$\$;
+`.trim();
+
+  const handleDismissFallback = () => {
+    localStorage.setItem('brewmaster_fallback_dismissed', 'true');
+    setShowFallbackModal(false);
+  };
+
+  const handleDeclineFallback = () => {
+    setAllowLocalStorage(false);
+    setShowFallbackModal(false);
+  };
+
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
       <div className="min-h-screen bg-stone-50 text-stone-900 print:bg-white print:p-0">
+        {showSyncDetails && (
+          <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[250] flex items-center justify-center p-6">
+            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-stone-900">{t('sync_details')}</h3>
+                <button onClick={() => setShowSyncDetails(false)} className="text-stone-300 hover:text-stone-900 transition-colors"><i className="fas fa-times text-xl"></i></button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('connection_status')}</p>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="font-bold text-sm">{supabase ? 'Connected' : 'Not Configured'}</span>
+                  </div>
+                </div>
+
+                {supabase && (
+                  <div>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('table_status')}</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {Object.keys(tableStatus).length > 0 ? Object.entries(tableStatus).map(([table, found]) => (
+                        <div key={table} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
+                          <span className="text-[10px] font-bold text-stone-600 truncate mr-2">{table}</span>
+                          <span className={`text-[9px] font-black uppercase flex-shrink-0 ${found ? 'text-green-600' : 'text-red-500'}`}>
+                            {found ? t('found') : t('not_found')}
+                          </span>
+                        </div>
+                      )) : (
+                        <div className="col-span-full py-4 text-center text-xs text-stone-400 italic">Checking status...</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('sql_instructions')}</p>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(SQL_SCHEMA); alert('SQL copied to clipboard!'); }}
+                      className="text-amber-600 font-black text-[10px] uppercase hover:underline"
+                    >
+                      {t('copy_sql')}
+                    </button>
+                  </div>
+                  <pre className="bg-stone-900 text-stone-100 p-4 rounded-xl text-[10px] font-mono overflow-x-auto h-40">
+                    {SQL_SCHEMA}
+                  </pre>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowSyncDetails(false)}
+                className="w-full mt-8 py-4 bg-stone-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showFallbackModal && (
+          <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[250] flex items-center justify-center p-6">
+            <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300 text-center">
+              <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i className="fas fa-cloud-slash text-2xl text-amber-600"></i>
+              </div>
+              <h3 className="text-2xl font-black text-stone-900 mb-2">{t('cloud_unavailable')}</h3>
+              <p className="text-stone-500 font-medium mb-8 text-sm leading-relaxed">
+                {t('fallback_message')}
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleDismissFallback}
+                  className="w-full py-4 bg-stone-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg"
+                >
+                  {t('proceed_local')}
+                </button>
+                <button
+                  onClick={handleDeclineFallback}
+                  className="w-full py-3 bg-stone-100 text-stone-500 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-stone-200 transition-all"
+                >
+                  {t('cancel_btn')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {printData && (
           <div className="fixed inset-0 z-[300] bg-white overflow-y-auto animate-in fade-in duration-200">
             <div className="print:hidden sticky top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-stone-100 z-[301] px-6 py-4 flex justify-between items-center">
@@ -533,9 +720,21 @@ const App: React.FC = () => {
           )}
           <header className="bg-white border-b border-stone-200 sticky top-0 z-50 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+              <div className="flex items-center gap-4">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('recipes')}>
                 <div className="bg-amber-500 p-2 rounded-xl text-white shadow-lg"><i className="fas fa-beer-mug-empty text-2xl"></i></div>
                 <h1 className="text-2xl font-black font-serif italic text-stone-900 uppercase">brewbindr</h1>
+              </div>
+
+              <button
+                onClick={handleOpenSyncDetails}
+                className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
+              >
+                <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                  {supabase ? t('cloud_sync') : t('local_mode')}
+                </span>
+              </button>
               </div>
               <nav className="hidden md:flex gap-8">
                 <button onClick={() => setView('recipes')} className={`font-bold transition-all text-sm ${view === 'recipes' ? 'text-amber-600' : 'text-stone-400 hover:text-stone-600'}`}>{t('nav_recipes')}</button>
@@ -604,7 +803,17 @@ const App: React.FC = () => {
             {view === 'create' && (
               <RecipeCreator initialRecipe={selectedRecipe || undefined} onSave={handleSaveRecipe} onDelete={handleDeleteRecipe} library={library} />
             )}
-            {view === 'library' && ( <IngredientLibrary ingredients={library} onUpdate={setLibrary} /> )}
+            {view === 'library' && (
+              <IngredientLibrary
+                ingredients={library}
+                onUpdate={(newLib) => {
+                  // Track and handle deletions for Supabase sync
+                  const deleted = library.filter(l => !newLib.find(nl => nl.id === l.id));
+                  deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id, d.type));
+                  setLibrary(newLib);
+                }}
+              />
+            )}
             {view === 'admin' && (
               <AdminView onExport={handleExportData} onExportBeerXml={handleExportLibraryBeerXml} onRestore={handleRestoreData} onFileImport={handleFileImport} onUrlImport={handleImportDemoData} xmlUrl={xmlUrl} onXmlUrlChange={setXmlUrl} importStatus={importStatus} />
             )}
