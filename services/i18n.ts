@@ -147,7 +147,11 @@ export const translations = {
     français: "Français",
     metric_desc: "Metric (kg, L, °C)",
     imperial_desc: "Imperial (lb, gal, °F)",
-    settings_label: "Settings"
+    settings_label: "Settings",
+    guest_mode: "Guest Mode",
+    logged_in_as: "Logged in as",
+    login_to_import: "Please log in to import or restore data.",
+    guest_user: "Guest User"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -295,7 +299,11 @@ export const translations = {
     français: "Frans",
     metric_desc: "Metrisch (kg, L, °C)",
     imperial_desc: "Imperiaal (lb, gal, °F)",
-    settings_label: "Instellingen"
+    settings_label: "Instellingen",
+    guest_mode: "Gastmodus",
+    logged_in_as: "Ingelogd als",
+    login_to_import: "Log in om gegevens te importeren of te herstellen.",
+    guest_user: "Gastgebruiker"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -443,6 +451,10 @@ export const translations = {
     français: "Français",
     metric_desc: "Métrique (kg, L, °C)",
     imperial_desc: "Impérial (lb, gal, °F)",
-    settings_label: "Paramètres"
+    settings_label: "Paramètres",
+    guest_mode: "Mode Invité",
+    logged_in_as: "Connecté en tant que",
+    login_to_import: "Veuillez vous connecter pour importer ou restaurer des données.",
+    guest_user: "Invité"
   }
 };

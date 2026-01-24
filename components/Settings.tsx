@@ -114,16 +114,16 @@ const Settings: React.FC = () => {
         {/* Account Info */}
         <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8 flex flex-col">
           <div className="flex items-center gap-3">
-            <div className="bg-stone-100 p-3 rounded-2xl text-stone-600">
-              <i className="fas fa-user-circle text-2xl"></i>
+            <div className={`p-3 rounded-2xl text-white ${user ? 'bg-amber-500' : 'bg-stone-400'}`}>
+              <i className={`fas ${user ? 'fa-user-check' : 'fa-user-circle'} text-2xl`}></i>
             </div>
             <h3 className="text-2xl font-black text-stone-900">{t('account_label')}</h3>
           </div>
 
           <div className="flex-1 space-y-4">
             <div>
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">{t('signed_in_as')}</p>
-              <p className="font-bold text-stone-900">{user?.email || 'Guest'}</p>
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">{user ? t('signed_in_as') : t('guest_mode')}</p>
+              <p className="font-bold text-stone-900">{user?.email || t('guest_user')}</p>
             </div>
           </div>
 

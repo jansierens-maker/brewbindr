@@ -31,7 +31,7 @@ const AdminView: React.FC<AdminViewProps> = ({
   onReject
 }) => {
   const { t } = useTranslation();
-  const { isAdmin } = useUser();
+  const { isAdmin, user } = useUser();
 
   return (
     <div className="space-y-12 animate-in fade-in duration-500">
@@ -96,16 +96,22 @@ const AdminView: React.FC<AdminViewProps> = ({
           </div>
 
           <div className="space-y-6">
-            <div className="space-y-4">
+            {!user && (
+              <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-center gap-3">
+                <i className="fas fa-lock text-amber-600"></i>
+                <p className="text-xs font-bold text-amber-900">{t('login_to_import')}</p>
+              </div>
+            )}
+            <div className="space-y-4 opacity-50 pointer-events-none" style={{ opacity: user ? 1 : 0.5, pointerEvents: user ? 'auto' : 'none' }}>
               <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('via_file')}</p>
               <label className="group flex flex-col items-center justify-center w-full h-40 bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl cursor-pointer hover:bg-stone-100 transition-all">
                 <i className="fas fa-cloud-upload-alt text-3xl text-stone-300 group-hover:text-amber-500 mb-2"></i>
                 <p className="text-sm text-stone-500 font-bold">{t('dropzone_text')}</p>
-                <input type="file" className="hidden" accept=".xml,.beerxml" onChange={onFileImport} />
+                <input type="file" className="hidden" accept=".xml,.beerxml" onChange={onFileImport} disabled={!user} />
               </label>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 opacity-50 pointer-events-none" style={{ opacity: user ? 1 : 0.5, pointerEvents: user ? 'auto' : 'none' }}>
               <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('via_url')}</p>
               <div className="flex flex-col md:flex-row gap-3">
                 <input 
@@ -114,10 +120,11 @@ const AdminView: React.FC<AdminViewProps> = ({
                   className="flex-1 px-4 h-12 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium" 
                   value={xmlUrl} 
                   onChange={(e) => onXmlUrlChange(e.target.value)} 
+                  disabled={!user}
                 />
                 <button 
                   onClick={() => onUrlImport()} 
-                  disabled={!xmlUrl} 
+                  disabled={!xmlUrl || !user}
                   className="px-6 h-12 bg-stone-900 text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50"
                 >
                   Import
@@ -183,7 +190,7 @@ const AdminView: React.FC<AdminViewProps> = ({
               </button>
             </div>
 
-            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-4">
+            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-4" style={{ opacity: user ? 1 : 0.5, pointerEvents: user ? 'auto' : 'none' }}>
               <div className="flex items-center gap-3">
                 <i className="fas fa-file-upload text-stone-400"></i>
                 <h4 className="font-bold text-stone-900 text-sm">{t('restore')} Data</h4>
@@ -193,7 +200,7 @@ const AdminView: React.FC<AdminViewProps> = ({
               </p>
               <label className="block w-full bg-white border border-stone-200 text-stone-900 py-4 rounded-xl font-bold cursor-pointer hover:bg-stone-100 transition-all shadow-sm text-center text-sm">
                 {t('restore')}
-                <input type="file" className="hidden" accept=".json" onChange={onRestore} />
+                <input type="file" className="hidden" accept=".json" onChange={onRestore} disabled={!user} />
               </label>
             </div>
           </div>

@@ -16,7 +16,13 @@ interface UserContextType {
 }
 
 const getDefaultLanguage = (): Language => {
-  return (localStorage.getItem('brew_lang') as Language) || 'en';
+  const saved = localStorage.getItem('brew_lang') as Language;
+  if (saved && (saved === 'en' || saved === 'nl' || saved === 'fr')) return saved;
+
+  const browserLang = navigator.language.split('-')[0];
+  if (browserLang === 'nl' || browserLang === 'fr') return browserLang as Language;
+
+  return 'en';
 };
 
 const defaultPreferences: UserPreferences = {
@@ -86,23 +92,38 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updatePreferences = async (prefs: Partial<UserPreferences>) => {
-    const currentPrefs = profile?.preferences || defaultPreferences;
-    const newPrefs = { ...currentPrefs, ...prefs };
+    // 1. Update state immediately using functional update to avoid stale closures
+    setProfile(prev => {
+      const currentPrefs = prev?.preferences || defaultPreferences;
+      const newPrefs = { ...currentPrefs, ...prefs };
 
-    if (prefs.language) {
-      localStorage.setItem('brew_lang', prefs.language);
+      if (prefs.language) {
+        localStorage.setItem('brew_lang', prefs.language);
+      }
+
+      if (prev) {
+        return { ...prev, preferences: newPrefs };
+      } else {
+        return { id: 'temp', role: 'user', preferences: newPrefs };
+      }
+    });
+
+    // 2. Persist to Supabase if logged in
+    if (user) {
+      try {
+        // We fetch the current profile from DB to be absolutely sure we have the latest
+        // before merging and saving, or we assume our state is correct.
+        // Given the frequency of setting changes,konstrueren we construction from state is fine
+        // as long as we use the same construction logic.
+        const currentProfile = await authService.getProfile(user.id);
+        if (currentProfile) {
+          const updatedPrefs = { ...currentProfile.preferences, ...prefs };
+          await authService.updateProfile({ ...currentProfile, preferences: updatedPrefs });
+        }
+      } catch (err) {
+        console.error('Failed to persist preferences:', err);
+      }
     }
-
-    if (!user || !profile) {
-      // If no user, just update local default preferences (simulated)
-      // This helps when user is not logged in
-      setProfile(prev => prev ? { ...prev, preferences: newPrefs } : { id: 'temp', role: 'user', preferences: newPrefs });
-      return;
-    }
-
-    const updatedProfile = { ...profile, preferences: newPrefs };
-    await authService.updateProfile(updatedProfile);
-    setProfile(updatedProfile);
   };
 
   const signOut = async () => {
