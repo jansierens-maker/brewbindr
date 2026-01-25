@@ -164,8 +164,9 @@ const AppContent: React.FC = () => {
     }
 
     // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
+    if (!user?.id) return;
     const timer = setTimeout(() => {
-      supabaseService.syncAll(data, user?.id);
+      supabaseService.syncAll(data, user.id);
     }, 2000);
 
     return () => clearTimeout(timer);

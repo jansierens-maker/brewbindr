@@ -109,7 +109,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updatePreferences = async (prefs: Partial<UserPreferences>) => {
     // 1. Update state immediately using functional update to avoid stale closures
     setProfile(prev => {
-      const currentPrefs = prev?.preferences || defaultPreferences;
+      const currentPrefs = { ...defaultPreferences, ...prev?.preferences };
       const newPrefs = { ...currentPrefs, ...prefs };
 
       if (prefs.language) {
@@ -126,9 +126,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      await authService.signOut();
+      // Add a safety timeout of 3 seconds for the signout call to prevent UI hanging
+      await Promise.race([
+        authService.signOut(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Signout timeout')), 3000))
+      ]);
     } catch (err) {
-      console.error('Error during signOut:', err);
+      console.error('Error or timeout during signOut:', err);
     } finally {
       setUser(null);
       setProfile(null);
