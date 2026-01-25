@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-const getEnv = (key: string) => {
-  const value = (import.meta as any).env?.[key] || process.env[key] || '';
-  // Basic validation to avoid common configuration pitfalls
-  if (!value || value === 'undefined' || value === 'null' || value.includes('YOUR_')) return '';
-  return value;
+const validateEnv = (value: any) => {
+  const s = String(value || '');
+  if (!s || s === 'undefined' || s === 'null' || s.includes('YOUR_')) return '';
+  return s;
 };
 
-const supabaseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL');
-const supabaseAnonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+// We must use literal process.env access for Vite's 'define' replacement to work
+const supabaseUrl = validateEnv(process.env.NEXT_PUBLIC_SUPABASE_URL);
+const supabaseAnonKey = validateEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
