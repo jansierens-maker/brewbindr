@@ -14,7 +14,7 @@ import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
 import { supabaseService } from './services/supabaseService';
-import { supabase } from './services/supabaseClient';
+import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
 type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin' | 'settings' | 'auth';
@@ -481,13 +481,21 @@ const AppContent: React.FC = () => {
 
   const handleOpenSyncDetails = async () => {
     setShowSyncDetails(true);
+    setTableStatus({});
+    setRlsStatus(null);
+
     if (supabase) {
       const status = await supabaseService.checkTableHealth();
       setTableStatus(status);
       if (user?.id) {
         const rls = await supabaseService.checkRLSHealth(user.id);
         setRlsStatus(rls);
+      } else {
+        setRlsStatus({ enabled: false, reason: 'Log in to check RLS' });
       }
+    } else {
+      setTableStatus({ 'N/A': false });
+      setRlsStatus({ enabled: false, reason: 'Supabase not configured' });
     }
   };
 
@@ -652,11 +660,20 @@ END \$\$;
               </div>
 
               <div className="space-y-6">
-                <div>
-                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('connection_status')}</p>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="font-bold text-sm">{supabase ? 'Connected' : 'Not Configured'}</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('connection_status')}</p>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span className="font-bold text-sm">{supabase ? 'Connected' : 'Not Configured'}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Supabase Config</p>
+                    <div className="text-[10px] font-bold text-stone-600 space-y-0.5">
+                      <p>URL: {getSupabaseConfigInfo().url}</p>
+                      <p>API Key: {getSupabaseConfigInfo().hasKey ? 'Present' : 'Missing'}</p>
+                    </div>
                   </div>
                 </div>
 
