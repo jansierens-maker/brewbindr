@@ -134,7 +134,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     profile,
     loading,
-    preferences: profile?.preferences || defaultPreferences,
+    preferences: { ...defaultPreferences, ...profile?.preferences },
     updatePreferences,
     signOut,
     isAdmin: profile?.role === 'admin'
