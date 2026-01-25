@@ -181,7 +181,7 @@ END $$;
 
 To enhance the security of your Brewbindr installation, it is strongly recommended to:
 
-- **Enable Leaked Password Protection**: In your **Supabase Dashboard**, navigate to **Authentication > Password Protection** and enable **Leaked Password Protection**. This prevents users from using passwords that have been compromised in data breaches.
+- **Enable Leaked Password Protection**: In your **Supabase Dashboard**, navigate to **Authentication > Attack Protection** and enable **Leaked Password Protection**. This prevents users from using passwords that have been compromised in data breaches.
 - **Enable Row-Level Security (RLS)**: The provided SQL schema already enables RLS on all tables. Always ensure RLS is active to prevent unauthorized data access.
 
 ### 5. Administrator Setup
