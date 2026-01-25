@@ -519,9 +519,13 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-);
+
+-- Helper to check if user is admin (moved up to avoid recursion in policies)
+CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
+  SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
+
+CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (is_admin());
 
 -- Trigger to create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -603,11 +607,6 @@ ALTER TABLE miscs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mash_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
 ALTER TABLE waters ENABLE ROW LEVEL SECURITY;
-
--- Helper to check if user is admin
-CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
-  SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
-$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
 -- RLS Policies for Data Tables
 DO \$\$

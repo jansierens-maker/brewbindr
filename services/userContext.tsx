@@ -92,7 +92,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setProfile(p);
     } catch (err) {
-      console.error('Error in fetchProfile:', err);
+      console.error('Critical Error in fetchProfile:', err);
+      // Even if fetch/upsert fails, we set a minimal profile state if we have a user
+      // so the app can at least function in "optimistic" mode.
+      if (user?.id) {
+        setProfile({ id: user.id, role: 'user', preferences: defaultPreferences });
+      }
     } finally {
       setLoading(false);
     }
@@ -126,7 +131,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (prev) {
         return { ...prev, preferences: newPrefs };
       } else {
-        return { id: 'temp', role: 'user', preferences: newPrefs } as UserProfile;
+        // Use the actual user ID if available, even if the profile hasn't loaded yet.
+        // This allows the debounced sync to try and create/update the row.
+        return { id: user?.id || 'temp', role: 'user', preferences: newPrefs } as UserProfile;
       }
     });
   };

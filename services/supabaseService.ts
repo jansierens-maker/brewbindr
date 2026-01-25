@@ -58,7 +58,12 @@ export const supabaseService = {
     try {
       // Test 1: Check if we can see our own profile
       const { data: profile, error: pError } = await client.from('profiles').select('id').eq('id', userId).single();
-      if (pError) return { enabled: false, reason: 'Profile unreachable' };
+
+      if (pError) {
+        if (pError.code === 'PGRST116') return { enabled: false, reason: 'Profile row missing in DB' };
+        return { enabled: false, reason: `Unreachable: ${pError.code} - ${pError.message}` };
+      }
+
       if (!profile) return { enabled: false, reason: 'Profile not found' };
 
       // Test 2: Try to see if we can update our profile
