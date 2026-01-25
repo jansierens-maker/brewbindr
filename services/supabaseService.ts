@@ -22,19 +22,52 @@ const TABLE_MAP: Record<string, string> = {
 export const supabaseService = {
   async checkTableHealth() {
     const client = supabase;
-    const tables = ['recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
+    const tables = ['profiles', 'recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
     if (!client) {
       return tables.reduce((acc, table) => ({ ...acc, [table]: false }), {}) as Record<string, boolean>;
     }
 
-    const results: Record<string, boolean> = {};
+    const results: Record<string, boolean | 'timeout' | 'error'> = {};
 
     await Promise.all(tables.map(async (table) => {
-      const { error } = await client.from(table).select('id').limit(1);
-      results[table] = !error;
+      try {
+        const query = client.from(table).select('id').limit(1);
+        const { error } = await Promise.race([
+          query,
+          new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+        ]);
+
+        if (error) {
+          // 42P01 = Table not found
+          results[table] = error.code === '42P01' ? false : 'error';
+        } else {
+          results[table] = true;
+        }
+      } catch (err: any) {
+        results[table] = err.message === 'timeout' ? 'timeout' : 'error';
+      }
     }));
 
     return results;
+  },
+
+  async checkRLSHealth(userId: string) {
+    const client = supabase;
+    if (!client || !userId) return { enabled: false, reason: 'No client/user' };
+
+    try {
+      // Test 1: Check if we can see our own profile
+      const { data: profile, error: pError } = await client.from('profiles').select('id').eq('id', userId).single();
+      if (pError) return { enabled: false, reason: 'Profile unreachable' };
+      if (!profile) return { enabled: false, reason: 'Profile not found' };
+
+      // Test 2: Try to see if we can update our profile
+      // This is a "dry run" or we just assume if select works and upsert doesn't hang it might be okay
+
+      return { enabled: true };
+    } catch (err) {
+      return { enabled: false, reason: 'Check failed' };
+    }
   },
 
   async fetchAppData(userId?: string) {

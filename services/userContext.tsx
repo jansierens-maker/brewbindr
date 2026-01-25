@@ -82,6 +82,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         await authService.updateProfile(newProfile);
         p = newProfile;
+      } else {
+        // Ensure fetched profile has all default preference keys (e.g. language)
+        const mergedPrefs = { ...defaultPreferences, ...p.preferences };
+        if (JSON.stringify(mergedPrefs) !== JSON.stringify(p.preferences)) {
+           p = { ...p, preferences: mergedPrefs };
+           await authService.updateProfile(p);
+        }
       }
       setProfile(p);
     } catch (err) {

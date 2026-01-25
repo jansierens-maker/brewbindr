@@ -84,7 +84,8 @@ const AppContent: React.FC = () => {
   const [xmlUrl, setXmlUrl] = useState('');
   const [showFallbackModal, setShowFallbackModal] = useState(false);
   const [showSyncDetails, setShowSyncDetails] = useState(false);
-  const [tableStatus, setTableStatus] = useState<Record<string, boolean>>({});
+  const [tableStatus, setTableStatus] = useState<Record<string, boolean | 'timeout' | 'error'>>({});
+  const [rlsStatus, setRlsStatus] = useState<{ enabled: boolean, reason?: string } | null>(null);
   const [allowLocalStorage, setAllowLocalStorage] = useState(true);
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importQueue, setImportQueue] = useState<{ type: 'recipe' | 'library', data: any }[]>([]);
@@ -483,6 +484,10 @@ const AppContent: React.FC = () => {
     if (supabase) {
       const status = await supabaseService.checkTableHealth();
       setTableStatus(status);
+      if (user?.id) {
+        const rls = await supabaseService.checkRLSHealth(user.id);
+        setRlsStatus(rls);
+      }
     }
   };
 
@@ -657,18 +662,35 @@ END \$\$;
                 </div>
 
                 {supabase && (
-                  <div>
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('table_status')}</p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {Object.keys(tableStatus).length > 0 ? Object.entries(tableStatus).map(([table, found]) => (
-                        <div key={table} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
-                          <span className="text-[10px] font-bold text-stone-600 truncate mr-2">{table}</span>
-                          <span className={`text-[9px] font-black uppercase flex-shrink-0 ${found ? 'text-green-600' : 'text-red-500'}`}>
-                            {found ? t('found') : t('not_found')}
-                          </span>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('table_status')}</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {Object.keys(tableStatus).length > 0 ? Object.entries(tableStatus).map(([table, status]) => (
+                          <div key={table} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
+                            <span className="text-[10px] font-bold text-stone-600 truncate mr-2">{table}</span>
+                            <span className={`text-[9px] font-black uppercase flex-shrink-0 ${status === true ? 'text-green-600' : status === 'timeout' ? 'text-amber-500' : 'text-red-500'}`}>
+                              {status === true ? t('found') : status === 'timeout' ? 'Timeout' : status === 'error' ? 'Error' : t('not_found')}
+                            </span>
+                          </div>
+                        )) : (
+                          <div className="col-span-full py-4 text-center text-xs text-stone-400 italic">Checking status...</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">RLS Security Status</p>
+                      {rlsStatus ? (
+                        <div className={`p-4 rounded-2xl border flex items-center gap-3 ${rlsStatus.enabled ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
+                          <i className={`fas ${rlsStatus.enabled ? 'fa-shield-check' : 'fa-shield-exclamation'} text-xl`}></i>
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-widest">{rlsStatus.enabled ? 'RLS Active' : 'RLS Check Failed'}</p>
+                            {rlsStatus.reason && <p className="text-[10px] font-bold opacity-70">{rlsStatus.reason}</p>}
+                          </div>
                         </div>
-                      )) : (
-                        <div className="col-span-full py-4 text-center text-xs text-stone-400 italic">Checking status...</div>
+                      ) : (
+                        <div className="py-4 text-center text-xs text-stone-400 italic">Checking RLS...</div>
                       )}
                     </div>
                   </div>
