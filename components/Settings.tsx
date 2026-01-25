@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useUser } from '../services/userContext';
 import { useTranslation } from '../App';
 import { Language } from '../services/i18n';
@@ -6,6 +6,13 @@ import { Language } from '../services/i18n';
 const Settings: React.FC = () => {
   const { preferences, updatePreferences, signOut, user } = useUser();
   const { t } = useTranslation();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setLoggingOut(true);
+    await signOut();
+    // No need to setLoggingOut(false) here because the component might unmount or state will change
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-500">
@@ -129,10 +136,16 @@ const Settings: React.FC = () => {
 
           {user && (
             <button
-              onClick={signOut}
-              className="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-100 transition-all"
+              onClick={handleSignOut}
+              disabled={loggingOut}
+              className={`w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-100 transition-all flex items-center justify-center gap-2 ${loggingOut ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              <i className="fas fa-sign-out-alt mr-2"></i> {t('sign_out_btn')}
+              {loggingOut ? (
+                <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <i className="fas fa-sign-out-alt"></i>
+              )}
+              {loggingOut ? t('signing_out') || 'Signing out...' : t('sign_out_btn')}
             </button>
           )}
         </div>

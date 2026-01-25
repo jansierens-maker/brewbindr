@@ -91,6 +91,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Debounced persistence of preferences
+  useEffect(() => {
+    if (!user || !profile || profile.id === 'temp') return;
+
+    const timer = setTimeout(async () => {
+      try {
+        await authService.updateProfile(profile);
+      } catch (err) {
+        console.error('Failed to sync preferences to Supabase:', err);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [profile, user]);
+
   const updatePreferences = async (prefs: Partial<UserPreferences>) => {
     // 1. Update state immediately using functional update to avoid stale closures
     setProfile(prev => {
@@ -104,30 +119,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (prev) {
         return { ...prev, preferences: newPrefs };
       } else {
-        return { id: 'temp', role: 'user', preferences: newPrefs };
+        return { id: 'temp', role: 'user', preferences: newPrefs } as UserProfile;
       }
     });
-
-    // 2. Persist to Supabase if logged in
-    if (user) {
-      try {
-        // We fetch the current profile from DB to be absolutely sure we have the latest
-        // before merging and saving, or we assume our state is correct.
-        // Given the frequency of setting changes,konstrueren we construction from state is fine
-        // as long as we use the same construction logic.
-        const currentProfile = await authService.getProfile(user.id);
-        if (currentProfile) {
-          const updatedPrefs = { ...currentProfile.preferences, ...prefs };
-          await authService.updateProfile({ ...currentProfile, preferences: updatedPrefs });
-        }
-      } catch (err) {
-        console.error('Failed to persist preferences:', err);
-      }
-    }
   };
 
   const signOut = async () => {
-    await authService.signOut();
+    try {
+      await authService.signOut();
+    } catch (err) {
+      console.error('Error during signOut:', err);
+    } finally {
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
+    }
   };
 
   const value = {
