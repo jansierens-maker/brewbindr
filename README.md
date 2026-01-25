@@ -77,7 +77,7 @@ BEGIN
   VALUES (new.id);
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -152,7 +152,7 @@ ALTER TABLE waters ENABLE ROW LEVEL SECURITY;
 -- Helper to check if user is admin
 CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
   SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
-$$ LANGUAGE sql SECURITY DEFINER;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
 -- RLS Policies for Data Tables
 DO $$
@@ -177,7 +177,14 @@ END $$;
 ```
 </details>
 
-### 4. Administrator Setup
+### 4. Security Recommendations
+
+To enhance the security of your Brewbindr installation, it is strongly recommended to:
+
+- **Enable Leaked Password Protection**: In your **Supabase Dashboard**, navigate to **Authentication > Attack Protection** and enable **Leaked Password Protection**. This prevents users from using passwords that have been compromised in data breaches.
+- **Enable Row-Level Security (RLS)**: The provided SQL schema already enables RLS on all tables. Always ensure RLS is active to prevent unauthorized data access.
+
+### 5. Administrator Setup
 
 By default, all new users are assigned the `user` role. To promote a user to `admin` (required to access the Admin panel and manage public ingredient submissions):
 
@@ -188,7 +195,7 @@ By default, all new users are assigned the `user` role. To promote a user to `ad
    UPDATE profiles SET role = 'admin' WHERE id = 'YOUR_USER_UUID';
    ```
 
-### 5. Run Locally
+### 6. Run Locally
 
 ```bash
 npm run dev
