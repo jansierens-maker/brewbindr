@@ -14,7 +14,7 @@ import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
 import { supabaseService } from './services/supabaseService';
-import { supabase } from './services/supabaseClient';
+import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
 type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin' | 'settings' | 'auth';
@@ -84,7 +84,8 @@ const AppContent: React.FC = () => {
   const [xmlUrl, setXmlUrl] = useState('');
   const [showFallbackModal, setShowFallbackModal] = useState(false);
   const [showSyncDetails, setShowSyncDetails] = useState(false);
-  const [tableStatus, setTableStatus] = useState<Record<string, boolean>>({});
+  const [tableStatus, setTableStatus] = useState<Record<string, boolean | 'timeout' | 'error'>>({});
+  const [rlsStatus, setRlsStatus] = useState<{ enabled: boolean, reason?: string } | null>(null);
   const [allowLocalStorage, setAllowLocalStorage] = useState(true);
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importQueue, setImportQueue] = useState<{ type: 'recipe' | 'library', data: any }[]>([]);
@@ -164,8 +165,9 @@ const AppContent: React.FC = () => {
     }
 
     // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
+    if (!user?.id) return;
     const timer = setTimeout(() => {
-      supabaseService.syncAll(data, user?.id);
+      supabaseService.syncAll(data, user.id);
     }, 2000);
 
     return () => clearTimeout(timer);
@@ -415,10 +417,11 @@ const AppContent: React.FC = () => {
     if (!targetUrl) return;
     setImportStatus('fetching');
     try {
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) throw new Error("Network response was not ok");
-      const xmlText = await response.text();
+      const data = await response.json();
+      const xmlText = data.contents;
       if (!xmlText) throw new Error("Received empty content from URL");
       setImportStatus('parsing');
       startImportFlow(parseBeerXml(xmlText));
@@ -447,11 +450,13 @@ const AppContent: React.FC = () => {
 
     try {
         for (const opt of selectedFiles) {
-            const targetUrl = `http://www.beerxml.com/${opt.file}`;
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+            const targetUrl = `https://beerxml.com/${opt.file}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
             const response = await fetch(proxyUrl);
             if (!response.ok) continue;
-            const xmlText = await response.text();
+            const data = await response.json();
+            const xmlText = data.contents;
+            if (!xmlText) continue;
             const result = parseBeerXml(xmlText);
             
             // Merge into aggregate
@@ -479,9 +484,21 @@ const AppContent: React.FC = () => {
 
   const handleOpenSyncDetails = async () => {
     setShowSyncDetails(true);
+    setTableStatus({});
+    setRlsStatus(null);
+
     if (supabase) {
       const status = await supabaseService.checkTableHealth();
       setTableStatus(status);
+      if (user?.id) {
+        const rls = await supabaseService.checkRLSHealth(user.id);
+        setRlsStatus(rls);
+      } else {
+        setRlsStatus({ enabled: false, reason: 'Log in to check RLS' });
+      }
+    } else {
+      setTableStatus({ 'N/A': false });
+      setRlsStatus({ enabled: false, reason: 'Supabase not configured' });
     }
   };
 
@@ -510,12 +527,23 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 -- Enable RLS on profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-);
+
+-- Helper to check if user is admin (moved up to avoid recursion in policies)
+CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
+  SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
+CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (auth.uid() != id AND is_admin());
 
 -- Trigger to create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -598,11 +626,6 @@ ALTER TABLE mash_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
 ALTER TABLE waters ENABLE ROW LEVEL SECURITY;
 
--- Helper to check if user is admin
-CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
-  SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
-$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
-
 -- RLS Policies for Data Tables
 DO \$\$
 DECLARE
@@ -613,13 +636,16 @@ BEGIN
   LOOP
     -- Everyone can read approved items (if the table has a status column)
     IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
+      EXECUTE format('DROP POLICY IF EXISTS "Allow read approved %I" ON %I;', t, t);
       EXECUTE format('CREATE POLICY "Allow read approved %I" ON %I FOR SELECT USING (status = ''approved'');', t, t);
     END IF;
 
     -- Users can read/write their own items
+    EXECUTE format('DROP POLICY IF EXISTS "Allow user manage own %I" ON %I;', t, t);
     EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t, t);
 
     -- Admins can do everything
+    EXECUTE format('DROP POLICY IF EXISTS "Allow admin manage %I" ON %I;', t, t);
     EXECUTE format('CREATE POLICY "Allow admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
   END LOOP;
 END \$\$;
@@ -647,27 +673,53 @@ END \$\$;
               </div>
 
               <div className="space-y-6">
-                <div>
-                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('connection_status')}</p>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="font-bold text-sm">{supabase ? 'Connected' : 'Not Configured'}</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('connection_status')}</p>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span className="font-bold text-sm">{supabase ? 'Connected' : 'Not Configured'}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Supabase Config</p>
+                    <div className="text-[10px] font-bold text-stone-600 space-y-0.5">
+                      <p>URL: {getSupabaseConfigInfo().url}</p>
+                      <p>API Key: {getSupabaseConfigInfo().hasKey ? 'Present' : 'Missing'}</p>
+                    </div>
                   </div>
                 </div>
 
                 {supabase && (
-                  <div>
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('table_status')}</p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {Object.keys(tableStatus).length > 0 ? Object.entries(tableStatus).map(([table, found]) => (
-                        <div key={table} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
-                          <span className="text-[10px] font-bold text-stone-600 truncate mr-2">{table}</span>
-                          <span className={`text-[9px] font-black uppercase flex-shrink-0 ${found ? 'text-green-600' : 'text-red-500'}`}>
-                            {found ? t('found') : t('not_found')}
-                          </span>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('table_status')}</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {Object.keys(tableStatus).length > 0 ? Object.entries(tableStatus).map(([table, status]) => (
+                          <div key={table} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
+                            <span className="text-[10px] font-bold text-stone-600 truncate mr-2">{table}</span>
+                            <span className={`text-[9px] font-black uppercase flex-shrink-0 ${status === true ? 'text-green-600' : status === 'timeout' ? 'text-amber-500' : 'text-red-500'}`}>
+                              {status === true ? t('found') : status === 'timeout' ? 'Timeout' : status === 'error' ? 'Error' : t('not_found')}
+                            </span>
+                          </div>
+                        )) : (
+                          <div className="col-span-full py-4 text-center text-xs text-stone-400 italic">Checking status...</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">RLS Security Status</p>
+                      {rlsStatus ? (
+                        <div className={`p-4 rounded-2xl border flex items-center gap-3 ${rlsStatus.enabled ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
+                          <i className={`fas ${rlsStatus.enabled ? 'fa-shield-check' : 'fa-shield-exclamation'} text-xl`}></i>
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-widest">{rlsStatus.enabled ? 'RLS Active' : 'RLS Check Failed'}</p>
+                            {rlsStatus.reason && <p className="text-[10px] font-bold opacity-70">{rlsStatus.reason}</p>}
+                          </div>
                         </div>
-                      )) : (
-                        <div className="col-span-full py-4 text-center text-xs text-stone-400 italic">Checking status...</div>
+                      ) : (
+                        <div className="py-4 text-center text-xs text-stone-400 italic">Checking RLS...</div>
                       )}
                     </div>
                   </div>

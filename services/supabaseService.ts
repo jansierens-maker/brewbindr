@@ -22,19 +22,76 @@ const TABLE_MAP: Record<string, string> = {
 export const supabaseService = {
   async checkTableHealth() {
     const client = supabase;
-    const tables = ['recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
+    const tables = ['profiles', 'recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
     if (!client) {
       return tables.reduce((acc, table) => ({ ...acc, [table]: false }), {}) as Record<string, boolean>;
     }
 
-    const results: Record<string, boolean> = {};
+    const results: Record<string, boolean | 'timeout' | 'error'> = {};
 
     await Promise.all(tables.map(async (table) => {
-      const { error } = await client.from(table).select('id').limit(1);
-      results[table] = !error;
+      try {
+        // Try to fetch one row.
+        // This checks if the table exists AND if we have at least READ permission.
+        const query = client.from(table).select('*').limit(1);
+        const { data, error } = await Promise.race([
+          query,
+          new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+        ]);
+
+        if (error) {
+          if (error.code === '42P01') {
+            results[table] = false; // Table not found
+          } else if (error.message.includes('apikey')) {
+             results[table] = 'error'; // Likely missing API key
+          } else {
+            // Might be RLS blocking even the count, or other DB error
+            results[table] = 'error';
+          }
+        } else {
+          // If we got data (even empty array), the table exists and is reachable
+          results[table] = true;
+        }
+      } catch (err: any) {
+        results[table] = err.message === 'timeout' ? 'timeout' : 'error';
+      }
     }));
 
     return results;
+  },
+
+  async checkRLSHealth(userId: string) {
+    const client = supabase;
+    if (!client || !userId) return { enabled: false, reason: 'No client/user' };
+
+    try {
+      // Test 1: Check if we can see our own profile
+      // If RLS is broken or recursive, this will fail or hang.
+      const query = client.from('profiles').select('id').eq('id', userId).single();
+      const { data: profile, error: pError } = await Promise.race([
+        query,
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+      ]);
+
+      if (pError) {
+        if (pError.code === 'PGRST116') return { enabled: false, reason: 'Profile row missing' };
+        if (pError.message?.includes('apikey')) return { enabled: false, reason: 'API Key Rejected' };
+        return { enabled: false, reason: `Error ${pError.code}: ${pError.message}` };
+      }
+
+      if (!profile) return { enabled: false, reason: 'Profile not returned' };
+
+      // Test 2: Check if we can at least reach the recipes table (even if empty)
+      const { error: rError } = await client.from('recipes').select('id', { count: 'exact', head: true }).limit(1);
+      if (rError && !rError.message.includes('PGRST116')) {
+         // If we get a permission error here, RLS might be blocking everything
+         if (rError.code === '42501') return { enabled: false, reason: 'RLS Permission Denied' };
+      }
+
+      return { enabled: true };
+    } catch (err: any) {
+      return { enabled: false, reason: err.message === 'timeout' ? 'Check timed out (possible RLS recursion)' : 'Check failed' };
+    }
   },
 
   async fetchAppData(userId?: string) {

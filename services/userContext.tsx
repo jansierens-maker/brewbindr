@@ -82,19 +82,46 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         await authService.updateProfile(newProfile);
         p = newProfile;
+      } else {
+        // Ensure fetched profile has all default preference keys (e.g. language)
+        const mergedPrefs = { ...defaultPreferences, ...p.preferences };
+        if (JSON.stringify(mergedPrefs) !== JSON.stringify(p.preferences)) {
+           p = { ...p, preferences: mergedPrefs };
+           await authService.updateProfile(p);
+        }
       }
       setProfile(p);
     } catch (err) {
-      console.error('Error in fetchProfile:', err);
+      console.error('Critical Error in fetchProfile:', err);
+      // Even if fetch/upsert fails, we set a minimal profile state if we have a user
+      // so the app can at least function in "optimistic" mode.
+      if (user?.id) {
+        setProfile({ id: user.id, role: 'user', preferences: defaultPreferences });
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // Debounced persistence of preferences
+  useEffect(() => {
+    if (!user || !profile || profile.id === 'temp') return;
+
+    const timer = setTimeout(async () => {
+      try {
+        await authService.updateProfile(profile);
+      } catch (err) {
+        console.error('Failed to sync preferences to Supabase:', err);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [profile, user]);
+
   const updatePreferences = async (prefs: Partial<UserPreferences>) => {
     // 1. Update state immediately using functional update to avoid stale closures
     setProfile(prev => {
-      const currentPrefs = prev?.preferences || defaultPreferences;
+      const currentPrefs = { ...defaultPreferences, ...prev?.preferences };
       const newPrefs = { ...currentPrefs, ...prefs };
 
       if (prefs.language) {
@@ -104,30 +131,27 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (prev) {
         return { ...prev, preferences: newPrefs };
       } else {
-        return { id: 'temp', role: 'user', preferences: newPrefs };
+        // Use the actual user ID if available, even if the profile hasn't loaded yet.
+        // This allows the debounced sync to try and create/update the row.
+        return { id: user?.id || 'temp', role: 'user', preferences: newPrefs } as UserProfile;
       }
     });
-
-    // 2. Persist to Supabase if logged in
-    if (user) {
-      try {
-        // We fetch the current profile from DB to be absolutely sure we have the latest
-        // before merging and saving, or we assume our state is correct.
-        // Given the frequency of setting changes,konstrueren we construction from state is fine
-        // as long as we use the same construction logic.
-        const currentProfile = await authService.getProfile(user.id);
-        if (currentProfile) {
-          const updatedPrefs = { ...currentProfile.preferences, ...prefs };
-          await authService.updateProfile({ ...currentProfile, preferences: updatedPrefs });
-        }
-      } catch (err) {
-        console.error('Failed to persist preferences:', err);
-      }
-    }
   };
 
   const signOut = async () => {
-    await authService.signOut();
+    try {
+      // Add a safety timeout of 3 seconds for the signout call to prevent UI hanging
+      await Promise.race([
+        authService.signOut(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Signout timeout')), 3000))
+      ]);
+    } catch (err) {
+      console.error('Error or timeout during signOut:', err);
+    } finally {
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
+    }
   };
 
   const value = {
