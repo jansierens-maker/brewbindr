@@ -417,10 +417,11 @@ const AppContent: React.FC = () => {
     if (!targetUrl) return;
     setImportStatus('fetching');
     try {
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) throw new Error("Network response was not ok");
-      const xmlText = await response.text();
+      const data = await response.json();
+      const xmlText = data.contents;
       if (!xmlText) throw new Error("Received empty content from URL");
       setImportStatus('parsing');
       startImportFlow(parseBeerXml(xmlText));
@@ -449,11 +450,13 @@ const AppContent: React.FC = () => {
 
     try {
         for (const opt of selectedFiles) {
-            const targetUrl = `http://www.beerxml.com/${opt.file}`;
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+            const targetUrl = `https://beerxml.com/${opt.file}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
             const response = await fetch(proxyUrl);
             if (!response.ok) continue;
-            const xmlText = await response.text();
+            const data = await response.json();
+            const xmlText = data.contents;
+            if (!xmlText) continue;
             const result = parseBeerXml(xmlText);
             
             // Merge into aggregate
