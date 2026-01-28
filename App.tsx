@@ -524,8 +524,14 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 -- Enable RLS on profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Helper to check if user is admin (moved up to avoid recursion in policies)
@@ -533,6 +539,7 @@ CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
   SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
 $$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
+DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (is_admin());
 
 -- Trigger to create profile on signup
@@ -626,13 +633,16 @@ BEGIN
   LOOP
     -- Everyone can read approved items (if the table has a status column)
     IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
+      EXECUTE format('DROP POLICY IF EXISTS "Allow read approved %I" ON %I;', t, t);
       EXECUTE format('CREATE POLICY "Allow read approved %I" ON %I FOR SELECT USING (status = ''approved'');', t, t);
     END IF;
 
     -- Users can read/write their own items
+    EXECUTE format('DROP POLICY IF EXISTS "Allow user manage own %I" ON %I;', t, t);
     EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t, t);
 
     -- Admins can do everything
+    EXECUTE format('DROP POLICY IF EXISTS "Allow admin manage %I" ON %I;', t, t);
     EXECUTE format('CREATE POLICY "Allow admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
   END LOOP;
 END \$\$;
