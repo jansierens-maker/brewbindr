@@ -6,11 +6,13 @@ import { useUser } from '../services/userContext';
 
 interface LibraryProps {
   ingredients: LibraryIngredient[];
+  libraryView: 'personal' | 'public';
   onUpdate: (ingredients: LibraryIngredient[]) => void;
 }
 
 const IngredientLibrary: React.FC<LibraryProps> = ({ 
   ingredients, 
+  libraryView,
   onUpdate
 }) => {
   const { t } = useTranslation();
@@ -151,23 +153,27 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
           <h3 className="text-2xl font-black capitalize text-stone-900">
             {filter === 'fermentable' ? t('malt') : filter === 'hop' ? t('hops') : filter === 'culture' ? t('yeast_lib') : filter === 'mash_profile' ? t('mash_profile') : filter === 'misc' ? t('miscs_label') : t('style_label')}
           </h3>
-          <p className="text-stone-400 text-xs font-bold">{ingredients.filter(i => i.type === filter).length} {t('items_in_collection')}</p>
+          <p className="text-stone-400 text-xs font-bold">
+            {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (!i.user_id || i.user_id === user?.id) : i.status === 'approved')).length} {t('items_in_collection')}
+          </p>
         </div>
-        <button 
-          onClick={handleAddNew}
-          className="bg-stone-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg hover:bg-black transition-all flex items-center gap-2"
-        >
-          <i className="fas fa-plus"></i> {t('new_btn')}
-        </button>
+        {libraryView === 'personal' && (
+          <button
+            onClick={handleAddNew}
+            className="bg-stone-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg hover:bg-black transition-all flex items-center gap-2"
+          >
+            <i className="fas fa-plus"></i> {t('new_btn')}
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ingredients.filter(i => i.type === filter).length === 0 ? (
+        {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (!i.user_id || i.user_id === user?.id) : i.status === 'approved')).length === 0 ? (
           <div className="col-span-full py-20 text-center text-stone-300 font-medium bg-white rounded-3xl border-2 border-dashed border-stone-100">
             {t('no_brews')}
           </div>
         ) : (
-          ingredients.filter(i => i.type === filter).map(item => (
+          ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (!i.user_id || i.user_id === user?.id) : i.status === 'approved')).map(item => (
             <div key={item.id} className={`bg-white p-8 rounded-3xl border shadow-sm relative transition-all ${editingId === item.id ? 'border-amber-400 ring-2 ring-amber-100' : 'border-stone-200'}`}>
               {editingId === item.id ? (
                 <div className="space-y-4 animate-in zoom-in-95 duration-200">
@@ -261,7 +267,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                       <button onClick={cancelEditing} className="px-4 bg-stone-100 text-stone-400 py-2.5 rounded-xl text-xs font-bold hover:bg-stone-200">{t('cancel_btn')}</button>
                     </div>
 
-                    {user && (item.user_id === user.id || !item.user_id) && item.status !== 'approved' && (
+                    {user && libraryView === 'personal' && (item.user_id === user.id || !item.user_id) && item.status !== 'approved' && (
                        <button
                         onClick={() => {
                           onUpdate(ingredients.map(i => i.id === editingId ? { ...i, ...editForm, status: 'submitted' } as LibraryIngredient : i));

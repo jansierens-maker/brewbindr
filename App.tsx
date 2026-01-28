@@ -61,6 +61,23 @@ const DEMO_OPTIONS = [
   { id: 'mash', name: "Five Mash Profiles", file: "mash.xml", icon: "fa-thermometer-half" },
 ];
 
+const isExactlySame = (a: any, b: any) => {
+  const strip = (obj: any) => {
+    if (!obj) return "";
+    const { id, user_id, status, libraryId, ...rest } = obj;
+    if (rest.ingredients) {
+       rest.ingredients = {
+         fermentables: rest.ingredients.fermentables?.map(({id, libraryId, ...f}: any) => f),
+         hops: rest.ingredients.hops?.map(({id, libraryId, ...h}: any) => h),
+         cultures: rest.ingredients.cultures?.map(({id, libraryId, ...c}: any) => c),
+         miscellaneous: rest.ingredients.miscellaneous?.map(({id, libraryId, ...m}: any) => m),
+       };
+    }
+    return JSON.stringify(rest);
+  };
+  return strip(a) === strip(b);
+};
+
 const App: React.FC = () => {
   return (
     <UserProvider>
@@ -87,8 +104,10 @@ const AppContent: React.FC = () => {
   const [tableStatus, setTableStatus] = useState<Record<string, boolean | 'timeout' | 'error'>>({});
   const [rlsStatus, setRlsStatus] = useState<{ enabled: boolean, reason?: string } | null>(null);
   const [allowLocalStorage, setAllowLocalStorage] = useState(true);
-  const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
+  const [importStatus, setImportStatus] = useState<ImportStatus | 'complete'>('idle');
+  const [libraryView, setLibraryView] = useState<'personal' | 'public'>('personal');
   const [importQueue, setImportQueue] = useState<{ type: 'recipe' | 'library', data: any }[]>([]);
+  const [importSummary, setImportSummary] = useState<{ inserted: number, updated: number, ignored: number, errors: number } | null>(null);
   const [currentDuplicate, setCurrentDuplicate] = useState<{ type: 'recipe' | 'library', data: any } | null>(null);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
@@ -114,6 +133,12 @@ const AppContent: React.FC = () => {
   const t = (key: keyof typeof translations['en']): string => {
     return translations[lang][key] || translations['en'][key] || key;
   };
+
+  useEffect(() => {
+    if (!authLoading) {
+      setLibraryView(user ? 'personal' : 'public');
+    }
+  }, [user, authLoading]);
 
   useEffect(() => {
     if (!supabase) {
@@ -292,63 +317,96 @@ const AppContent: React.FC = () => {
       return;
     }
 
+    setImportSummary({ inserted: 0, updated: 0, ignored: 0, errors: 0 });
     setImportQueue(queue);
     setImportStatus('resolving');
     // Important: call with state snapshots for consistency
-    processQueue(queue, recipes, library);
+    processQueue(queue, recipes, library, { inserted: 0, updated: 0, ignored: 0, errors: 0 });
   };
 
-  const processQueue = (currentQueue: typeof importQueue, currentRecipes: Recipe[], currentLib: LibraryIngredient[]) => {
+  const processQueue = (currentQueue: typeof importQueue, currentRecipes: Recipe[], currentLib: LibraryIngredient[], summary: { inserted: number, updated: number, ignored: number, errors: number }) => {
     if (currentQueue.length === 0) {
-      setImportStatus('idle');
+      setImportStatus('complete');
       return;
     }
     const next = currentQueue[0];
+
+    // Only check for duplicates in personal collection
+    const personalRecipes = currentRecipes.filter(r => !r.user_id || r.user_id === user?.id);
+    const personalLib = currentLib.filter(l => !l.user_id || l.user_id === user?.id);
+
     let isDuplicate = false;
+    let exactMatches: any[] = [];
+
     if (next.type === 'recipe') {
-      isDuplicate = currentRecipes.some(r => r.name.toLowerCase() === next.data.name.toLowerCase());
+      exactMatches = personalRecipes.filter(r => isExactlySame(r, next.data));
+      isDuplicate = personalRecipes.some(r => r.name.toLowerCase() === next.data.name.toLowerCase());
     } else {
-      isDuplicate = currentLib.some(l => l.name.toLowerCase() === next.data.name.toLowerCase() && l.type === next.data.type);
+      exactMatches = personalLib.filter(l => l.type === next.data.type && isExactlySame(l, next.data));
+      isDuplicate = personalLib.some(l => l.name.toLowerCase() === next.data.name.toLowerCase() && l.type === next.data.type);
     }
     
-    if (isDuplicate) {
-      if (next.type === 'recipe') {
-        const nextQ = currentQueue.slice(1);
-        setImportQueue(nextQ);
-        processQueue(nextQ, currentRecipes, currentLib);
-      } else {
-        setCurrentDuplicate(next);
-      }
-    } else {
-      let newRecipes = [...currentRecipes];
-      let newLib = [...currentLib];
-      if (next.type === 'recipe') {
-        const linked = linkIngredientsToLibrary(next.data, newLib);
-        newRecipes.push({ ...linked, user_id: user?.id });
-      } else {
-        const newItem = { ...next.data, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
-        newLib.push(newItem);
-      }
-      // Update state once per step
-      setRecipes(newRecipes);
-      setLibrary(newLib);
-      
+    if (exactMatches.length > 0) {
+      // Exactly the same data, ignore it
+      const nextSummary = { ...summary, ignored: summary.ignored + 1 };
+      setImportSummary(nextSummary);
       const nextQ = currentQueue.slice(1);
       setImportQueue(nextQ);
-      // Wait for state updates before next recursive call
-      setTimeout(() => processQueue(nextQ, newRecipes, newLib), 0);
+      processQueue(nextQ, currentRecipes, currentLib, nextSummary);
+      return;
+    }
+
+    if (isDuplicate) {
+      setCurrentDuplicate(next);
+    } else {
+      try {
+        let newRecipes = [...currentRecipes];
+        let newLib = [...currentLib];
+        let itemsAdded = 0;
+        if (next.type === 'recipe') {
+          const result = linkIngredientsToLibrary(next.data, newLib);
+          const linked = result.recipe;
+          itemsAdded = 1 + result.addedToLibrary;
+          newRecipes.push({ ...linked, user_id: user?.id });
+        } else {
+          const newItem = { ...next.data, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
+          newLib.push(newItem);
+          itemsAdded = 1;
+        }
+
+        const nextSummary = { ...summary, inserted: summary.inserted + itemsAdded };
+        setImportSummary(nextSummary);
+
+        // Update state once per step
+        setRecipes(newRecipes);
+        setLibrary(newLib);
+
+        const nextQ = currentQueue.slice(1);
+        setImportQueue(nextQ);
+        // Wait for state updates before next recursive call
+        setTimeout(() => processQueue(nextQ, newRecipes, newLib, nextSummary), 0);
+      } catch (err) {
+        console.error("Error processing import item:", err);
+        const nextSummary = { ...summary, errors: summary.errors + 1 };
+        setImportSummary(nextSummary);
+        const nextQ = currentQueue.slice(1);
+        setImportQueue(nextQ);
+        setTimeout(() => processQueue(nextQ, currentRecipes, currentLib, nextSummary), 0);
+      }
     }
   };
 
   const linkIngredientsToLibrary = (recipe: Recipe, tempLib: LibraryIngredient[]) => {
+    let addedToLibrary = 0;
     const getLibId = (name: string, type: string, props: Partial<LibraryIngredient>): string => {
       const existing = tempLib.find(i => i.type === type && i.name.toLowerCase() === name.toLowerCase());
       if (existing) return existing.id;
       const newId = Math.random().toString(36).substr(2, 9);
       tempLib.push({ id: newId, name, type, user_id: user?.id, ...props } as LibraryIngredient);
+      addedToLibrary++;
       return newId;
     };
-    return {
+    const linked = {
       ...recipe,
       ingredients: {
         ...recipe.ingredients,
@@ -369,38 +427,49 @@ const AppContent: React.FC = () => {
         }))
       }
     };
+    return { recipe: linked, addedToLibrary };
   };
 
   const resolveConflict = (action: 'cancel' | 'skip' | 'overwrite' | 'copy') => {
-    if (!currentDuplicate) return;
+    if (!currentDuplicate || !importSummary) return;
     if (action === 'cancel') { setImportQueue([]); setCurrentDuplicate(null); setImportStatus('idle'); return; }
+
     let updatedRecipes = [...recipes];
     let updatedLib = [...library];
     const nextQueue = importQueue.slice(1);
+    let nextSummary = { ...importSummary };
     
     if (action === 'overwrite') {
       if (currentDuplicate.type === 'recipe') {
-        const linked = linkIngredientsToLibrary(currentDuplicate.data, updatedLib);
-        updatedRecipes = recipes.map(r => r.name.toLowerCase() === linked.name.toLowerCase() ? { ...linked, id: r.id, user_id: user?.id } : r);
+        const { recipe: linked, addedToLibrary } = linkIngredientsToLibrary(currentDuplicate.data, updatedLib);
+        updatedRecipes = recipes.map(r => (!r.user_id || r.user_id === user?.id) && r.name.toLowerCase() === linked.name.toLowerCase() ? { ...linked, id: r.id, user_id: user?.id } : r);
+        nextSummary.updated += 1;
+        nextSummary.inserted += addedToLibrary;
       } else {
-        updatedLib = library.map(l => (l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type) ? { ...currentDuplicate.data, id: l.id, user_id: user?.id } : l);
+        updatedLib = library.map(l => (!l.user_id || l.user_id === user?.id) && l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type ? { ...currentDuplicate.data, id: l.id, user_id: user?.id } : l);
+        nextSummary.updated += 1;
       }
     } else if (action === 'copy') {
       if (currentDuplicate.type === 'recipe') {
-        const linked = linkIngredientsToLibrary({ ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)` }, updatedLib);
+        const { recipe: linked, addedToLibrary } = linkIngredientsToLibrary({ ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)` }, updatedLib);
         linked.id = Math.random().toString(36).substr(2, 9);
         updatedRecipes = [...recipes, { ...linked, user_id: user?.id }];
+        nextSummary.inserted += 1 + addedToLibrary;
       } else {
         const newItem = { ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)`, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
         updatedLib = [...library, newItem];
+        nextSummary.inserted += 1;
       }
+    } else if (action === 'skip') {
+      nextSummary.ignored += 1;
     }
 
+    setImportSummary(nextSummary);
     setRecipes(updatedRecipes);
     setLibrary(updatedLib);
     setImportQueue(nextQueue);
     setCurrentDuplicate(null);
-    setTimeout(() => processQueue(nextQueue, updatedRecipes, updatedLib), 0);
+    setTimeout(() => processQueue(nextQueue, updatedRecipes, updatedLib, nextSummary), 0);
   };
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -863,7 +932,38 @@ END \$\$;
           {importStatus !== 'idle' && (
             <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
               <div className="bg-white rounded-3xl p-8 max-sm w-full shadow-2xl animate-in zoom-in-95 duration-300">
-                {importStatus !== 'resolving' ? (
+                {importStatus === 'complete' && importSummary ? (
+                  <div className="text-center space-y-6">
+                    <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto">
+                      <i className="fas fa-check text-2xl text-green-600"></i>
+                    </div>
+                    <h3 className="text-2xl font-black text-stone-900">{t('import_summary')}</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="bg-stone-50 p-3 rounded-2xl border border-stone-100">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">{t('records_inserted')}</p>
+                        <p className="text-xl font-black text-stone-900">{importSummary.inserted}</p>
+                      </div>
+                      <div className="bg-stone-50 p-3 rounded-2xl border border-stone-100">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">{t('records_updated')}</p>
+                        <p className="text-xl font-black text-stone-900">{importSummary.updated}</p>
+                      </div>
+                      <div className="bg-stone-50 p-3 rounded-2xl border border-stone-100">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">{t('records_ignored')}</p>
+                        <p className="text-xl font-black text-stone-900">{importSummary.ignored}</p>
+                      </div>
+                      <div className="bg-stone-50 p-3 rounded-2xl border border-stone-100">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">{t('records_errors')}</p>
+                        <p className="text-xl font-black text-red-600">{importSummary.errors}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setImportStatus('idle'); setImportSummary(null); }}
+                      className="w-full py-4 bg-stone-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg"
+                    >
+                      {t('close_btn')}
+                    </button>
+                  </div>
+                ) : (importStatus !== 'resolving' && importStatus !== 'complete') ? (
                   <div className="text-center space-y-4">
                     <div className="relative w-16 h-16 mx-auto">
                       <div className="absolute inset-0 border-4 border-stone-100 rounded-full"></div>
@@ -932,15 +1032,31 @@ END \$\$;
           <main className="max-w-7xl mx-auto px-4 py-10 pb-32">
             {view === 'recipes' && (
               <div className="space-y-10 animate-in fade-in duration-500">
-                <div> <h2 className="text-4xl font-black text-stone-900">{t('nav_recipes')}</h2> </div>
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                  <div> <h2 className="text-4xl font-black text-stone-900">{t('nav_recipes')}</h2> </div>
+                  <div className="flex bg-stone-100 p-1 rounded-2xl w-fit">
+                    <button
+                      onClick={() => setLibraryView('personal')}
+                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'personal' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                    >
+                      {t('personal_collection')}
+                    </button>
+                    <button
+                      onClick={() => setLibraryView('public')}
+                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'public' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                    >
+                      {t('public_library')}
+                    </button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {recipes.length === 0 ? (
+                  {recipes.filter(r => libraryView === 'personal' ? (!r.user_id || r.user_id === user?.id) : r.status === 'approved').length === 0 ? (
                     <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-stone-200 px-6 shadow-sm">
                       <i className="fas fa-beer text-5xl text-amber-100 mb-6 block"></i>
                       <p className="text-stone-400 font-bold max-w-sm mx-auto mb-6"> {t('empty_recipes_hint').split('Library')[0]} <button onClick={() => setView('library')} className="text-amber-600 underline hover:text-amber-700"> {t('go_to_library')} </button> {t('empty_recipes_hint').split('Library')[1]} </p>
                       <div className="flex flex-col items-center gap-4"> <p className="text-xs font-black text-stone-300 uppercase tracking-widest">{t('demo_hint')}</p> <button onClick={handleImportDemoData} className="bg-amber-600 text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl hover:bg-amber-700 transition-all flex items-center gap-2"> <i className="fas fa-download"></i> {t('import_demo')} </button> </div>
                     </div>
-                  ) : recipes.map(r => (
+                  ) : recipes.filter(r => libraryView === 'personal' ? (!r.user_id || r.user_id === user?.id) : r.status === 'approved').map(r => (
                     <div key={r.id} className="bg-white rounded-3xl border border-stone-200 p-6 hover:shadow-xl transition-all border-b-4 group relative flex flex-col" style={{ borderBottomColor: getSRMColor(r.specifications?.color?.value || 0) }}>
                       <div className="absolute top-4 right-4 flex gap-2">
                         <button onClick={() => handlePrintRecipe(r)} title={t('print_recipe')} className="text-stone-300 hover:text-stone-900 transition-colors"> <i className="fas fa-print text-lg"></i> </button>
@@ -981,8 +1097,29 @@ END \$\$;
               <RecipeCreator initialRecipe={selectedRecipe || undefined} onSave={handleSaveRecipe} onDelete={handleDeleteRecipe} library={library} />
             )}
             {view === 'library' && (
+              <div className="space-y-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+                  <div>
+                    <h2 className="text-4xl font-black text-stone-900">{t('nav_library')}</h2>
+                  </div>
+                  <div className="flex bg-stone-100 p-1 rounded-2xl w-fit">
+                    <button
+                      onClick={() => setLibraryView('personal')}
+                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'personal' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                    >
+                      {t('personal_collection')}
+                    </button>
+                    <button
+                      onClick={() => setLibraryView('public')}
+                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'public' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                    >
+                      {t('public_library')}
+                    </button>
+                  </div>
+                </div>
               <IngredientLibrary
                 ingredients={library}
+                libraryView={libraryView}
                 onUpdate={(newLib) => {
                   // Track and handle deletions for Supabase sync
                   const deleted = library.filter(l => !newLib.find(nl => nl.id === l.id));
@@ -990,6 +1127,7 @@ END \$\$;
                   setLibrary(newLib);
                 }}
               />
+              </div>
             )}
             {view === 'admin' && (
               <AdminView
