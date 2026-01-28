@@ -537,10 +537,10 @@ CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (
 -- Helper to check if user is admin (moved up to avoid recursion in policies)
 CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
   SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
-$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
-CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (is_admin());
+CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (auth.uid() != id AND is_admin());
 
 -- Trigger to create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
