@@ -152,7 +152,15 @@ export const translations = {
     guest_mode: "Guest Mode",
     logged_in_as: "Logged in as",
     login_to_import: "Please log in to import or restore data.",
-    guest_user: "Guest User"
+    guest_user: "Guest User",
+    personal_collection: "Personal Collection",
+    public_library: "Public Library",
+    import_summary: "Import Summary",
+    records_inserted: "Inserted",
+    records_updated: "Updated",
+    records_ignored: "Ignored",
+    records_errors: "Errors",
+    close_btn: "Close"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -305,7 +313,15 @@ export const translations = {
     guest_mode: "Gastmodus",
     logged_in_as: "Ingelogd als",
     login_to_import: "Log in om gegevens te importeren of te herstellen.",
-    guest_user: "Gastgebruiker"
+    guest_user: "Gastgebruiker",
+    personal_collection: "Mijn Collectie",
+    public_library: "Publieke Bibliotheek",
+    import_summary: "Import Samenvatting",
+    records_inserted: "Toegevoegd",
+    records_updated: "Bijgewerkt",
+    records_ignored: "Genegeerd",
+    records_errors: "Fouten",
+    close_btn: "Sluiten"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -458,6 +474,14 @@ export const translations = {
     guest_mode: "Mode Invité",
     logged_in_as: "Connecté en tant que",
     login_to_import: "Veuillez vous connecter pour importer ou restaurer des données.",
-    guest_user: "Invité"
+    guest_user: "Invité",
+    personal_collection: "Ma Collection",
+    public_library: "Bibliothèque Publique",
+    import_summary: "Résumé de l'importation",
+    records_inserted: "Insérés",
+    records_updated: "Mis à jour",
+    records_ignored: "Ignorés",
+    records_errors: "Erreurs",
+    close_btn: "Fermer"
   }
 };
