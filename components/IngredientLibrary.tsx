@@ -313,7 +313,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                       </div>
                     )}
                     {item.type === 'fermentable' && (
-                      <div className="flex justify-between"><span>{t('color')}: <span className="text-stone-900">{item.color} SRM</span></span><span>{t('efficiency')}: <span className="text-stone-900">{item.yield}%</span></span></div>
+                      <div className="flex justify-between"><span>{t('color')}: <span className="text-stone-900">{item.color} SRM</span></span><span>{t('potential_label')}: <span className="text-stone-900">{item.yield}%</span></span></div>
                     )}
                     {item.type === 'hop' && (
                       <div>Alpha: <span className="text-stone-900">{item.alpha}%</span></div>
