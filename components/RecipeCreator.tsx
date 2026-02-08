@@ -252,7 +252,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
       </section>
 
       {/* Target Stats Section */}
-      <section className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 sticky top-24 z-40 border border-stone-800">
+      <section className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 sticky top-24 z-40 border border-stone-800">
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('target_abv')}</p>
           <p className={`text-4xl font-black ${getStatColor(stats.abv, selectedStyleGuideline?.abv_min, selectedStyleGuideline?.abv_max)}`}>
@@ -307,18 +307,6 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.fg_min}-{selectedStyleGuideline.fg_max}</p>
           )}
         </div>
-        <div className="flex flex-col">
-          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('attenuation')}</p>
-          <div className="flex items-baseline gap-1">
-            <input
-              type="number"
-              className="bg-transparent text-4xl font-black w-full focus:outline-none"
-              value={Math.round(stats.attenuation)}
-              onChange={e => handleAttenuationChange(parseFloat(e.target.value) || 0)}
-            />
-            <span className="text-xl font-black text-stone-500">%</span>
-          </div>
-        </div>
       </section>
 
       {/* Main Form Section */}
@@ -350,9 +338,16 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-stone-400 uppercase">{t('efficiency')}</label>
+            <label className="text-xs font-bold text-stone-400 uppercase">{t('brewhouse_efficiency')}</label>
             <div className="flex items-center gap-2">
               <input type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.efficiency.brewhouse} onChange={e => setRecipe({...recipe, efficiency: {brewhouse: parseFloat(e.target.value) || 0}})} />
+              <span className="text-xs font-bold text-stone-400">%</span>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-stone-400 uppercase">{t('attenuation')}</label>
+            <div className="flex items-center gap-2">
+              <input type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={Math.round(stats.attenuation)} onChange={e => handleAttenuationChange(parseFloat(e.target.value) || 0)} />
               <span className="text-xs font-bold text-stone-400">%</span>
             </div>
           </div>
