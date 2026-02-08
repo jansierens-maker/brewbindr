@@ -37,7 +37,22 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
 
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [fgDisplay, setFgDisplay] = useState('');
+  const [aaDisplay, setAaDisplay] = useState('');
+  const [fgFocused, setFgFocused] = useState(false);
+  const [aaFocused, setAaFocused] = useState(false);
   const gemini = new GeminiService();
+
+  const formatLocalized = (val: number, decimals: number) => {
+    if (val === undefined || isNaN(val)) return "";
+    const formatted = val.toFixed(decimals);
+    return lang === 'en' ? formatted : formatted.replace('.', ',');
+  };
+
+  const parseLocalized = (val: string) => {
+    const normalized = val.replace(',', '.');
+    return parseFloat(normalized);
+  };
 
   const handleAiGenerate = async () => {
     if (!prompt.trim()) return;
@@ -61,6 +76,18 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
   };
 
   const stats = useMemo(() => calculateRecipeStats(recipe), [recipe]);
+
+  React.useEffect(() => {
+    if (!fgFocused) {
+      setFgDisplay(formatLocalized(stats.fg, 3));
+    }
+  }, [stats.fg, fgFocused, lang]);
+
+  React.useEffect(() => {
+    if (!aaFocused) {
+      setAaDisplay(formatLocalized(stats.attenuation, 0));
+    }
+  }, [stats.attenuation, aaFocused, lang]);
 
   const handleAttenuationChange = (newAA: number) => {
     setRecipe(prev => {
@@ -297,11 +324,18 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('est_fg')}</p>
           <input
-            type="number"
-            step="0.001"
+            type="text"
+            inputMode="decimal"
             className={`bg-transparent text-4xl font-black w-full focus:outline-none ${getStatColor(stats.fg, selectedStyleGuideline?.fg_min, selectedStyleGuideline?.fg_max)}`}
-            value={stats.fg.toFixed(3)}
-            onChange={e => handleFgChange(parseFloat(e.target.value) || 1)}
+            value={fgDisplay}
+            onFocus={() => setFgFocused(true)}
+            onBlur={() => { setFgFocused(false); setFgDisplay(formatLocalized(stats.fg, 3)); }}
+            onChange={e => {
+              const val = e.target.value;
+              setFgDisplay(val);
+              const parsed = parseLocalized(val);
+              if (!isNaN(parsed)) handleFgChange(parsed);
+            }}
           />
           {selectedStyleGuideline?.fg_min !== undefined && (
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.fg_min}-{selectedStyleGuideline.fg_max}</p>
@@ -347,7 +381,20 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
           <div>
             <label className="text-xs font-bold text-stone-400 uppercase">{t('attenuation')}</label>
             <div className="flex items-center gap-2">
-              <input type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={Math.round(stats.attenuation)} onChange={e => handleAttenuationChange(parseFloat(e.target.value) || 0)} />
+              <input
+                type="text"
+                inputMode="decimal"
+                className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold"
+                value={aaDisplay}
+                onFocus={() => setAaFocused(true)}
+                onBlur={() => { setAaFocused(false); setAaDisplay(formatLocalized(stats.attenuation, 0)); }}
+                onChange={e => {
+                  const val = e.target.value;
+                  setAaDisplay(val);
+                  const parsed = parseLocalized(val);
+                  if (!isNaN(parsed)) handleAttenuationChange(parsed);
+                }}
+              />
               <span className="text-xs font-bold text-stone-400">%</span>
             </div>
           </div>
