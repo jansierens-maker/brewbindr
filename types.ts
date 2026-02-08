@@ -121,6 +121,7 @@ export interface Recipe {
     abv?: { value: number };
     ibu?: { value: number };
     color?: { value: number };
+    attenuation?: { value: number };
   };
 }
 

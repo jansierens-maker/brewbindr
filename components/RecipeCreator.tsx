@@ -61,6 +61,33 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
   };
 
   const stats = useMemo(() => calculateRecipeStats(recipe), [recipe]);
+
+  const handleAttenuationChange = (newAA: number) => {
+    setRecipe(prev => {
+      let newCultures = prev.ingredients.cultures.map(c => ({
+        ...c,
+        attenuation: newAA
+      }));
+
+      if (newCultures.length === 0) {
+        newCultures = [{ name: 'Default Yeast', type: 'ale', form: 'dry', attenuation: newAA }];
+      }
+
+      return {
+        ...prev,
+        ingredients: {
+          ...prev.ingredients,
+          cultures: newCultures
+        }
+      };
+    });
+  };
+
+  const handleFgChange = (newFg: number) => {
+    if (stats.og <= 1) return;
+    const newAA = ((stats.og - newFg) / (stats.og - 1)) * 100;
+    handleAttenuationChange(newAA);
+  };
   
   const selectedStyleGuideline = useMemo(() => {
     if (!recipe.style?.libraryId) return null;
@@ -225,7 +252,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
       </section>
 
       {/* Target Stats Section */}
-      <section className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl grid grid-cols-2 lg:grid-cols-4 gap-8 sticky top-24 z-40 border border-stone-800">
+      <section className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 sticky top-24 z-40 border border-stone-800">
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('target_abv')}</p>
           <p className={`text-4xl font-black ${getStatColor(stats.abv, selectedStyleGuideline?.abv_min, selectedStyleGuideline?.abv_max)}`}>
@@ -266,6 +293,31 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
           {selectedStyleGuideline?.og_min !== undefined && (
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.og_min}-{selectedStyleGuideline.og_max}</p>
           )}
+        </div>
+        <div className="flex flex-col">
+          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('est_fg')}</p>
+          <input
+            type="number"
+            step="0.001"
+            className={`bg-transparent text-4xl font-black w-full focus:outline-none ${getStatColor(stats.fg, selectedStyleGuideline?.fg_min, selectedStyleGuideline?.fg_max)}`}
+            value={stats.fg.toFixed(3)}
+            onChange={e => handleFgChange(parseFloat(e.target.value) || 1)}
+          />
+          {selectedStyleGuideline?.fg_min !== undefined && (
+            <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.fg_min}-{selectedStyleGuideline.fg_max}</p>
+          )}
+        </div>
+        <div className="flex flex-col">
+          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('attenuation')}</p>
+          <div className="flex items-baseline gap-1">
+            <input
+              type="number"
+              className="bg-transparent text-4xl font-black w-full focus:outline-none"
+              value={Math.round(stats.attenuation)}
+              onChange={e => handleAttenuationChange(parseFloat(e.target.value) || 0)}
+            />
+            <span className="text-xl font-black text-stone-500">%</span>
+          </div>
         </div>
       </section>
 
@@ -482,7 +534,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
               </button>
             )}
             <button 
-              onClick={() => onSave({...recipe, user_id: user?.id, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
+              onClick={() => onSave({...recipe, user_id: user?.id, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}, attenuation: {value: stats.attenuation}}})}
               className="flex-1 bg-stone-900 text-white py-5 rounded-3xl font-black shadow-xl hover:bg-black transition-all uppercase tracking-widest text-lg"
             >
               {t('save_recipe')}
@@ -491,7 +543,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
 
           {recipe.id && recipe.user_id === user?.id && recipe.status !== 'approved' && (
             <button
-              onClick={() => onSave({...recipe, status: 'submitted', specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
+              onClick={() => onSave({...recipe, status: 'submitted', specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}, attenuation: {value: stats.attenuation}}})}
               className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-amber-600 transition-all uppercase tracking-widest text-sm"
             >
               <i className="fas fa-cloud-upload-alt mr-2"></i>

@@ -195,10 +195,13 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
     }
   });
 
+  const attenuation = og > 1 ? ((og - fg) / (og - 1)) * 100 : 0;
+
   return {
     og,
     fg,
     abv,
+    attenuation,
     color: colorSRM,
     ibu: Math.round(ibu)
   };
