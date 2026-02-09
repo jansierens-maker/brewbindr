@@ -13,6 +13,15 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Recipe and notes are required' });
   }
 
+  // Input validation for security and resource management
+  if (notes.length > 2000) {
+    return res.status(400).json({ error: 'Tasting notes are too long (max 2000 characters)' });
+  }
+
+  if (JSON.stringify(recipe).length > 10000) {
+    return res.status(400).json({ error: 'Recipe data is too large' });
+  }
+
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     const response = await ai.models.generateContent({
@@ -27,6 +36,7 @@ export default async function handler(req: any, res: any) {
     res.status(200).json({ text: response.text || "" });
   } catch (error: any) {
     console.error("API Error:", error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    // Secure error response: don't leak internal error details to the client
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 }
