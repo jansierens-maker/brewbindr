@@ -31,6 +31,10 @@ export class GeminiService {
   }
 
   async generateRecipe(prompt: string): Promise<Recipe> {
+    if (prompt.length > 2000) {
+      throw new Error('Prompt is too long (max 2000 characters)');
+    }
+
     const cacheKey = `recipe_${this.getCacheKey(prompt)}`;
     const cached = this.getCache(cacheKey);
     if (cached) return cached;
@@ -52,6 +56,13 @@ export class GeminiService {
   }
 
   async analyzeTasting(recipe: Recipe, notes: string): Promise<string> {
+    if (notes.length > 2000) {
+      throw new Error('Notes are too long (max 2000 characters)');
+    }
+    if (JSON.stringify(recipe).length > 10000) {
+      throw new Error('Recipe data is too large');
+    }
+
     const cacheKey = `tasting_${this.getCacheKey({ recipeId: recipe.id, name: recipe.name, notes })}`;
     const cached = this.getCache(cacheKey);
     if (cached) return cached;

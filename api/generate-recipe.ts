@@ -9,8 +9,12 @@ export default async function handler(req: any, res: any) {
 
   const { prompt } = req.body;
 
-  if (!prompt) {
-    return res.status(400).json({ error: 'Prompt is required' });
+  if (!prompt || typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'Prompt is required and must be a string' });
+  }
+
+  if (prompt.length > 2000) {
+    return res.status(400).json({ error: 'Prompt is too long (max 2000 characters)' });
   }
 
   try {
@@ -140,6 +144,7 @@ export default async function handler(req: any, res: any) {
     res.status(200).json(JSON.parse(response.text || '{}'));
   } catch (error: any) {
     console.error("API Error:", error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    // Secure error response - don't leak internal error details
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 }
