@@ -9,8 +9,13 @@ export default async function handler(req: any, res: any) {
 
   const { prompt } = req.body;
 
-  if (!prompt) {
-    return res.status(400).json({ error: 'Prompt is required' });
+  if (!prompt || typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'Prompt is required and must be a string' });
+  }
+
+  // Security: Limit input length to prevent resource exhaustion
+  if (prompt.length > 2000) {
+    return res.status(400).json({ error: 'Prompt too long (max 2000 characters)' });
   }
 
   try {
@@ -139,7 +144,8 @@ export default async function handler(req: any, res: any) {
 
     res.status(200).json(JSON.parse(response.text || '{}'));
   } catch (error: any) {
+    // Security: Log detailed error on the server but return a generic message to the client
     console.error("API Error:", error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    res.status(500).json({ error: 'An error occurred while generating the recipe. Please try again later.' });
   }
 }
