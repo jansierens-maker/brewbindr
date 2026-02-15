@@ -46,9 +46,9 @@ export const authService = {
   async updateProfile(profile: Partial<UserProfile>) {
     if (!supabase || !profile.id) return;
 
-    // Ensure we are only sending valid columns to avoid potential upsert issues
+    // Security: We only allow updating preferences from the client to prevent role escalation.
+    // The 'role' must be managed via the Supabase dashboard or a secure backend process.
     const profileData: any = { id: profile.id };
-    if (profile.role) profileData.role = profile.role;
     if (profile.preferences) profileData.preferences = profile.preferences;
 
     const { error } = await supabase

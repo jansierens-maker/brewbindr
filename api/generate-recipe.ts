@@ -9,12 +9,21 @@ export default async function handler(req: any, res: any) {
 
   const { prompt } = req.body;
 
-  if (!prompt) {
+  // Security: Input validation and length limits to prevent DoS/abuse
+  if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
     return res.status(400).json({ error: 'Prompt is required' });
+  }
+  if (prompt.length > 2000) {
+    return res.status(400).json({ error: 'Prompt too long (max 2000 characters)' });
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY is missing in environment variables");
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
       contents: `Generate a detailed beer recipe in BeerJSON structure based on the following request: ${prompt}.
@@ -139,7 +148,8 @@ export default async function handler(req: any, res: any) {
 
     res.status(200).json(JSON.parse(response.text || '{}'));
   } catch (error: any) {
+    // Security: Log detailed error on server, but return generic message to client to avoid info leakage
     console.error("API Error:", error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    res.status(500).json({ error: 'An error occurred while generating the recipe' });
   }
 }
