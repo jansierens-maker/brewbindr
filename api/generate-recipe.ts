@@ -13,6 +13,11 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
 
+  // Input validation: Limit prompt length to prevent resource exhaustion
+  if (typeof prompt !== 'string' || prompt.length > 2000) {
+    return res.status(400).json({ error: 'Invalid prompt: Prompt must be a string and less than 2000 characters.' });
+  }
+
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     const response = await ai.models.generateContent({
@@ -139,7 +144,8 @@ export default async function handler(req: any, res: any) {
 
     res.status(200).json(JSON.parse(response.text || '{}'));
   } catch (error: any) {
+    // Log detailed error for debugging, but return generic message to client
     console.error("API Error:", error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    res.status(500).json({ error: 'An error occurred during recipe generation. Please try again later.' });
   }
 }
