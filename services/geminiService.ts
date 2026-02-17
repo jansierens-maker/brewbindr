@@ -1,5 +1,6 @@
 
 import { Recipe } from "../types";
+import { supabase } from "./supabaseClient";
 
 export class GeminiService {
   private getCacheKey(input: any): string {
@@ -35,9 +36,15 @@ export class GeminiService {
     const cached = this.getCache(cacheKey);
     if (cached) return cached;
 
+    const { data: { session } } = await supabase?.auth.getSession() ?? { data: { session: null } };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
     const response = await fetch('/api/generate-recipe', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ prompt })
     });
 
@@ -56,9 +63,15 @@ export class GeminiService {
     const cached = this.getCache(cacheKey);
     if (cached) return cached;
 
+    const { data: { session } } = await supabase?.auth.getSession() ?? { data: { session: null } };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
     const response = await fetch('/api/analyze-tasting', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ recipe, notes })
     });
 
