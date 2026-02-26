@@ -7,3 +7,8 @@
 **Vulnerability:** The 'process.env.API_KEY' was defined in 'vite.config.ts', causing any environment variable named 'API_KEY' to be baked into the client-side bundle even if unused in the source.
 **Learning:** Build-time string replacement ('define') is dangerous for generic names like 'API_KEY'.
 **Prevention:** Only expose strictly necessary, public-safe variables to the client bundle. Remove any 'define' entries that are not actively used.
+
+## 2025-05-14 - [HIGH] Fix Fail-Open Authentication in AI Endpoints
+**Vulnerability:** API endpoints for recipe generation and tasting analysis were only performing authentication checks if Supabase environment variables were present. If they were missing, the endpoints would proceed without any authorization, potentially exposing the Gemini AI API to unauthorized use.
+**Learning:** Security checks should be "fail-closed". If required security infrastructure (like Supabase) is missing, the application should refuse to perform sensitive operations.
+**Prevention:** Always verify that mandatory security configurations are present and enforce authentication regardless of optional environment settings in production-critical paths.

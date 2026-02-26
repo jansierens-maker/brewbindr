@@ -12,19 +12,22 @@ export default async function handler(req: any, res: any) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (supabaseUrl && supabaseAnonKey) {
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error("Supabase configuration missing in API handler");
+    return res.status(500).json({ error: 'Internal configuration error' });
+  }
 
-    if (!token) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.split(' ')[1];
 
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) {
-      return res.status(401).json({ error: 'Invalid or expired session' });
-    }
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) {
+    return res.status(401).json({ error: 'Invalid or expired session' });
   }
 
   const { prompt } = req.body;
