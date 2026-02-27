@@ -39,15 +39,15 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
       <div className="grid grid-cols-4 gap-4 mb-10">
         <div className="border-2 border-stone-900 p-3 rounded-lg">
           <p className="text-[9px] font-black uppercase text-stone-400 mb-1">{t('og_label')}</p>
-          <p className="text-xl font-black">{log?.measurements.actual_og?.toFixed(3) || recipe.specifications?.og?.value?.toFixed(3) || '-'}</p>
+          <p className="text-xl font-black">{formatBrewNumber(log?.measurements.actual_og || recipe.specifications?.og?.value, 'og', lang, preferences)}</p>
         </div>
         <div className="border-2 border-stone-900 p-3 rounded-lg">
           <p className="text-[9px] font-black uppercase text-stone-400 mb-1">{t('fg_label')}</p>
-          <p className="text-xl font-black">{log?.measurements.actual_fg?.toFixed(3) || recipe.specifications?.fg?.value?.toFixed(3) || '-'}</p>
+          <p className="text-xl font-black">{formatBrewNumber(log?.measurements.actual_fg || recipe.specifications?.fg?.value, 'og', lang, preferences)}</p>
         </div>
         <div className="border-2 border-stone-900 p-3 rounded-lg">
           <p className="text-[9px] font-black uppercase text-stone-400 mb-1">{t('abv_label')}</p>
-          <p className="text-xl font-black">{abv}%</p>
+          <p className="text-xl font-black">{formatBrewNumber(abv, 'abv', lang, preferences)}%</p>
         </div>
         <div className="border-2 border-stone-900 p-3 rounded-lg">
           <p className="text-[9px] font-black uppercase text-stone-400 mb-1">{t('target_ibu')}</p>
