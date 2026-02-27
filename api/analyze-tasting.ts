@@ -54,7 +54,7 @@ export default async function handler(req: any, res: any) {
 
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       contents: `As a Master Cicerone, analyze this recipe and the following tasting notes:
 
       Recipe: ${JSON.stringify(recipe)}

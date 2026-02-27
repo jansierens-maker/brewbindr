@@ -50,7 +50,7 @@ export default async function handler(req: any, res: any) {
 
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       contents: `Generate a detailed beer recipe in BeerJSON structure based on the following request: ${prompt}.
 
       CRITICAL INSTRUCTIONS:
