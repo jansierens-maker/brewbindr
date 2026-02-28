@@ -52,15 +52,19 @@ export default async function handler(req: any, res: any) {
       return res.status(500).json({ error: 'AI service is currently unavailable.' });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
     const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: `As a Master Cicerone, analyze this recipe and the following tasting notes:
+      model: "gemini-2.5-flash",
+      contents: [{
+        parts: [{
+          text: `As a Master Cicerone, analyze this recipe and the following tasting notes:
 
       Recipe: ${JSON.stringify(recipe)}
       Tasting Notes: ${notes}
 
-      Provide feedback on stylistic accuracy, possible brewing improvements, and suggestions for future iterations.`,
+      Provide feedback on stylistic accuracy, possible brewing improvements, and suggestions for future iterations.`
+        }]
+      }],
     });
     res.status(200).json({ text: response.text || "" });
   } catch (error: any) {
