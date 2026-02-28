@@ -3,6 +3,18 @@ import React, { useState } from 'react';
 import { LibraryIngredient, MashStep } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
+import { supabaseService } from '../services/supabaseService';
+
+const TABLE_MAP: Record<string, string> = {
+  'fermentable': 'fermentables',
+  'hop': 'hops',
+  'culture': 'cultures',
+  'style': 'styles',
+  'misc': 'miscs',
+  'mash_profile': 'mash_profiles',
+  'equipment': 'equipment',
+  'water': 'waters'
+};
 
 interface LibraryProps {
   ingredients: LibraryIngredient[];
@@ -21,6 +33,39 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
   const [itemToDelete, setItemToDelete] = useState<LibraryIngredient | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkAction = async () => {
+    if (selectedIds.length === 0 || !user?.id) return;
+
+    if (libraryView === 'personal') {
+      // Bulk Submit to Public
+      await supabaseService.batchUpdateStatus(selectedIds, TABLE_MAP[filter] || filter, 'submitted');
+      alert(`${selectedIds.length} items submitted for review!`);
+    } else {
+      // Bulk Import to Personal
+      const selectedItems = ingredients.filter(i => selectedIds.includes(i.id));
+      const newItems = selectedItems.map(item => ({
+        ...item,
+        id: Math.random().toString(36).substr(2, 9),
+        user_id: user.id,
+        status: 'private' as const
+      }));
+      await supabaseService.batchSaveLibraryIngredients(newItems, user.id);
+      alert(`${selectedIds.length} items added to your collection!`);
+    }
+
+    // Refresh parent data
+    const remoteData = await supabaseService.fetchAppData(user.id);
+    if (remoteData) {
+      onUpdate(remoteData.library);
+    }
+    setSelectedIds([]);
+  };
 
   const handleAddNew = () => {
     const newId = Math.random().toString(36).substr(2, 9);
@@ -138,7 +183,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             {['fermentable', 'hop', 'culture', 'misc', 'mash_profile', 'style'].map((f: any) => (
               <button 
                 key={f}
-                onClick={() => { setFilter(f); cancelEditing(); }} 
+                onClick={() => { setFilter(f); cancelEditing(); setSelectedIds([]); }}
                 className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all ${filter === f ? 'bg-amber-600 text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'}`}
               >
                 {f === 'fermentable' ? t('malt') : f === 'hop' ? t('hops') : f === 'culture' ? t('yeast_lib') : f === 'mash_profile' ? t('mash_profile') : f === 'misc' ? t('miscs_label') : t('style_label')}
@@ -148,33 +193,61 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-between items-end px-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end px-2 gap-4">
         <div>
           <h3 className="text-2xl font-black capitalize text-stone-900">
             {filter === 'fermentable' ? t('malt') : filter === 'hop' ? t('hops') : filter === 'culture' ? t('yeast_lib') : filter === 'mash_profile' ? t('mash_profile') : filter === 'misc' ? t('miscs_label') : t('style_label')}
           </h3>
           <p className="text-stone-400 text-xs font-bold">
-            {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (!i.user_id || i.user_id === user?.id) : i.status === 'approved')).length} {t('items_in_collection')}
+            {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status !== 'approved' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length} {t('items_in_collection')}
           </p>
         </div>
-        {libraryView === 'personal' && (
-          <button
-            onClick={handleAddNew}
-            className="bg-stone-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg hover:bg-black transition-all flex items-center gap-2"
-          >
-            <i className="fas fa-plus"></i> {t('new_btn')}
-          </button>
-        )}
+
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {selectedIds.length > 0 && user && (
+            <div className="flex items-center gap-3 bg-amber-50 px-4 py-2 rounded-xl border border-amber-100 animate-in slide-in-from-right-4 duration-300 mr-auto md:mr-0">
+               <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">{selectedIds.length} {t('selected')}</span>
+               <button
+                onClick={handleBulkAction}
+                className="bg-amber-600 text-white px-4 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-amber-700 transition-all shadow-sm"
+               >
+                 {libraryView === 'personal' ? t('bulk_submit') : t('bulk_import')}
+               </button>
+               <button onClick={() => setSelectedIds([])} className="text-amber-400 hover:text-amber-600 transition-colors"><i className="fas fa-times text-xs"></i></button>
+            </div>
+          )}
+
+          {libraryView === 'personal' && (
+            <button
+              onClick={handleAddNew}
+              className="bg-stone-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg hover:bg-black transition-all flex items-center gap-2"
+            >
+              <i className="fas fa-plus"></i> {t('new_btn')}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (!i.user_id || i.user_id === user?.id) : i.status === 'approved')).length === 0 ? (
+        {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status !== 'approved' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length === 0 ? (
           <div className="col-span-full py-20 text-center text-stone-300 font-medium bg-white rounded-3xl border-2 border-dashed border-stone-100">
             {t('no_brews')}
           </div>
         ) : (
-          ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (!i.user_id || i.user_id === user?.id) : i.status === 'approved')).map(item => (
-            <div key={item.id} className={`bg-white p-8 rounded-3xl border shadow-sm relative transition-all ${editingId === item.id ? 'border-amber-400 ring-2 ring-amber-100' : 'border-stone-200'}`}>
+          ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status !== 'approved' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).map(item => (
+            <div key={item.id} className={`bg-white p-8 rounded-3xl border shadow-sm relative transition-all ${editingId === item.id ? 'border-amber-400 ring-2 ring-amber-100' : selectedIds.includes(item.id) ? 'border-amber-500 ring-2 ring-amber-100' : 'border-stone-200'}`}>
+
+              {editingId !== item.id && (
+                <div className="absolute top-4 right-4 z-10">
+                   <button
+                    onClick={() => toggleSelection(item.id)}
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-200 text-transparent'}`}
+                   >
+                     <i className="fas fa-check text-[10px]"></i>
+                   </button>
+                </div>
+              )}
+
               {editingId === item.id ? (
                 <div className="space-y-4 animate-in zoom-in-95 duration-200">
                   <div>
@@ -267,19 +340,6 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                       <button onClick={cancelEditing} className="px-4 bg-stone-100 text-stone-400 py-2.5 rounded-xl text-xs font-bold hover:bg-stone-200">{t('cancel_btn')}</button>
                     </div>
 
-                    {user && libraryView === 'personal' && (item.user_id === user.id || !item.user_id) && item.status !== 'approved' && (
-                       <button
-                        onClick={() => {
-                          onUpdate(ingredients.map(i => i.id === editingId ? { ...i, ...editForm, status: 'submitted' } as LibraryIngredient : i));
-                          setEditingId(null);
-                        }}
-                        className="w-full bg-amber-100 text-amber-700 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-amber-200 transition-all"
-                       >
-                         <i className="fas fa-cloud-upload-alt mr-2"></i>
-                         {item.status === 'submitted' ? 'Update Submission' : 'Submit to Public Library'}
-                       </button>
-                    )}
-
                     <button onClick={() => deleteItem(item)} className="w-full mt-2 py-2 text-red-500 text-[10px] font-black uppercase hover:bg-red-50 rounded-xl transition-all">
                       <i className="fas fa-trash-alt mr-2"></i> {t('delete_ingredient')}
                     </button>
@@ -325,6 +385,39 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                       <div className="space-y-1">
                         <p>{(item.steps || []).length} {t('mash_steps')}</p>
                       </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-stone-100 flex flex-col gap-2">
+                    {user && libraryView === 'personal' && (item.user_id === user.id || !item.user_id) && item.status !== 'submitted' && (
+                       <button
+                        onClick={async () => {
+                          await supabaseService.updateItemStatus(item.id, item.type, 'submitted');
+                          const remoteData = await supabaseService.fetchAppData(user.id);
+                          if (remoteData) onUpdate(remoteData.library);
+                        }}
+                        className="w-full bg-amber-100 text-amber-700 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-amber-200 transition-all tracking-widest"
+                       >
+                         <i className="fas fa-cloud-upload-alt mr-2"></i>
+                         {t('submit_to_public')}
+                       </button>
+                    )}
+
+                    {libraryView === 'public' && (
+                       <button
+                        onClick={async () => {
+                          const newItem = { ...item, id: Math.random().toString(36).substr(2, 9), user_id: user?.id, status: 'private' as const };
+                          onUpdate([...ingredients, newItem]);
+                          if (user?.id) {
+                            await supabaseService.saveLibraryIngredient(newItem, user.id);
+                          }
+                          alert(`${item.name} added to your collection!`);
+                        }}
+                        className="w-full bg-stone-900 text-white py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-black transition-all tracking-widest"
+                       >
+                         <i className="fas fa-plus-circle mr-2"></i>
+                         {t('add_to_collection')}
+                       </button>
                     )}
                   </div>
                 </>
