@@ -48,10 +48,12 @@ export default async function handler(req: any, res: any) {
       return res.status(500).json({ error: 'AI service is currently unavailable.' });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
-      contents: `Generate a detailed beer recipe in BeerJSON structure based on the following request: ${prompt}.
+      model: "gemini-2.5-flash",
+      contents: [{
+        parts: [{
+          text: `Generate a detailed beer recipe in BeerJSON structure based on the following request: ${prompt}.
 
       CRITICAL INSTRUCTIONS:
       1. Use EXACTLY these unit strings: 'kilograms' for fermentables, 'grams' for hops, 'liters' for batch size, 'minutes' for boil time and hop additions.
@@ -59,7 +61,9 @@ export default async function handler(req: any, res: any) {
       3. For cultures, include 'attenuation' percentage (e.g., 75).
       4. Ensure all ingredients have names that describe them well (e.g. 'Pilsner Malt', 'Citra Hops').
       5. Include a brief description of the beer style and any specific brewing tips in the 'notes' field.
-      6. The output must be strictly valid JSON matching the provided schema.`,
+      6. The output must be strictly valid JSON matching the provided schema.`
+        }]
+      }],
       config: {
         responseMimeType: "application/json",
         responseSchema: {
