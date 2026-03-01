@@ -160,7 +160,13 @@ export const translations = {
     records_updated: "Updated",
     records_ignored: "Ignored",
     records_errors: "Errors",
-    close_btn: "Close"
+    close_btn: "Close",
+    add_to_collection: "Add to Collection",
+    submit_to_public: "Submit to Public",
+    bulk_submit: "Bulk Submit to Public",
+    bulk_import: "Bulk Import to Collection",
+    selected: "selected",
+    items_selected: "items selected"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -321,7 +327,13 @@ export const translations = {
     records_updated: "Bijgewerkt",
     records_ignored: "Genegeerd",
     records_errors: "Fouten",
-    close_btn: "Sluiten"
+    close_btn: "Sluiten",
+    add_to_collection: "Toevoegen aan collectie",
+    submit_to_public: "Indienen bij publieke bib",
+    bulk_submit: "Bulk indienen bij publiek",
+    bulk_import: "Bulk importeren naar collectie",
+    selected: "geselecteerd",
+    items_selected: "items geselecteerd"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -482,6 +494,12 @@ export const translations = {
     records_updated: "Mis à jour",
     records_ignored: "Ignorés",
     records_errors: "Erreurs",
-    close_btn: "Fermer"
+    close_btn: "Fermer",
+    add_to_collection: "Ajouter à la collection",
+    submit_to_public: "Soumettre à la bibliothèque publique",
+    bulk_submit: "Soumission groupée au public",
+    bulk_import: "Importation groupée vers la collection",
+    selected: "sélectionné",
+    items_selected: "articles sélectionnés"
   }
 };

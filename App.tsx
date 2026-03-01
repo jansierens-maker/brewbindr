@@ -551,6 +551,84 @@ const AppContent: React.FC = () => {
     setShowDemoModal(true);
   };
 
+  const handleRecipeSubmitToPublic = async (recipe: Recipe) => {
+    if (!user?.id || !recipe.id) return;
+
+    // Update recipe status
+    await supabaseService.updateItemStatus(recipe.id, 'recipes', 'submitted');
+
+    // Update related ingredients if they are private
+    const privateIngredients = [
+      ...(recipe.ingredients.fermentables || []),
+      ...(recipe.ingredients.hops || []),
+      ...(recipe.ingredients.cultures || []),
+      ...(recipe.ingredients.miscellaneous || [])
+    ].filter(i => {
+      const libItem = library.find(li => li.id === i.libraryId);
+      return libItem && libItem.status === 'private' && libItem.user_id === user.id;
+    });
+
+    for (const ing of privateIngredients) {
+      const libItem = library.find(li => li.id === ing.libraryId);
+      if (libItem) {
+        await supabaseService.updateItemStatus(libItem.id, libItem.type, 'submitted');
+      }
+    }
+
+    // Refresh data
+    const remoteData = await supabaseService.fetchAppData(user.id);
+    if (remoteData) {
+      setRecipes(remoteData.recipes);
+      setLibrary(remoteData.library);
+    }
+    alert("Recipe and its private ingredients submitted for review!");
+  };
+
+  const handleRecipeAddToPersonal = async (recipe: Recipe) => {
+    const newRecipeId = Math.random().toString(36).substr(2, 9);
+    const newIngredients: LibraryIngredient[] = [];
+    const currentLib = [...library];
+
+    const processIngredient = (ing: any) => {
+      const libItem = currentLib.find(li => li.id === ing.libraryId);
+      if (libItem && libItem.status === 'approved' && !currentLib.find(li => li.name === libItem.name && li.status !== 'approved' && li.user_id === user?.id)) {
+        const newId = Math.random().toString(36).substr(2, 9);
+        const newItem = { ...libItem, id: newId, user_id: user?.id, status: 'private' as const };
+        newIngredients.push(newItem);
+        currentLib.push(newItem);
+        return { ...ing, libraryId: newId };
+      }
+      return ing;
+    };
+
+    const updatedRecipe: Recipe = {
+      ...recipe,
+      id: newRecipeId,
+      user_id: user?.id,
+      status: 'private',
+      ingredients: {
+        ...recipe.ingredients,
+        fermentables: (recipe.ingredients.fermentables || []).map(processIngredient),
+        hops: (recipe.ingredients.hops || []).map(processIngredient),
+        cultures: (recipe.ingredients.cultures || []).map(processIngredient),
+        miscellaneous: (recipe.ingredients.miscellaneous || []).map(processIngredient)
+      }
+    };
+
+    setLibrary(prev => [...prev, ...newIngredients]);
+    setRecipes(prev => [...prev, updatedRecipe]);
+
+    if (user?.id) {
+      if (newIngredients.length > 0) {
+        await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
+      }
+      await supabaseService.saveRecipe(updatedRecipe, user.id);
+    }
+
+    setLibraryView('personal');
+    alert("Recipe added to your personal collection!");
+  };
+
   const handleOpenSyncDetails = async () => {
     setShowSyncDetails(true);
     setTableStatus({});
@@ -577,13 +655,26 @@ const AppContent: React.FC = () => {
     setPendingSubmissions(pending);
     // Refresh main data
     const remoteData = await supabaseService.fetchAppData(user?.id);
-    if (remoteData) setLibrary(remoteData.library);
+    if (remoteData) {
+      setRecipes(remoteData.recipes);
+      setLibrary(remoteData.library);
+      setBrewLogs(remoteData.brewLogs);
+      setTastingNotes(remoteData.tastingNotes);
+    }
   };
 
   const handleReject = async (id: string, type: string, table?: string) => {
     await supabaseService.updateItemStatus(id, type, 'private', table);
     const pending = await supabaseService.fetchPendingSubmissions();
     setPendingSubmissions(pending);
+    // Refresh main data
+    const remoteData = await supabaseService.fetchAppData(user?.id);
+    if (remoteData) {
+      setRecipes(remoteData.recipes);
+      setLibrary(remoteData.library);
+      setBrewLogs(remoteData.brewLogs);
+      setTastingNotes(remoteData.tastingNotes);
+    }
   };
 
   const SQL_SCHEMA = `
@@ -1050,13 +1141,13 @@ END \$\$;
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {recipes.filter(r => libraryView === 'personal' ? (!r.user_id || r.user_id === user?.id) : r.status === 'approved').length === 0 ? (
+                  {recipes.filter(r => libraryView === 'personal' ? (r.status !== 'approved' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved').length === 0 ? (
                     <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-stone-200 px-6 shadow-sm">
                       <i className="fas fa-beer text-5xl text-amber-100 mb-6 block"></i>
                       <p className="text-stone-400 font-bold max-w-sm mx-auto mb-6"> {t('empty_recipes_hint').split('Library')[0]} <button onClick={() => setView('library')} className="text-amber-600 underline hover:text-amber-700"> {t('go_to_library')} </button> {t('empty_recipes_hint').split('Library')[1]} </p>
                       <div className="flex flex-col items-center gap-4"> <p className="text-xs font-black text-stone-300 uppercase tracking-widest">{t('demo_hint')}</p> <button onClick={handleImportDemoData} className="bg-amber-600 text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl hover:bg-amber-700 transition-all flex items-center gap-2"> <i className="fas fa-download"></i> {t('import_demo')} </button> </div>
                     </div>
-                  ) : recipes.filter(r => libraryView === 'personal' ? (!r.user_id || r.user_id === user?.id) : r.status === 'approved').map(r => (
+                  ) : recipes.filter(r => libraryView === 'personal' ? (r.status !== 'approved' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved').map(r => (
                     <div key={r.id} className="bg-white rounded-3xl border border-stone-200 p-6 hover:shadow-xl transition-all border-b-4 group relative flex flex-col" style={{ borderBottomColor: getSRMColor(r.specifications?.color?.value || 0) }}>
                       <div className="absolute top-4 right-4 flex gap-2">
                         <button onClick={() => handlePrintRecipe(r)} title={t('print_recipe')} className="text-stone-300 hover:text-stone-900 transition-colors"> <i className="fas fa-print text-lg"></i> </button>
@@ -1064,6 +1155,13 @@ END \$\$;
                       </div>
                       <h3 className="text-xl font-bold mb-1 pr-16 truncate group-hover:text-amber-800 transition-colors">{r.name}</h3>
                       
+                      {libraryView === 'personal' && r.status === 'submitted' && (
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <i className="fas fa-clock text-amber-500 text-[10px]"></i>
+                          <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Pending Review</span>
+                        </div>
+                      )}
+
                       <div className="flex-1">
                         {r.notes && (
                           <p className="text-[10px] text-stone-400 font-medium mb-4 line-clamp-2 italic leading-relaxed">
@@ -1078,9 +1176,29 @@ END \$\$;
                         <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">IBU</p><p className="font-bold text-xs">{r.specifications?.ibu?.value}</p></div>
                         <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">OG</p><p className="font-bold text-xs">{formatBrewNumber(r.specifications?.og?.value, 'og', lang, preferences)}</p></div>
                       </div>
-                      <div className="flex gap-2 mt-auto">
-                        <button onClick={() => { setSelectedRecipe(r); setSelectedBrewLog(null); setView('log'); }} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">Brew</button>
-                        {(!r.user_id || r.user_id === user?.id) && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">Edit</button>}
+                      <div className="flex flex-col gap-2 mt-auto">
+                        <div className="flex gap-2">
+                          <button onClick={() => { setSelectedRecipe(r); setSelectedBrewLog(null); setView('log'); }} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">Brew</button>
+                          {libraryView === 'personal' && (!r.user_id || r.user_id === user?.id) && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">Edit</button>}
+                        </div>
+
+                        {libraryView === 'public' && (
+                          <button
+                            onClick={() => handleRecipeAddToPersonal(r)}
+                            className="w-full bg-stone-900 text-white text-[10px] font-black uppercase py-3 rounded-xl hover:bg-black transition-all tracking-widest"
+                          >
+                            <i className="fas fa-plus-circle mr-2"></i> {t('add_to_collection')}
+                          </button>
+                        )}
+
+                        {user && libraryView === 'personal' && r.status !== 'submitted' && (
+                          <button
+                            onClick={() => handleRecipeSubmitToPublic(r)}
+                            className="w-full bg-amber-100 text-amber-700 text-[10px] font-black uppercase py-3 rounded-xl hover:bg-amber-200 transition-all tracking-widest"
+                          >
+                            <i className="fas fa-cloud-upload-alt mr-2"></i> {t('submit_to_public')}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

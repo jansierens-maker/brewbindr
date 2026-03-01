@@ -279,13 +279,13 @@ export const supabaseService = {
     }
   },
 
-  async updateItemStatus(id: string, type: string, status: 'private' | 'approved', tableOverride?: string) {
+  async updateItemStatus(id: string, type: string, status: 'private' | 'submitted' | 'approved', tableOverride?: string) {
     const client = supabase;
     const table = tableOverride || TABLE_MAP[type] || type;
     if (!client || !table) return;
 
     // Fetch current data to update the status inside the jsonb too
-    const { data: item } = await client.from(table).select('data').eq('id', id).single();
+    const { data: item } = await client.from(table).select('data, user_id').eq('id', id).single();
     if (item) {
       const newData = { ...item.data, status };
       return client.from(table).update({
@@ -293,5 +293,46 @@ export const supabaseService = {
         data: newData
       }).eq('id', id);
     }
+  },
+
+  async batchUpdateStatus(ids: string[], table: string, status: 'private' | 'submitted' | 'approved') {
+    const client = supabase;
+    if (!client || !table || ids.length === 0) return;
+
+    const { data: items } = await client.from(table).select('id, data, user_id').in('id', ids);
+    if (items) {
+      const updates = items.map(item => ({
+        id: item.id,
+        status: status,
+        user_id: item.user_id,
+        data: { ...item.data, status }
+      }));
+      return client.from(table).upsert(updates);
+    }
+  },
+
+  async batchSaveLibraryIngredients(items: LibraryIngredient[], userId: string) {
+    const client = supabase;
+    if (!client || items.length === 0) return;
+
+    const libraryByType: Record<string, LibraryIngredient[]> = {};
+    items.forEach(item => {
+      const table = TABLE_MAP[item.type];
+      if (table) {
+        if (!libraryByType[table]) libraryByType[table] = [];
+        libraryByType[table].push(item);
+      }
+    });
+
+    const tasks = Object.entries(libraryByType).map(([table, items]) => {
+      return client.from(table).upsert(items.map(i => ({
+        id: i.id,
+        data: i,
+        user_id: userId,
+        status: i.status || 'private'
+      })));
+    });
+
+    return Promise.all(tasks);
   }
 };
