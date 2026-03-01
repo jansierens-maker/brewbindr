@@ -655,13 +655,26 @@ const AppContent: React.FC = () => {
     setPendingSubmissions(pending);
     // Refresh main data
     const remoteData = await supabaseService.fetchAppData(user?.id);
-    if (remoteData) setLibrary(remoteData.library);
+    if (remoteData) {
+      setRecipes(remoteData.recipes);
+      setLibrary(remoteData.library);
+      setBrewLogs(remoteData.brewLogs);
+      setTastingNotes(remoteData.tastingNotes);
+    }
   };
 
   const handleReject = async (id: string, type: string, table?: string) => {
     await supabaseService.updateItemStatus(id, type, 'private', table);
     const pending = await supabaseService.fetchPendingSubmissions();
     setPendingSubmissions(pending);
+    // Refresh main data
+    const remoteData = await supabaseService.fetchAppData(user?.id);
+    if (remoteData) {
+      setRecipes(remoteData.recipes);
+      setLibrary(remoteData.library);
+      setBrewLogs(remoteData.brewLogs);
+      setTastingNotes(remoteData.tastingNotes);
+    }
   };
 
   const SQL_SCHEMA = `
