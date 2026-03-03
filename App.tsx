@@ -800,9 +800,13 @@ BEGIN
       EXECUTE format('CREATE POLICY "Allow read approved %I" ON %I FOR SELECT USING (status = ''approved'');', t, t);
     END IF;
 
-    -- Users can read/write their own items
+    -- Users can read/write their own items (Non-admins cannot set status to approved)
     EXECUTE format('DROP POLICY IF EXISTS "Allow user manage own %I" ON %I;', t, t);
-    EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t, t);
+    IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
+      EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id AND (status != ''approved'' OR is_admin()));', t, t);
+    ELSE
+      EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t, t);
+    END IF;
 
     -- Admins can do everything
     EXECUTE format('DROP POLICY IF EXISTS "Allow admin manage %I" ON %I;', t, t);
@@ -974,7 +978,7 @@ END \$\$;
                 <i className="fas fa-info-circle text-amber-600 mt-1"></i>
                 <div>
                     <p className="text-xs text-amber-900 font-bold leading-relaxed">
-                        Select which sample data sets you want to add to your collection. You can find more samples at <a href="https://beerxml.com" target="_blank" className="underline">BeerXML.com</a> or download BrewDog recipes from <a href="https://brewdogrecipes.com" target="_blank" className="underline">brewdogrecipes.com</a>.
+                        Select which sample data sets you want to add to your collection. You can find more samples at <a href="https://beerxml.com" target="_blank" rel="noopener noreferrer" className="underline">BeerXML.com</a> or download BrewDog recipes from <a href="https://brewdogrecipes.com" target="_blank" rel="noopener noreferrer" className="underline">brewdogrecipes.com</a>.
                     </p>
                 </div>
               </div>
