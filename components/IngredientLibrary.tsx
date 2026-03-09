@@ -238,13 +238,18 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             <div key={item.id} className={`bg-white p-8 rounded-3xl border shadow-sm relative transition-all ${editingId === item.id ? 'border-amber-400 ring-2 ring-amber-100' : selectedIds.includes(item.id) ? 'border-amber-500 ring-2 ring-amber-100' : 'border-stone-200'}`}>
 
               {editingId !== item.id && (
-                <div className="absolute top-4 right-4 z-10">
+                <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
                    <button
                     onClick={() => toggleSelection(item.id)}
                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-200 text-transparent'}`}
                    >
                      <i className="fas fa-check text-[10px]"></i>
                    </button>
+                   {(!item.user_id || item.user_id === user?.id) && (
+                      <button onClick={() => startEditing(item)} className="text-stone-300 hover:text-amber-500 transition-colors">
+                        <i className="fas fa-edit text-xs"></i>
+                      </button>
+                    )}
                 </div>
               )}
 
@@ -348,16 +353,11 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
               ) : (
                 <>
                   <div className="flex justify-between items-start mb-4">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col pr-14">
                       <h4 className="font-black text-lg text-stone-900 leading-tight">{item.name}</h4>
                       {item.status === 'approved' && <span className="text-[8px] font-black text-green-600 uppercase tracking-widest mt-1"><i className="fas fa-check-circle mr-1"></i>Public Library</span>}
                       {item.status === 'submitted' && <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest mt-1"><i className="fas fa-clock mr-1"></i>Pending Review</span>}
                     </div>
-                    {(!item.user_id || item.user_id === user?.id) && (
-                      <button onClick={() => startEditing(item)} className="text-stone-300 hover:text-amber-500 transition-colors">
-                        <i className="fas fa-edit text-xs"></i>
-                      </button>
-                    )}
                   </div>
                   <div className="grid grid-cols-1 gap-2 text-[10px] font-black uppercase tracking-widest text-stone-400">
                     {item.type === 'misc' && (
