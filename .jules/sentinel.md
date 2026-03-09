@@ -12,3 +12,8 @@
 **Vulnerability:** API endpoints for recipe generation and tasting analysis were only performing authentication checks if Supabase environment variables were present. If they were missing, the endpoints would proceed without any authorization, potentially exposing the Gemini AI API to unauthorized use.
 **Learning:** Security checks should be "fail-closed". If required security infrastructure (like Supabase) is missing, the application should refuse to perform sensitive operations.
 **Prevention:** Always verify that mandatory security configurations are present and enforce authentication regardless of optional environment settings in production-critical paths.
+
+## 2025-05-14 - [HIGH] Fix Authorization Bypass in Library Submissions
+**Vulnerability:** Users could bypass the administrative approval process by manually setting the 'status' of their recipes or ingredients to 'approved' via direct Supabase API calls.
+**Learning:** Row-Level Security (RLS) policies must validate not just ownership, but also restricted state transitions (like moderation status) using 'WITH CHECK'.
+**Prevention:** For tables with moderation workflows, add 'WITH CHECK' clauses to RLS policies to ensure non-admin users cannot set records to a 'protected' state (e.g., status = 'approved').
