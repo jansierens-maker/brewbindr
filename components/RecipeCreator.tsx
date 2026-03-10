@@ -338,6 +338,13 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
                     <option value="pounds">lb</option>
                   </select>
                 </div>
+                {f.libraryId && library.find(l => l.id === f.libraryId)?.stock && (
+                  <div className="text-[10px] font-black text-stone-400 uppercase">
+                    {t('stock_label')}: <span className={library.find(l => l.id === f.libraryId)!.stock!.amount < f.amount.value ? 'text-red-500' : 'text-green-600'}>
+                      {library.find(l => l.id === f.libraryId)!.stock!.amount} {library.find(l => l.id === f.libraryId)!.stock!.unit}
+                    </span>
+                  </div>
+                )}
                 <button onClick={() => removeIngredient('fermentable', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
             ))}
@@ -368,6 +375,13 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
                     <option value="ounces">oz</option>
                   </select>
                 </div>
+                {h.libraryId && library.find(l => l.id === h.libraryId)?.stock && (
+                  <div className="text-[10px] font-black text-stone-400 uppercase">
+                    {t('stock_label')}: <span className={library.find(l => l.id === h.libraryId)!.stock!.amount < h.amount.value ? 'text-red-500' : 'text-green-600'}>
+                      {library.find(l => l.id === h.libraryId)!.stock!.amount} {library.find(l => l.id === h.libraryId)!.stock!.unit}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">min</span>
@@ -391,6 +405,13 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
                   <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={c.attenuation ?? 75} onChange={e => updateField('culture', i, 'attenuation', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">%</span>
                 </div>
+                {c.libraryId && library.find(l => l.id === c.libraryId)?.stock && (
+                  <div className="text-[10px] font-black text-stone-400 uppercase">
+                    {t('stock_label')}: <span className={library.find(l => l.id === c.libraryId)!.stock!.amount < 1 ? 'text-red-500' : 'text-green-600'}>
+                      {library.find(l => l.id === c.libraryId)!.stock!.amount} {library.find(l => l.id === c.libraryId)!.stock!.unit}
+                    </span>
+                  </div>
+                )}
                 <button onClick={() => removeIngredient('culture', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
             ))}

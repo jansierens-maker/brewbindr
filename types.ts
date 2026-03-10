@@ -61,6 +61,10 @@ export interface LibraryIngredient {
   ph?: number;
   steps?: MashStep[];
   notes?: string;
+  stock?: {
+    amount: number;
+    unit: string;
+  };
 }
 
 export interface MashStep {

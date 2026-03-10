@@ -256,8 +256,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
               {editingId === item.id ? (
                 <div className="space-y-4 animate-in zoom-in-95 duration-200">
                   <div>
-                    <label className="text-[10px] font-black text-stone-400 uppercase">{t('name_label')}</label>
-                    <input className="w-full p-2 bg-stone-50 border rounded-lg text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+                    <label htmlFor="ingredient-name" className="text-[10px] font-black text-stone-400 uppercase">{t('name_label')}</label>
+                    <input id="ingredient-name" className="w-full p-2 bg-stone-50 border rounded-lg text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} />
                   </div>
                   
                   {filter === 'misc' && (
@@ -339,6 +339,32 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     </div>
                   )}
 
+                  <div className="pt-2 border-t border-stone-100">
+                    <label htmlFor="ingredient-stock" className="text-[10px] font-black text-stone-400 uppercase">{t('stock_label')}</label>
+                    <div className="grid grid-cols-2 gap-3 mt-1">
+                      <input
+                        id="ingredient-stock"
+                        type="number"
+                        step="0.01"
+                        className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold"
+                        placeholder={t('stock_amount')}
+                        value={editForm.stock?.amount ?? ""}
+                        onChange={e => setEditForm({...editForm, stock: { amount: parseFloat(e.target.value) || 0, unit: editForm.stock?.unit || (filter === 'hop' || filter === 'misc' ? 'g' : 'kg') }})}
+                      />
+                      <select
+                        className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold"
+                        value={editForm.stock?.unit || (filter === 'hop' || filter === 'misc' ? 'g' : 'kg')}
+                        onChange={e => setEditForm({...editForm, stock: { amount: editForm.stock?.amount || 0, unit: e.target.value }})}
+                      >
+                        <option value="kg">kg</option>
+                        <option value="g">g</option>
+                        <option value="lb">lb</option>
+                        <option value="oz">oz</option>
+                        <option value="items">items</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-2 pt-2">
                     <div className="flex gap-2">
                       <button onClick={saveEditing} className="flex-1 bg-amber-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-amber-700">{t('save_btn')}</button>
@@ -387,6 +413,15 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                       </div>
                     )}
                   </div>
+
+                  {item.stock && (
+                    <div className="mt-4 p-3 bg-stone-50 rounded-2xl border border-stone-100 flex justify-between items-center">
+                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('stock_label')}</span>
+                      <span className={`text-xs font-black ${item.stock.amount > 0 ? 'text-stone-900' : 'text-red-500'}`}>
+                        {item.stock.amount} {item.stock.unit}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="mt-6 pt-6 border-t border-stone-100 flex flex-col gap-2">
                     {user && libraryView === 'personal' && (item.user_id === user.id || !item.user_id) && item.status !== 'submitted' && (

@@ -1,5 +1,5 @@
 
-import { Recipe, UserPreferences } from "../types";
+import { Recipe, UserPreferences, LibraryIngredient } from "../types";
 
 export const srmToEbc = (srm: number) => srm * 1.97;
 export const ebcToSrm = (ebc: number) => ebc / 1.97;
@@ -201,5 +201,48 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
     abv,
     color: colorSRM,
     ibu: Math.round(ibu)
+  };
+};
+
+export const checkRecipeStock = (recipe: Recipe, library: LibraryIngredient[]) => {
+  const missing: string[] = [];
+  const insufficient: string[] = [];
+
+  const check = (name: string, requiredAmount: number, requiredUnit: string, libraryId?: string) => {
+    const item = library.find(l => l.id === libraryId || l.name.toLowerCase() === name.toLowerCase());
+    if (!item || !item.stock) {
+      missing.push(name);
+      return;
+    }
+
+    // Convert stock to required unit for comparison
+    let stockAmount = item.stock.amount;
+    const stockUnit = normalizeUnit(item.stock.unit);
+    const targetUnit = normalizeUnit(requiredUnit);
+
+    if (stockUnit !== targetUnit) {
+      if (stockUnit === 'kilograms' && targetUnit === 'grams') stockAmount *= 1000;
+      else if (stockUnit === 'grams' && targetUnit === 'kilograms') stockAmount /= 1000;
+      else if (stockUnit === 'pounds' && targetUnit === 'ounces') stockAmount *= 16;
+      else if (stockUnit === 'ounces' && targetUnit === 'pounds') stockAmount /= 16;
+      else if (stockUnit === 'kilograms' && targetUnit === 'pounds') stockAmount *= 2.20462;
+      else if (stockUnit === 'pounds' && targetUnit === 'kilograms') stockAmount /= 2.20462;
+      // Add more conversions if needed
+    }
+
+    if (stockAmount < requiredAmount) {
+      insufficient.push(name);
+    }
+  };
+
+  recipe.ingredients.fermentables.forEach(f => check(f.name, f.amount.value, f.amount.unit, f.libraryId));
+  recipe.ingredients.hops.forEach(h => check(h.name, h.amount.value, h.amount.unit, h.libraryId));
+  recipe.ingredients.cultures.forEach(c => check(c.name, 1, 'items', c.libraryId)); // Yeast is usually counted as 1 unit if amount is missing
+  recipe.ingredients.miscellaneous?.forEach(m => check(m.name, m.amount.value, m.amount.unit, m.libraryId));
+
+  return {
+    isBrewable: missing.length === 0 && insufficient.length === 0,
+    missing,
+    insufficient
   };
 };
