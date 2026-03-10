@@ -8,6 +8,7 @@ import PrintView from './components/PrintView';
 import AdminView from './components/AdminView';
 import Auth from './components/Auth';
 import Settings from './components/Settings';
+import HelpView from './components/HelpView';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber } from './services/calculations';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
@@ -17,7 +18,7 @@ import { supabaseService } from './services/supabaseService';
 import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
-type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin' | 'settings' | 'auth';
+type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin' | 'settings' | 'auth' | 'help';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
 
 interface LanguageContextType {
@@ -1116,6 +1117,9 @@ END \$\$;
                     <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{user ? t('logged_in_as') : t('guest_mode')}</p>
                     <p className="text-[10px] font-bold text-stone-900 truncate max-w-[120px]">{user?.email || t('guest_user')}</p>
                   </div>
+                  <button onClick={() => setView('help')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'help' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
+                    <i className="fas fa-question-circle"></i>
+                  </button>
                   <button onClick={() => setView(user ? 'settings' : 'auth')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'settings' || view === 'auth' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
                     <i className="fas fa-user"></i>
                   </button>
@@ -1271,6 +1275,7 @@ END \$\$;
             {view === 'tasting' && selectedRecipe && selectedBrewLog && (
               <TastingNotes recipe={selectedRecipe} brewLogId={selectedBrewLog.id} onSave={(note) => { setTastingNotes([note, ...tastingNotes]); setView('brews'); }} />
             )}
+            {view === 'help' && <HelpView />}
           </main>
         </div>
       </div>
