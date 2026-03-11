@@ -556,26 +556,49 @@ const AppContent: React.FC = () => {
   const handleRecipeSubmitToPublic = async (recipe: Recipe) => {
     if (!user?.id || !recipe.id) return;
 
-    // Update recipe status
-    await supabaseService.updateItemStatus(recipe.id, 'recipes', 'submitted');
+    const newIngredients: LibraryIngredient[] = [];
+    const currentLib = [...library];
 
-    // Update related ingredients if they are private
-    const privateIngredients = [
-      ...(recipe.ingredients.fermentables || []),
-      ...(recipe.ingredients.hops || []),
-      ...(recipe.ingredients.cultures || []),
-      ...(recipe.ingredients.miscellaneous || [])
-    ].filter(i => {
-      const libItem = library.find(li => li.id === i.libraryId);
-      return libItem && libItem.status === 'private' && libItem.user_id === user.id;
-    });
+    const processIngredient = (ing: any) => {
+      const libItem = currentLib.find(li => li.id === ing.libraryId);
+      if (libItem && libItem.status === 'private' && libItem.user_id === user.id) {
+        // Check if we already created a clone for this ingredient in this session
+        const alreadyCloned = newIngredients.find(ni => ni.name === libItem.name && ni.type === libItem.type);
+        if (alreadyCloned) return { ...ing, libraryId: alreadyCloned.id };
 
-    for (const ing of privateIngredients) {
-      const libItem = library.find(li => li.id === ing.libraryId);
-      if (libItem) {
-        await supabaseService.updateItemStatus(libItem.id, libItem.type, 'submitted');
+        const newId = Math.random().toString(36).substr(2, 9);
+        const newItem = {
+          ...libItem,
+          id: newId,
+          user_id: user.id,
+          status: 'submitted' as const,
+          stock: undefined
+        };
+        newIngredients.push(newItem);
+        currentLib.push(newItem);
+        return { ...ing, libraryId: newId };
       }
+      return ing;
+    };
+
+    const clonedRecipe: Recipe = {
+      ...recipe,
+      id: Math.random().toString(36).substr(2, 9),
+      user_id: user.id,
+      status: 'submitted',
+      ingredients: {
+        ...recipe.ingredients,
+        fermentables: (recipe.ingredients.fermentables || []).map(processIngredient),
+        hops: (recipe.ingredients.hops || []).map(processIngredient),
+        cultures: (recipe.ingredients.cultures || []).map(processIngredient),
+        miscellaneous: (recipe.ingredients.miscellaneous || []).map(processIngredient)
+      }
+    };
+
+    if (newIngredients.length > 0) {
+      await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
     }
+    await supabaseService.saveRecipe(clonedRecipe, user.id);
 
     // Refresh data
     const remoteData = await supabaseService.fetchAppData(user.id);
@@ -583,7 +606,7 @@ const AppContent: React.FC = () => {
       setRecipes(remoteData.recipes);
       setLibrary(remoteData.library);
     }
-    alert("Recipe and its private ingredients submitted for review!");
+    alert("Recipe and its private ingredients submitted for review! The original items remain in your collection.");
   };
 
   const handleRecipeAddToPersonal = async (recipe: Recipe) => {
@@ -1163,7 +1186,7 @@ END \$\$;
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {recipes
-                    .filter(r => libraryView === 'personal' ? (r.status !== 'approved' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
+                    .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
                     .filter(r => !showBrewableOnly || checkRecipeStock(r, library).isBrewable)
                     .length === 0 ? (
                     <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-stone-200 px-6 shadow-sm">
@@ -1172,7 +1195,7 @@ END \$\$;
                       <div className="flex flex-col items-center gap-4"> <p className="text-xs font-black text-stone-300 uppercase tracking-widest">{t('demo_hint')}</p> <button onClick={handleImportDemoData} className="bg-amber-600 text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl hover:bg-amber-700 transition-all flex items-center gap-2"> <i className="fas fa-download"></i> {t('import_demo')} </button> </div>
                     </div>
                   ) : recipes
-                    .filter(r => libraryView === 'personal' ? (r.status !== 'approved' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
+                    .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
                     .filter(r => !showBrewableOnly || checkRecipeStock(r, library).isBrewable)
                     .map(r => {
                     const stock = checkRecipeStock(r, library);
@@ -1257,7 +1280,7 @@ END \$\$;
               <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} />
             )}
             {view === 'create' && (
-              <RecipeCreator initialRecipe={selectedRecipe || undefined} onSave={handleSaveRecipe} onDelete={handleDeleteRecipe} library={library} />
+              <RecipeCreator initialRecipe={selectedRecipe || undefined} onSave={handleSaveRecipe} onSubmitToPublic={handleRecipeSubmitToPublic} onDelete={handleDeleteRecipe} library={library} />
             )}
             {view === 'library' && (
               <div className="space-y-8">

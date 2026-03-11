@@ -7,12 +7,13 @@ import { useUser } from '../services/userContext';
 
 interface RecipeCreatorProps {
   onSave: (recipe: Recipe) => void;
+  onSubmitToPublic?: (recipe: Recipe) => void;
   onDelete?: (id: string) => void;
   initialRecipe?: Recipe;
   library: LibraryIngredient[];
 }
 
-const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initialRecipe, library }) => {
+const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, initialRecipe, library }) => {
   const { t, lang } = useTranslation();
   const { preferences, user } = useUser();
   const [recipe, setRecipe] = useState<Recipe>(initialRecipe || {
@@ -510,13 +511,13 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
             </button>
           </div>
 
-          {recipe.id && recipe.user_id === user?.id && recipe.status !== 'approved' && (
+          {recipe.id && recipe.user_id === user?.id && recipe.status === 'private' && onSubmitToPublic && (
             <button
-              onClick={() => onSave({...recipe, status: 'submitted', specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
+              onClick={() => onSubmitToPublic({...recipe, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
               className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-amber-600 transition-all uppercase tracking-widest text-sm"
             >
               <i className="fas fa-cloud-upload-alt mr-2"></i>
-              {recipe.status === 'submitted' ? 'Update Submission' : 'Submit to Public Library'}
+              Submit to Public Library
             </button>
           )}
 

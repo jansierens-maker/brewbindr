@@ -209,7 +209,10 @@ export const checkRecipeStock = (recipe: Recipe, library: LibraryIngredient[]) =
   const insufficient: string[] = [];
 
   const check = (name: string, requiredAmount: number, requiredUnit: string, libraryId?: string) => {
-    const item = library.find(l => l.id === libraryId || l.name.toLowerCase() === name.toLowerCase());
+    // Prioritize private items for stock checks to ensure accuracy when items are cloned for submission
+    const item = library.find(l => (l.id === libraryId || l.name.toLowerCase() === name.toLowerCase()) && l.status === 'private')
+              || library.find(l => l.id === libraryId || l.name.toLowerCase() === name.toLowerCase());
+
     if (!item || !item.stock) {
       missing.push(name);
       return;
