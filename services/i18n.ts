@@ -197,7 +197,9 @@ export const translations = {
     stock_amount: "Stock Amount",
     unit_label: "Unit",
     ready_to_brew: "Ready to brew",
-    missing_ingredients: "Missing ingredients"
+    missing_ingredients: "Missing ingredients",
+    enable_stock_title: "Stock Management",
+    enable_stock_desc: "Track inventory and brewability"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -395,7 +397,9 @@ export const translations = {
     stock_amount: "Voorraad Hoeveelheid",
     unit_label: "Eenheid",
     ready_to_brew: "Klaar om te brouwen",
-    missing_ingredients: "Ontbrekende ingrediënten"
+    missing_ingredients: "Ontbrekende ingrediënten",
+    enable_stock_title: "Voorraadbeheer",
+    enable_stock_desc: "Houd voorraad en brouwbaarheid bij"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -593,6 +597,8 @@ export const translations = {
     stock_amount: "Quantité en stock",
     unit_label: "Unité",
     ready_to_brew: "Prêt à brasser",
-    missing_ingredients: "Ingrédients manquants"
+    missing_ingredients: "Ingrédients manquants",
+    enable_stock_title: "Gestion des stocks",
+    enable_stock_desc: "Suivre l'inventaire et la brassabilité"
   }
 };

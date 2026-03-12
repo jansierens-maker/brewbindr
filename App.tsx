@@ -1160,13 +1160,15 @@ END \$\$;
                     <h2 className="text-4xl font-black text-stone-900">{t('nav_recipes')}</h2>
                   </div>
                   <div className="flex flex-wrap items-center gap-4">
-                    <button
-                      onClick={() => setShowBrewableOnly(!showBrewableOnly)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${showBrewableOnly ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-100' : 'bg-white text-stone-400 border-stone-200 hover:border-stone-400'}`}
-                    >
-                      <i className={`fas ${showBrewableOnly ? 'fa-check-circle' : 'fa-circle'}`}></i>
-                      {t('show_brewable_only')}
-                    </button>
+                    {preferences.enableStockManagement && (
+                      <button
+                        onClick={() => setShowBrewableOnly(!showBrewableOnly)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${showBrewableOnly ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-100' : 'bg-white text-stone-400 border-stone-200 hover:border-stone-400'}`}
+                      >
+                        <i className={`fas ${showBrewableOnly ? 'fa-check-circle' : 'fa-circle'}`}></i>
+                        {t('show_brewable_only')}
+                      </button>
+                    )}
 
                     <div className="flex bg-stone-100 p-1 rounded-2xl w-fit">
                       <button
@@ -1215,18 +1217,20 @@ END \$\$;
                           </div>
                         )}
 
-                        {stock.isBrewable ? (
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-50 rounded-full border border-green-100">
-                            <i className="fas fa-check-circle text-green-600 text-[10px]"></i>
-                            <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">{t('ready_to_brew')}</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-50 rounded-full border border-red-100">
-                            <i className="fas fa-exclamation-circle text-red-600 text-[10px]"></i>
-                            <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">
-                              {stock.missing.length + stock.insufficient.length} {t('missing_ingredients')}
-                            </span>
-                          </div>
+                        {preferences.enableStockManagement && (
+                          stock.isBrewable ? (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-50 rounded-full border border-green-100">
+                              <i className="fas fa-check-circle text-green-600 text-[10px]"></i>
+                              <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">{t('ready_to_brew')}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-50 rounded-full border border-red-100">
+                              <i className="fas fa-exclamation-circle text-red-600 text-[10px]"></i>
+                              <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">
+                                {stock.missing.length + stock.insufficient.length} {t('missing_ingredients')}
+                              </span>
+                            </div>
+                          )
                         )}
                       </div>
 

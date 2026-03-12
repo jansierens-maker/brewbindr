@@ -12,6 +12,7 @@ export interface UserPreferences {
   units: 'metric' | 'imperial';
   colorScale: 'srm' | 'ebc';
   language: Language;
+  enableStockManagement: boolean;
 }
 
 export interface UserProfile {

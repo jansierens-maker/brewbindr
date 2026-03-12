@@ -28,7 +28,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   onUpdate
 }) => {
   const { t } = useTranslation();
-  const { user } = useUser();
+  const { user, preferences } = useUser();
   const [filter, setFilter] = useState<'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style'>('fermentable');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
@@ -347,7 +347,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     </div>
                   )}
 
-                  {editForm.status === 'private' && ['fermentable', 'hop', 'culture', 'misc'].includes(filter) && (
+                  {preferences.enableStockManagement && editForm.status === 'private' && ['fermentable', 'hop', 'culture', 'misc'].includes(filter) && (
                     <div className="pt-2 border-t border-stone-100">
                       <label htmlFor="ingredient-stock" className="text-[10px] font-black text-stone-400 uppercase">{t('stock_label')}</label>
                       <div className="grid grid-cols-2 gap-3 mt-1">
@@ -424,7 +424,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     )}
                   </div>
 
-                  {item.status === 'private' && item.stock && ['fermentable', 'hop', 'culture', 'misc'].includes(item.type) && (
+                  {preferences.enableStockManagement && item.status === 'private' && item.stock && ['fermentable', 'hop', 'culture', 'misc'].includes(item.type) && (
                     <div className="mt-4 p-3 bg-stone-50 rounded-2xl border border-stone-100 flex justify-between items-center">
                       <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('stock_label')}</span>
                       <span className={`text-xs font-black ${item.stock.amount > 0 ? 'text-stone-900' : 'text-red-500'}`}>
