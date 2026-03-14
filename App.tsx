@@ -136,6 +136,72 @@ const AppContent: React.FC = () => {
     return translations[lang][key] || translations['en'][key] || key;
   };
 
+  const syncIngredientsWithLibrary = (recipe: Recipe, targetStatus: 'private' | 'submitted', currentLib: LibraryIngredient[]) => {
+    const newIngredients: LibraryIngredient[] = [];
+    const updatedLib = [...currentLib];
+
+    const getTargetItem = (name: string, type: string, originalId?: string) => {
+      // 1. Try to find by original ID if it already has the correct status
+      const byId = updatedLib.find(l => l.id === originalId);
+      if (byId && (targetStatus === 'private' ? byId.status === 'private' : (byId.status === 'approved' || byId.status === 'submitted'))) {
+        return byId;
+      }
+
+      // 2. Try to find by name and type with the target status
+      if (targetStatus === 'private') {
+        return updatedLib.find(l => l.name.toLowerCase() === name.toLowerCase() && l.type === type && l.status === 'private' && (!l.user_id || l.user_id === user?.id));
+      } else {
+        const approved = updatedLib.find(l => l.name.toLowerCase() === name.toLowerCase() && l.type === type && l.status === 'approved');
+        if (approved) return approved;
+        return updatedLib.find(l => l.name.toLowerCase() === name.toLowerCase() && l.type === type && l.status === 'submitted' && l.user_id === user?.id);
+      }
+    };
+
+    const processItem = (item: any, type: string, defaultProps: any = {}) => {
+      if (!item || !item.name) return item;
+
+      const existing = getTargetItem(item.name, type, item.libraryId);
+      if (existing) {
+        return { ...item, libraryId: existing.id, name: existing.name };
+      }
+
+      const original = updatedLib.find(l => l.id === item.libraryId) || item;
+      const newId = Math.random().toString(36).substr(2, 9);
+      const newItem: LibraryIngredient = {
+        ...original,
+        ...defaultProps,
+        id: newId,
+        name: item.name,
+        type: type,
+        user_id: user?.id,
+        status: targetStatus,
+        stock: targetStatus === 'private' ? original.stock : undefined
+      };
+
+      newIngredients.push(newItem);
+      updatedLib.push(newItem);
+      return { ...item, libraryId: newId };
+    };
+
+    const syncedRecipe: Recipe = {
+      ...recipe,
+      status: targetStatus,
+      style: recipe.style ? processItem(recipe.style, 'style') : undefined,
+      ingredients: {
+        ...recipe.ingredients,
+        fermentables: (recipe.ingredients.fermentables || []).map(f => processItem(f, 'fermentable', {
+            color: f.color?.value || 2,
+            yield: f.yield?.potential?.value ? Math.round((f.yield.potential.value - 1) / 0.046 * 100) : 75
+        })),
+        hops: (recipe.ingredients.hops || []).map(h => processItem(h, 'hop', { alpha: h.alpha_acid?.value || 5 })),
+        cultures: (recipe.ingredients.cultures || []).map(c => processItem(c, 'culture', { attenuation: c.attenuation || 75, form: c.form || 'dry' })),
+        miscellaneous: (recipe.ingredients.miscellaneous || []).map(m => processItem(m, 'misc'))
+      }
+    };
+
+    return { syncedRecipe, newIngredients, updatedLib };
+  };
+
   useEffect(() => {
     if (!authLoading) {
       setLibraryView(user ? 'personal' : 'public');
@@ -200,11 +266,20 @@ const AppContent: React.FC = () => {
     return () => clearTimeout(timer);
   }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading]);
 
-  const handleSaveRecipe = (recipe: Recipe) => {
+  const handleSaveRecipe = async (recipe: Recipe) => {
+    const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
+
+    if (newIngredients.length > 0) {
+      setLibrary(prev => [...prev, ...newIngredients]);
+      if (user?.id) {
+        await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
+      }
+    }
+
     if (selectedRecipe && selectedRecipe.id) {
-      setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? { ...recipe, id: selectedRecipe.id, user_id: user?.id } : r));
+      setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id } : r));
     } else {
-      const newRecipe = { ...recipe, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
+      const newRecipe = { ...syncedRecipe, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
       setRecipes(prev => [...prev, newRecipe]);
     }
     setSelectedRecipe(null);
@@ -399,37 +474,9 @@ const AppContent: React.FC = () => {
   };
 
   const linkIngredientsToLibrary = (recipe: Recipe, tempLib: LibraryIngredient[]) => {
-    let addedToLibrary = 0;
-    const getLibId = (name: string, type: string, props: Partial<LibraryIngredient>): string => {
-      const existing = tempLib.find(i => i.type === type && i.name.toLowerCase() === name.toLowerCase());
-      if (existing) return existing.id;
-      const newId = Math.random().toString(36).substr(2, 9);
-      tempLib.push({ id: newId, name, type, user_id: user?.id, ...props } as LibraryIngredient);
-      addedToLibrary++;
-      return newId;
-    };
-    const linked = {
-      ...recipe,
-      ingredients: {
-        ...recipe.ingredients,
-        fermentables: recipe.ingredients.fermentables.map(f => ({ 
-          ...f, 
-          libraryId: getLibId(f.name, 'fermentable', { 
-            color: f.color?.value || 2, 
-            yield: f.yield?.potential?.value ? Math.round((f.yield.potential.value - 1) / 0.046 * 100) : 75 
-          }) 
-        })),
-        hops: recipe.ingredients.hops.map(h => ({ 
-          ...h, 
-          libraryId: getLibId(h.name, 'hop', { alpha: h.alpha_acid?.value || 5 }) 
-        })),
-        cultures: recipe.ingredients.cultures.map(c => ({ 
-          ...c, 
-          libraryId: getLibId(c.name, 'culture', { attenuation: c.attenuation || 75, form: c.form || 'dry' }) 
-        }))
-      }
-    };
-    return { recipe: linked, addedToLibrary };
+    const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', tempLib);
+    tempLib.push(...newIngredients);
+    return { recipe: syncedRecipe, addedToLibrary: newIngredients.length };
   };
 
   const resolveConflict = (action: 'cancel' | 'skip' | 'overwrite' | 'copy') => {
@@ -556,43 +603,13 @@ const AppContent: React.FC = () => {
   const handleRecipeSubmitToPublic = async (recipe: Recipe) => {
     if (!user?.id || !recipe.id) return;
 
-    const newIngredients: LibraryIngredient[] = [];
-    const currentLib = [...library];
-
-    const processIngredient = (ing: any) => {
-      const libItem = currentLib.find(li => li.id === ing.libraryId);
-      if (libItem && libItem.status === 'private' && libItem.user_id === user.id) {
-        // Check if we already created a clone for this ingredient in this session
-        const alreadyCloned = newIngredients.find(ni => ni.name === libItem.name && ni.type === libItem.type);
-        if (alreadyCloned) return { ...ing, libraryId: alreadyCloned.id };
-
-        const newId = Math.random().toString(36).substr(2, 9);
-        const newItem = {
-          ...libItem,
-          id: newId,
-          user_id: user.id,
-          status: 'submitted' as const,
-          stock: undefined
-        };
-        newIngredients.push(newItem);
-        currentLib.push(newItem);
-        return { ...ing, libraryId: newId };
-      }
-      return ing;
-    };
+    const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'submitted', library);
 
     const clonedRecipe: Recipe = {
-      ...recipe,
+      ...syncedRecipe,
       id: Math.random().toString(36).substr(2, 9),
       user_id: user.id,
-      status: 'submitted',
-      ingredients: {
-        ...recipe.ingredients,
-        fermentables: (recipe.ingredients.fermentables || []).map(processIngredient),
-        hops: (recipe.ingredients.hops || []).map(processIngredient),
-        cultures: (recipe.ingredients.cultures || []).map(processIngredient),
-        miscellaneous: (recipe.ingredients.miscellaneous || []).map(processIngredient)
-      }
+      status: 'submitted'
     };
 
     if (newIngredients.length > 0) {
@@ -606,38 +623,18 @@ const AppContent: React.FC = () => {
       setRecipes(remoteData.recipes);
       setLibrary(remoteData.library);
     }
-    alert("Recipe and its private ingredients submitted for review! The original items remain in your collection.");
+    alert("Recipe and its ingredients submitted for review! The original items remain in your collection.");
   };
 
   const handleRecipeAddToPersonal = async (recipe: Recipe) => {
+    const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
+
     const newRecipeId = Math.random().toString(36).substr(2, 9);
-    const newIngredients: LibraryIngredient[] = [];
-    const currentLib = [...library];
-
-    const processIngredient = (ing: any) => {
-      const libItem = currentLib.find(li => li.id === ing.libraryId);
-      if (libItem && libItem.status === 'approved' && !currentLib.find(li => li.name === libItem.name && li.status !== 'approved' && li.user_id === user?.id)) {
-        const newId = Math.random().toString(36).substr(2, 9);
-        const newItem = { ...libItem, id: newId, user_id: user?.id, status: 'private' as const };
-        newIngredients.push(newItem);
-        currentLib.push(newItem);
-        return { ...ing, libraryId: newId };
-      }
-      return ing;
-    };
-
     const updatedRecipe: Recipe = {
-      ...recipe,
+      ...syncedRecipe,
       id: newRecipeId,
       user_id: user?.id,
-      status: 'private',
-      ingredients: {
-        ...recipe.ingredients,
-        fermentables: (recipe.ingredients.fermentables || []).map(processIngredient),
-        hops: (recipe.ingredients.hops || []).map(processIngredient),
-        cultures: (recipe.ingredients.cultures || []).map(processIngredient),
-        miscellaneous: (recipe.ingredients.miscellaneous || []).map(processIngredient)
-      }
+      status: 'private'
     };
 
     setLibrary(prev => [...prev, ...newIngredients]);
@@ -1284,7 +1281,23 @@ END \$\$;
               <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} />
             )}
             {view === 'create' && (
-              <RecipeCreator initialRecipe={selectedRecipe || undefined} onSave={handleSaveRecipe} onSubmitToPublic={handleRecipeSubmitToPublic} onDelete={handleDeleteRecipe} library={library} />
+              <RecipeCreator
+                initialRecipe={selectedRecipe || undefined}
+                onSave={handleSaveRecipe}
+                onSubmitToPublic={handleRecipeSubmitToPublic}
+                onDelete={handleDeleteRecipe}
+                library={(() => {
+                  // Deduplicate library items for RecipeCreator selection, prioritizing 'private' over 'approved'/'submitted'
+                  const deduplicated: Record<string, LibraryIngredient> = {};
+                  library.forEach(item => {
+                    const key = `${item.type}-${item.name.toLowerCase()}`;
+                    if (!deduplicated[key] || item.status === 'private') {
+                      deduplicated[key] = item;
+                    }
+                  });
+                  return Object.values(deduplicated);
+                })()}
+              />
             )}
             {view === 'library' && (
               <div className="space-y-8">
