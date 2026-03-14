@@ -1144,7 +1144,6 @@ END \$\$;
                   <button onClick={() => setView(user ? 'settings' : 'auth')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'settings' || view === 'auth' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
                     <i className="fas fa-user"></i>
                   </button>
-                  <button onClick={() => { setSelectedRecipe(null); setView('create'); }} className="bg-stone-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-md"> <i className="fas fa-plus mr-2"></i>{t('nav_new')} </button>
                 </div>
               </div>
             </div>
@@ -1184,18 +1183,24 @@ END \$\$;
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {libraryView === 'personal' && (
+                    <button
+                      onClick={() => { setSelectedRecipe(null); setView('create'); }}
+                      className="bg-white rounded-3xl border-2 border-dashed border-stone-200 p-6 hover:border-amber-500 hover:bg-amber-50/30 transition-all flex flex-col items-center justify-center gap-4 group h-full min-h-[300px]"
+                    >
+                      <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all shadow-sm">
+                        <i className="fas fa-plus text-2xl"></i>
+                      </div>
+                      <div className="text-center">
+                        <p className="font-black text-stone-900 uppercase tracking-widest text-sm">{t('nav_new')}</p>
+                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-1">Create Recipe</p>
+                      </div>
+                    </button>
+                  )}
                   {recipes
                     .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
                     .filter(r => !showBrewableOnly || checkRecipeStock(r, library).isBrewable)
-                    .length === 0 ? (
-                    <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-stone-200 px-6 shadow-sm">
-                      <i className="fas fa-beer text-5xl text-amber-100 mb-6 block"></i>
-                      <p className="text-stone-400 font-bold max-w-sm mx-auto mb-6"> {t('empty_recipes_hint').split('Library')[0]} <button onClick={() => setView('library')} className="text-amber-600 underline hover:text-amber-700"> {t('go_to_library')} </button> {t('empty_recipes_hint').split('Library')[1]} </p>
-                      <div className="flex flex-col items-center gap-4"> <p className="text-xs font-black text-stone-300 uppercase tracking-widest">{t('demo_hint')}</p> <button onClick={handleImportDemoData} className="bg-amber-600 text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl hover:bg-amber-700 transition-all flex items-center gap-2"> <i className="fas fa-download"></i> {t('import_demo')} </button> </div>
-                    </div>
-                  ) : recipes
-                    .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
-                    .filter(r => !showBrewableOnly || checkRecipeStock(r, library).isBrewable)
+                    .sort((a, b) => a.name.localeCompare(b.name))
                     .map(r => {
                     const stock = checkRecipeStock(r, library);
                     return (
@@ -1271,6 +1276,16 @@ END \$\$;
                       </div>
                     </div>
                   );})}
+                  {recipes
+                    .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
+                    .filter(r => !showBrewableOnly || checkRecipeStock(r, library).isBrewable)
+                    .length === 0 && (
+                    <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-stone-200 px-6 shadow-sm">
+                      <i className="fas fa-beer text-5xl text-amber-100 mb-6 block"></i>
+                      <p className="text-stone-400 font-bold max-w-sm mx-auto mb-6"> {t('empty_recipes_hint').split('Library')[0]} <button onClick={() => setView('library')} className="text-amber-600 underline hover:text-amber-700"> {t('go_to_library')} </button> {t('empty_recipes_hint').split('Library')[1]} </p>
+                      <div className="flex flex-col items-center gap-4"> <p className="text-xs font-black text-stone-300 uppercase tracking-widest">{t('demo_hint')}</p> <button onClick={handleImportDemoData} className="bg-amber-600 text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl hover:bg-amber-700 transition-all flex items-center gap-2"> <i className="fas fa-download"></i> {t('import_demo')} </button> </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1295,7 +1310,7 @@ END \$\$;
                       deduplicated[key] = item;
                     }
                   });
-                  return Object.values(deduplicated);
+                  return Object.values(deduplicated).sort((a, b) => a.name.localeCompare(b.name));
                 })()}
               />
             )}
