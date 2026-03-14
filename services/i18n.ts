@@ -188,7 +188,18 @@ export const translations = {
     admin_manual_desc: "As an administrator, you have access to additional tools to maintain the public library.",
     admin_step_submissions: "Review pending submissions from users for the public library.",
     admin_step_data: "Export or restore the entire application database.",
-    admin_step_sync: "Monitor system health and Row Level Security (RLS) status."
+    admin_step_sync: "Monitor system health and Row Level Security (RLS) status.",
+    stock_label: "Stock",
+    in_stock: "In Stock",
+    insufficient_stock: "Insufficient Stock",
+    out_of_stock: "Out of Stock",
+    show_brewable_only: "Show only brewable",
+    stock_amount: "Stock Amount",
+    unit_label: "Unit",
+    ready_to_brew: "Ready to brew",
+    missing_ingredients: "Missing ingredients",
+    enable_stock_title: "Stock Management",
+    enable_stock_desc: "Track inventory and brewability"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -377,7 +388,18 @@ export const translations = {
     admin_manual_desc: "Als beheerder heb je toegang tot extra tools om de publieke bibliotheek te onderhouden.",
     admin_step_submissions: "Beoordeel ingediende recepten en ingrediënten van gebruikers.",
     admin_step_data: "Exporteer of herstel de volledige applicatiedatabase.",
-    admin_step_sync: "Monitor de systeemgezondheid en Row Level Security (RLS) status."
+    admin_step_sync: "Monitor de systeemgezondheid en Row Level Security (RLS) status.",
+    stock_label: "Voorraad",
+    in_stock: "Op voorraad",
+    insufficient_stock: "Onvoldoende voorraad",
+    out_of_stock: "Niet op voorraad",
+    show_brewable_only: "Toon enkel brouwbaren",
+    stock_amount: "Voorraad Hoeveelheid",
+    unit_label: "Eenheid",
+    ready_to_brew: "Klaar om te brouwen",
+    missing_ingredients: "Ontbrekende ingrediënten",
+    enable_stock_title: "Voorraadbeheer",
+    enable_stock_desc: "Houd voorraad en brouwbaarheid bij"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -566,6 +588,17 @@ export const translations = {
     admin_manual_desc: "En tant qu'administrateur, vous avez accès à des outils supplémentaires pour maintenir la bibliothèque publique.",
     admin_step_submissions: "Examinez les soumissions en attente des utilisateurs pour la bibliothèque publique.",
     admin_step_data: "Exportez ou restaurez l'intégralité de la base de données de l'application.",
-    admin_step_sync: "Surveillez l'état de santé du système et le statut de la sécurité au niveau des lignes (RLS)."
+    admin_step_sync: "Surveillez l'état de santé du système et le statut de la sécurité au niveau des lignes (RLS).",
+    stock_label: "Stock",
+    in_stock: "En stock",
+    insufficient_stock: "Stock insuffisant",
+    out_of_stock: "En rupture de stock",
+    show_brewable_only: "Afficher uniquement les brassables",
+    stock_amount: "Quantité en stock",
+    unit_label: "Unité",
+    ready_to_brew: "Prêt à brasser",
+    missing_ingredients: "Ingrédients manquants",
+    enable_stock_title: "Gestion des stocks",
+    enable_stock_desc: "Suivre l'inventaire et la brassabilité"
   }
 };

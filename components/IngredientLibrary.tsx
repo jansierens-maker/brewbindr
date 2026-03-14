@@ -28,7 +28,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   onUpdate
 }) => {
   const { t } = useTranslation();
-  const { user } = useUser();
+  const { user, preferences } = useUser();
   const [filter, setFilter] = useState<'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style'>('fermentable');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
@@ -43,8 +43,16 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     if (selectedIds.length === 0 || !user?.id) return;
 
     if (libraryView === 'personal') {
-      // Bulk Submit to Public
-      await supabaseService.batchUpdateStatus(selectedIds, TABLE_MAP[filter] || filter, 'submitted');
+      // Bulk Submit to Public - Clone items to keep originals private
+      const selectedItems = ingredients.filter(i => selectedIds.includes(i.id));
+      const submittedClones = selectedItems.map(item => ({
+        ...item,
+        id: Math.random().toString(36).substr(2, 9),
+        user_id: user.id,
+        status: 'submitted' as const,
+        stock: undefined // Remove stock for public submission
+      }));
+      await supabaseService.batchSaveLibraryIngredients(submittedClones, user.id);
       alert(`${selectedIds.length} items submitted for review!`);
     } else {
       // Bulk Import to Personal
@@ -199,7 +207,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             {filter === 'fermentable' ? t('malt') : filter === 'hop' ? t('hops') : filter === 'culture' ? t('yeast_lib') : filter === 'mash_profile' ? t('mash_profile') : filter === 'misc' ? t('miscs_label') : t('style_label')}
           </h3>
           <p className="text-stone-400 text-xs font-bold">
-            {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status !== 'approved' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length} {t('items_in_collection')}
+            {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length} {t('items_in_collection')}
           </p>
         </div>
 
@@ -229,12 +237,12 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status !== 'approved' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length === 0 ? (
+        {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length === 0 ? (
           <div className="col-span-full py-20 text-center text-stone-300 font-medium bg-white rounded-3xl border-2 border-dashed border-stone-100">
             {t('no_brews')}
           </div>
         ) : (
-          ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status !== 'approved' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).map(item => (
+          ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).map(item => (
             <div key={item.id} className={`bg-white p-8 rounded-3xl border shadow-sm relative transition-all ${editingId === item.id ? 'border-amber-400 ring-2 ring-amber-100' : selectedIds.includes(item.id) ? 'border-amber-500 ring-2 ring-amber-100' : 'border-stone-200'}`}>
 
               {editingId !== item.id && (
@@ -256,8 +264,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
               {editingId === item.id ? (
                 <div className="space-y-4 animate-in zoom-in-95 duration-200">
                   <div>
-                    <label className="text-[10px] font-black text-stone-400 uppercase">{t('name_label')}</label>
-                    <input className="w-full p-2 bg-stone-50 border rounded-lg text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+                    <label htmlFor="ingredient-name" className="text-[10px] font-black text-stone-400 uppercase">{t('name_label')}</label>
+                    <input id="ingredient-name" className="w-full p-2 bg-stone-50 border rounded-lg text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} />
                   </div>
                   
                   {filter === 'misc' && (
@@ -339,6 +347,34 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     </div>
                   )}
 
+                  {preferences.enableStockManagement && editForm.status === 'private' && ['fermentable', 'hop', 'culture', 'misc'].includes(filter) && (
+                    <div className="pt-2 border-t border-stone-100">
+                      <label htmlFor="ingredient-stock" className="text-[10px] font-black text-stone-400 uppercase">{t('stock_label')}</label>
+                      <div className="grid grid-cols-2 gap-3 mt-1">
+                        <input
+                          id="ingredient-stock"
+                          type="number"
+                          step="0.01"
+                          className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold"
+                          placeholder={t('stock_amount')}
+                          value={editForm.stock?.amount ?? ""}
+                          onChange={e => setEditForm({...editForm, stock: { amount: parseFloat(e.target.value) || 0, unit: editForm.stock?.unit || (filter === 'hop' || filter === 'misc' ? 'g' : 'kg') }})}
+                        />
+                        <select
+                          className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold"
+                          value={editForm.stock?.unit || (filter === 'hop' || filter === 'misc' ? 'g' : 'kg')}
+                          onChange={e => setEditForm({...editForm, stock: { amount: editForm.stock?.amount || 0, unit: e.target.value }})}
+                        >
+                          <option value="kg">kg</option>
+                          <option value="g">g</option>
+                          <option value="lb">lb</option>
+                          <option value="oz">oz</option>
+                          <option value="items">items</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex flex-col gap-2 pt-2">
                     <div className="flex gap-2">
                       <button onClick={saveEditing} className="flex-1 bg-amber-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-amber-700">{t('save_btn')}</button>
@@ -388,13 +424,30 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     )}
                   </div>
 
+                  {preferences.enableStockManagement && item.status === 'private' && item.stock && ['fermentable', 'hop', 'culture', 'misc'].includes(item.type) && (
+                    <div className="mt-4 p-3 bg-stone-50 rounded-2xl border border-stone-100 flex justify-between items-center">
+                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('stock_label')}</span>
+                      <span className={`text-xs font-black ${item.stock.amount > 0 ? 'text-stone-900' : 'text-red-500'}`}>
+                        {item.stock.amount} {item.stock.unit}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="mt-6 pt-6 border-t border-stone-100 flex flex-col gap-2">
-                    {user && libraryView === 'personal' && (item.user_id === user.id || !item.user_id) && item.status !== 'submitted' && (
+                    {user && libraryView === 'personal' && (item.user_id === user.id || !item.user_id) && item.status === 'private' && (
                        <button
                         onClick={async () => {
-                          await supabaseService.updateItemStatus(item.id, item.type, 'submitted');
+                          const clone = {
+                            ...item,
+                            id: Math.random().toString(36).substr(2, 9),
+                            user_id: user.id,
+                            status: 'submitted' as const,
+                            stock: undefined
+                          };
+                          await supabaseService.saveLibraryIngredient(clone, user.id);
                           const remoteData = await supabaseService.fetchAppData(user.id);
                           if (remoteData) onUpdate(remoteData.library);
+                          alert(`${item.name} submitted for review!`);
                         }}
                         className="w-full bg-amber-100 text-amber-700 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-amber-200 transition-all tracking-widest"
                        >

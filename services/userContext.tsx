@@ -28,7 +28,8 @@ const getDefaultLanguage = (): Language => {
 const defaultPreferences: UserPreferences = {
   units: 'metric',
   colorScale: 'srm',
-  language: getDefaultLanguage()
+  language: getDefaultLanguage(),
+  enableStockManagement: false
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);

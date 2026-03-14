@@ -7,12 +7,13 @@ import { useUser } from '../services/userContext';
 
 interface RecipeCreatorProps {
   onSave: (recipe: Recipe) => void;
+  onSubmitToPublic?: (recipe: Recipe) => void;
   onDelete?: (id: string) => void;
   initialRecipe?: Recipe;
   library: LibraryIngredient[];
 }
 
-const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initialRecipe, library }) => {
+const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, initialRecipe, library }) => {
   const { t, lang } = useTranslation();
   const { preferences, user } = useUser();
   const [recipe, setRecipe] = useState<Recipe>(initialRecipe || {
@@ -338,6 +339,13 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
                     <option value="pounds">lb</option>
                   </select>
                 </div>
+                {preferences.enableStockManagement && f.libraryId && library.find(l => l.id === f.libraryId && l.status === 'private')?.stock && (
+                  <div className="text-[10px] font-black text-stone-400 uppercase">
+                    {t('stock_label')}: <span className={library.find(l => l.id === f.libraryId)!.stock!.amount < f.amount.value ? 'text-red-500' : 'text-green-600'}>
+                      {library.find(l => l.id === f.libraryId)!.stock!.amount} {library.find(l => l.id === f.libraryId)!.stock!.unit}
+                    </span>
+                  </div>
+                )}
                 <button onClick={() => removeIngredient('fermentable', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
             ))}
@@ -368,6 +376,13 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
                     <option value="ounces">oz</option>
                   </select>
                 </div>
+                {preferences.enableStockManagement && h.libraryId && library.find(l => l.id === h.libraryId && l.status === 'private')?.stock && (
+                  <div className="text-[10px] font-black text-stone-400 uppercase">
+                    {t('stock_label')}: <span className={library.find(l => l.id === h.libraryId)!.stock!.amount < h.amount.value ? 'text-red-500' : 'text-green-600'}>
+                      {library.find(l => l.id === h.libraryId)!.stock!.amount} {library.find(l => l.id === h.libraryId)!.stock!.unit}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">min</span>
@@ -391,6 +406,13 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
                   <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={c.attenuation ?? 75} onChange={e => updateField('culture', i, 'attenuation', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">%</span>
                 </div>
+                {preferences.enableStockManagement && c.libraryId && library.find(l => l.id === c.libraryId && l.status === 'private')?.stock && (
+                  <div className="text-[10px] font-black text-stone-400 uppercase">
+                    {t('stock_label')}: <span className={library.find(l => l.id === c.libraryId)!.stock!.amount < 1 ? 'text-red-500' : 'text-green-600'}>
+                      {library.find(l => l.id === c.libraryId)!.stock!.amount} {library.find(l => l.id === c.libraryId)!.stock!.unit}
+                    </span>
+                  </div>
+                )}
                 <button onClick={() => removeIngredient('culture', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
             ))}
@@ -489,13 +511,13 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onDelete, initial
             </button>
           </div>
 
-          {recipe.id && recipe.user_id === user?.id && recipe.status !== 'approved' && (
+          {recipe.id && recipe.user_id === user?.id && recipe.status === 'private' && onSubmitToPublic && (
             <button
-              onClick={() => onSave({...recipe, status: 'submitted', specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
+              onClick={() => onSubmitToPublic({...recipe, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
               className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-amber-600 transition-all uppercase tracking-widest text-sm"
             >
               <i className="fas fa-cloud-upload-alt mr-2"></i>
-              {recipe.status === 'submitted' ? 'Update Submission' : 'Submit to Public Library'}
+              Submit to Public Library
             </button>
           )}
 

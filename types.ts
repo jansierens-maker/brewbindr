@@ -12,6 +12,7 @@ export interface UserPreferences {
   units: 'metric' | 'imperial';
   colorScale: 'srm' | 'ebc';
   language: Language;
+  enableStockManagement: boolean;
 }
 
 export interface UserProfile {
@@ -61,6 +62,10 @@ export interface LibraryIngredient {
   ph?: number;
   steps?: MashStep[];
   notes?: string;
+  stock?: {
+    amount: number;
+    unit: string;
+  };
 }
 
 export interface MashStep {
