@@ -242,7 +242,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             {t('no_brews')}
           </div>
         ) : (
-          ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).map(item => (
+          ingredients
+            .filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved'))
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(item => (
             <div key={item.id} className={`bg-white p-8 rounded-3xl border shadow-sm relative transition-all ${editingId === item.id ? 'border-amber-400 ring-2 ring-amber-100' : selectedIds.includes(item.id) ? 'border-amber-500 ring-2 ring-amber-100' : 'border-stone-200'}`}>
 
               {editingId !== item.id && (
