@@ -1138,11 +1138,11 @@ END \$\$;
                     <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{user ? t('logged_in_as') : t('guest_mode')}</p>
                     <p className="text-[10px] font-bold text-stone-900 truncate max-w-[120px]">{user?.email || t('guest_user')}</p>
                   </div>
-                  <button onClick={() => setView('help')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'help' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
-                    <i className="fas fa-question-circle"></i>
-                  </button>
                   <button onClick={() => setView(user ? 'settings' : 'auth')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'settings' || view === 'auth' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
                     <i className="fas fa-user"></i>
+                  </button>
+                  <button onClick={() => setView('help')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'help' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
+                    <i className="fas fa-question-circle"></i>
                   </button>
                 </div>
               </div>
