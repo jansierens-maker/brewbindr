@@ -533,10 +533,24 @@ const AppContent: React.FC = () => {
   const handleUrlImport = async (urlInput?: any) => {
     const targetUrl = typeof urlInput === 'string' ? urlInput : xmlUrl;
     if (!targetUrl) return;
+
+    // Security: Validate protocol to prevent URI scheme exploitation
+    if (!targetUrl.toLowerCase().startsWith('http://') && !targetUrl.toLowerCase().startsWith('https://')) {
+      alert("Invalid URL. Only http:// and https:// protocols are allowed.");
+      return;
+    }
+
     setImportStatus('fetching');
+
+    // Security: Implement timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
       const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-      const response = await fetch(proxyUrl);
+      const response = await fetch(proxyUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       if (!response.ok) throw new Error("Network response was not ok");
       const data = await response.json();
       const xmlText = data.contents;
@@ -544,9 +558,13 @@ const AppContent: React.FC = () => {
       setImportStatus('parsing');
       startImportFlow(parseBeerXml(xmlText));
       if (targetUrl === xmlUrl) setXmlUrl('');
-    } catch (err) {
+    } catch (err: any) {
+      clearTimeout(timeoutId);
       console.error("Import failed:", err);
-      alert("Import failed. Please verify the URL and your connection.");
+      const message = err.name === 'AbortError'
+        ? "Import timed out. The server took too long to respond."
+        : "Import failed. Please verify the URL and your connection.";
+      alert(message);
       setImportStatus('idle');
     }
   };
