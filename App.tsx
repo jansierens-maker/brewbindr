@@ -606,9 +606,9 @@ const AppContent: React.FC = () => {
         }
         setImportStatus('parsing');
         startImportFlow(aggregatedResult);
-    } catch (err) {
+    } catch (err: any) {
         console.error("Batch import failed", err);
-        alert("Batch import encountered errors.");
+        alert(`Batch import failed: ${err.message || err.toString()}`);
         setImportStatus('idle');
     }
     setSelectedDemoIds([]);
