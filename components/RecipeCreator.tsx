@@ -213,6 +213,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAiGenerate()}
+              maxLength={2000}
             />
             <button 
               onClick={handleAiGenerate}
