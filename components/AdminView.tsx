@@ -121,6 +121,7 @@ const AdminView: React.FC<AdminViewProps> = ({
                   value={xmlUrl} 
                   onChange={(e) => onXmlUrlChange(e.target.value)} 
                   disabled={!user}
+                  maxLength={2048}
                 />
                 <button 
                   onClick={() => onUrlImport()} 

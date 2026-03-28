@@ -74,12 +74,18 @@ const TastingNotes: React.FC<TastingNotesProps> = ({ recipe, brewLogId, onSave }
           </div>
 
           <div className="space-y-4">
-            <textarea 
-              className="w-full p-4 bg-white text-stone-900 border border-stone-200 rounded-xl min-h-[200px]"
-              placeholder="..."
-              value={note.comments}
-              onChange={(e) => setNote({...note, comments: e.target.value})}
-            />
+            <div className="relative">
+              <textarea
+                className="w-full p-4 bg-white text-stone-900 border border-stone-200 rounded-xl min-h-[200px]"
+                placeholder="..."
+                value={note.comments}
+                onChange={(e) => setNote({...note, comments: e.target.value})}
+                maxLength={2000}
+              />
+              <div className="absolute bottom-4 right-4 text-[10px] font-black uppercase tracking-widest text-stone-400 pointer-events-none">
+                {note.comments.length}/2000
+              </div>
+            </div>
             <button 
               onClick={handleAnalyze}
               disabled={analyzing || !note.comments}
