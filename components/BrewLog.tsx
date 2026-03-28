@@ -5,14 +5,17 @@ import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNu
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 
+import { LibraryIngredient } from '../types';
+
 interface BrewLogProps {
   recipe: Recipe;
   initialLog?: BrewLogEntry;
   onUpdate: (entry: BrewLogEntry) => void;
   onSaveAndExit: (entry: BrewLogEntry) => void;
+  library?: LibraryIngredient[];
 }
 
-const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit }) => {
+const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit, library = [] }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
   const [activeTab, setActiveTab] = useState<'brew' | 'ferment' | 'lager' | 'bottle'>('brew');
@@ -235,57 +238,91 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
               {/* Fermentables View */}
               <div className="space-y-3">
                 <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('grains')}</h4>
-                {recipe.ingredients.fermentables.map((f, i) => (
-                  <div key={i} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                    <div className="font-bold text-stone-900">{f.name}</div>
-                    <div className="text-sm font-black text-stone-400 uppercase">{formatBrewNumber(f.amount.value, 'kg', lang, preferences)} {f.amount.unit === 'pounds' ? 'lb' : 'kg'}</div>
-                  </div>
-                ))}
+                {recipe.ingredients.fermentables.map((f, i) => {
+                  const stockItem = preferences.enableStockManagement && f.libraryId ? library.find(l => l.id === f.libraryId && l.status === 'private') : null;
+                  return (
+                    <div key={i} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl border border-stone-100">
+                      <div>
+                        <div className="font-bold text-stone-900">{f.name}</div>
+                        {stockItem?.stock && (
+                          <div className="text-[10px] font-black text-stone-400 uppercase mt-0.5">
+                            {t('stock_label')}: <span className={stockItem.stock.amount < f.amount.value ? 'text-red-500' : 'text-green-600'}>
+                              {stockItem.stock.amount} {stockItem.stock.unit}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-sm font-black text-stone-400 uppercase">{formatBrewNumber(f.amount.value, 'kg', lang, preferences)} {f.amount.unit === 'pounds' ? 'lb' : 'kg'}</div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Hops View with Alpha override */}
               <div className="space-y-3">
                 <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('hops')} - {t('actual_batch_values')}</h4>
                 <div className="grid grid-cols-1 gap-3">
-                  {recipe.ingredients.hops.map((h, i) => (
-                    <div key={i} className="flex flex-col md:flex-row md:items-center gap-4 p-5 bg-white border border-stone-200 rounded-2xl shadow-sm">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                           <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase text-white ${h.use === 'boil' ? 'bg-red-500' : h.use === 'dry_hop' ? 'bg-green-600' : 'bg-stone-500'}`}>{h.use}</span>
-                           <div className="font-bold text-stone-900">{h.name}</div>
+                  {recipe.ingredients.hops.map((h, i) => {
+                    const stockItem = preferences.enableStockManagement && h.libraryId ? library.find(l => l.id === h.libraryId && l.status === 'private') : null;
+                    return (
+                      <div key={i} className="flex flex-col md:flex-row md:items-center gap-4 p-5 bg-white border border-stone-200 rounded-2xl shadow-sm">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase text-white ${h.use === 'boil' ? 'bg-red-500' : h.use === 'dry_hop' ? 'bg-green-600' : 'bg-stone-500'}`}>{h.use}</span>
+                            <div className="font-bold text-stone-900">{h.name}</div>
+                          </div>
+                          {stockItem?.stock && (
+                            <div className="text-[10px] font-black text-stone-400 uppercase mt-1">
+                              {t('stock_label')}: <span className={stockItem.stock.amount < h.amount.value ? 'text-red-500' : 'text-green-600'}>
+                                {stockItem.stock.amount} {stockItem.stock.unit}
+                              </span>
+                            </div>
+                          )}
+                          <div className="text-[10px] font-bold text-stone-400 uppercase mt-1">
+                            <i className="fas fa-clock mr-1"></i> {h.time?.value ?? 0} min • {formatBrewNumber(h.amount.value, 'g', lang, preferences)} {h.amount.unit === 'ounces' ? 'oz' : 'g'}
+                          </div>
                         </div>
-                        <div className="text-[10px] font-bold text-stone-400 uppercase mt-1">
-                          <i className="fas fa-clock mr-1"></i> {h.time?.value ?? 0} min • {formatBrewNumber(h.amount.value, 'g', lang, preferences)} {h.amount.unit === 'ounces' ? 'oz' : 'g'}
+
+                        <div className="flex items-center gap-3 bg-stone-50 p-2 rounded-xl border border-stone-100">
+                          <label className="text-[10px] font-black text-stone-400 uppercase pl-2">Alpha %</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-20 p-2 bg-white border border-stone-200 rounded-lg text-right font-black text-stone-900"
+                            value={entry.measurements.measured_alpha?.[h.name] ?? (h.alpha_acid?.value || 5)}
+                            onChange={e => handleAlphaChange(h.name, parseFloat(e.target.value) || 0)}
+                          />
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-3 bg-stone-50 p-2 rounded-xl border border-stone-100">
-                        <label className="text-[10px] font-black text-stone-400 uppercase pl-2">Alpha %</label>
-                        <input 
-                          type="number" 
-                          step="0.1" 
-                          className="w-20 p-2 bg-white border border-stone-200 rounded-lg text-right font-black text-stone-900"
-                          value={entry.measurements.measured_alpha?.[h.name] ?? (h.alpha_acid?.value || 5)} 
-                          onChange={e => handleAlphaChange(h.name, parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Yeast View */}
               <div className="space-y-3">
                 <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('yeast_lib')}</h4>
-                {recipe.ingredients.cultures.map((c, i) => (
-                  <div key={i} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                    <div className="flex items-center gap-2">
-                       <i className="fas fa-flask text-purple-600 text-xs"></i>
-                       <div className="font-bold text-stone-900">{c.name}</div>
+                {recipe.ingredients.cultures.map((c, i) => {
+                  const stockItem = preferences.enableStockManagement && c.libraryId ? library.find(l => l.id === c.libraryId && l.status === 'private') : null;
+                  return (
+                    <div key={i} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl border border-stone-100">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <i className="fas fa-flask text-purple-600 text-xs"></i>
+                          <div className="font-bold text-stone-900">{c.name}</div>
+                        </div>
+                        {stockItem?.stock && (
+                          <div className="text-[10px] font-black text-stone-400 uppercase mt-0.5">
+                            {t('stock_label')}: <span className={stockItem.stock.amount < 1 ? 'text-red-500' : 'text-green-600'}>
+                              {stockItem.stock.amount} {stockItem.stock.unit}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-sm font-black text-stone-400 uppercase">{c.attenuation}% {c.form}</div>
                     </div>
-                    <div className="text-sm font-black text-stone-400 uppercase">{c.attenuation}% {c.form}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
