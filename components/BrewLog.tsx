@@ -13,9 +13,10 @@ interface BrewLogProps {
   onUpdate: (entry: BrewLogEntry) => void;
   onSaveAndExit: (entry: BrewLogEntry) => void;
   library?: LibraryIngredient[];
+  onGoToLibrary?: () => void;
 }
 
-const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit, library = [] }) => {
+const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit, library = [], onGoToLibrary }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
   const [activeTab, setActiveTab] = useState<'brew' | 'ferment' | 'lager' | 'bottle'>('brew');
@@ -240,16 +241,15 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('grains')}</h4>
                 {recipe.ingredients.fermentables.map((f, i) => {
                   const stockItem = preferences.enableStockManagement && f.libraryId ? library.find(l => l.id === f.libraryId && l.status === 'private') : null;
+                  const isMissing = stockItem?.stock && stockItem.stock.amount < f.amount.value;
                   return (
                     <div key={i} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <div className="font-bold text-stone-900">{f.name}</div>
-                        {stockItem?.stock && (
-                          <div className="text-[10px] font-black text-stone-400 uppercase mt-0.5">
-                            {t('stock_label')}: <span className={stockItem.stock.amount < f.amount.value ? 'text-red-500' : 'text-green-600'}>
-                              {stockItem.stock.amount} {stockItem.stock.unit}
-                            </span>
-                          </div>
+                        {isMissing && (
+                          <button onClick={onGoToLibrary} className="text-red-500 hover:text-red-600 transition-colors" title="Out of stock - Click to manage">
+                            <i className="fas fa-exclamation-circle text-sm"></i>
+                          </button>
                         )}
                       </div>
                       <div className="text-sm font-black text-stone-400 uppercase">{formatBrewNumber(f.amount.value, 'kg', lang, preferences)} {f.amount.unit === 'pounds' ? 'lb' : 'kg'}</div>
@@ -264,20 +264,19 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 <div className="grid grid-cols-1 gap-3">
                   {recipe.ingredients.hops.map((h, i) => {
                     const stockItem = preferences.enableStockManagement && h.libraryId ? library.find(l => l.id === h.libraryId && l.status === 'private') : null;
+                    const isMissing = stockItem?.stock && stockItem.stock.amount < h.amount.value;
                     return (
                       <div key={i} className="flex flex-col md:flex-row md:items-center gap-4 p-5 bg-white border border-stone-200 rounded-2xl shadow-sm">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase text-white ${h.use === 'boil' ? 'bg-red-500' : h.use === 'dry_hop' ? 'bg-green-600' : 'bg-stone-500'}`}>{h.use}</span>
                             <div className="font-bold text-stone-900">{h.name}</div>
+                            {isMissing && (
+                              <button onClick={onGoToLibrary} className="text-red-500 hover:text-red-600 transition-colors" title="Out of stock - Click to manage">
+                                <i className="fas fa-exclamation-circle text-sm"></i>
+                              </button>
+                            )}
                           </div>
-                          {stockItem?.stock && (
-                            <div className="text-[10px] font-black text-stone-400 uppercase mt-1">
-                              {t('stock_label')}: <span className={stockItem.stock.amount < h.amount.value ? 'text-red-500' : 'text-green-600'}>
-                                {stockItem.stock.amount} {stockItem.stock.unit}
-                              </span>
-                            </div>
-                          )}
                           <div className="text-[10px] font-bold text-stone-400 uppercase mt-1">
                             <i className="fas fa-clock mr-1"></i> {h.time?.value ?? 0} min • {formatBrewNumber(h.amount.value, 'g', lang, preferences)} {h.amount.unit === 'ounces' ? 'oz' : 'g'}
                           </div>
@@ -304,19 +303,16 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('yeast_lib')}</h4>
                 {recipe.ingredients.cultures.map((c, i) => {
                   const stockItem = preferences.enableStockManagement && c.libraryId ? library.find(l => l.id === c.libraryId && l.status === 'private') : null;
+                  const isMissing = stockItem?.stock && stockItem.stock.amount < 1;
                   return (
                     <div key={i} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-flask text-purple-600 text-xs"></i>
-                          <div className="font-bold text-stone-900">{c.name}</div>
-                        </div>
-                        {stockItem?.stock && (
-                          <div className="text-[10px] font-black text-stone-400 uppercase mt-0.5">
-                            {t('stock_label')}: <span className={stockItem.stock.amount < 1 ? 'text-red-500' : 'text-green-600'}>
-                              {stockItem.stock.amount} {stockItem.stock.unit}
-                            </span>
-                          </div>
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-flask text-purple-600 text-xs"></i>
+                        <div className="font-bold text-stone-900">{c.name}</div>
+                        {isMissing && (
+                          <button onClick={onGoToLibrary} className="text-red-500 hover:text-red-600 transition-colors" title="Out of stock - Click to manage">
+                            <i className="fas fa-exclamation-circle text-sm"></i>
+                          </button>
                         )}
                       </div>
                       <div className="text-sm font-black text-stone-400 uppercase">{c.attenuation}% {c.form}</div>

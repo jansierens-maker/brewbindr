@@ -340,10 +340,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   </select>
                 </div>
                 {preferences.enableStockManagement && f.libraryId && library.find(l => l.id === f.libraryId && l.status === 'private')?.stock && (
-                  <div className="text-[10px] font-black text-stone-400 uppercase">
-                    {t('stock_label')}: <span className={library.find(l => l.id === f.libraryId)!.stock!.amount < f.amount.value ? 'text-red-500' : 'text-green-600'}>
-                      {library.find(l => l.id === f.libraryId)!.stock!.amount} {library.find(l => l.id === f.libraryId)!.stock!.unit}
-                    </span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-stone-400/80">
+                    <span>{t('stock_label')}: {library.find(l => l.id === f.libraryId)!.stock!.amount} {library.find(l => l.id === f.libraryId)!.stock!.unit}</span>
+                    {library.find(l => l.id === f.libraryId)!.stock!.amount < f.amount.value && (
+                      <i className="fas fa-exclamation-circle text-red-500" title="Out of stock"></i>
+                    )}
                   </div>
                 )}
                 <button onClick={() => removeIngredient('fermentable', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
@@ -377,10 +378,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   </select>
                 </div>
                 {preferences.enableStockManagement && h.libraryId && library.find(l => l.id === h.libraryId && l.status === 'private')?.stock && (
-                  <div className="text-[10px] font-black text-stone-400 uppercase">
-                    {t('stock_label')}: <span className={library.find(l => l.id === h.libraryId)!.stock!.amount < h.amount.value ? 'text-red-500' : 'text-green-600'}>
-                      {library.find(l => l.id === h.libraryId)!.stock!.amount} {library.find(l => l.id === h.libraryId)!.stock!.unit}
-                    </span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-stone-400/80">
+                    <span>{t('stock_label')}: {library.find(l => l.id === h.libraryId)!.stock!.amount} {library.find(l => l.id === h.libraryId)!.stock!.unit}</span>
+                    {library.find(l => l.id === h.libraryId)!.stock!.amount < h.amount.value && (
+                      <i className="fas fa-exclamation-circle text-red-500" title="Out of stock"></i>
+                    )}
                   </div>
                 )}
                 <div className="flex items-center gap-2">
@@ -407,10 +409,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   <span className="text-[10px] font-black text-stone-400 uppercase">%</span>
                 </div>
                 {preferences.enableStockManagement && c.libraryId && library.find(l => l.id === c.libraryId && l.status === 'private')?.stock && (
-                  <div className="text-[10px] font-black text-stone-400 uppercase">
-                    {t('stock_label')}: <span className={library.find(l => l.id === c.libraryId)!.stock!.amount < 1 ? 'text-red-500' : 'text-green-600'}>
-                      {library.find(l => l.id === c.libraryId)!.stock!.amount} {library.find(l => l.id === c.libraryId)!.stock!.unit}
-                    </span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-stone-400/80">
+                    <span>{t('stock_label')}: {library.find(l => l.id === c.libraryId)!.stock!.amount} {library.find(l => l.id === c.libraryId)!.stock!.unit}</span>
+                    {library.find(l => l.id === c.libraryId)!.stock!.amount < 1 && (
+                      <i className="fas fa-exclamation-circle text-red-500" title="Out of stock"></i>
+                    )}
                   </div>
                 )}
                 <button onClick={() => removeIngredient('culture', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
