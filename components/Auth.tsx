@@ -53,6 +53,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="brewmaster@example.com"
+            maxLength={255} // Security: Limit input length to prevent oversized payloads
           />
         </div>
         <div>
@@ -64,6 +65,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
+            maxLength={100} // Security: Limit input length to prevent oversized payloads
           />
         </div>
 

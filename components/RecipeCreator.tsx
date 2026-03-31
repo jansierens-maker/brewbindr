@@ -276,7 +276,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2">
             <label className="text-xs font-bold text-stone-400 uppercase">{t('recipe_name')}</label>
-            <input className="w-full p-3 bg-stone-50 border rounded-xl text-stone-900 font-bold" value={recipe.name} onChange={e => setRecipe({...recipe, name: e.target.value})} />
+            <input className="w-full p-3 bg-stone-50 border rounded-xl text-stone-900 font-bold" value={recipe.name} onChange={e => setRecipe({...recipe, name: e.target.value})} maxLength={100} />
           </div>
           <div className="md:col-span-2">
             <label className="text-xs font-bold text-stone-400 uppercase">{t('style_label')}</label>
@@ -435,7 +435,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="space-y-4 bg-stone-50 p-6 rounded-3xl border border-stone-100">
             <div className="mb-4">
                <label className="text-[10px] font-black text-stone-400 uppercase mb-1 block">Profile Name</label>
-               <input className="w-full p-3 bg-white border border-stone-200 rounded-xl text-sm font-bold shadow-sm" value={recipe.mash?.name || ""} onChange={e => setRecipe({...recipe, mash: { ...(recipe.mash || { steps: [] }), name: e.target.value}})} placeholder="e.g., Single Infusion" />
+               <input className="w-full p-3 bg-white border border-stone-200 rounded-xl text-sm font-bold shadow-sm" value={recipe.mash?.name || ""} onChange={e => setRecipe({...recipe, mash: { ...(recipe.mash || { steps: [] }), name: e.target.value}})} placeholder="e.g., Single Infusion" maxLength={100} />
             </div>
             <div className="space-y-3">
               {(recipe.mash?.steps || []).map((s, idx) => (
@@ -491,6 +491,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             placeholder="Brewing tips, profile notes, or general thoughts..."
             value={recipe.notes || ""}
             onChange={e => setRecipe({...recipe, notes: e.target.value})}
+            maxLength={2000}
           />
         </div>
 

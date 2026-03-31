@@ -268,7 +268,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                 <div className="space-y-4 animate-in zoom-in-95 duration-200">
                   <div>
                     <label htmlFor="ingredient-name" className="text-[10px] font-black text-stone-400 uppercase">{t('name_label')}</label>
-                    <input id="ingredient-name" className="w-full p-2 bg-stone-50 border rounded-lg text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+                    <input id="ingredient-name" className="w-full p-2 bg-stone-50 border rounded-lg text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} maxLength={100} />
                   </div>
                   
                   {filter === 'misc' && (
@@ -301,7 +301,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
                       <div className="col-span-2">
                         <label className="text-[10px] font-black text-stone-400 uppercase">{t('style_category')}</label>
-                        <input className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.category || ""} onChange={e => setEditForm({...editForm, category: e.target.value})} />
+                        <input className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.category || ""} onChange={e => setEditForm({...editForm, category: e.target.value})} maxLength={100} />
                       </div>
                       <div>
                         <label className="text-[10px] font-black text-stone-400 uppercase">OG Min</label>
