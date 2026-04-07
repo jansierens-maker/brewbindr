@@ -17,3 +17,8 @@
 **Vulnerability:** Users could bypass the administrative approval process by manually setting the 'status' of their recipes or ingredients to 'approved' via direct Supabase API calls.
 **Learning:** Row-Level Security (RLS) policies must validate not just ownership, but also restricted state transitions (like moderation status) using 'WITH CHECK'.
 **Prevention:** For tables with moderation workflows, add 'WITH CHECK' clauses to RLS policies to ensure non-admin users cannot set records to a 'protected' state (e.g., status = 'approved').
+
+## 2025-05-14 - [HIGH] Prevent AI Prompt Injection via Delimiters
+**Vulnerability:** User-provided prompts and recipe data were directly concatenated into AI system instructions, making the application vulnerable to prompt injection where a user could trick the AI into ignoring safety guidelines or leaking internal logic.
+**Learning:** LLMs can easily be confused between instructions and data if they are not clearly separated.
+**Prevention:** Always wrap user-provided data in unique, explicit delimiters (e.g., USER_REQUEST_START/END) and provide clear system instructions to treat content within those delimiters as data only, ignoring any embedded commands.
