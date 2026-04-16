@@ -17,3 +17,8 @@
 **Vulnerability:** Users could bypass the administrative approval process by manually setting the 'status' of their recipes or ingredients to 'approved' via direct Supabase API calls.
 **Learning:** Row-Level Security (RLS) policies must validate not just ownership, but also restricted state transitions (like moderation status) using 'WITH CHECK'.
 **Prevention:** For tables with moderation workflows, add 'WITH CHECK' clauses to RLS policies to ensure non-admin users cannot set records to a 'protected' state (e.g., status = 'approved').
+
+## 2025-05-14 - [MEDIUM] Harden AI Endpoints against Prompt Injection
+**Vulnerability:** User-provided prompts and data were passed directly to the Gemini AI model without isolation. This made the AI susceptible to prompt injection attacks where a user could try to override system instructions.
+**Learning:** LLMs can be instructed to ignore user input if it is clearly delimited and accompanied by a system-level directive to treat it as data.
+**Prevention:** Always wrap untrusted user input in XML-style tags (e.g., <PROMPT>) and explicitly instruct the AI to treat content within those tags strictly as data. Additionally, perform strict type validation on complex objects before stringifying them for the AI.
