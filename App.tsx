@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext, useMemo } from 'react';
 import RecipeCreator from './components/RecipeCreator';
 import BrewLog from './components/BrewLog';
 import TastingNotes from './components/TastingNotes';
@@ -116,6 +116,26 @@ const AppContent: React.FC = () => {
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
+
+  const deduplicatedLibrary = useMemo(() => {
+    // Deduplicate library items for RecipeCreator selection, prioritizing 'private' over 'approved'/'submitted'
+    const deduplicated: Record<string, LibraryIngredient> = {};
+    library.forEach(item => {
+      const key = `${item.type}-${item.name.toLowerCase()}`;
+      if (!deduplicated[key] || item.status === 'private') {
+        deduplicated[key] = item;
+      }
+    });
+    return Object.values(deduplicated).sort((a, b) => a.name.localeCompare(b.name));
+  }, [library]);
+
+  const processedRecipes = useMemo(() => {
+    return recipes
+      .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
+      .map(r => ({ recipe: r, stock: checkRecipeStock(r, library) }))
+      .filter(({ stock }) => !showBrewableOnly || stock.isBrewable)
+      .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name));
+  }, [recipes, libraryView, user?.id, showBrewableOnly, library]);
 
   useEffect(() => {
     if (printData) {
@@ -1215,13 +1235,7 @@ END \$\$;
                       </div>
                     </button>
                   )}
-                  {recipes
-                    .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
-                    .filter(r => !showBrewableOnly || checkRecipeStock(r, library).isBrewable)
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map(r => {
-                    const stock = checkRecipeStock(r, library);
-                    return (
+                  {processedRecipes.map(({ recipe: r, stock }) => (
                     <div key={r.id} className="bg-white rounded-3xl border border-stone-200 p-6 hover:shadow-xl transition-all border-b-4 group relative flex flex-col" style={{ borderBottomColor: getSRMColor(r.specifications?.color?.value || 0) }}>
                       <div className="absolute top-4 right-4 flex gap-2">
                         <button onClick={() => handlePrintRecipe(r)} title={t('print_recipe')} className="text-stone-300 hover:text-stone-900 transition-colors"> <i className="fas fa-print text-lg"></i> </button>
@@ -1293,11 +1307,8 @@ END \$\$;
                         )}
                       </div>
                     </div>
-                  );})}
-                  {recipes
-                    .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
-                    .filter(r => !showBrewableOnly || checkRecipeStock(r, library).isBrewable)
-                    .length === 0 && (
+                  ))}
+                  {processedRecipes.length === 0 && (
                     <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-stone-200 px-6 shadow-sm">
                       <i className="fas fa-beer text-5xl text-amber-100 mb-6 block"></i>
                       <p className="text-stone-400 font-bold max-w-sm mx-auto mb-6"> {t('empty_recipes_hint').split('Library')[0]} <button onClick={() => setView('library')} className="text-amber-600 underline hover:text-amber-700"> {t('go_to_library')} </button> {t('empty_recipes_hint').split('Library')[1]} </p>
@@ -1319,17 +1330,7 @@ END \$\$;
                 onSave={handleSaveRecipe}
                 onSubmitToPublic={handleRecipeSubmitToPublic}
                 onDelete={handleDeleteRecipe}
-                library={(() => {
-                  // Deduplicate library items for RecipeCreator selection, prioritizing 'private' over 'approved'/'submitted'
-                  const deduplicated: Record<string, LibraryIngredient> = {};
-                  library.forEach(item => {
-                    const key = `${item.type}-${item.name.toLowerCase()}`;
-                    if (!deduplicated[key] || item.status === 'private') {
-                      deduplicated[key] = item;
-                    }
-                  });
-                  return Object.values(deduplicated).sort((a, b) => a.name.localeCompare(b.name));
-                })()}
+                library={deduplicatedLibrary}
               />
             )}
             {view === 'library' && (
