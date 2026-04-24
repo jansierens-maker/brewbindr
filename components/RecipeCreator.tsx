@@ -347,7 +347,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     </span>
                   </div>
                 )}
-                <button onClick={() => removeIngredient('fermentable', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
+                <button onClick={() => removeIngredient('fermentable', i)} aria-label="Remove Fermentable"><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
             ))}
           </div>
@@ -388,7 +388,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">min</span>
                 </div>
-                <button onClick={() => removeIngredient('hop', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
+                <button onClick={() => removeIngredient('hop', i)} aria-label="Remove Hop"><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
             ))}
           </div>
@@ -414,7 +414,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     </span>
                   </div>
                 )}
-                <button onClick={() => removeIngredient('culture', i)}><i className="fas fa-trash-alt text-stone-300"></i></button>
+                <button onClick={() => removeIngredient('culture', i)} aria-label="Remove Culture"><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
             ))}
           </div>
@@ -474,7 +474,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                         <option value="temperature">Temp</option>
                         <option value="decoction">Decoc</option>
                       </select>
-                      <button onClick={() => removeMashStep(idx)} className="text-stone-300 hover:text-red-500 transition-colors p-2"><i className="fas fa-trash-alt"></i></button>
+                      <button onClick={() => removeMashStep(idx)} className="text-stone-300 hover:text-red-500 transition-colors p-2" aria-label="Remove Mash Step"><i className="fas fa-trash-alt"></i></button>
                     </div>
                   </div>
                 </div>
@@ -500,6 +500,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <button
                 onClick={() => { if(confirm(t('confirm_delete'))) onDelete(recipe.id!); }}
                 className="flex-none bg-stone-100 text-red-600 px-8 py-5 rounded-3xl font-black shadow-sm hover:bg-red-50 transition-all uppercase tracking-widest text-lg"
+                aria-label="Delete Recipe"
               >
                 <i className="fas fa-trash-alt"></i>
               </button>
