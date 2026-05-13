@@ -22,3 +22,8 @@
 **Vulnerability:** User-provided prompts and data were passed directly to the Gemini AI model without isolation. This made the AI susceptible to prompt injection attacks where a user could try to override system instructions.
 **Learning:** LLMs can be instructed to ignore user input if it is clearly delimited and accompanied by a system-level directive to treat it as data.
 **Prevention:** Always wrap untrusted user input in XML-style tags (e.g., <PROMPT>) and explicitly instruct the AI to treat content within those tags strictly as data. Additionally, perform strict type validation on complex objects before stringifying them for the AI.
+
+## 2025-05-14 - [CRITICAL] Replaced Weak Random Number Generator
+**Vulnerability:** Weak cryptographically insecure ID generation was utilized for creating IDs using `Math.random().toString(36).substr(2, 9)`.
+**Learning:** Usage of `Math.random` to generate unique IDs or security sensitive data poses a severe security risk and may be prone to predictability and collisions.
+**Prevention:** It's imperative to use cryptographically secure implementations for randomness such as `crypto.randomUUID()` in Node.js instead.

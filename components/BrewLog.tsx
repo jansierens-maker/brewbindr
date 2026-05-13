@@ -19,7 +19,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
   const [saveIndicator, setSaveIndicator] = useState<boolean>(false);
   
   const [entry, setEntry] = useState<BrewLogEntry>(initialLog || {
-    id: Math.random().toString(36).substr(2, 9),
+    id: crypto.randomUUID(),
     recipeId: recipe.id || 'unassigned',
     date: new Date().toISOString().split('T')[0],
     brewDate: new Date().toISOString().split('T')[0],

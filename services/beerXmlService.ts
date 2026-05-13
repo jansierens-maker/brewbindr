@@ -240,7 +240,7 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
     }
 
     result.recipes.push({
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       name: getVal(r, "NAME"),
       type: (getVal(r, "TYPE").toLowerCase().replace(" ", "_") as any) || "all_grain",
       author: getVal(r, "BREWER"),
