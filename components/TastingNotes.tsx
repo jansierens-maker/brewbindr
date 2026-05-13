@@ -30,7 +30,7 @@ const RatingField: React.FC<{ label: string, value: number, onChange: (val: numb
 const TastingNotes: React.FC<TastingNotesProps> = ({ recipe, brewLogId, onSave }) => {
   const { t } = useTranslation();
   const [note, setNote] = useState<TastingNote>({
-    id: Math.random().toString(36).substr(2, 9),
+    id: crypto.randomUUID(),
     recipeId: recipe.id || '',
     brewLogId,
     date: new Date().toISOString().split('T')[0],

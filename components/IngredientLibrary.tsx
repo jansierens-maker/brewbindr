@@ -47,7 +47,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       const selectedItems = ingredients.filter(i => selectedIds.includes(i.id));
       const submittedClones = selectedItems.map(item => ({
         ...item,
-        id: Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID(),
         user_id: user.id,
         status: 'submitted' as const,
         stock: undefined // Remove stock for public submission
@@ -59,7 +59,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       const selectedItems = ingredients.filter(i => selectedIds.includes(i.id));
       const newItems = selectedItems.map(item => ({
         ...item,
-        id: Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID(),
         user_id: user.id,
         status: 'private' as const
       }));
@@ -76,7 +76,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   };
 
   const handleAddNew = () => {
-    const newId = Math.random().toString(36).substr(2, 9);
+    const newId = crypto.randomUUID();
     
     let defaultName = "";
     switch(filter) {
@@ -442,7 +442,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                         onClick={async () => {
                           const clone = {
                             ...item,
-                            id: Math.random().toString(36).substr(2, 9),
+                            id: crypto.randomUUID(),
                             user_id: user.id,
                             status: 'submitted' as const,
                             stock: undefined
@@ -462,7 +462,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     {libraryView === 'public' && (
                        <button
                         onClick={async () => {
-                          const newItem = { ...item, id: Math.random().toString(36).substr(2, 9), user_id: user?.id, status: 'private' as const };
+                          const newItem = { ...item, id: crypto.randomUUID(), user_id: user?.id, status: 'private' as const };
                           onUpdate([...ingredients, newItem]);
                           if (user?.id) {
                             await supabaseService.saveLibraryIngredient(newItem, user.id);

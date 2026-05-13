@@ -186,7 +186,7 @@ const AppContent: React.FC = () => {
       }
 
       const original = updatedLib.find(l => l.id === item.libraryId) || item;
-      const newId = Math.random().toString(36).substr(2, 9);
+      const newId = crypto.randomUUID();
       const newItem: LibraryIngredient = {
         ...original,
         ...defaultProps,
@@ -299,7 +299,7 @@ const AppContent: React.FC = () => {
     if (selectedRecipe && selectedRecipe.id) {
       setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id } : r));
     } else {
-      const newRecipe = { ...syncedRecipe, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
+      const newRecipe = { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id };
       setRecipes(prev => [...prev, newRecipe]);
     }
     setSelectedRecipe(null);
@@ -466,7 +466,7 @@ const AppContent: React.FC = () => {
           itemsAdded = 1 + result.addedToLibrary;
           newRecipes.push({ ...linked, user_id: user?.id });
         } else {
-          const newItem = { ...next.data, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
+          const newItem = { ...next.data, id: crypto.randomUUID(), user_id: user?.id };
           newLib.push(newItem);
           itemsAdded = 1;
         }
@@ -521,11 +521,11 @@ const AppContent: React.FC = () => {
     } else if (action === 'copy') {
       if (currentDuplicate.type === 'recipe') {
         const { recipe: linked, addedToLibrary } = linkIngredientsToLibrary({ ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)` }, updatedLib);
-        linked.id = Math.random().toString(36).substr(2, 9);
+        linked.id = crypto.randomUUID();
         updatedRecipes = [...recipes, { ...linked, user_id: user?.id }];
         nextSummary.inserted += 1 + addedToLibrary;
       } else {
-        const newItem = { ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)`, id: Math.random().toString(36).substr(2, 9), user_id: user?.id };
+        const newItem = { ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)`, id: crypto.randomUUID(), user_id: user?.id };
         updatedLib = [...library, newItem];
         nextSummary.inserted += 1;
       }
@@ -645,7 +645,7 @@ const AppContent: React.FC = () => {
 
     const clonedRecipe: Recipe = {
       ...syncedRecipe,
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       user_id: user.id,
       status: 'submitted'
     };
@@ -667,7 +667,7 @@ const AppContent: React.FC = () => {
   const handleRecipeAddToPersonal = async (recipe: Recipe) => {
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
 
-    const newRecipeId = Math.random().toString(36).substr(2, 9);
+    const newRecipeId = crypto.randomUUID();
     const updatedRecipe: Recipe = {
       ...syncedRecipe,
       id: newRecipeId,
