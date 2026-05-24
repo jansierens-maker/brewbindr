@@ -208,6 +208,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           </div>
           <div className="flex flex-col md:flex-row gap-4">
             <input 
+              aria-label="AI Recipe Prompt"
               className="flex-1 bg-white/10 border border-white/20 rounded-2xl px-6 py-4 text-white font-medium placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
               placeholder="e.g., A Hazy IPA with mango and Citra hops, 20L batch"
               value={prompt}
@@ -275,21 +276,22 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
       <section className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2">
-            <label className="text-xs font-bold text-stone-400 uppercase">{t('recipe_name')}</label>
-            <input className="w-full p-3 bg-stone-50 border rounded-xl text-stone-900 font-bold" value={recipe.name} onChange={e => setRecipe({...recipe, name: e.target.value})} />
+            <label htmlFor="recipe_name" className="text-xs font-bold text-stone-400 uppercase">{t('recipe_name')}</label>
+            <input id="recipe_name" className="w-full p-3 bg-stone-50 border rounded-xl text-stone-900 font-bold" value={recipe.name} onChange={e => setRecipe({...recipe, name: e.target.value})} />
           </div>
           <div className="md:col-span-2">
-            <label className="text-xs font-bold text-stone-400 uppercase">{t('style_label')}</label>
-            <select className="w-full p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.style?.libraryId || ""} onChange={e => handleLibrarySelect('style', 0, e.target.value)}>
+            <label htmlFor="recipe_style" className="text-xs font-bold text-stone-400 uppercase">{t('style_label')}</label>
+            <select id="recipe_style" className="w-full p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.style?.libraryId || ""} onChange={e => handleLibrarySelect('style', 0, e.target.value)}>
               <option value="">-- Choose Style --</option>
               {library.filter(l => l.type === 'style').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-bold text-stone-400 uppercase">{t('batch_size')}</label>
+            <label htmlFor="batch_size" className="text-xs font-bold text-stone-400 uppercase">{t('batch_size')}</label>
             <div className="flex items-center gap-2">
-              <input type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.batch_size.value} onChange={e => setRecipe({...recipe, batch_size: {...recipe.batch_size, value: parseFloat(e.target.value) || 0}})} />
+              <input id="batch_size" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.batch_size.value} onChange={e => setRecipe({...recipe, batch_size: {...recipe.batch_size, value: parseFloat(e.target.value) || 0}})} />
               <select
+                aria-label="Batch Size Unit"
                 className="bg-transparent text-xs font-bold text-stone-400 outline-none"
                 value={recipe.batch_size.unit}
                 onChange={e => setRecipe({...recipe, batch_size: {...recipe.batch_size, unit: e.target.value as any}})}
@@ -300,16 +302,16 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-stone-400 uppercase">{t('efficiency')}</label>
+            <label htmlFor="efficiency" className="text-xs font-bold text-stone-400 uppercase">{t('efficiency')}</label>
             <div className="flex items-center gap-2">
-              <input type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.efficiency.brewhouse} onChange={e => setRecipe({...recipe, efficiency: {brewhouse: parseFloat(e.target.value) || 0}})} />
+              <input id="efficiency" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.efficiency.brewhouse} onChange={e => setRecipe({...recipe, efficiency: {brewhouse: parseFloat(e.target.value) || 0}})} />
               <span className="text-xs font-bold text-stone-400">%</span>
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-stone-400 uppercase">{t('boil_time')}</label>
+            <label htmlFor="boil_time" className="text-xs font-bold text-stone-400 uppercase">{t('boil_time')}</label>
             <div className="flex items-center gap-2">
-              <input type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.boil_time.value} onChange={e => setRecipe({...recipe, boil_time: {...recipe.boil_time, value: parseFloat(e.target.value) || 0}})} />
+              <input id="boil_time" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.boil_time.value} onChange={e => setRecipe({...recipe, boil_time: {...recipe.boil_time, value: parseFloat(e.target.value) || 0}})} />
               <span className="text-xs font-bold text-stone-400">min</span>
             </div>
           </div>
@@ -434,21 +436,22 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           </div>
           <div className="space-y-4 bg-stone-50 p-6 rounded-3xl border border-stone-100">
             <div className="mb-4">
-               <label className="text-[10px] font-black text-stone-400 uppercase mb-1 block">Profile Name</label>
-               <input className="w-full p-3 bg-white border border-stone-200 rounded-xl text-sm font-bold shadow-sm" value={recipe.mash?.name || ""} onChange={e => setRecipe({...recipe, mash: { ...(recipe.mash || { steps: [] }), name: e.target.value}})} placeholder="e.g., Single Infusion" />
+               <label htmlFor="mash_profile_name" className="text-[10px] font-black text-stone-400 uppercase mb-1 block">Profile Name</label>
+               <input id="mash_profile_name" className="w-full p-3 bg-white border border-stone-200 rounded-xl text-sm font-bold shadow-sm" value={recipe.mash?.name || ""} onChange={e => setRecipe({...recipe, mash: { ...(recipe.mash || { steps: [] }), name: e.target.value}})} placeholder="e.g., Single Infusion" />
             </div>
             <div className="space-y-3">
               {(recipe.mash?.steps || []).map((s, idx) => (
                 <div key={idx} className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm relative group">
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
                     <div className="md:col-span-2">
-                      <label className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_name')}</label>
-                      <input className="w-full p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} />
+                      <label htmlFor={`step_name_${idx}`} className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_name')}</label>
+                      <input id={`step_name_${idx}`} className="w-full p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_temp')}</label>
+                      <label htmlFor={`step_temp_${idx}`} className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_temp')}</label>
                       <div className="flex items-center gap-2">
                         <input
+                          id={`step_temp_${idx}`}
                           type="number"
                           className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold"
                           value={preferences.units === 'imperial' ? Math.round((s.step_temp * 9/5) + 32) : s.step_temp}
@@ -462,14 +465,14 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                       </div>
                     </div>
                     <div>
-                      <label className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_time')}</label>
+                      <label htmlFor={`step_time_${idx}`} className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_time')}</label>
                       <div className="flex items-center gap-2">
-                        <input type="number" className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.step_time} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
+                        <input id={`step_time_${idx}`} type="number" className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.step_time} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
                         <span className="text-xs font-bold text-stone-400">min</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between pb-1">
-                      <select className="p-2 bg-stone-100 border border-stone-200 rounded-lg text-[10px] font-black uppercase tracking-tight text-stone-500" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
+                      <select aria-label="Mash Step Type" className="p-2 bg-stone-100 border border-stone-200 rounded-lg text-[10px] font-black uppercase tracking-tight text-stone-500" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
                         <option value="infusion">Infusion</option>
                         <option value="temperature">Temp</option>
                         <option value="decoction">Decoc</option>
@@ -485,8 +488,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
 
         {/* Recipe Notes */}
         <div className="pt-6 border-t border-stone-100">
-          <h4 className="font-bold uppercase text-stone-900 mb-4 flex items-center gap-2"><i className="fas fa-sticky-note text-stone-400"></i> {t('notes')}</h4>
+          <label htmlFor="recipe_notes" className="font-bold uppercase text-stone-900 mb-4 flex items-center gap-2"><i className="fas fa-sticky-note text-stone-400"></i> {t('notes')}</label>
           <textarea 
+            id="recipe_notes"
             className="w-full p-4 bg-stone-50 border border-stone-100 rounded-2xl min-h-[120px] text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
             placeholder="Brewing tips, profile notes, or general thoughts..."
             value={recipe.notes || ""}
