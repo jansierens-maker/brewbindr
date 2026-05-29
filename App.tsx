@@ -114,6 +114,7 @@ const AppContent: React.FC = () => {
   const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
   const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
+  const [initialSyncStatus, setInitialSyncStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
 
@@ -235,31 +236,46 @@ const AppContent: React.FC = () => {
         setShowFallbackModal(true);
       }
     }
+
     const loadData = async () => {
       if (authLoading) return;
 
-      // First load from localStorage for immediate availability
-      const saved = localStorage.getItem('brewmaster_data_v3');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          if (data.recipes) setRecipes(data.recipes);
-          if (data.brewLogs) setBrewLogs(data.brewLogs);
-          if (data.tastingNotes) setTastingNotes(data.tastingNotes);
-          if (data.library) setLibrary(data.library);
-        } catch (e) {
-          console.error('Error parsing local data:', e);
-        }
-      }
+      // Always start with a clean slate when user changes
+      setInitialSyncStatus('idle');
+      setRecipes([]);
+      setBrewLogs([]);
+      setTastingNotes([]);
+      setLibrary(EXAMPLES);
 
-      // Sync from Supabase for cross-device consistency
-      const remoteData = await supabaseService.fetchAppData(user?.id);
-      if (remoteData) {
-        // We overwrite local state with remote data.
-        setRecipes(remoteData.recipes);
-        setBrewLogs(remoteData.brewLogs);
-        setTastingNotes(remoteData.tastingNotes);
-        setLibrary(remoteData.library);
+      if (user?.id) {
+        // AUTHENTICATED USER: Fetch directly and ONLY from DB
+        setInitialSyncStatus('loading');
+        try {
+          const remoteData = await supabaseService.fetchAppData(user.id);
+          if (remoteData) {
+            setRecipes(remoteData.recipes);
+            setBrewLogs(remoteData.brewLogs);
+            setTastingNotes(remoteData.tastingNotes);
+            setLibrary(remoteData.library);
+            setInitialSyncStatus('success');
+          }
+        } catch (err) {
+          console.error('Direct DB fetch failed:', err);
+          setInitialSyncStatus('error');
+        }
+      } else {
+        // GUEST USER: Load from localStorage
+        const saved = localStorage.getItem('brewmaster_guest_data');
+        if (saved) {
+          try {
+            const data = JSON.parse(saved);
+            setRecipes(data.recipes || []);
+            setBrewLogs(data.brewLogs || []);
+            setTastingNotes(data.tastingNotes || []);
+            setLibrary(data.library || EXAMPLES);
+          } catch (e) { console.error('Error parsing guest data:', e); }
+        }
+        setInitialSyncStatus('success');
       }
 
       if (isAdmin) {
@@ -271,54 +287,133 @@ const AppContent: React.FC = () => {
   }, [user?.id, authLoading, isAdmin]);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || initialSyncStatus !== 'success' || user?.id) return;
+
+    // ONLY GUEST DATA IS SAVED TO LOCALSTORAGE
+    // Logged-in user data is handled via Realtime + Direct CRUD
     const data = { recipes, brewLogs, tastingNotes, library };
     if (allowLocalStorage) {
-      localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
+      localStorage.setItem('brewmaster_guest_data', JSON.stringify(data));
     }
+  }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading, initialSyncStatus]);
 
-    // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
-    if (!user?.id) return;
-    const timer = setTimeout(() => {
-      supabaseService.syncAll(data, user.id);
-    }, 2000);
+  // Realtime Subscription Effect
+  useEffect(() => {
+    if (!supabase || !user?.id || initialSyncStatus !== 'success') return;
 
-    return () => clearTimeout(timer);
-  }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading]);
+    const tables = ['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+
+    const channel = supabase.channel('db-changes');
+
+    tables.forEach(table => {
+      channel.on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table },
+        (payload: any) => {
+          const { eventType, new: newRow, old: oldRow } = payload;
+
+          // Map to correct React state
+          if (table === 'recipes') {
+            setRecipes(prev => {
+              if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                const item = { ...newRow.data, user_id: newRow.user_id, status: newRow.status };
+                const exists = prev.find(r => r.id === item.id);
+                return exists ? prev.map(r => r.id === item.id ? item : r) : [...prev, item];
+              }
+              if (eventType === 'DELETE') return prev.filter(r => r.id !== oldRow.id);
+              return prev;
+            });
+          } else if (table === 'brew_logs') {
+            setBrewLogs(prev => {
+              if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                const item = { ...newRow.data, user_id: newRow.user_id };
+                const exists = prev.find(l => l.id === item.id);
+                return exists ? prev.map(l => l.id === item.id ? item : l) : [item, ...prev];
+              }
+              if (eventType === 'DELETE') return prev.filter(l => l.id !== oldRow.id);
+              return prev;
+            });
+          } else if (table === 'tasting_notes') {
+            setTastingNotes(prev => {
+              if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                const item = { ...newRow.data, user_id: newRow.user_id };
+                const exists = prev.find(n => n.id === item.id);
+                return exists ? prev.map(n => n.id === item.id ? item : n) : [item, ...prev];
+              }
+              if (eventType === 'DELETE') return prev.filter(n => n.id !== oldRow.id);
+              return prev;
+            });
+          } else {
+            // It's a library table
+            setLibrary(prev => {
+              if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                const item = { ...newRow.data, user_id: newRow.user_id, status: newRow.status };
+                const exists = prev.find(i => i.id === item.id);
+                return exists ? prev.map(i => i.id === item.id ? item : i) : [...prev, item];
+              }
+              if (eventType === 'DELETE') return prev.filter(i => i.id !== oldRow.id);
+              return prev;
+            });
+          }
+        }
+      );
+    });
+
+    channel.subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user?.id, initialSyncStatus]);
 
   const handleSaveRecipe = async (recipe: Recipe) => {
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
+    const updatedRecipe = { ...syncedRecipe, id: selectedRecipe?.id || crypto.randomUUID(), user_id: user?.id };
 
-    if (newIngredients.length > 0) {
-      setLibrary(prev => [...prev, ...newIngredients]);
-      if (user?.id) {
+    // For Guest Mode, we must update state manually
+    if (!user?.id) {
+      if (newIngredients.length > 0) setLibrary(prev => [...prev, ...newIngredients]);
+      setRecipes(prev => {
+        const exists = prev.find(r => r.id === updatedRecipe.id);
+        if (exists) return prev.map(r => r.id === updatedRecipe.id ? updatedRecipe : r);
+        return [...prev, updatedRecipe];
+      });
+    } else {
+      // For Account Mode, Realtime will handle state updates after save completes
+      if (newIngredients.length > 0) {
         await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
       }
+      await supabaseService.saveRecipe(updatedRecipe, user.id);
     }
 
-    if (selectedRecipe && selectedRecipe.id) {
-      setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id } : r));
+    setSelectedRecipe(null);
+    setView('recipes');
+  };
+
+  const handleDeleteRecipe = async (id: string) => {
+    if (!user?.id) {
+      setRecipes(prev => prev.filter(r => r.id !== id));
     } else {
-      const newRecipe = { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id };
-      setRecipes(prev => [...prev, newRecipe]);
+      // Realtime handles state update after delete succeeds
+      await supabaseService.deleteRecipe(id);
     }
     setSelectedRecipe(null);
     setView('recipes');
   };
 
-  const handleDeleteRecipe = (id: string) => {
-    setRecipes(prev => prev.filter(r => r.id !== id));
-    setSelectedRecipe(null);
-    setView('recipes');
-    supabaseService.deleteRecipe(id);
-  };
+  const handleUpdateBrewLog = async (entry: BrewLogEntry) => {
+    const updatedLog = { ...entry, user_id: user?.id };
 
-  const handleUpdateBrewLog = (entry: BrewLogEntry) => {
-    setBrewLogs(prev => {
-      const exists = prev.find(l => l.id === entry.id);
-      if (exists) return prev.map(l => l.id === entry.id ? entry : l);
-      return [{ ...entry, user_id: user?.id }, ...prev];
-    });
+    if (!user?.id) {
+      setBrewLogs(prev => {
+        const exists = prev.find(l => l.id === updatedLog.id);
+        if (exists) return prev.map(l => l.id === updatedLog.id ? updatedLog : l);
+        return [updatedLog, ...prev];
+      });
+    } else {
+      // Realtime handles state update
+      await supabaseService.saveBrewLog(updatedLog, user.id);
+    }
   };
 
   const handleSaveAndExitBrewLog = (entry: BrewLogEntry) => {
@@ -691,6 +786,10 @@ const AppContent: React.FC = () => {
 
   const handleOpenSyncDetails = async () => {
     setShowSyncDetails(true);
+    refreshSyncStatus();
+  };
+
+  const refreshSyncStatus = async () => {
     setTableStatus({});
     setRlsStatus(null);
 
@@ -706,6 +805,24 @@ const AppContent: React.FC = () => {
     } else {
       setTableStatus({ 'N/A': false });
       setRlsStatus({ enabled: false, reason: 'Supabase not configured' });
+    }
+  };
+
+  const handleRetryInitialSync = async () => {
+    setInitialSyncStatus('loading');
+    try {
+      const remoteData = await supabaseService.fetchAppData(user?.id);
+      if (remoteData) {
+        setRecipes(remoteData.recipes);
+        setBrewLogs(remoteData.brewLogs);
+        setTastingNotes(remoteData.tastingNotes);
+        setLibrary(remoteData.library);
+        setInitialSyncStatus('success');
+        refreshSyncStatus();
+      }
+    } catch (err) {
+      console.error('Retry sync failed:', err);
+      setInitialSyncStatus('error');
     }
   };
 
@@ -752,18 +869,40 @@ DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
 
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id AND (role = (SELECT role FROM profiles WHERE id = auth.uid())));
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
 DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Helper to check if user is admin (moved up to avoid recursion in policies)
+-- Helper to check if user is admin (SECURITY DEFINER bypasses RLS to prevent recursion)
 CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
-  SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
-$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
+
+-- Trigger to prevent non-admins from changing roles
+CREATE OR REPLACE FUNCTION protect_profile_role()
+RETURNS trigger AS $$
+BEGIN
+  -- If not admin and trying to change role
+  IF NOT is_admin() AND NEW.role IS DISTINCT FROM OLD.role THEN
+    RAISE EXCEPTION 'Only admins can change user roles';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_profile_update ON profiles;
+CREATE TRIGGER on_profile_update
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION protect_profile_role();
 
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
-CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (auth.uid() != id AND is_admin());
+CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (is_admin());
 
 -- Trigger to create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -873,6 +1012,25 @@ BEGIN
     EXECUTE format('CREATE POLICY "Allow admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
   END LOOP;
 END \$\$;
+
+-- Enable Realtime for all tables
+-- This ensures the DB broadcasts changes to the frontend SDK
+BEGIN;
+  DROP PUBLICATION IF EXISTS supabase_realtime;
+  CREATE PUBLICATION supabase_realtime FOR TABLE
+    profiles,
+    recipes,
+    brew_logs,
+    tasting_notes,
+    fermentables,
+    hops,
+    cultures,
+    styles,
+    miscs,
+    mash_profiles,
+    equipment,
+    waters;
+COMMIT;
 `.trim();
 
   const handleDismissFallback = () => {
@@ -933,7 +1091,17 @@ END \$\$;
                     </div>
 
                     <div>
-                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">RLS Security Status</p>
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">RLS Security Status</p>
+                        {initialSyncStatus === 'error' && (
+                          <button
+                            onClick={handleRetryInitialSync}
+                            className="text-amber-600 font-black text-[10px] uppercase hover:underline flex items-center gap-1"
+                          >
+                            <i className="fas fa-sync-alt"></i> Retry Sync
+                          </button>
+                        )}
+                      </div>
                       {rlsStatus ? (
                         <div className={`p-4 rounded-2xl border flex items-center gap-3 ${rlsStatus.enabled ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
                           <i className={`fas ${rlsStatus.enabled ? 'fa-shield-check' : 'fa-shield-exclamation'} text-xl`}></i>
@@ -1158,9 +1326,9 @@ END \$\$;
                 onClick={handleOpenSyncDetails}
                 className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
               >
-                <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${initialSyncStatus === 'error' ? 'bg-red-500' : (supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300')}`}></div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                  {supabase ? t('cloud_sync') : t('local_mode')}
+                  {initialSyncStatus === 'error' ? 'Sync Error' : (supabase ? t('cloud_sync') : t('local_mode'))}
                 </span>
               </button>
               </div>
@@ -1187,6 +1355,16 @@ END \$\$;
             </div>
           </header>
           <main className="max-w-7xl mx-auto px-4 py-10 pb-32">
+            {(authLoading || initialSyncStatus === 'loading') && (view === 'recipes' || view === 'library' || view === 'brews') ? (
+              <div className="py-20 text-center animate-in fade-in duration-500">
+                <div className="relative w-16 h-16 mx-auto mb-6">
+                  <div className="absolute inset-0 border-4 border-stone-100 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-amber-500 rounded-full border-t-transparent animate-spin"></div>
+                </div>
+                <p className="text-stone-400 font-bold uppercase tracking-widest text-xs">{t('loading')}...</p>
+              </div>
+            ) : (
+              <>
             {view === 'recipes' && (
               <div className="space-y-10 animate-in fade-in duration-500">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -1358,10 +1536,22 @@ END \$\$;
                 ingredients={library}
                 libraryView={libraryView}
                 onUpdate={(newLib) => {
-                  // Track and handle deletions for Supabase sync
+                  if (!user?.id) {
+                    setLibrary(newLib);
+                    return;
+                  }
+
+                  // Account Mode: Direct DB updates, Realtime handles the 'setLibrary'
                   const deleted = library.filter(l => !newLib.find(nl => nl.id === l.id));
+                  const added = newLib.filter(nl => !library.find(l => l.id === nl.id));
+                  const updated = newLib.filter(nl => {
+                      const old = library.find(l => l.id === nl.id);
+                      return old && JSON.stringify(old) !== JSON.stringify(nl);
+                  });
+
                   deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id, d.type));
-                  setLibrary(newLib);
+                  added.forEach(a => supabaseService.saveLibraryIngredient(a, user.id));
+                  updated.forEach(u => supabaseService.saveLibraryIngredient(u, user.id));
                 }}
               />
               </div>
@@ -1384,9 +1574,24 @@ END \$\$;
             {view === 'auth' && <Auth onSuccess={() => setView('recipes')} />}
             {view === 'settings' && <Settings />}
             {view === 'tasting' && selectedRecipe && selectedBrewLog && (
-              <TastingNotes recipe={selectedRecipe} brewLogId={selectedBrewLog.id} onSave={(note) => { setTastingNotes([note, ...tastingNotes]); setView('brews'); }} />
+              <TastingNotes
+                recipe={selectedRecipe}
+                brewLogId={selectedBrewLog.id}
+                onSave={async (note) => {
+                  const updatedNote = { ...note, user_id: user?.id };
+                  if (!user?.id) {
+                    setTastingNotes([updatedNote, ...tastingNotes]);
+                  } else {
+                    // Realtime handles state update
+                    await supabaseService.saveTastingNote(updatedNote, user.id);
+                  }
+                  setView('brews');
+                }}
+              />
             )}
             {view === 'help' && <HelpView />}
+              </>
+            )}
           </main>
         </div>
       </div>
