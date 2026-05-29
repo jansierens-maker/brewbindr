@@ -128,7 +128,13 @@ export const supabaseService = {
         return query;
       });
 
-      const responses = await Promise.all(requests);
+      // Implement timeout for the collective fetch to prevent UI hangs on DB recursion
+      const FETCH_TIMEOUT = 10000;
+      const responses = await Promise.race([
+        Promise.all(requests),
+        new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('timeout')), FETCH_TIMEOUT))
+      ]);
+
       const data: any = {};
 
       for (let i = 0; i < tableList.length; i++) {
