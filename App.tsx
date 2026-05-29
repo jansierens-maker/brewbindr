@@ -290,28 +290,96 @@ const AppContent: React.FC = () => {
     if (authLoading || initialSyncStatus !== 'success' || user?.id) return;
 
     // ONLY GUEST DATA IS SAVED TO LOCALSTORAGE
-    // Logged-in user data is handled via Direct CRUD to Supabase
+    // Logged-in user data is handled via Realtime + Direct CRUD
     const data = { recipes, brewLogs, tastingNotes, library };
     if (allowLocalStorage) {
       localStorage.setItem('brewmaster_guest_data', JSON.stringify(data));
     }
   }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading, initialSyncStatus]);
 
+  // Realtime Subscription Effect
+  useEffect(() => {
+    if (!supabase || !user?.id || initialSyncStatus !== 'success') return;
+
+    const tables = ['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+
+    const channel = supabase.channel('db-changes');
+
+    tables.forEach(table => {
+      channel.on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table },
+        (payload: any) => {
+          const { eventType, new: newRow, old: oldRow } = payload;
+
+          // Map to correct React state
+          if (table === 'recipes') {
+            setRecipes(prev => {
+              if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                const item = { ...newRow.data, user_id: newRow.user_id, status: newRow.status };
+                const exists = prev.find(r => r.id === item.id);
+                return exists ? prev.map(r => r.id === item.id ? item : r) : [...prev, item];
+              }
+              if (eventType === 'DELETE') return prev.filter(r => r.id !== oldRow.id);
+              return prev;
+            });
+          } else if (table === 'brew_logs') {
+            setBrewLogs(prev => {
+              if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                const item = { ...newRow.data, user_id: newRow.user_id };
+                const exists = prev.find(l => l.id === item.id);
+                return exists ? prev.map(l => l.id === item.id ? item : l) : [item, ...prev];
+              }
+              if (eventType === 'DELETE') return prev.filter(l => l.id !== oldRow.id);
+              return prev;
+            });
+          } else if (table === 'tasting_notes') {
+            setTastingNotes(prev => {
+              if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                const item = { ...newRow.data, user_id: newRow.user_id };
+                const exists = prev.find(n => n.id === item.id);
+                return exists ? prev.map(n => n.id === item.id ? item : n) : [item, ...prev];
+              }
+              if (eventType === 'DELETE') return prev.filter(n => n.id !== oldRow.id);
+              return prev;
+            });
+          } else {
+            // It's a library table
+            setLibrary(prev => {
+              if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                const item = { ...newRow.data, user_id: newRow.user_id, status: newRow.status };
+                const exists = prev.find(i => i.id === item.id);
+                return exists ? prev.map(i => i.id === item.id ? item : i) : [...prev, item];
+              }
+              if (eventType === 'DELETE') return prev.filter(i => i.id !== oldRow.id);
+              return prev;
+            });
+          }
+        }
+      );
+    });
+
+    channel.subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user?.id, initialSyncStatus]);
+
   const handleSaveRecipe = async (recipe: Recipe) => {
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
     const updatedRecipe = { ...syncedRecipe, id: selectedRecipe?.id || crypto.randomUUID(), user_id: user?.id };
 
-    if (newIngredients.length > 0) {
-      setLibrary(prev => [...prev, ...newIngredients]);
-    }
-
-    setRecipes(prev => {
-      const exists = prev.find(r => r.id === updatedRecipe.id);
-      if (exists) return prev.map(r => r.id === updatedRecipe.id ? updatedRecipe : r);
-      return [...prev, updatedRecipe];
-    });
-
-    if (user?.id) {
+    // For Guest Mode, we must update state manually
+    if (!user?.id) {
+      if (newIngredients.length > 0) setLibrary(prev => [...prev, ...newIngredients]);
+      setRecipes(prev => {
+        const exists = prev.find(r => r.id === updatedRecipe.id);
+        if (exists) return prev.map(r => r.id === updatedRecipe.id ? updatedRecipe : r);
+        return [...prev, updatedRecipe];
+      });
+    } else {
+      // For Account Mode, Realtime will handle state updates after save completes
       if (newIngredients.length > 0) {
         await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
       }
@@ -322,22 +390,28 @@ const AppContent: React.FC = () => {
     setView('recipes');
   };
 
-  const handleDeleteRecipe = (id: string) => {
-    setRecipes(prev => prev.filter(r => r.id !== id));
+  const handleDeleteRecipe = async (id: string) => {
+    if (!user?.id) {
+      setRecipes(prev => prev.filter(r => r.id !== id));
+    } else {
+      // Realtime handles state update after delete succeeds
+      await supabaseService.deleteRecipe(id);
+    }
     setSelectedRecipe(null);
     setView('recipes');
-    supabaseService.deleteRecipe(id);
   };
 
   const handleUpdateBrewLog = async (entry: BrewLogEntry) => {
     const updatedLog = { ...entry, user_id: user?.id };
-    setBrewLogs(prev => {
-      const exists = prev.find(l => l.id === updatedLog.id);
-      if (exists) return prev.map(l => l.id === updatedLog.id ? updatedLog : l);
-      return [updatedLog, ...prev];
-    });
 
-    if (user?.id) {
+    if (!user?.id) {
+      setBrewLogs(prev => {
+        const exists = prev.find(l => l.id === updatedLog.id);
+        if (exists) return prev.map(l => l.id === updatedLog.id ? updatedLog : l);
+        return [updatedLog, ...prev];
+      });
+    } else {
+      // Realtime handles state update
       await supabaseService.saveBrewLog(updatedLog, user.id);
     }
   };
@@ -938,6 +1012,25 @@ BEGIN
     EXECUTE format('CREATE POLICY "Allow admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
   END LOOP;
 END \$\$;
+
+-- Enable Realtime for all tables
+-- This ensures the DB broadcasts changes to the frontend SDK
+BEGIN;
+  DROP PUBLICATION IF EXISTS supabase_realtime;
+  CREATE PUBLICATION supabase_realtime FOR TABLE
+    profiles,
+    recipes,
+    brew_logs,
+    tasting_notes,
+    fermentables,
+    hops,
+    cultures,
+    styles,
+    miscs,
+    mash_profiles,
+    equipment,
+    waters;
+COMMIT;
 `.trim();
 
   const handleDismissFallback = () => {
@@ -1443,7 +1536,12 @@ END \$\$;
                 ingredients={library}
                 libraryView={libraryView}
                 onUpdate={(newLib) => {
-                  // Track and handle changes/deletions for Direct CRUD
+                  if (!user?.id) {
+                    setLibrary(newLib);
+                    return;
+                  }
+
+                  // Account Mode: Direct DB updates, Realtime handles the 'setLibrary'
                   const deleted = library.filter(l => !newLib.find(nl => nl.id === l.id));
                   const added = newLib.filter(nl => !library.find(l => l.id === nl.id));
                   const updated = newLib.filter(nl => {
@@ -1451,13 +1549,9 @@ END \$\$;
                       return old && JSON.stringify(old) !== JSON.stringify(nl);
                   });
 
-                  setLibrary(newLib);
-
-                  if (user?.id) {
-                    deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id, d.type));
-                    added.forEach(a => supabaseService.saveLibraryIngredient(a, user.id));
-                    updated.forEach(u => supabaseService.saveLibraryIngredient(u, user.id));
-                  }
+                  deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id, d.type));
+                  added.forEach(a => supabaseService.saveLibraryIngredient(a, user.id));
+                  updated.forEach(u => supabaseService.saveLibraryIngredient(u, user.id));
                 }}
               />
               </div>
@@ -1485,8 +1579,10 @@ END \$\$;
                 brewLogId={selectedBrewLog.id}
                 onSave={async (note) => {
                   const updatedNote = { ...note, user_id: user?.id };
-                  setTastingNotes([updatedNote, ...tastingNotes]);
-                  if (user?.id) {
+                  if (!user?.id) {
+                    setTastingNotes([updatedNote, ...tastingNotes]);
+                  } else {
+                    // Realtime handles state update
                     await supabaseService.saveTastingNote(updatedNote, user.id);
                   }
                   setView('brews');
