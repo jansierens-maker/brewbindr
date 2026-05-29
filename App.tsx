@@ -236,21 +236,40 @@ const AppContent: React.FC = () => {
         setShowFallbackModal(true);
       }
     }
+
     const loadData = async () => {
       if (authLoading) return;
 
-      // First load from localStorage for immediate availability
-      const saved = localStorage.getItem('brewmaster_data_v3');
+      // Reset sync status on user change
+      setInitialSyncStatus('idle');
+
+      const storageKey = `brewmaster_data_v3_${user?.id || 'guest'}`;
+
+      // Migration from old generic key
+      const oldSaved = localStorage.getItem('brewmaster_data_v3');
+      if (oldSaved && !localStorage.getItem(storageKey)) {
+         localStorage.setItem(storageKey, oldSaved);
+         // We keep the old key for one session as a safety backup, but don't delete it yet
+      }
+
+      // First load from user-specific localStorage for immediate availability
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.recipes) setRecipes(data.recipes);
-          if (data.brewLogs) setBrewLogs(data.brewLogs);
-          if (data.tastingNotes) setTastingNotes(data.tastingNotes);
-          if (data.library) setLibrary(data.library);
+          setRecipes(data.recipes || []);
+          setBrewLogs(data.brewLogs || []);
+          setTastingNotes(data.tastingNotes || []);
+          setLibrary(data.library || EXAMPLES);
         } catch (e) {
           console.error('Error parsing local data:', e);
         }
+      } else {
+        // Reset state for new user session if no local data exists
+        setRecipes([]);
+        setBrewLogs([]);
+        setTastingNotes([]);
+        setLibrary(EXAMPLES);
       }
 
       // Sync from Supabase for cross-device consistency
@@ -284,14 +303,14 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (authLoading) return;
 
-    // Safety check: Don't save empty state to localStorage OR sync to Supabase
-    // until we've at least attempted the initial sync from the server.
-    // This prevents a failed sync from wiping local data.
+    // Safety check: Don't save state until we've at least attempted the initial sync.
     if (initialSyncStatus === 'idle' || initialSyncStatus === 'loading') return;
 
     const data = { recipes, brewLogs, tastingNotes, library };
+    const storageKey = `brewmaster_data_v3_${user?.id || 'guest'}`;
+
     if (allowLocalStorage) {
-      localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
+      localStorage.setItem(storageKey, JSON.stringify(data));
     }
 
     // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
@@ -708,6 +727,10 @@ const AppContent: React.FC = () => {
 
   const handleOpenSyncDetails = async () => {
     setShowSyncDetails(true);
+    refreshSyncStatus();
+  };
+
+  const refreshSyncStatus = async () => {
     setTableStatus({});
     setRlsStatus(null);
 
@@ -723,6 +746,24 @@ const AppContent: React.FC = () => {
     } else {
       setTableStatus({ 'N/A': false });
       setRlsStatus({ enabled: false, reason: 'Supabase not configured' });
+    }
+  };
+
+  const handleRetryInitialSync = async () => {
+    setInitialSyncStatus('loading');
+    try {
+      const remoteData = await supabaseService.fetchAppData(user?.id);
+      if (remoteData) {
+        setRecipes(remoteData.recipes);
+        setBrewLogs(remoteData.brewLogs);
+        setTastingNotes(remoteData.tastingNotes);
+        setLibrary(remoteData.library);
+        setInitialSyncStatus('success');
+        refreshSyncStatus();
+      }
+    } catch (err) {
+      console.error('Retry sync failed:', err);
+      setInitialSyncStatus('error');
     }
   };
 
@@ -972,7 +1013,17 @@ END \$\$;
                     </div>
 
                     <div>
-                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">RLS Security Status</p>
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">RLS Security Status</p>
+                        {initialSyncStatus === 'error' && (
+                          <button
+                            onClick={handleRetryInitialSync}
+                            className="text-amber-600 font-black text-[10px] uppercase hover:underline flex items-center gap-1"
+                          >
+                            <i className="fas fa-sync-alt"></i> Retry Sync
+                          </button>
+                        )}
+                      </div>
                       {rlsStatus ? (
                         <div className={`p-4 rounded-2xl border flex items-center gap-3 ${rlsStatus.enabled ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
                           <i className={`fas ${rlsStatus.enabled ? 'fa-shield-check' : 'fa-shield-exclamation'} text-xl`}></i>
