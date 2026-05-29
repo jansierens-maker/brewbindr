@@ -240,56 +240,42 @@ const AppContent: React.FC = () => {
     const loadData = async () => {
       if (authLoading) return;
 
-      // Reset sync status on user change
+      // Always start with a clean slate when user changes
       setInitialSyncStatus('idle');
+      setRecipes([]);
+      setBrewLogs([]);
+      setTastingNotes([]);
+      setLibrary(EXAMPLES);
 
-      const storageKey = `brewmaster_data_v3_${user?.id || 'guest'}`;
-
-      // Migration from old generic key
-      const oldSaved = localStorage.getItem('brewmaster_data_v3');
-      if (oldSaved && !localStorage.getItem(storageKey)) {
-         localStorage.setItem(storageKey, oldSaved);
-         // We keep the old key for one session as a safety backup, but don't delete it yet
-      }
-
-      // First load from user-specific localStorage for immediate availability
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
+      if (user?.id) {
+        // AUTHENTICATED USER: Fetch directly and ONLY from DB
+        setInitialSyncStatus('loading');
         try {
-          const data = JSON.parse(saved);
-          setRecipes(data.recipes || []);
-          setBrewLogs(data.brewLogs || []);
-          setTastingNotes(data.tastingNotes || []);
-          setLibrary(data.library || EXAMPLES);
-        } catch (e) {
-          console.error('Error parsing local data:', e);
+          const remoteData = await supabaseService.fetchAppData(user.id);
+          if (remoteData) {
+            setRecipes(remoteData.recipes);
+            setBrewLogs(remoteData.brewLogs);
+            setTastingNotes(remoteData.tastingNotes);
+            setLibrary(remoteData.library);
+            setInitialSyncStatus('success');
+          }
+        } catch (err) {
+          console.error('Direct DB fetch failed:', err);
+          setInitialSyncStatus('error');
         }
       } else {
-        // Reset state for new user session if no local data exists
-        setRecipes([]);
-        setBrewLogs([]);
-        setTastingNotes([]);
-        setLibrary(EXAMPLES);
-      }
-
-      // Sync from Supabase for cross-device consistency
-      setInitialSyncStatus('loading');
-      try {
-        const remoteData = await supabaseService.fetchAppData(user?.id);
-        if (remoteData) {
-          // We overwrite local state with remote data.
-          setRecipes(remoteData.recipes);
-          setBrewLogs(remoteData.brewLogs);
-          setTastingNotes(remoteData.tastingNotes);
-          setLibrary(remoteData.library);
-          setInitialSyncStatus('success');
-        } else {
-          // remoteData is null if supabase client is not configured
-          setInitialSyncStatus('success');
+        // GUEST USER: Load from localStorage
+        const saved = localStorage.getItem('brewmaster_guest_data');
+        if (saved) {
+          try {
+            const data = JSON.parse(saved);
+            setRecipes(data.recipes || []);
+            setBrewLogs(data.brewLogs || []);
+            setTastingNotes(data.tastingNotes || []);
+            setLibrary(data.library || EXAMPLES);
+          } catch (e) { console.error('Error parsing guest data:', e); }
         }
-      } catch (err) {
-        console.error('Initial sync failed:', err);
-        setInitialSyncStatus('error');
+        setInitialSyncStatus('success');
       }
 
       if (isAdmin) {
@@ -301,16 +287,13 @@ const AppContent: React.FC = () => {
   }, [user?.id, authLoading, isAdmin]);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || initialSyncStatus !== 'success' || user?.id) return;
 
-    // Safety check: Don't save state until we've at least attempted the initial sync.
-    if (initialSyncStatus === 'idle' || initialSyncStatus === 'loading') return;
-
+    // ONLY GUEST DATA IS SAVED TO LOCALSTORAGE
+    // Logged-in user data is handled via Direct CRUD to Supabase
     const data = { recipes, brewLogs, tastingNotes, library };
-    const storageKey = `brewmaster_data_v3_${user?.id || 'guest'}`;
-
     if (allowLocalStorage) {
-      localStorage.setItem(storageKey, JSON.stringify(data));
+      localStorage.setItem('brewmaster_guest_data', JSON.stringify(data));
     }
   }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading, initialSyncStatus]);
 
