@@ -75,7 +75,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     setSelectedIds([]);
   };
 
-  const handleAddNew = () => {
+  const handleAddNew = async () => {
     const newId = crypto.randomUUID();
     
     let defaultName = "";
@@ -104,7 +104,13 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       misc_type: filter === 'misc' ? 'spice' : undefined,
       misc_use: filter === 'misc' ? 'boil' : undefined
     };
+
     onUpdate([...ingredients, newItem]);
+
+    if (user?.id) {
+      await supabaseService.saveLibraryIngredient(newItem, user.id);
+    }
+
     startEditing(newItem);
   };
 

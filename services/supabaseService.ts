@@ -194,6 +194,38 @@ export const supabaseService = {
     return client.from('recipes').delete().eq('id', id);
   },
 
+  async saveBrewLog(entry: BrewLogEntry, userId?: string) {
+    const client = supabase;
+    if (!client || !entry.id) return;
+    return client.from('brew_logs').upsert({
+      id: entry.id,
+      data: entry,
+      user_id: userId || entry.user_id
+    });
+  },
+
+  async deleteBrewLog(id: string) {
+    const client = supabase;
+    if (!client) return;
+    return client.from('brew_logs').delete().eq('id', id);
+  },
+
+  async saveTastingNote(note: TastingNote, userId?: string) {
+    const client = supabase;
+    if (!client || !note.id) return;
+    return client.from('tasting_notes').upsert({
+      id: note.id,
+      data: note,
+      user_id: userId || note.user_id
+    });
+  },
+
+  async deleteTastingNote(id: string) {
+    const client = supabase;
+    if (!client) return;
+    return client.from('tasting_notes').delete().eq('id', id);
+  },
+
   async saveLibraryIngredient(item: LibraryIngredient, userId?: string) {
     const client = supabase;
     const table = TABLE_MAP[item.type];

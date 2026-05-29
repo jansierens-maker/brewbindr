@@ -312,32 +312,29 @@ const AppContent: React.FC = () => {
     if (allowLocalStorage) {
       localStorage.setItem(storageKey, JSON.stringify(data));
     }
-
-    // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
-    if (!user?.id || initialSyncStatus !== 'success') return;
-    const timer = setTimeout(() => {
-      supabaseService.syncAll(data, user.id);
-    }, 2000);
-
-    return () => clearTimeout(timer);
   }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading, initialSyncStatus]);
 
   const handleSaveRecipe = async (recipe: Recipe) => {
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
+    const updatedRecipe = { ...syncedRecipe, id: selectedRecipe?.id || crypto.randomUUID(), user_id: user?.id };
 
     if (newIngredients.length > 0) {
       setLibrary(prev => [...prev, ...newIngredients]);
-      if (user?.id) {
-        await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
-      }
     }
 
-    if (selectedRecipe && selectedRecipe.id) {
-      setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id } : r));
-    } else {
-      const newRecipe = { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id };
-      setRecipes(prev => [...prev, newRecipe]);
+    setRecipes(prev => {
+      const exists = prev.find(r => r.id === updatedRecipe.id);
+      if (exists) return prev.map(r => r.id === updatedRecipe.id ? updatedRecipe : r);
+      return [...prev, updatedRecipe];
+    });
+
+    if (user?.id) {
+      if (newIngredients.length > 0) {
+        await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
+      }
+      await supabaseService.saveRecipe(updatedRecipe, user.id);
     }
+
     setSelectedRecipe(null);
     setView('recipes');
   };
@@ -349,12 +346,17 @@ const AppContent: React.FC = () => {
     supabaseService.deleteRecipe(id);
   };
 
-  const handleUpdateBrewLog = (entry: BrewLogEntry) => {
+  const handleUpdateBrewLog = async (entry: BrewLogEntry) => {
+    const updatedLog = { ...entry, user_id: user?.id };
     setBrewLogs(prev => {
-      const exists = prev.find(l => l.id === entry.id);
-      if (exists) return prev.map(l => l.id === entry.id ? entry : l);
-      return [{ ...entry, user_id: user?.id }, ...prev];
+      const exists = prev.find(l => l.id === updatedLog.id);
+      if (exists) return prev.map(l => l.id === updatedLog.id ? updatedLog : l);
+      return [updatedLog, ...prev];
     });
+
+    if (user?.id) {
+      await supabaseService.saveBrewLog(updatedLog, user.id);
+    }
   };
 
   const handleSaveAndExitBrewLog = (entry: BrewLogEntry) => {
@@ -1458,10 +1460,21 @@ END \$\$;
                 ingredients={library}
                 libraryView={libraryView}
                 onUpdate={(newLib) => {
-                  // Track and handle deletions for Supabase sync
+                  // Track and handle changes/deletions for Direct CRUD
                   const deleted = library.filter(l => !newLib.find(nl => nl.id === l.id));
-                  deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id, d.type));
+                  const added = newLib.filter(nl => !library.find(l => l.id === nl.id));
+                  const updated = newLib.filter(nl => {
+                      const old = library.find(l => l.id === nl.id);
+                      return old && JSON.stringify(old) !== JSON.stringify(nl);
+                  });
+
                   setLibrary(newLib);
+
+                  if (user?.id) {
+                    deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id, d.type));
+                    added.forEach(a => supabaseService.saveLibraryIngredient(a, user.id));
+                    updated.forEach(u => supabaseService.saveLibraryIngredient(u, user.id));
+                  }
                 }}
               />
               </div>
@@ -1484,7 +1497,18 @@ END \$\$;
             {view === 'auth' && <Auth onSuccess={() => setView('recipes')} />}
             {view === 'settings' && <Settings />}
             {view === 'tasting' && selectedRecipe && selectedBrewLog && (
-              <TastingNotes recipe={selectedRecipe} brewLogId={selectedBrewLog.id} onSave={(note) => { setTastingNotes([note, ...tastingNotes]); setView('brews'); }} />
+              <TastingNotes
+                recipe={selectedRecipe}
+                brewLogId={selectedBrewLog.id}
+                onSave={async (note) => {
+                  const updatedNote = { ...note, user_id: user?.id };
+                  setTastingNotes([updatedNote, ...tastingNotes]);
+                  if (user?.id) {
+                    await supabaseService.saveTastingNote(updatedNote, user.id);
+                  }
+                  setView('brews');
+                }}
+              />
             )}
             {view === 'help' && <HelpView />}
               </>
