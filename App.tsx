@@ -114,6 +114,7 @@ const AppContent: React.FC = () => {
   const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
   const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
+  const [initialSyncStatus, setInitialSyncStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
 
@@ -253,13 +254,23 @@ const AppContent: React.FC = () => {
       }
 
       // Sync from Supabase for cross-device consistency
-      const remoteData = await supabaseService.fetchAppData(user?.id);
-      if (remoteData) {
-        // We overwrite local state with remote data.
-        setRecipes(remoteData.recipes);
-        setBrewLogs(remoteData.brewLogs);
-        setTastingNotes(remoteData.tastingNotes);
-        setLibrary(remoteData.library);
+      setInitialSyncStatus('loading');
+      try {
+        const remoteData = await supabaseService.fetchAppData(user?.id);
+        if (remoteData) {
+          // We overwrite local state with remote data.
+          setRecipes(remoteData.recipes);
+          setBrewLogs(remoteData.brewLogs);
+          setTastingNotes(remoteData.tastingNotes);
+          setLibrary(remoteData.library);
+          setInitialSyncStatus('success');
+        } else {
+          // remoteData is null if supabase client is not configured
+          setInitialSyncStatus('success');
+        }
+      } catch (err) {
+        console.error('Initial sync failed:', err);
+        setInitialSyncStatus('error');
       }
 
       if (isAdmin) {
@@ -272,19 +283,25 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     if (authLoading) return;
+
+    // Safety check: Don't save empty state to localStorage OR sync to Supabase
+    // until we've at least attempted the initial sync from the server.
+    // This prevents a failed sync from wiping local data.
+    if (initialSyncStatus === 'idle' || initialSyncStatus === 'loading') return;
+
     const data = { recipes, brewLogs, tastingNotes, library };
     if (allowLocalStorage) {
       localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
     }
 
     // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
-    if (!user?.id) return;
+    if (!user?.id || initialSyncStatus !== 'success') return;
     const timer = setTimeout(() => {
       supabaseService.syncAll(data, user.id);
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading]);
+  }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading, initialSyncStatus]);
 
   const handleSaveRecipe = async (recipe: Recipe) => {
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
@@ -752,18 +769,40 @@ DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
 
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id AND (role = (SELECT role FROM profiles WHERE id = auth.uid())));
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
 DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Helper to check if user is admin (moved up to avoid recursion in policies)
+-- Helper to check if user is admin (SECURITY DEFINER bypasses RLS to prevent recursion)
 CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
-  SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
-$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
+
+-- Trigger to prevent non-admins from changing roles
+CREATE OR REPLACE FUNCTION protect_profile_role()
+RETURNS trigger AS $$
+BEGIN
+  -- If not admin and trying to change role
+  IF NOT is_admin() AND NEW.role IS DISTINCT FROM OLD.role THEN
+    RAISE EXCEPTION 'Only admins can change user roles';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_profile_update ON profiles;
+CREATE TRIGGER on_profile_update
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION protect_profile_role();
 
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
-CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (auth.uid() != id AND is_admin());
+CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (is_admin());
 
 -- Trigger to create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -1158,9 +1197,9 @@ END \$\$;
                 onClick={handleOpenSyncDetails}
                 className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
               >
-                <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${initialSyncStatus === 'error' ? 'bg-red-500' : (supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300')}`}></div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                  {supabase ? t('cloud_sync') : t('local_mode')}
+                  {initialSyncStatus === 'error' ? 'Sync Error' : (supabase ? t('cloud_sync') : t('local_mode'))}
                 </span>
               </button>
               </div>
@@ -1187,6 +1226,16 @@ END \$\$;
             </div>
           </header>
           <main className="max-w-7xl mx-auto px-4 py-10 pb-32">
+            {(authLoading || initialSyncStatus === 'loading') && (view === 'recipes' || view === 'library' || view === 'brews') ? (
+              <div className="py-20 text-center animate-in fade-in duration-500">
+                <div className="relative w-16 h-16 mx-auto mb-6">
+                  <div className="absolute inset-0 border-4 border-stone-100 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-amber-500 rounded-full border-t-transparent animate-spin"></div>
+                </div>
+                <p className="text-stone-400 font-bold uppercase tracking-widest text-xs">{t('loading')}...</p>
+              </div>
+            ) : (
+              <>
             {view === 'recipes' && (
               <div className="space-y-10 animate-in fade-in duration-500">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -1387,6 +1436,8 @@ END \$\$;
               <TastingNotes recipe={selectedRecipe} brewLogId={selectedBrewLog.id} onSave={(note) => { setTastingNotes([note, ...tastingNotes]); setView('brews'); }} />
             )}
             {view === 'help' && <HelpView />}
+              </>
+            )}
           </main>
         </div>
       </div>

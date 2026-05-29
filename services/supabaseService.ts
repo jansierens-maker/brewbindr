@@ -90,7 +90,14 @@ export const supabaseService = {
 
       return { enabled: true };
     } catch (err: any) {
-      return { enabled: false, reason: err.message === 'timeout' ? 'Check timed out (possible RLS recursion)' : 'Check failed' };
+      console.error('RLS Health Check Error:', err);
+      const isTimeout = err.message === 'timeout';
+      return {
+        enabled: false,
+        reason: isTimeout
+          ? 'Check timed out (possible RLS recursion). Check your SQL policies.'
+          : `Check failed: ${err.message}`
+      };
     }
   },
 
@@ -124,13 +131,25 @@ export const supabaseService = {
       const responses = await Promise.all(requests);
       const data: any = {};
 
-      tableList.forEach((table, idx) => {
-        data[table] = responses[idx].data?.map((r: any) => ({
+      for (let i = 0; i < tableList.length; i++) {
+        const res = responses[i] as any;
+        const rows = res.data;
+        const error = res.error;
+        const table = tableList[i];
+
+        if (error) {
+          console.error(`Error fetching table ${table}:`, error);
+          // If we encounter a permission or RLS error, we should fail the whole fetch
+          // to prevent overwriting local data with incomplete remote data.
+          throw new Error(`Failed to fetch ${table}: ${error.message}`);
+        }
+
+        data[table] = rows?.map((r: any) => ({
           ...r.data,
           user_id: r.user_id,
           status: r.status
         })) || [];
-      });
+      }
 
       // Merge library tables back into a single array
       const library: LibraryIngredient[] = [];
