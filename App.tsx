@@ -114,6 +114,7 @@ const AppContent: React.FC = () => {
   const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
   const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
+  const [syncError, setSyncError] = useState(false);
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
 
@@ -238,22 +239,9 @@ const AppContent: React.FC = () => {
       const updateState = (setter: React.Dispatch<React.SetStateAction<any[]>>) => {
         setter(prev => {
           if (eventType === 'DELETE') {
-            return prev.filter(item => item.id !== oldRecord.id);
+            return prev.filter(item => item.id !== (oldRecord?.id || oldRecord?.data?.id));
           }
-          const itemData = { ...newRecord.data, user_id: newRecord.user_id, status: newRecord.status };
-          const exists = prev.find(item => item.id === itemData.id);
-          if (exists) {
-            return prev.map(item => item.id === itemData.id ? itemData : item);
-          }
-          return [itemData, ...prev];
-        });
-      };
-
-      const updateLibraryState = () => {
-        setLibrary(prev => {
-          if (eventType === 'DELETE') {
-            return prev.filter(item => item.id !== oldRecord.id);
-          }
+          if (!newRecord) return prev;
           const itemData = { ...newRecord.data, user_id: newRecord.user_id, status: newRecord.status };
           const exists = prev.find(item => item.id === itemData.id);
           if (exists) {
@@ -267,7 +255,7 @@ const AppContent: React.FC = () => {
       else if (table === 'brew_logs') updateState(setBrewLogs);
       else if (table === 'tasting_notes') updateState(setTastingNotes);
       else if (['fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'].includes(table)) {
-        updateLibraryState();
+        updateState(setLibrary);
       }
     };
 
@@ -275,17 +263,25 @@ const AppContent: React.FC = () => {
       if (authLoading) return;
 
       // Initial Fetch
-      const remoteData = await supabaseService.fetchAppData(user?.id);
-      if (remoteData) {
-        setRecipes(remoteData.recipes);
-        setBrewLogs(remoteData.brewLogs);
-        setTastingNotes(remoteData.tastingNotes);
-        setLibrary(remoteData.library);
-      } else {
-        setRecipes([]);
-        setBrewLogs([]);
-        setTastingNotes([]);
-        setLibrary(user ? [] : EXAMPLES);
+      try {
+        setSyncError(false);
+        const remoteData = await supabaseService.fetchAppData(user?.id);
+        if (remoteData) {
+          setRecipes(remoteData.recipes);
+          setBrewLogs(remoteData.brewLogs);
+          setTastingNotes(remoteData.tastingNotes);
+          setLibrary(remoteData.library);
+        } else if (user) {
+          setSyncError(true);
+        } else {
+          setRecipes([]);
+          setBrewLogs([]);
+          setTastingNotes([]);
+          setLibrary(EXAMPLES);
+        }
+      } catch (err) {
+        console.error("Initial sync failed:", err);
+        if (user) setSyncError(true);
       }
 
       if (isAdmin) {
@@ -934,6 +930,32 @@ ALTER PUBLICATION supabase_realtime ADD TABLE miscs;
 ALTER PUBLICATION supabase_realtime ADD TABLE mash_profiles;
 ALTER PUBLICATION supabase_realtime ADD TABLE equipment;
 ALTER PUBLICATION supabase_realtime ADD TABLE waters;
+
+-- Grant PostgREST access to public schema
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+
+-- anon can only read approved content
+GRANT SELECT ON TABLE recipes TO anon;
+GRANT SELECT ON TABLE fermentables TO anon;
+GRANT SELECT ON TABLE hops TO anon;
+GRANT SELECT ON TABLE cultures TO anon;
+GRANT SELECT ON TABLE styles TO anon;
+GRANT SELECT ON TABLE miscs TO anon;
+GRANT SELECT ON TABLE mash_profiles TO anon;
+
+-- authenticated users get full access to all tables
+GRANT ALL ON TABLE recipes TO authenticated;
+GRANT ALL ON TABLE brew_logs TO authenticated;
+GRANT ALL ON TABLE tasting_notes TO authenticated;
+GRANT ALL ON TABLE fermentables TO authenticated;
+GRANT ALL ON TABLE hops TO authenticated;
+GRANT ALL ON TABLE cultures TO authenticated;
+GRANT ALL ON TABLE styles TO authenticated;
+GRANT ALL ON TABLE miscs TO authenticated;
+GRANT ALL ON TABLE mash_profiles TO authenticated;
+GRANT ALL ON TABLE equipment TO authenticated;
+GRANT ALL ON TABLE waters TO authenticated;
+GRANT ALL ON TABLE profiles TO authenticated;
 `.trim();
 
   const handleDismissFallback = () => {
@@ -1009,6 +1031,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE waters;
                 )}
 
                 <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Manual Sync & Repair</p>
+                    <button
+                      onClick={async () => {
+                        const remoteData = await supabaseService.fetchAppData(user?.id);
+                        if (remoteData) {
+                          setRecipes(remoteData.recipes);
+                          setBrewLogs(remoteData.brewLogs);
+                          setTastingNotes(remoteData.tastingNotes);
+                          setLibrary(remoteData.library);
+                          setSyncError(false);
+                          alert('Data successfully re-synchronized!');
+                        } else {
+                          setSyncError(true);
+                          alert('Re-sync failed. Please check your connection or database permissions.');
+                        }
+                      }}
+                      className="text-amber-600 font-black text-[10px] uppercase hover:underline"
+                    >
+                      Retry Sync
+                    </button>
+                  </div>
                   <div className="flex justify-between items-center mb-2">
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('sql_instructions')}</p>
                     <button
@@ -1217,9 +1261,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE waters;
                 onClick={handleOpenSyncDetails}
                 className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
               >
-                <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500' : supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                  {supabase ? t('cloud_sync') : t('local_mode')}
+                  {syncError ? 'Sync Error' : supabase ? t('cloud_sync') : t('local_mode')}
                 </span>
               </button>
               </div>
