@@ -14,7 +14,7 @@ A comprehensive beer brewing companion for creating recipes in BeerJSON format, 
 - **Ingredient Library**: Manage your own collection of fermentables, hops, cultures, and more.
 - **BeerXML Support**: Import and export recipes and libraries in the industry-standard BeerXML format.
 - **Multi-language Support**: Available in English, Dutch, and French.
-- **Cloud Sync**: Optional Supabase integration for cross-device data consistency.
+- **Realtime Connection**: Supabase integration for live, cross-device data consistency.
 
 ## Prerequisites
 

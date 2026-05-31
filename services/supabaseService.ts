@@ -5,7 +5,7 @@ import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
  * Supabase Service for Brewbindr
  *
  * Expected Database Schema:
- * Tables are created via the Sync Details modal SQL schema instructions.
+ * Tables are created via the Connection Details modal SQL schema instructions.
  */
 
 const TABLE_MAP: Record<string, string> = {

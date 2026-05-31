@@ -262,9 +262,22 @@ const AppContent: React.FC = () => {
     const setupRealtime = async () => {
       if (authLoading) return;
 
-      // Initial Fetch
+      // Initial Fetch & Health Check
       try {
         setSyncError(false);
+
+        if (!user) {
+          const health = await supabaseService.checkTableHealth();
+          const allOk = Object.values(health).every(v => v === true);
+          if (allOk) {
+            // Tables exist, redirect guest to login
+            setView('auth');
+          } else {
+            // Tables missing or error, show connection details
+            setShowSyncDetails(true);
+          }
+        }
+
         const remoteData = await supabaseService.fetchAppData(user?.id);
         if (remoteData) {
           setRecipes(remoteData.recipes);
@@ -280,8 +293,9 @@ const AppContent: React.FC = () => {
           setLibrary(EXAMPLES);
         }
       } catch (err) {
-        console.error("Initial sync failed:", err);
+        console.error("Initial connection failed:", err);
         if (user) setSyncError(true);
+        else setShowSyncDetails(true);
       }
 
       if (isAdmin) {
@@ -1263,7 +1277,7 @@ GRANT ALL ON TABLE profiles TO authenticated;
               >
                 <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500' : supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                  {syncError ? 'Sync Error' : supabase ? t('cloud_sync') : t('local_mode')}
+                  {syncError ? 'Connection Error' : supabase ? t('cloud_sync') : t('local_mode')}
                 </span>
               </button>
               </div>
