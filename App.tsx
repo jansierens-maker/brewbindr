@@ -114,6 +114,7 @@ const AppContent: React.FC = () => {
   const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
   const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
+  const [syncError, setSyncError] = useState(false);
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
 
@@ -229,62 +230,121 @@ const AppContent: React.FC = () => {
   }, [user, authLoading]);
 
   useEffect(() => {
-    if (!supabase) {
-      const dismissed = localStorage.getItem('brewmaster_fallback_dismissed');
-      if (!dismissed) {
-        setShowFallbackModal(true);
+    let userDataChannel: any = null;
+    let publicDataChannel: any = null;
+
+    const handlePayload = (payload: any, table: string) => {
+      const { eventType, new: newRecord, old: oldRecord } = payload;
+
+      const updateState = (setter: React.Dispatch<React.SetStateAction<any[]>>) => {
+        setter(prev => {
+          if (eventType === 'DELETE') {
+            return prev.filter(item => item.id !== (oldRecord?.id || oldRecord?.data?.id));
+          }
+          if (!newRecord) return prev;
+          const itemData = { ...newRecord.data, user_id: newRecord.user_id, status: newRecord.status };
+          const exists = prev.find(item => item.id === itemData.id);
+          if (exists) {
+            return prev.map(item => item.id === itemData.id ? itemData : item);
+          }
+          return [itemData, ...prev];
+        });
+      };
+
+      if (table === 'recipes') updateState(setRecipes);
+      else if (table === 'brew_logs') updateState(setBrewLogs);
+      else if (table === 'tasting_notes') updateState(setTastingNotes);
+      else if (['fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'].includes(table)) {
+        updateState(setLibrary);
       }
-    }
-    const loadData = async () => {
+    };
+
+    const setupRealtime = async () => {
       if (authLoading) return;
 
-      // First load from localStorage for immediate availability
-      const saved = localStorage.getItem('brewmaster_data_v3');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          if (data.recipes) setRecipes(data.recipes);
-          if (data.brewLogs) setBrewLogs(data.brewLogs);
-          if (data.tastingNotes) setTastingNotes(data.tastingNotes);
-          if (data.library) setLibrary(data.library);
-        } catch (e) {
-          console.error('Error parsing local data:', e);
-        }
-      }
+      // Initial Fetch & Health Check
+      try {
+        setSyncError(false);
 
-      // Sync from Supabase for cross-device consistency
-      const remoteData = await supabaseService.fetchAppData(user?.id);
-      if (remoteData) {
-        // We overwrite local state with remote data.
-        setRecipes(remoteData.recipes);
-        setBrewLogs(remoteData.brewLogs);
-        setTastingNotes(remoteData.tastingNotes);
-        setLibrary(remoteData.library);
+        if (!user) {
+          const health = await supabaseService.checkTableHealth();
+          const allOk = Object.values(health).every(v => v === true);
+          if (allOk) {
+            // Tables exist, redirect guest to login
+            setView('auth');
+          } else {
+            // Tables missing or error, show connection details
+            setShowSyncDetails(true);
+          }
+        }
+
+        const remoteData = await supabaseService.fetchAppData(user?.id);
+        if (remoteData) {
+          setRecipes(remoteData.recipes);
+          setBrewLogs(remoteData.brewLogs);
+          setTastingNotes(remoteData.tastingNotes);
+          setLibrary(remoteData.library);
+        } else if (user) {
+          setSyncError(true);
+        } else {
+          setRecipes([]);
+          setBrewLogs([]);
+          setTastingNotes([]);
+          setLibrary(EXAMPLES);
+        }
+      } catch (err) {
+        console.error("Initial connection failed:", err);
+        if (user) setSyncError(true);
+        else setShowSyncDetails(true);
       }
 
       if (isAdmin) {
         const pending = await supabaseService.fetchPendingSubmissions();
         setPendingSubmissions(pending);
       }
+
+      if (!supabase) return;
+
+      // Channel 1: User's own data across all relevant tables
+      if (user?.id) {
+        userDataChannel = supabase.channel('user-updates');
+        const tables = ['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+
+        tables.forEach(table => {
+          userDataChannel.on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: table,
+            filter: `user_id=eq.${user.id}`
+          }, (payload: any) => handlePayload(payload, table));
+        });
+
+        userDataChannel.subscribe();
+      }
+
+      // Channel 2: Publicly approved data
+      publicDataChannel = supabase.channel('public-updates');
+      const publicTables = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+
+      publicTables.forEach(table => {
+        publicDataChannel.on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: table,
+          filter: 'status=eq.approved'
+        }, (payload: any) => handlePayload(payload, table));
+      });
+
+      publicDataChannel.subscribe();
     };
-    loadData();
+
+    setupRealtime();
+
+    return () => {
+      if (userDataChannel) supabase?.removeChannel(userDataChannel);
+      if (publicDataChannel) supabase?.removeChannel(publicDataChannel);
+    };
   }, [user?.id, authLoading, isAdmin]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    const data = { recipes, brewLogs, tastingNotes, library };
-    if (allowLocalStorage) {
-      localStorage.setItem('brewmaster_data_v3', JSON.stringify(data));
-    }
-
-    // Debounced sync to Supabase (2 seconds delay to avoid excessive API calls)
-    if (!user?.id) return;
-    const timer = setTimeout(() => {
-      supabaseService.syncAll(data, user.id);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [recipes, brewLogs, tastingNotes, library, user?.id, authLoading]);
 
   const handleSaveRecipe = async (recipe: Recipe) => {
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
@@ -296,12 +356,20 @@ const AppContent: React.FC = () => {
       }
     }
 
-    if (selectedRecipe && selectedRecipe.id) {
-      setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id } : r));
-    } else {
-      const newRecipe = { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id };
-      setRecipes(prev => [...prev, newRecipe]);
+    const targetRecipe = selectedRecipe && selectedRecipe.id
+      ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id }
+      : { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id };
+
+    setRecipes(prev => {
+      const exists = prev.find(r => r.id === targetRecipe.id);
+      if (exists) return prev.map(r => r.id === targetRecipe.id ? targetRecipe : r);
+      return [targetRecipe, ...prev];
+    });
+
+    if (user?.id) {
+      await supabaseService.saveRecipe(targetRecipe, user.id);
     }
+
     setSelectedRecipe(null);
     setView('recipes');
   };
@@ -313,12 +381,16 @@ const AppContent: React.FC = () => {
     supabaseService.deleteRecipe(id);
   };
 
-  const handleUpdateBrewLog = (entry: BrewLogEntry) => {
+  const handleUpdateBrewLog = async (entry: BrewLogEntry) => {
+    const targetLog = { ...entry, user_id: user?.id };
     setBrewLogs(prev => {
       const exists = prev.find(l => l.id === entry.id);
-      if (exists) return prev.map(l => l.id === entry.id ? entry : l);
-      return [{ ...entry, user_id: user?.id }, ...prev];
+      if (exists) return prev.map(l => l.id === entry.id ? targetLog : l);
+      return [targetLog, ...prev];
     });
+    if (user?.id) {
+      await supabaseService.saveBrewLog(targetLog, user.id);
+    }
   };
 
   const handleSaveAndExitBrewLog = (entry: BrewLogEntry) => {
@@ -713,28 +785,14 @@ const AppContent: React.FC = () => {
     await supabaseService.updateItemStatus(id, type, 'approved', table);
     const pending = await supabaseService.fetchPendingSubmissions();
     setPendingSubmissions(pending);
-    // Refresh main data
-    const remoteData = await supabaseService.fetchAppData(user?.id);
-    if (remoteData) {
-      setRecipes(remoteData.recipes);
-      setLibrary(remoteData.library);
-      setBrewLogs(remoteData.brewLogs);
-      setTastingNotes(remoteData.tastingNotes);
-    }
+    // State will be updated via Realtime
   };
 
   const handleReject = async (id: string, type: string, table?: string) => {
     await supabaseService.updateItemStatus(id, type, 'private', table);
     const pending = await supabaseService.fetchPendingSubmissions();
     setPendingSubmissions(pending);
-    // Refresh main data
-    const remoteData = await supabaseService.fetchAppData(user?.id);
-    if (remoteData) {
-      setRecipes(remoteData.recipes);
-      setLibrary(remoteData.library);
-      setBrewLogs(remoteData.brewLogs);
-      setTastingNotes(remoteData.tastingNotes);
-    }
+    // State will be updated via Realtime
   };
 
   const SQL_SCHEMA = `
@@ -873,15 +931,52 @@ BEGIN
     EXECUTE format('CREATE POLICY "Allow admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
   END LOOP;
 END \$\$;
+
+-- Enable Realtime for all tables
+ALTER PUBLICATION supabase_realtime ADD TABLE recipes;
+ALTER PUBLICATION supabase_realtime ADD TABLE brew_logs;
+ALTER PUBLICATION supabase_realtime ADD TABLE tasting_notes;
+ALTER PUBLICATION supabase_realtime ADD TABLE fermentables;
+ALTER PUBLICATION supabase_realtime ADD TABLE hops;
+ALTER PUBLICATION supabase_realtime ADD TABLE cultures;
+ALTER PUBLICATION supabase_realtime ADD TABLE styles;
+ALTER PUBLICATION supabase_realtime ADD TABLE miscs;
+ALTER PUBLICATION supabase_realtime ADD TABLE mash_profiles;
+ALTER PUBLICATION supabase_realtime ADD TABLE equipment;
+ALTER PUBLICATION supabase_realtime ADD TABLE waters;
+
+-- Grant PostgREST access to public schema
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+
+-- anon can only read approved content
+GRANT SELECT ON TABLE recipes TO anon;
+GRANT SELECT ON TABLE fermentables TO anon;
+GRANT SELECT ON TABLE hops TO anon;
+GRANT SELECT ON TABLE cultures TO anon;
+GRANT SELECT ON TABLE styles TO anon;
+GRANT SELECT ON TABLE miscs TO anon;
+GRANT SELECT ON TABLE mash_profiles TO anon;
+
+-- authenticated users get full access to all tables
+GRANT ALL ON TABLE recipes TO authenticated;
+GRANT ALL ON TABLE brew_logs TO authenticated;
+GRANT ALL ON TABLE tasting_notes TO authenticated;
+GRANT ALL ON TABLE fermentables TO authenticated;
+GRANT ALL ON TABLE hops TO authenticated;
+GRANT ALL ON TABLE cultures TO authenticated;
+GRANT ALL ON TABLE styles TO authenticated;
+GRANT ALL ON TABLE miscs TO authenticated;
+GRANT ALL ON TABLE mash_profiles TO authenticated;
+GRANT ALL ON TABLE equipment TO authenticated;
+GRANT ALL ON TABLE waters TO authenticated;
+GRANT ALL ON TABLE profiles TO authenticated;
 `.trim();
 
   const handleDismissFallback = () => {
-    localStorage.setItem('brewmaster_fallback_dismissed', 'true');
     setShowFallbackModal(false);
   };
 
   const handleDeclineFallback = () => {
-    setAllowLocalStorage(false);
     setShowFallbackModal(false);
   };
 
@@ -950,6 +1045,28 @@ END \$\$;
                 )}
 
                 <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Manual Sync & Repair</p>
+                    <button
+                      onClick={async () => {
+                        const remoteData = await supabaseService.fetchAppData(user?.id);
+                        if (remoteData) {
+                          setRecipes(remoteData.recipes);
+                          setBrewLogs(remoteData.brewLogs);
+                          setTastingNotes(remoteData.tastingNotes);
+                          setLibrary(remoteData.library);
+                          setSyncError(false);
+                          alert('Data successfully re-synchronized!');
+                        } else {
+                          setSyncError(true);
+                          alert('Re-sync failed. Please check your connection or database permissions.');
+                        }
+                      }}
+                      className="text-amber-600 font-black text-[10px] uppercase hover:underline"
+                    >
+                      Retry Sync
+                    </button>
+                  </div>
                   <div className="flex justify-between items-center mb-2">
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('sql_instructions')}</p>
                     <button
@@ -1158,9 +1275,9 @@ END \$\$;
                 onClick={handleOpenSyncDetails}
                 className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
               >
-                <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500' : supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                  {supabase ? t('cloud_sync') : t('local_mode')}
+                  {syncError ? 'Connection Error' : supabase ? t('cloud_sync') : t('local_mode')}
                 </span>
               </button>
               </div>
@@ -1357,11 +1474,24 @@ END \$\$;
               <IngredientLibrary
                 ingredients={library}
                 libraryView={libraryView}
-                onUpdate={(newLib) => {
+                onUpdate={async (newLib) => {
                   // Track and handle deletions for Supabase sync
                   const deleted = library.filter(l => !newLib.find(nl => nl.id === l.id));
                   deleted.forEach(d => supabaseService.deleteLibraryIngredient(d.id, d.type));
+
+                  // Find created/updated items
+                  const changed = newLib.filter(newItem => {
+                    const oldItem = library.find(o => o.id === newItem.id);
+                    return !oldItem || JSON.stringify(oldItem) !== JSON.stringify(newItem);
+                  });
+
                   setLibrary(newLib);
+
+                  if (user?.id && changed.length > 0) {
+                    for (const item of changed) {
+                      await supabaseService.saveLibraryIngredient(item, user.id);
+                    }
+                  }
                 }}
               />
               </div>
@@ -1384,7 +1514,18 @@ END \$\$;
             {view === 'auth' && <Auth onSuccess={() => setView('recipes')} />}
             {view === 'settings' && <Settings />}
             {view === 'tasting' && selectedRecipe && selectedBrewLog && (
-              <TastingNotes recipe={selectedRecipe} brewLogId={selectedBrewLog.id} onSave={(note) => { setTastingNotes([note, ...tastingNotes]); setView('brews'); }} />
+              <TastingNotes
+                recipe={selectedRecipe}
+                brewLogId={selectedBrewLog.id}
+                onSave={async (note) => {
+                  const targetNote = { ...note, user_id: user?.id };
+                  setTastingNotes([targetNote, ...tastingNotes]);
+                  if (user?.id) {
+                    await supabaseService.saveTastingNote(targetNote, user.id);
+                  }
+                  setView('brews');
+                }}
+              />
             )}
             {view === 'help' && <HelpView />}
           </main>

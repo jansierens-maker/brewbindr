@@ -5,7 +5,7 @@ import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
  * Supabase Service for Brewbindr
  *
  * Expected Database Schema:
- * Tables are created via the Sync Details modal SQL schema instructions.
+ * Tables are created via the Connection Details modal SQL schema instructions.
  */
 
 const TABLE_MAP: Record<string, string> = {
@@ -121,7 +121,10 @@ export const supabaseService = {
         return query;
       });
 
-      const responses = await Promise.all(requests);
+      const responses = await Promise.race([
+        Promise.all(requests),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+      ]);
       const data: any = {};
 
       tableList.forEach((table, idx) => {
@@ -169,6 +172,38 @@ export const supabaseService = {
     return client.from('recipes').delete().eq('id', id);
   },
 
+  async saveBrewLog(log: BrewLogEntry, userId?: string) {
+    const client = supabase;
+    if (!client || !log.id) return;
+    return client.from('brew_logs').upsert({
+      id: log.id,
+      data: log,
+      user_id: userId || log.user_id
+    });
+  },
+
+  async deleteBrewLog(id: string) {
+    const client = supabase;
+    if (!client) return;
+    return client.from('brew_logs').delete().eq('id', id);
+  },
+
+  async saveTastingNote(note: TastingNote, userId?: string) {
+    const client = supabase;
+    if (!client || !note.id) return;
+    return client.from('tasting_notes').upsert({
+      id: note.id,
+      data: note,
+      user_id: userId || note.user_id
+    });
+  },
+
+  async deleteTastingNote(id: string) {
+    const client = supabase;
+    if (!client) return;
+    return client.from('tasting_notes').delete().eq('id', id);
+  },
+
   async saveLibraryIngredient(item: LibraryIngredient, userId?: string) {
     const client = supabase;
     const table = TABLE_MAP[item.type];
@@ -188,69 +223,6 @@ export const supabaseService = {
     return client.from(table).delete().eq('id', id);
   },
 
-  async syncAll(data: { recipes: Recipe[], brewLogs: BrewLogEntry[], tastingNotes: TastingNote[], library: LibraryIngredient[] }, userId?: string) {
-    const client = supabase;
-    if (!client) return;
-    const { recipes, brewLogs, tastingNotes, library } = data;
-
-    // Only sync items owned by the current user OR items without a user_id (migration)
-    const filterOwned = (item: any) => !item.user_id || item.user_id === userId;
-
-    const tasks = [];
-
-    const ownedRecipes = recipes.filter(filterOwned);
-    if (ownedRecipes.length > 0) {
-      tasks.push(client.from('recipes').upsert(ownedRecipes.map(r => ({
-        id: r.id,
-        data: r,
-        user_id: userId || r.user_id,
-        status: r.status || 'private'
-      }))));
-    }
-
-    const ownedLogs = brewLogs.filter(filterOwned);
-    if (ownedLogs.length > 0) {
-      tasks.push(client.from('brew_logs').upsert(ownedLogs.map(l => ({
-        id: l.id,
-        data: l,
-        user_id: userId || l.user_id
-      }))));
-    }
-
-    const ownedNotes = tastingNotes.filter(filterOwned);
-    if (ownedNotes.length > 0) {
-      tasks.push(client.from('tasting_notes').upsert(ownedNotes.map(n => ({
-        id: n.id,
-        data: n,
-        user_id: userId || n.user_id
-      }))));
-    }
-
-    // Split library by type for granular storage
-    const libraryByType: Record<string, LibraryIngredient[]> = {};
-    library.filter(filterOwned).forEach(item => {
-      const table = TABLE_MAP[item.type];
-      if (table) {
-        if (!libraryByType[table]) libraryByType[table] = [];
-        libraryByType[table].push(item);
-      }
-    });
-
-    Object.entries(libraryByType).forEach(([table, items]) => {
-      tasks.push(client.from(table).upsert(items.map(i => ({
-        id: i.id,
-        data: i,
-        user_id: userId || i.user_id,
-        status: i.status || 'private'
-      }))));
-    });
-
-    try {
-      await Promise.all(tasks);
-    } catch (err) {
-      console.error('Error during bulk sync to Supabase:', err);
-    }
-  },
 
   async fetchPendingSubmissions() {
     const client = supabase;
