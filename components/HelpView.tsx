@@ -39,6 +39,37 @@ const HelpView: React.FC = () => {
         </div>
       </section>
 
+      <section className="bg-emerald-50/50 p-8 rounded-3xl border border-emerald-100 shadow-sm space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="bg-emerald-100 p-3 rounded-2xl text-emerald-600">
+            <i className="fas fa-lightbulb text-2xl"></i>
+          </div>
+          <h3 className="text-2xl font-black text-stone-900">{t('help_tips_title')}</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex gap-4">
+            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">1</div>
+            <p className="text-sm text-stone-600">{t('help_tips_library')}</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">2</div>
+            <p className="text-sm text-stone-600">{t('help_tips_efficiency')}</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">3</div>
+            <p className="text-sm text-stone-600">{t('help_tips_import')}</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">4</div>
+            <p className="text-sm text-stone-600">{t('help_tips_ai')}</p>
+          </div>
+          <div className="flex gap-4 md:col-span-2">
+            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">5</div>
+            <p className="text-sm text-stone-600">{t('help_tips_stock')}</p>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-6">
         <div className="flex items-center gap-3">
           <div className="bg-blue-100 p-3 rounded-2xl text-blue-600">
