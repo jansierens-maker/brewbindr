@@ -81,7 +81,7 @@ export default async function handler(req: any, res: any) {
     res.status(200).json({ text: response.text || "" });
   } catch (error: any) {
     // Log detailed error for debugging, but return generic message to client
-    console.error("API Error:", error);
+    console.error("API Error:", error.message || "Unknown error occurred");
     res.status(500).json({ error: 'An error occurred during tasting analysis. Please try again later.' });
   }
 }
