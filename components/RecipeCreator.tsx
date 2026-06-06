@@ -38,7 +38,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
 
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const gemini = new GeminiService();
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const gemini = useMemo(() => new GeminiService(), []);
 
   const handleAiGenerate = async () => {
     if (!prompt.trim()) return;
@@ -62,6 +64,20 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
   };
 
   const stats = useMemo(() => calculateRecipeStats(recipe), [recipe]);
+
+  const handleAiAnalyze = async () => {
+    setIsAnalyzing(true);
+    setAiAnalysis(null);
+    try {
+      const feedback = await gemini.analyzeRecipe(recipe);
+      setAiAnalysis(feedback);
+    } catch (error) {
+      console.error("AI Analysis failed:", error);
+      alert("Failed to analyze recipe. Please check your API key.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
   
   const selectedStyleGuideline = useMemo(() => {
     if (!recipe.style?.libraryId) return null;
@@ -197,15 +213,28 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
       <section className="bg-gradient-to-br from-indigo-900 to-stone-900 p-8 rounded-3xl shadow-2xl border border-indigo-500/30 relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-amber-500/20 transition-all duration-700"></div>
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-amber-500 p-2.5 rounded-xl shadow-lg shadow-amber-500/20 animate-pulse">
-              <i className="fas fa-robot text-white text-xl"></i>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-500 p-2.5 rounded-xl shadow-lg shadow-amber-500/20 animate-pulse">
+                <i className="fas fa-robot text-white text-xl"></i>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white tracking-tight uppercase">brewbindr <span className="text-amber-500">AI</span></h2>
+                <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Recipe Innovation Bot</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-white tracking-tight uppercase">brewbindr <span className="text-amber-500">AI</span></h2>
-              <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Recipe Innovation Bot</p>
-            </div>
+            {recipe.id && (
+              <button
+                onClick={handleAiAnalyze}
+                disabled={isAnalyzing}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg"
+              >
+                {isAnalyzing ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-microscope"></i>}
+                {isAnalyzing ? t('analyzing_recipe') : t('analyze_recipe')}
+              </button>
+            )}
           </div>
+
           <div className="flex flex-col md:flex-row gap-4">
             <input 
               aria-label="AI Recipe Prompt"
@@ -224,6 +253,18 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               {isGenerating ? <><i className="fas fa-circle-notch fa-spin"></i> Brewing Idea...</> : <><i className="fas fa-magic"></i> Generate Recipe</>}
             </button>
           </div>
+
+          {aiAnalysis && (
+            <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-6 text-white animate-in slide-in-from-top-4 duration-500">
+              <div className="flex items-center gap-2 mb-4 text-amber-400">
+                <i className="fas fa-award text-xl"></i>
+                <h3 className="font-black uppercase tracking-widest text-sm">{t('cicerone_analysis')}</h3>
+              </div>
+              <div className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap text-stone-200">
+                {aiAnalysis}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -302,10 +343,18 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             </div>
           </div>
           <div>
-            <label htmlFor="efficiency" className="text-xs font-bold text-stone-400 uppercase">{t('efficiency')}</label>
+            <div className="flex items-center gap-1.5 mb-1">
+              <label htmlFor="efficiency" className="text-xs font-bold text-stone-400 uppercase">{t('efficiency')}</label>
+              <div className="group relative">
+                <i className="fas fa-info-circle text-[10px] text-stone-300"></i>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-stone-800 text-white text-[9px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+                  Adjust based on your equipment's performance to improve OG predictions.
+                </div>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
-              <input id="efficiency" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.efficiency.brewhouse} onChange={e => setRecipe({...recipe, efficiency: {brewhouse: parseFloat(e.target.value) || 0}})} />
-              <span className="text-xs font-bold text-stone-400">%</span>
+              <input id="efficiency" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold border-amber-200/50 focus:border-amber-500 transition-colors" value={recipe.efficiency.brewhouse} onChange={e => setRecipe({...recipe, efficiency: {brewhouse: parseFloat(e.target.value) || 0}})} />
+              <span className="text-xs font-bold text-amber-600">%</span>
             </div>
           </div>
           <div>

@@ -31,12 +31,21 @@ export class GeminiService {
     }
   }
 
+  private async getAuthSession() {
+    try {
+      const { data } = await supabase?.auth?.getSession() ?? {};
+      return data?.session ?? null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   async generateRecipe(prompt: string): Promise<Recipe> {
     const cacheKey = `recipe_${this.getCacheKey(prompt)}`;
     const cached = this.getCache(cacheKey);
     if (cached) return cached;
 
-    const { data: { session } } = await supabase?.auth.getSession() ?? { data: { session: null } };
+    const session = await this.getAuthSession();
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (session?.access_token) {
       headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -63,7 +72,7 @@ export class GeminiService {
     const cached = this.getCache(cacheKey);
     if (cached) return cached;
 
-    const { data: { session } } = await supabase?.auth.getSession() ?? { data: { session: null } };
+    const session = await this.getAuthSession();
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (session?.access_token) {
       headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -78,6 +87,34 @@ export class GeminiService {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || 'Failed to analyze tasting');
+    }
+
+    const data = await response.json();
+    const resultText = data.text || "";
+    this.setCache(cacheKey, resultText);
+    return resultText;
+  }
+
+  async analyzeRecipe(recipe: Recipe): Promise<string> {
+    const cacheKey = `recipe_analysis_${this.getCacheKey({ id: recipe.id, name: recipe.name, ingredients: recipe.ingredients })}`;
+    const cached = this.getCache(cacheKey);
+    if (cached) return cached;
+
+    const session = await this.getAuthSession();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch('/api/analyze-recipe', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ recipe })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to analyze recipe');
     }
 
     const data = await response.json();
