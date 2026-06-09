@@ -47,6 +47,18 @@ export const breweryService = {
     return data;
   },
 
+  async removeMember(userId: string) {
+    if (!supabase) return;
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        brewery_id: null,
+        brewery_role: null
+      })
+      .eq('id', userId);
+    if (error) throw error;
+  },
+
   async generateInvitation(breweryId: string, role: BreweryRole): Promise<Invitation | null> {
     if (!supabase) return null;
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();

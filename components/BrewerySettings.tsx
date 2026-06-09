@@ -78,6 +78,16 @@ const BrewerySettings: React.FC = () => {
     }
   };
 
+  const handleRemoveMember = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this member?')) return;
+    try {
+      await breweryService.removeMember(id);
+      setMembers(members.filter(m => m.id !== id));
+    } catch (err) {
+      alert('Failed to remove member');
+    }
+  };
+
   if (loading) return <div className="py-12 text-center text-stone-400 font-bold uppercase tracking-widest text-xs animate-pulse">Loading Brewery...</div>;
 
   return (
@@ -142,7 +152,7 @@ const BrewerySettings: React.FC = () => {
                   </div>
                 </div>
                 {isAdmin && member.id !== profile?.id && (
-                  <button className="text-stone-300 hover:text-red-500 transition-colors">
+                  <button onClick={() => handleRemoveMember(member.id)} className="text-stone-300 hover:text-red-500 transition-colors">
                     <i className="fas fa-user-minus"></i>
                   </button>
                 )}

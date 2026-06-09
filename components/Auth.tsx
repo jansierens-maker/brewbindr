@@ -76,17 +76,19 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
           />
         </div>
 
-        <div>
-          <label className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Invite Code (Optional)</label>
-          <input
-            type="text"
-            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all uppercase placeholder:normal-case"
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-            placeholder="ABCDEF"
-          />
-          <p className="text-[9px] text-stone-400 mt-1 ml-1 font-bold italic">Joining a brewery? Enter the code here.</p>
-        </div>
+        {isSignUp && (
+          <div>
+            <label className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Invite Code (Optional)</label>
+            <input
+              type="text"
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all uppercase placeholder:normal-case"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+              placeholder="ABCDEF"
+            />
+            <p className="text-[9px] text-stone-400 mt-1 ml-1 font-bold italic">Joining a brewery? Enter the code here.</p>
+          </div>
+        )}
 
         {error && (
           <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold flex items-center gap-2 animate-in slide-in-from-top-2">
