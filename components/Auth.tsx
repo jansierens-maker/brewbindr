@@ -19,12 +19,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
     setError(null);
     try {
       if (isSignUp) {
-        const data = await authService.signUp(email, password);
-        if (inviteCode.trim() && data.user) {
-           // We'll handle joining in a post-login phase or RPC if needed,
-           // but for now let's store it or try to join if session is active
-           localStorage.setItem('pending_invite_code', inviteCode.trim());
-        }
+        await authService.signUp(email, password, inviteCode.trim() || undefined);
         alert('Check your email for the confirmation link!');
       } else {
         await authService.signIn(email, password);

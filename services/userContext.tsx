@@ -80,48 +80,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const pendingInviteCode = localStorage.getItem('pending_invite_code');
 
       if (!p) {
-        // Create default profile if not exists
-        const newProfile: UserProfile = {
+        // This case should ideally be handled by handle_new_user trigger.
+        // If it isn't (e.g. race condition or trigger error), we create a minimal profile.
+        // The trigger in SQL_SCHEMA handles brewery creation more reliably.
+        const minimalProfile: UserProfile = {
           id: userId,
           role: 'user',
           preferences: defaultPreferences
         };
-
-        if (pendingInviteCode) {
-           try {
-             const breweryId = await breweryService.joinBrewery(pendingInviteCode, userId);
-             newProfile.brewery_id = breweryId;
-             // brewery_role is set by joinBrewery update
-             localStorage.removeItem('pending_invite_code');
-             // Re-fetch because joinBrewery updated the DB
-             p = await authService.getProfile(userId);
-           } catch (err: any) {
-             console.error('Failed to join brewery on signup:', err);
-             alert(`Join failed: ${err.message}`);
-             localStorage.removeItem('pending_invite_code');
-             await authService.updateProfile(newProfile);
-             p = newProfile;
-           }
-        } else {
-           // Standard solo setup: Create a default brewery
-           const newBrewery = await breweryService.createBrewery(`${userId.substring(0, 5)}'s Brewery`);
-           if (newBrewery) {
-              newProfile.brewery_id = newBrewery.id;
-              newProfile.brewery_role = 'admin';
-           }
-           await authService.updateProfile(newProfile);
-           // Update profile with brewery info (authService.updateProfile only updates preferences/id)
-           // We need a direct supabase call here or update authService
-           if (newBrewery) {
-              await supabase?.from('profiles').update({
-                brewery_id: newBrewery.id,
-                brewery_role: 'admin'
-              }).eq('id', userId);
-              p = await authService.getProfile(userId);
-           } else {
-              p = newProfile;
-           }
-        }
+        await authService.updateProfile(minimalProfile);
+        p = await authService.getProfile(userId) || minimalProfile;
       } else {
         // Ensure fetched profile has all default preference keys (e.g. language)
         const mergedPrefs = { ...defaultPreferences, ...p.preferences };
@@ -131,7 +99,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // Handle pending invite for existing user
+      // Handle pending invite for existing user who just logged in
       if (p && pendingInviteCode) {
          if (p.brewery_id) {
             alert("You are already part of a brewery. Please export your data, delete your account, and re-join if you want to switch.");

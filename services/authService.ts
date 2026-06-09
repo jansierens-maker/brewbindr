@@ -2,13 +2,14 @@ import { supabase } from './supabaseClient';
 import { UserProfile } from '../types';
 
 export const authService = {
-  async signUp(email: string, password: string) {
+  async signUp(email: string, password: string, inviteCode?: string) {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin
+        emailRedirectTo: window.location.origin,
+        data: inviteCode ? { invite_code: inviteCode } : undefined
       }
     });
     if (error) throw error;
