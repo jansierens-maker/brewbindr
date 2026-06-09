@@ -815,31 +815,49 @@ const AppContent: React.FC = () => {
   };
 
   const SQL_SCHEMA = `
--- Create breweries table
-CREATE TABLE IF NOT EXISTS breweries (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+-- 1. Create/Update Tables Idempotently
+CREATE TABLE IF NOT EXISTS breweries (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
+ALTER TABLE breweries ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT 'My Brewery';
+ALTER TABLE breweries ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE breweries ALTER COLUMN name DROP DEFAULT;
 
--- Create profiles table
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
-  role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user')),
-  brewery_id UUID REFERENCES breweries(id),
-  brewery_role TEXT CHECK (brewery_role IN ('admin', 'brewmaster', 'brewer', 'taster')),
-  preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm", "language": "en"}'::jsonb
-);
+CREATE TABLE IF NOT EXISTS profiles (id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE);
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user'));
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS brewery_id UUID REFERENCES breweries(id);
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS brewery_role TEXT CHECK (brewery_role IN ('admin', 'brewmaster', 'brewer', 'taster'));
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm", "language": "en"}'::jsonb;
 
--- Create invitations table
-CREATE TABLE IF NOT EXISTS invitations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  brewery_id UUID NOT NULL REFERENCES breweries(id) ON DELETE CASCADE,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'brewmaster', 'brewer', 'taster')),
-  code TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  expires_at TIMESTAMPTZ DEFAULT (now() + interval '7 days')
-);
+CREATE TABLE IF NOT EXISTS invitations (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS brewery_id UUID NOT NULL REFERENCES breweries(id) ON DELETE CASCADE;
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS role TEXT NOT NULL CHECK (role IN ('admin', 'brewmaster', 'brewer', 'taster'));
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS code TEXT NOT NULL;
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT (now() + interval '7 days');
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_code_key') THEN
+    ALTER TABLE invitations ADD CONSTRAINT invitations_code_key UNIQUE (code);
+  END IF;
+END $$;
+
+-- Create application tables idempotently
+DO $$
+DECLARE
+  t text;
+  tables text[] := ARRAY['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+BEGIN
+  FOR t IN SELECT unnest(tables) LOOP
+    EXECUTE format('CREATE TABLE IF NOT EXISTS %I (id TEXT PRIMARY KEY);', t);
+    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS data JSONB;', t);
+    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users;', t);
+    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS brewery_id UUID REFERENCES breweries(id);', t);
+
+    IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
+      EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS status TEXT DEFAULT ''private'' CHECK (status IN (''private'', ''submitted'', ''approved''));', t);
+    END IF;
+  END LOOP;
+END $$;
 
 -- Enable RLS
 ALTER TABLE breweries ENABLE ROW LEVEL SECURITY;
@@ -888,86 +906,20 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
   INSERT INTO public.profiles (id)
-  VALUES (new.id);
+  VALUES (new.id)
+  ON CONFLICT (id) DO NOTHING;
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Policies for invitations
 DROP POLICY IF EXISTS "Admins can manage invitations" ON invitations;
 CREATE POLICY "Admins can manage invitations" ON invitations FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() = 'admin');
-
--- Create application tables with user_id, brewery_id and status
-CREATE TABLE IF NOT EXISTS recipes (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  brewery_id UUID REFERENCES breweries(id),
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS brew_logs (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users, brewery_id UUID REFERENCES breweries(id));
-CREATE TABLE IF NOT EXISTS tasting_notes (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users, brewery_id UUID REFERENCES breweries(id));
-CREATE TABLE IF NOT EXISTS fermentables (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  brewery_id UUID REFERENCES breweries(id),
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS hops (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  brewery_id UUID REFERENCES breweries(id),
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS cultures (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  brewery_id UUID REFERENCES breweries(id),
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS styles (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  brewery_id UUID REFERENCES breweries(id),
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS miscs (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  brewery_id UUID REFERENCES breweries(id),
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS mash_profiles (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  brewery_id UUID REFERENCES breweries(id),
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS equipment (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users, brewery_id UUID REFERENCES breweries(id));
-CREATE TABLE IF NOT EXISTS waters (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users, brewery_id UUID REFERENCES breweries(id));
-
--- Enable Row Level Security (RLS)
-ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE brew_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tasting_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE fermentables ENABLE ROW LEVEL SECURITY;
-ALTER TABLE hops ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cultures ENABLE ROW LEVEL SECURITY;
-ALTER TABLE styles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE miscs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE mash_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE waters ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for Data Tables
 DO \$\$
@@ -977,6 +929,8 @@ DECLARE
 BEGIN
   FOR t IN SELECT unnest(tables)
   LOOP
+    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY;', t);
+
     -- Everyone can read approved items (if the table has a status column)
     IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
       EXECUTE format('DROP POLICY IF EXISTS "Allow read approved %I" ON %I;', t, t);
@@ -987,38 +941,51 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS "Allow user manage own %I" ON %I;', t, t);
 
     -- SELECT: Any member of the brewery
+    EXECUTE format('DROP POLICY IF EXISTS "Allow brewery members read %I" ON %I;', t, t);
     EXECUTE format('CREATE POLICY "Allow brewery members read %I" ON %I FOR SELECT USING (brewery_id = get_user_brewery_id());', t, t);
 
     -- INSERT/UPDATE/DELETE based on roles
-    IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters') THEN
-      -- admin and brewmaster can manage
+    IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
+      -- admin and brewmaster can manage (with status check)
+      EXECUTE format('DROP POLICY IF EXISTS "Allow admin/brewmaster manage %I" ON %I;', t, t);
       EXECUTE format('CREATE POLICY "Allow admin/brewmaster manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() IN (''admin'', ''brewmaster'')) WITH CHECK (brewery_id = get_user_brewery_id() AND (status != ''approved'' OR is_admin()));', t, t);
+    ELSIF t IN ('equipment', 'waters') THEN
+      -- admin and brewmaster can manage (no status check)
+      EXECUTE format('DROP POLICY IF EXISTS "Allow admin/brewmaster manage %I" ON %I;', t, t);
+      EXECUTE format('CREATE POLICY "Allow admin/brewmaster manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() IN (''admin'', ''brewmaster'')) WITH CHECK (brewery_id = get_user_brewery_id());', t, t);
     ELSIF t = 'brew_logs' THEN
       -- admin, brewmaster, brewer can manage
+      EXECUTE format('DROP POLICY IF EXISTS "Allow admin/brewmaster/brewer manage %I" ON %I;', t, t);
       EXECUTE format('CREATE POLICY "Allow admin/brewmaster/brewer manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() IN (''admin'', ''brewmaster'', ''brewer''));', t, t);
     ELSIF t = 'tasting_notes' THEN
       -- everyone in brewery can manage
+      EXECUTE format('DROP POLICY IF EXISTS "Allow brewery members manage %I" ON %I;', t, t);
       EXECUTE format('CREATE POLICY "Allow brewery members manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id());', t, t);
     END IF;
 
     -- Admins of the app (global role) can still do everything
-    EXECUTE format('DROP POLICY IF EXISTS "Allow admin manage %I" ON %I;', t, t);
+    EXECUTE format('DROP POLICY IF EXISTS "Allow global admin manage %I" ON %I;', t, t);
     EXECUTE format('CREATE POLICY "Allow global admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
   END LOOP;
 END \$\$;
 
--- Enable Realtime for all tables
-ALTER PUBLICATION supabase_realtime ADD TABLE recipes;
-ALTER PUBLICATION supabase_realtime ADD TABLE brew_logs;
-ALTER PUBLICATION supabase_realtime ADD TABLE tasting_notes;
-ALTER PUBLICATION supabase_realtime ADD TABLE fermentables;
-ALTER PUBLICATION supabase_realtime ADD TABLE hops;
-ALTER PUBLICATION supabase_realtime ADD TABLE cultures;
-ALTER PUBLICATION supabase_realtime ADD TABLE styles;
-ALTER PUBLICATION supabase_realtime ADD TABLE miscs;
-ALTER PUBLICATION supabase_realtime ADD TABLE mash_profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE equipment;
-ALTER PUBLICATION supabase_realtime ADD TABLE waters;
+-- Enable Realtime for all tables idempotently
+DO $$
+DECLARE
+  t text;
+  tables text[] := ARRAY['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+BEGIN
+  FOR t IN SELECT unnest(tables) LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = t
+    ) THEN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE %I;', t);
+    END IF;
+  END LOOP;
+END $$;
 
 -- Grant PostgREST access to public schema
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
