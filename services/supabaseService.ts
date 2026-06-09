@@ -94,22 +94,26 @@ export const supabaseService = {
     }
   },
 
-  async fetchAppData(userId?: string) {
+  async fetchAppData(userId?: string, breweryId?: string) {
     const client = supabase;
     if (!client) return null;
     try {
       const tableList = ['recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
 
       const requests = tableList.map(t => {
-        let query = client.from(t).select('data, user_id, status');
+        let query = client.from(t).select('data, user_id, brewery_id, status');
 
-        // For items that can be public, fetch owned OR approved
+        // For items that can be public, fetch owned/brewery OR approved
         if (['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'].includes(t)) {
-          if (userId) {
+          if (breweryId) {
+             query = query.or(`brewery_id.eq.${breweryId},status.eq.approved`);
+          } else if (userId) {
             query = query.or(`user_id.eq.${userId},status.eq.approved`);
           } else {
             query = query.eq('status', 'approved');
           }
+        } else if (breweryId) {
+           query = query.eq('brewery_id', breweryId);
         } else if (userId) {
           // For private items (brew logs, etc.), only fetch owned
           query = query.eq('user_id', userId);
@@ -131,6 +135,7 @@ export const supabaseService = {
         data[table] = responses[idx].data?.map((r: any) => ({
           ...r.data,
           user_id: r.user_id,
+          brewery_id: r.brewery_id,
           status: r.status
         })) || [];
       });
@@ -155,13 +160,14 @@ export const supabaseService = {
     }
   },
 
-  async saveRecipe(recipe: Recipe, userId?: string) {
+  async saveRecipe(recipe: Recipe, userId?: string, breweryId?: string) {
     const client = supabase;
     if (!client || !recipe.id) return;
     return client.from('recipes').upsert({
       id: recipe.id,
       data: recipe,
       user_id: userId || recipe.user_id,
+      brewery_id: breweryId || recipe.brewery_id,
       status: recipe.status || 'private'
     });
   },
@@ -172,13 +178,14 @@ export const supabaseService = {
     return client.from('recipes').delete().eq('id', id);
   },
 
-  async saveBrewLog(log: BrewLogEntry, userId?: string) {
+  async saveBrewLog(log: BrewLogEntry, userId?: string, breweryId?: string) {
     const client = supabase;
     if (!client || !log.id) return;
     return client.from('brew_logs').upsert({
       id: log.id,
       data: log,
-      user_id: userId || log.user_id
+      user_id: userId || log.user_id,
+      brewery_id: breweryId || log.brewery_id
     });
   },
 
@@ -188,13 +195,14 @@ export const supabaseService = {
     return client.from('brew_logs').delete().eq('id', id);
   },
 
-  async saveTastingNote(note: TastingNote, userId?: string) {
+  async saveTastingNote(note: TastingNote, userId?: string, breweryId?: string) {
     const client = supabase;
     if (!client || !note.id) return;
     return client.from('tasting_notes').upsert({
       id: note.id,
       data: note,
-      user_id: userId || note.user_id
+      user_id: userId || note.user_id,
+      brewery_id: breweryId || note.brewery_id
     });
   },
 
@@ -204,7 +212,7 @@ export const supabaseService = {
     return client.from('tasting_notes').delete().eq('id', id);
   },
 
-  async saveLibraryIngredient(item: LibraryIngredient, userId?: string) {
+  async saveLibraryIngredient(item: LibraryIngredient, userId?: string, breweryId?: string) {
     const client = supabase;
     const table = TABLE_MAP[item.type];
     if (!client || !table) return;
@@ -212,6 +220,7 @@ export const supabaseService = {
       id: item.id,
       data: item,
       user_id: userId || item.user_id,
+      brewery_id: breweryId || item.brewery_id,
       status: item.status || 'private'
     });
   },
@@ -283,7 +292,7 @@ export const supabaseService = {
     }
   },
 
-  async batchSaveLibraryIngredients(items: LibraryIngredient[], userId: string) {
+  async batchSaveLibraryIngredients(items: LibraryIngredient[], userId: string, breweryId?: string) {
     const client = supabase;
     if (!client || items.length === 0) return;
 
@@ -301,6 +310,7 @@ export const supabaseService = {
         id: i.id,
         data: i,
         user_id: userId,
+        brewery_id: breweryId || i.brewery_id,
         status: i.status || 'private'
       })));
     });

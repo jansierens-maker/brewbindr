@@ -4,6 +4,7 @@ import { UserProfile, UserPreferences } from '../types';
 import { Language } from './i18n';
 import { supabase } from './supabaseClient';
 import { authService } from './authService';
+import { breweryService } from './breweryService';
 
 interface UserContextType {
   user: User | null;
@@ -13,6 +14,7 @@ interface UserContextType {
   updatePreferences: (prefs: Partial<UserPreferences>) => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  breweryRole: string | null;
 }
 
 const getDefaultLanguage = (): Language => {
@@ -74,6 +76,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchProfile = async (userId: string) => {
     try {
       let p = await authService.getProfile(userId);
+
+      const pendingInviteCode = localStorage.getItem('pending_invite_code');
+
       if (!p) {
         // Create default profile if not exists
         const newProfile: UserProfile = {
@@ -81,8 +86,42 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: 'user',
           preferences: defaultPreferences
         };
-        await authService.updateProfile(newProfile);
-        p = newProfile;
+
+        if (pendingInviteCode) {
+           try {
+             const breweryId = await breweryService.joinBrewery(pendingInviteCode, userId);
+             newProfile.brewery_id = breweryId;
+             // brewery_role is set by joinBrewery update
+             localStorage.removeItem('pending_invite_code');
+             // Re-fetch because joinBrewery updated the DB
+             p = await authService.getProfile(userId);
+           } catch (err: any) {
+             console.error('Failed to join brewery on signup:', err);
+             alert(`Join failed: ${err.message}`);
+             localStorage.removeItem('pending_invite_code');
+             await authService.updateProfile(newProfile);
+             p = newProfile;
+           }
+        } else {
+           // Standard solo setup: Create a default brewery
+           const newBrewery = await breweryService.createBrewery(`${userId.substring(0, 5)}'s Brewery`);
+           if (newBrewery) {
+              newProfile.brewery_id = newBrewery.id;
+              newProfile.brewery_role = 'admin';
+           }
+           await authService.updateProfile(newProfile);
+           // Update profile with brewery info (authService.updateProfile only updates preferences/id)
+           // We need a direct supabase call here or update authService
+           if (newBrewery) {
+              await supabase?.from('profiles').update({
+                brewery_id: newBrewery.id,
+                brewery_role: 'admin'
+              }).eq('id', userId);
+              p = await authService.getProfile(userId);
+           } else {
+              p = newProfile;
+           }
+        }
       } else {
         // Ensure fetched profile has all default preference keys (e.g. language)
         const mergedPrefs = { ...defaultPreferences, ...p.preferences };
@@ -91,6 +130,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
            await authService.updateProfile(p);
         }
       }
+
+      // Handle pending invite for existing user
+      if (p && pendingInviteCode) {
+         if (p.brewery_id) {
+            alert("You are already part of a brewery. Please export your data, delete your account, and re-join if you want to switch.");
+         } else {
+            try {
+               await breweryService.joinBrewery(pendingInviteCode, userId);
+               p = await authService.getProfile(userId);
+            } catch (err: any) {
+               alert(`Join failed: ${err.message}`);
+            }
+         }
+         localStorage.removeItem('pending_invite_code');
+      }
+
       setProfile(p);
     } catch (err) {
       console.error('Critical Error in fetchProfile:', err);
@@ -162,7 +217,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     preferences: { ...defaultPreferences, ...profile?.preferences },
     updatePreferences,
     signOut,
-    isAdmin: profile?.role === 'admin'
+    isAdmin: profile?.role === 'admin',
+    breweryRole: profile?.brewery_role ?? null
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

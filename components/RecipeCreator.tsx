@@ -15,7 +15,9 @@ interface RecipeCreatorProps {
 
 const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, initialRecipe, library }) => {
   const { t, lang } = useTranslation();
-  const { preferences, user } = useUser();
+  const { preferences, user, breweryRole } = useUser();
+
+  const canEdit = breweryRole === 'admin' || breweryRole === 'brewmaster' || !breweryRole;
   const [recipe, setRecipe] = useState<Recipe>(initialRecipe || {
     name: '',
     type: 'all_grain',
@@ -549,7 +551,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
 
         <div className="flex flex-col gap-4">
           <div className="flex gap-4">
-            {onDelete && recipe.id && (recipe.user_id === user?.id) && (
+            {onDelete && recipe.id && (recipe.user_id === user?.id) && canEdit && (
               <button
                 onClick={() => { if(confirm(t('confirm_delete'))) onDelete(recipe.id!); }}
                 className="flex-none bg-stone-100 text-red-600 px-8 py-5 rounded-3xl font-black shadow-sm hover:bg-red-50 transition-all uppercase tracking-widest text-lg"
@@ -559,8 +561,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               </button>
             )}
             <button 
+              disabled={!canEdit}
               onClick={() => onSave({...recipe, user_id: user?.id, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
-              className="flex-1 bg-stone-900 text-white py-5 rounded-3xl font-black shadow-xl hover:bg-black transition-all uppercase tracking-widest text-lg"
+              className="flex-1 bg-stone-900 text-white py-5 rounded-3xl font-black shadow-xl hover:bg-black transition-all uppercase tracking-widest text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('save_recipe')}
             </button>

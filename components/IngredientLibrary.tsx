@@ -28,7 +28,9 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   onUpdate
 }) => {
   const { t } = useTranslation();
-  const { user, preferences } = useUser();
+  const { user, preferences, profile, breweryRole } = useUser();
+
+  const canEdit = breweryRole === 'admin' || breweryRole === 'brewmaster' || !breweryRole;
   const [filter, setFilter] = useState<'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style'>('fermentable');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
@@ -52,7 +54,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         status: 'submitted' as const,
         stock: undefined // Remove stock for public submission
       }));
-      await supabaseService.batchSaveLibraryIngredients(submittedClones, user.id);
+      await supabaseService.batchSaveLibraryIngredients(submittedClones, user.id, profile?.brewery_id);
       alert(`${selectedIds.length} items submitted for review!`);
     } else {
       // Bulk Import to Personal
@@ -63,12 +65,12 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         user_id: user.id,
         status: 'private' as const
       }));
-      await supabaseService.batchSaveLibraryIngredients(newItems, user.id);
+      await supabaseService.batchSaveLibraryIngredients(newItems, user.id, profile?.brewery_id);
       alert(`${selectedIds.length} items added to your collection!`);
     }
 
     // Refresh parent data
-    const remoteData = await supabaseService.fetchAppData(user.id);
+    const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
     if (remoteData) {
       onUpdate(remoteData.library);
     }
@@ -92,6 +94,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     const newItem: LibraryIngredient = {
       id: newId,
       user_id: user?.id,
+      brewery_id: profile?.brewery_id,
       status: 'private',
       name: (filter === 'misc' || filter === 'style') ? defaultName : `${t('new_btn')} ${defaultName}`,
       type: filter as string,
@@ -212,7 +215,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {selectedIds.length > 0 && user && (
+          {selectedIds.length > 0 && user && canEdit && (
             <div className="flex items-center gap-3 bg-amber-50 px-4 py-2 rounded-xl border border-amber-100 animate-in slide-in-from-right-4 duration-300 mr-auto md:mr-0">
                <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">{selectedIds.length} {t('selected')}</span>
                <button
@@ -225,7 +228,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             </div>
           )}
 
-          {libraryView === 'personal' && (
+          {libraryView === 'personal' && canEdit && (
             <button
               onClick={handleAddNew}
               className="bg-stone-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg hover:bg-black transition-all flex items-center gap-2"
@@ -256,7 +259,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                    >
                      <i className="fas fa-check text-[10px]"></i>
                    </button>
-                   {(!item.user_id || item.user_id === user?.id) && (
+                   {((!item.user_id || item.user_id === user?.id) || (item.brewery_id === profile?.brewery_id)) && canEdit && (
                       <button onClick={() => startEditing(item)} className="text-stone-300 hover:text-amber-500 transition-colors">
                         <i className="fas fa-edit text-xs"></i>
                       </button>
@@ -437,18 +440,19 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                   )}
 
                   <div className="mt-6 pt-6 border-t border-stone-100 flex flex-col gap-2">
-                    {user && libraryView === 'personal' && (item.user_id === user.id || !item.user_id) && item.status === 'private' && (
+                    {user && libraryView === 'personal' && ((item.user_id === user.id || !item.user_id) || item.brewery_id === profile?.brewery_id) && item.status === 'private' && canEdit && (
                        <button
                         onClick={async () => {
                           const clone = {
                             ...item,
                             id: crypto.randomUUID(),
                             user_id: user.id,
+                            brewery_id: profile?.brewery_id,
                             status: 'submitted' as const,
                             stock: undefined
                           };
-                          await supabaseService.saveLibraryIngredient(clone, user.id);
-                          const remoteData = await supabaseService.fetchAppData(user.id);
+                          await supabaseService.saveLibraryIngredient(clone, user.id, profile?.brewery_id);
+                          const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
                           if (remoteData) onUpdate(remoteData.library);
                           alert(`${item.name} submitted for review!`);
                         }}
@@ -462,10 +466,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     {libraryView === 'public' && (
                        <button
                         onClick={async () => {
-                          const newItem = { ...item, id: crypto.randomUUID(), user_id: user?.id, status: 'private' as const };
+                          const newItem = { ...item, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' as const };
                           onUpdate([...ingredients, newItem]);
                           if (user?.id) {
-                            await supabaseService.saveLibraryIngredient(newItem, user.id);
+                            await supabaseService.saveLibraryIngredient(newItem, user.id, profile?.brewery_id);
                           }
                           alert(`${item.name} added to your collection!`);
                         }}

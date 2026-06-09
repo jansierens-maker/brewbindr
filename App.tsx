@@ -231,6 +231,7 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     let userDataChannel: any = null;
+    let breweryDataChannel: any = null;
     let publicDataChannel: any = null;
 
     const handlePayload = (payload: any, table: string) => {
@@ -278,7 +279,7 @@ const AppContent: React.FC = () => {
           }
         }
 
-        const remoteData = await supabaseService.fetchAppData(user?.id);
+        const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id);
         if (remoteData) {
           setRecipes(remoteData.recipes);
           setBrewLogs(remoteData.brewLogs);
@@ -305,7 +306,7 @@ const AppContent: React.FC = () => {
 
       if (!supabase) return;
 
-      // Channel 1: User's own data across all relevant tables
+      // Channel 1: User's own data (legacy support / private profiles)
       if (user?.id) {
         userDataChannel = supabase.channel('user-updates');
         const tables = ['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
@@ -320,6 +321,23 @@ const AppContent: React.FC = () => {
         });
 
         userDataChannel.subscribe();
+      }
+
+      // Channel 1.5: Brewery shared data
+      if (profile?.brewery_id) {
+        breweryDataChannel = supabase.channel('brewery-updates');
+        const tables = ['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+
+        tables.forEach(table => {
+          breweryDataChannel.on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: table,
+            filter: `brewery_id=eq.${profile.brewery_id}`
+          }, (payload: any) => handlePayload(payload, table));
+        });
+
+        breweryDataChannel.subscribe();
       }
 
       // Channel 2: Publicly approved data
@@ -342,9 +360,10 @@ const AppContent: React.FC = () => {
 
     return () => {
       if (userDataChannel) supabase?.removeChannel(userDataChannel);
+      if (breweryDataChannel) supabase?.removeChannel(breweryDataChannel);
       if (publicDataChannel) supabase?.removeChannel(publicDataChannel);
     };
-  }, [user?.id, authLoading, isAdmin]);
+  }, [user?.id, profile?.brewery_id, authLoading, isAdmin]);
 
   const handleSaveRecipe = async (recipe: Recipe) => {
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
@@ -352,13 +371,13 @@ const AppContent: React.FC = () => {
     if (newIngredients.length > 0) {
       setLibrary(prev => [...prev, ...newIngredients]);
       if (user?.id) {
-        await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
+        await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id, profile?.brewery_id);
       }
     }
 
     const targetRecipe = selectedRecipe && selectedRecipe.id
-      ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id }
-      : { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id };
+      ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id, brewery_id: profile?.brewery_id }
+      : { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id };
 
     setRecipes(prev => {
       const exists = prev.find(r => r.id === targetRecipe.id);
@@ -367,7 +386,7 @@ const AppContent: React.FC = () => {
     });
 
     if (user?.id) {
-      await supabaseService.saveRecipe(targetRecipe, user.id);
+      await supabaseService.saveRecipe(targetRecipe, user.id, profile?.brewery_id);
     }
 
     setSelectedRecipe(null);
@@ -382,14 +401,14 @@ const AppContent: React.FC = () => {
   };
 
   const handleUpdateBrewLog = async (entry: BrewLogEntry) => {
-    const targetLog = { ...entry, user_id: user?.id };
+    const targetLog = { ...entry, user_id: user?.id, brewery_id: profile?.brewery_id };
     setBrewLogs(prev => {
       const exists = prev.find(l => l.id === entry.id);
       if (exists) return prev.map(l => l.id === entry.id ? targetLog : l);
       return [targetLog, ...prev];
     });
     if (user?.id) {
-      await supabaseService.saveBrewLog(targetLog, user.id);
+      await supabaseService.saveBrewLog(targetLog, user.id, profile?.brewery_id);
     }
   };
 
@@ -796,18 +815,59 @@ const AppContent: React.FC = () => {
   };
 
   const SQL_SCHEMA = `
+-- Create breweries table
+CREATE TABLE IF NOT EXISTS breweries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
   role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  brewery_id UUID REFERENCES breweries(id),
+  brewery_role TEXT CHECK (brewery_role IN ('admin', 'brewmaster', 'brewer', 'taster')),
   preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm", "language": "en"}'::jsonb
 );
 
--- Enable RLS on profiles
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+-- Create invitations table
+CREATE TABLE IF NOT EXISTS invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brewery_id UUID NOT NULL REFERENCES breweries(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('admin', 'brewmaster', 'brewer', 'taster')),
+  code TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  expires_at TIMESTAMPTZ DEFAULT (now() + interval '7 days')
+);
 
+-- Enable RLS
+ALTER TABLE breweries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
+
+-- Helper Functions for RLS
+CREATE OR REPLACE FUNCTION get_user_brewery_id() RETURNS UUID AS $$
+  SELECT brewery_id FROM profiles WHERE id = auth.uid();
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION get_user_brewery_role() RETURNS TEXT AS $$
+  SELECT brewery_role FROM profiles WHERE id = auth.uid();
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+-- Policies for breweries
+DROP POLICY IF EXISTS "Members can view their brewery" ON breweries;
+CREATE POLICY "Members can view their brewery" ON breweries FOR SELECT USING (id = get_user_brewery_id());
+
+DROP POLICY IF EXISTS "Admins can update brewery" ON breweries;
+CREATE POLICY "Admins can update brewery" ON breweries FOR UPDATE USING (id = get_user_brewery_id() AND get_user_brewery_role() = 'admin');
+
+-- Policies for profiles
 DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can view brewery members" ON profiles;
+CREATE POLICY "Users can view brewery members" ON profiles FOR SELECT USING (brewery_id = get_user_brewery_id());
 
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id AND (role = (SELECT role FROM profiles WHERE id = auth.uid())));
@@ -815,7 +875,7 @@ CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.
 DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Helper to check if user is admin (moved up to avoid recursion in policies)
+-- Helper to check if user is admin (global app admin)
 CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
   SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
@@ -837,59 +897,64 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Backfill profiles for existing users
-INSERT INTO public.profiles (id)
-SELECT id FROM auth.users
-ON CONFLICT (id) DO NOTHING;
+-- Policies for invitations
+DROP POLICY IF EXISTS "Admins can manage invitations" ON invitations;
+CREATE POLICY "Admins can manage invitations" ON invitations FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() = 'admin');
 
--- Create application tables with user_id and status
--- We use TEXT for id to support existing random string IDs, but UUID for user_id
+-- Create application tables with user_id, brewery_id and status
 CREATE TABLE IF NOT EXISTS recipes (
   id TEXT PRIMARY KEY,
   data JSONB,
   user_id UUID REFERENCES auth.users,
+  brewery_id UUID REFERENCES breweries(id),
   status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
 );
-CREATE TABLE IF NOT EXISTS brew_logs (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
-CREATE TABLE IF NOT EXISTS tasting_notes (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
+CREATE TABLE IF NOT EXISTS brew_logs (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users, brewery_id UUID REFERENCES breweries(id));
+CREATE TABLE IF NOT EXISTS tasting_notes (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users, brewery_id UUID REFERENCES breweries(id));
 CREATE TABLE IF NOT EXISTS fermentables (
   id TEXT PRIMARY KEY,
   data JSONB,
   user_id UUID REFERENCES auth.users,
+  brewery_id UUID REFERENCES breweries(id),
   status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
 );
 CREATE TABLE IF NOT EXISTS hops (
   id TEXT PRIMARY KEY,
   data JSONB,
   user_id UUID REFERENCES auth.users,
+  brewery_id UUID REFERENCES breweries(id),
   status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
 );
 CREATE TABLE IF NOT EXISTS cultures (
   id TEXT PRIMARY KEY,
   data JSONB,
   user_id UUID REFERENCES auth.users,
+  brewery_id UUID REFERENCES breweries(id),
   status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
 );
 CREATE TABLE IF NOT EXISTS styles (
   id TEXT PRIMARY KEY,
   data JSONB,
   user_id UUID REFERENCES auth.users,
+  brewery_id UUID REFERENCES breweries(id),
   status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
 );
 CREATE TABLE IF NOT EXISTS miscs (
   id TEXT PRIMARY KEY,
   data JSONB,
   user_id UUID REFERENCES auth.users,
+  brewery_id UUID REFERENCES breweries(id),
   status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
 );
 CREATE TABLE IF NOT EXISTS mash_profiles (
   id TEXT PRIMARY KEY,
   data JSONB,
   user_id UUID REFERENCES auth.users,
+  brewery_id UUID REFERENCES breweries(id),
   status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
 );
-CREATE TABLE IF NOT EXISTS equipment (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
-CREATE TABLE IF NOT EXISTS waters (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
+CREATE TABLE IF NOT EXISTS equipment (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users, brewery_id UUID REFERENCES breweries(id));
+CREATE TABLE IF NOT EXISTS waters (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users, brewery_id UUID REFERENCES breweries(id));
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
@@ -918,17 +983,27 @@ BEGIN
       EXECUTE format('CREATE POLICY "Allow read approved %I" ON %I FOR SELECT USING (status = ''approved'');', t, t);
     END IF;
 
-    -- Users can read/write their own items (Non-admins cannot set status to approved)
+    -- Drop old user-only policy
     EXECUTE format('DROP POLICY IF EXISTS "Allow user manage own %I" ON %I;', t, t);
-    IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
-      EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id AND (status != ''approved'' OR is_admin()));', t, t);
-    ELSE
-      EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t, t);
+
+    -- SELECT: Any member of the brewery
+    EXECUTE format('CREATE POLICY "Allow brewery members read %I" ON %I FOR SELECT USING (brewery_id = get_user_brewery_id());', t, t);
+
+    -- INSERT/UPDATE/DELETE based on roles
+    IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters') THEN
+      -- admin and brewmaster can manage
+      EXECUTE format('CREATE POLICY "Allow admin/brewmaster manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() IN (''admin'', ''brewmaster'')) WITH CHECK (brewery_id = get_user_brewery_id() AND (status != ''approved'' OR is_admin()));', t, t);
+    ELSIF t = 'brew_logs' THEN
+      -- admin, brewmaster, brewer can manage
+      EXECUTE format('CREATE POLICY "Allow admin/brewmaster/brewer manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() IN (''admin'', ''brewmaster'', ''brewer''));', t, t);
+    ELSIF t = 'tasting_notes' THEN
+      -- everyone in brewery can manage
+      EXECUTE format('CREATE POLICY "Allow brewery members manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id());', t, t);
     END IF;
 
-    -- Admins can do everything
+    -- Admins of the app (global role) can still do everything
     EXECUTE format('DROP POLICY IF EXISTS "Allow admin manage %I" ON %I;', t, t);
-    EXECUTE format('CREATE POLICY "Allow admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
+    EXECUTE format('CREATE POLICY "Allow global admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
   END LOOP;
 END \$\$;
 
@@ -1489,7 +1564,7 @@ GRANT ALL ON TABLE profiles TO authenticated;
 
                   if (user?.id && changed.length > 0) {
                     for (const item of changed) {
-                      await supabaseService.saveLibraryIngredient(item, user.id);
+                      await supabaseService.saveLibraryIngredient(item, user.id, profile?.brewery_id);
                     }
                   }
                 }}
@@ -1518,10 +1593,10 @@ GRANT ALL ON TABLE profiles TO authenticated;
                 recipe={selectedRecipe}
                 brewLogId={selectedBrewLog.id}
                 onSave={async (note) => {
-                  const targetNote = { ...note, user_id: user?.id };
+                  const targetNote = { ...note, user_id: user?.id, brewery_id: profile?.brewery_id };
                   setTastingNotes([targetNote, ...tastingNotes]);
                   if (user?.id) {
-                    await supabaseService.saveTastingNote(targetNote, user.id);
+                    await supabaseService.saveTastingNote(targetNote, user.id, profile?.brewery_id);
                   }
                   setView('brews');
                 }}

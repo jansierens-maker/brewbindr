@@ -10,6 +10,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,10 +19,18 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
     setError(null);
     try {
       if (isSignUp) {
-        await authService.signUp(email, password);
+        const data = await authService.signUp(email, password);
+        if (inviteCode.trim() && data.user) {
+           // We'll handle joining in a post-login phase or RPC if needed,
+           // but for now let's store it or try to join if session is active
+           localStorage.setItem('pending_invite_code', inviteCode.trim());
+        }
         alert('Check your email for the confirmation link!');
       } else {
         await authService.signIn(email, password);
+        if (inviteCode.trim()) {
+           localStorage.setItem('pending_invite_code', inviteCode.trim());
+        }
         if (onSuccess) onSuccess();
       }
     } catch (err: any) {
@@ -65,6 +74,18 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
           />
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Invite Code (Optional)</label>
+          <input
+            type="text"
+            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all uppercase placeholder:normal-case"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+            placeholder="ABCDEF"
+          />
+          <p className="text-[9px] text-stone-400 mt-1 ml-1 font-bold italic">Joining a brewery? Enter the code here.</p>
         </div>
 
         {error && (
