@@ -132,11 +132,18 @@ const AppContent: React.FC = () => {
 
   const processedRecipes = useMemo(() => {
     return recipes
-      .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
+      .filter(r => {
+        if (libraryView === 'public') return r.status === 'approved';
+        // Personal Collection: show private items belonging to user OR their brewery
+        return r.status === 'private' && (
+          (!r.user_id || r.user_id === user?.id) ||
+          (profile?.brewery_id && r.brewery_id === profile.brewery_id)
+        );
+      })
       .map(r => ({ recipe: r, stock: checkRecipeStock(r, library) }))
       .filter(({ stock }) => !showBrewableOnly || stock.isBrewable)
       .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name));
-  }, [recipes, libraryView, user?.id, showBrewableOnly, library]);
+  }, [recipes, libraryView, user?.id, profile?.brewery_id, showBrewableOnly, library]);
 
   useEffect(() => {
     if (printData) {
@@ -170,7 +177,14 @@ const AppContent: React.FC = () => {
 
       // 2. Try to find by name and type with the target status
       if (targetStatus === 'private') {
-        return updatedLib.find(l => l.name.toLowerCase() === name.toLowerCase() && l.type === type && l.status === 'private' && (!l.user_id || l.user_id === user?.id));
+        return updatedLib.find(l =>
+          l.name.toLowerCase() === name.toLowerCase() &&
+          l.type === type &&
+          l.status === 'private' && (
+            (!l.user_id || l.user_id === user?.id) ||
+            (profile?.brewery_id && l.brewery_id === profile.brewery_id)
+          )
+        );
       } else {
         const approved = updatedLib.find(l => l.name.toLowerCase() === name.toLowerCase() && l.type === type && l.status === 'approved');
         if (approved) return approved;
@@ -243,7 +257,7 @@ const AppContent: React.FC = () => {
             return prev.filter(item => item.id !== (oldRecord?.id || oldRecord?.data?.id));
           }
           if (!newRecord) return prev;
-          const itemData = { ...newRecord.data, user_id: newRecord.user_id, status: newRecord.status };
+          const itemData = { ...newRecord.data, user_id: newRecord.user_id, brewery_id: newRecord.brewery_id, status: newRecord.status };
           const exists = prev.find(item => item.id === itemData.id);
           if (exists) {
             return prev.map(item => item.id === itemData.id ? itemData : item);
@@ -520,8 +534,14 @@ const AppContent: React.FC = () => {
     const next = currentQueue[0];
 
     // Only check for duplicates in personal collection
-    const personalRecipes = currentRecipes.filter(r => !r.user_id || r.user_id === user?.id);
-    const personalLib = currentLib.filter(l => !l.user_id || l.user_id === user?.id);
+    const personalRecipes = currentRecipes.filter(r =>
+      (!r.user_id || r.user_id === user?.id) ||
+      (profile?.brewery_id && r.brewery_id === profile.brewery_id)
+    );
+    const personalLib = currentLib.filter(l =>
+      (!l.user_id || l.user_id === user?.id) ||
+      (profile?.brewery_id && l.brewery_id === profile.brewery_id)
+    );
 
     let isDuplicate = false;
     let exactMatches: any[] = [];
@@ -602,11 +622,21 @@ const AppContent: React.FC = () => {
     if (action === 'overwrite') {
       if (currentDuplicate.type === 'recipe') {
         const { recipe: linked, addedToLibrary } = linkIngredientsToLibrary(currentDuplicate.data, updatedLib);
-        updatedRecipes = recipes.map(r => (!r.user_id || r.user_id === user?.id) && r.name.toLowerCase() === linked.name.toLowerCase() ? { ...linked, id: r.id, user_id: user?.id } : r);
+        updatedRecipes = recipes.map(r => {
+          const isOwnOrBrewery = (!r.user_id || r.user_id === user?.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id);
+          return isOwnOrBrewery && r.name.toLowerCase() === linked.name.toLowerCase()
+            ? { ...linked, id: r.id, user_id: user?.id, brewery_id: profile?.brewery_id }
+            : r;
+        });
         nextSummary.updated += 1;
         nextSummary.inserted += addedToLibrary;
       } else {
-        updatedLib = library.map(l => (!l.user_id || l.user_id === user?.id) && l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type ? { ...currentDuplicate.data, id: l.id, user_id: user?.id } : l);
+        updatedLib = library.map(l => {
+          const isOwnOrBrewery = (!l.user_id || l.user_id === user?.id) || (profile?.brewery_id && l.brewery_id === profile.brewery_id);
+          return isOwnOrBrewery && l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type
+            ? { ...currentDuplicate.data, id: l.id, user_id: user?.id, brewery_id: profile?.brewery_id }
+            : l;
+        });
         nextSummary.updated += 1;
       }
     } else if (action === 'copy') {

@@ -210,7 +210,11 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             {filter === 'fermentable' ? t('malt') : filter === 'hop' ? t('hops') : filter === 'culture' ? t('yeast_lib') : filter === 'mash_profile' ? t('mash_profile') : filter === 'misc' ? t('miscs_label') : t('style_label')}
           </h3>
           <p className="text-stone-400 text-xs font-bold">
-            {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length} {t('items_in_collection')}
+            {ingredients.filter(i => i.type === filter && (
+              libraryView === 'public'
+                ? i.status === 'approved'
+                : (i.status === 'private' && ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id)))
+            )).length} {t('items_in_collection')}
           </p>
         </div>
 
@@ -240,13 +244,21 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length === 0 ? (
+        {ingredients.filter(i => i.type === filter && (
+          libraryView === 'public'
+            ? i.status === 'approved'
+            : (i.status === 'private' && ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id)))
+        )).length === 0 ? (
           <div className="col-span-full py-20 text-center text-stone-300 font-medium bg-white rounded-3xl border-2 border-dashed border-stone-100">
             {t('no_brews')}
           </div>
         ) : (
           ingredients
-            .filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved'))
+            .filter(i => i.type === filter && (
+              libraryView === 'public'
+                ? i.status === 'approved'
+                : (i.status === 'private' && ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id)))
+            ))
             .sort((a, b) => a.name.localeCompare(b.name))
             .map(item => (
             <div key={item.id} className={`bg-white p-8 rounded-3xl border shadow-sm relative transition-all ${editingId === item.id ? 'border-amber-400 ring-2 ring-amber-100' : selectedIds.includes(item.id) ? 'border-amber-500 ring-2 ring-amber-100' : 'border-stone-200'}`}>
