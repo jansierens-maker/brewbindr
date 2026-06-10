@@ -12,7 +12,8 @@
     "@google/genai": "^1.34.0",
     "@supabase/supabase-js": "^2.91.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "resend": "^6.12.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",

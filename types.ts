@@ -19,6 +19,7 @@ export type BreweryRole = 'admin' | 'brewmaster' | 'brewer' | 'taster';
 
 export interface UserProfile {
   id: string;
+  email?: string;
   role: 'admin' | 'user';
   preferences: UserPreferences;
   brewery_id?: string;

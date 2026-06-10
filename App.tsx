@@ -853,6 +853,7 @@ ALTER TABLE breweries ALTER COLUMN name DROP DEFAULT;
 
 CREATE TABLE IF NOT EXISTS profiles (id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE);
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user'));
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS brewery_id UUID REFERENCES breweries(id);
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS brewery_role TEXT CHECK (brewery_role IN ('admin', 'brewmaster', 'brewer', 'taster'));
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm", "language": "en"}'::jsonb;
@@ -952,9 +953,10 @@ BEGIN
     LIMIT 1;
 
     IF invite_brewery_id IS NOT NULL THEN
-      INSERT INTO public.profiles (id, brewery_id, brewery_role)
-      VALUES (new.id, invite_brewery_id, invite_role)
+      INSERT INTO public.profiles (id, email, brewery_id, brewery_role)
+      VALUES (new.id, new.email, invite_brewery_id, invite_role)
       ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
         brewery_id = EXCLUDED.brewery_id,
         brewery_role = EXCLUDED.brewery_role;
 
@@ -968,9 +970,10 @@ BEGIN
   -- Default: Create new brewery for the user
   INSERT INTO breweries (name) VALUES ('My Brewery') RETURNING id INTO new_brewery_id;
 
-  INSERT INTO public.profiles (id, brewery_id, brewery_role)
-  VALUES (new.id, new_brewery_id, 'admin')
+  INSERT INTO public.profiles (id, email, brewery_id, brewery_role)
+  VALUES (new.id, new.email, new_brewery_id, 'admin')
   ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
     brewery_id = EXCLUDED.brewery_id,
     brewery_role = EXCLUDED.brewery_role;
 
@@ -1100,6 +1103,39 @@ GRANT ALL ON TABLE mash_profiles TO authenticated;
 GRANT ALL ON TABLE equipment TO authenticated;
 GRANT ALL ON TABLE waters TO authenticated;
 GRANT ALL ON TABLE profiles TO authenticated;
+
+-- Migration for existing users: Create a default brewery for each user and link their data
+DO \$\$
+DECLARE
+  u_record RECORD;
+  new_brewery_id UUID;
+BEGIN
+  -- 1. Sync emails for existing profiles
+  UPDATE public.profiles p
+  SET email = u.email
+  FROM auth.users u
+  WHERE p.id = u.id AND p.email IS NULL;
+
+  -- 2. Create breweries for solo users
+  FOR u_record IN SELECT id FROM profiles WHERE brewery_id IS NULL
+  LOOP
+    INSERT INTO breweries (name) VALUES ('My Brewery') RETURNING id INTO new_brewery_id;
+    UPDATE profiles SET brewery_id = new_brewery_id, brewery_role = 'admin' WHERE id = u_record.id;
+
+    -- Link existing data
+    UPDATE recipes SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE brew_logs SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE tasting_notes SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE fermentables SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE hops SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE cultures SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE styles SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE miscs SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE mash_profiles SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE equipment SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE waters SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+  END LOOP;
+END \$\$;
 `.trim();
 
   const handleDismissFallback = () => {

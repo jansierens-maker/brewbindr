@@ -37,7 +37,7 @@ export const breweryService = {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, brewery_role')
+      .select('id, email, brewery_role')
       .eq('brewery_id', breweryId);
     if (error) return [];
 

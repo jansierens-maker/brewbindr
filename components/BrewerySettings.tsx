@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '../services/userContext';
 import { useTranslation } from '../App';
 import { breweryService } from '../services/breweryService';
-import { Brewery, Invitation, BreweryRole } from '../types';
+import { Brewery, Invitation, BreweryRole, UserProfile } from '../types';
 
 const BrewerySettings: React.FC = () => {
   const { profile, user, breweryRole } = useUser();
@@ -14,6 +14,8 @@ const BrewerySettings: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteRole, setInviteRole] = useState<BreweryRole>('brewmaster');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   const isAdmin = breweryRole === 'admin';
 
@@ -57,15 +59,41 @@ const BrewerySettings: React.FC = () => {
   };
 
   const handleCreateInvite = async () => {
-    if (!profile?.brewery_id) return;
+    if (!profile?.brewery_id || !inviteEmail.trim()) {
+      alert('Please enter an email address');
+      return;
+    }
+
+    setSendingInvite(true);
     try {
       const invite = await breweryService.generateInvitation(profile.brewery_id, inviteRole);
       if (invite) {
+        // Send email via API
+        const res = await fetch('/api/send-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: inviteEmail.trim(),
+            code: invite.code,
+            breweryName: brewery?.name || 'a brewery',
+            role: inviteRole
+          })
+        });
+
+        if (!res.ok) {
+           const errData = await res.json();
+           throw new Error(errData.error || 'Failed to send email');
+        }
+
         setInvitations([...invitations, invite]);
         setShowInviteModal(false);
+        setInviteEmail('');
+        alert('Invitation sent successfully!');
       }
-    } catch (err) {
-      alert('Failed to create invitation');
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setSendingInvite(false);
     }
   };
 
@@ -146,7 +174,7 @@ const BrewerySettings: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-stone-900 truncate max-w-[150px]">
-                      {member.id === profile?.id ? 'You' : member.id.substring(0, 8) + '...'}
+                      {member.id === profile?.id ? 'You' : member.email || member.id.substring(0, 8) + '...'}
                     </p>
                     <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{member.brewery_role}</p>
                   </div>
@@ -212,6 +240,15 @@ const BrewerySettings: React.FC = () => {
             <h3 className="text-2xl font-black text-stone-900 mb-6">Create Invitation</h3>
             <div className="space-y-4">
               <div>
+                <label className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">Email Address</label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="brewmaster@example.com"
+                  className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold focus:ring-2 focus:ring-amber-500/20 outline-none mb-4"
+                />
+
                 <label className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">Assign Role</label>
                 <div className="grid grid-cols-2 gap-2">
                   {(['brewmaster', 'brewer', 'taster'] as BreweryRole[]).map(role => (
@@ -234,9 +271,11 @@ const BrewerySettings: React.FC = () => {
                 </button>
                 <button
                   onClick={handleCreateInvite}
-                  className="flex-1 py-3 bg-stone-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-200"
+                  disabled={sendingInvite}
+                  className="flex-1 py-3 bg-stone-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-200 disabled:opacity-50"
                 >
-                  Generate
+                  {sendingInvite ? <i className="fas fa-spinner fa-spin mr-2"></i> : null}
+                  Send Invite
                 </button>
               </div>
             </div>
