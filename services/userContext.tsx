@@ -73,6 +73,26 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  useEffect(() => {
+    let profileSubscription: any = null;
+    if (user?.id && supabase) {
+       profileSubscription = supabase
+         .channel('profile-updates')
+         .on('postgres_changes', {
+           event: 'UPDATE',
+           schema: 'public',
+           table: 'profiles',
+           filter: `id=eq.${user.id}`
+         }, (payload) => {
+           setProfile(prev => ({ ...prev, ...payload.new } as UserProfile));
+         })
+         .subscribe();
+    }
+    return () => {
+       if (profileSubscription) supabase?.removeChannel(profileSubscription);
+    }
+  }, [user?.id]);
+
   const fetchProfile = async (userId: string) => {
     try {
       let p = await authService.getProfile(userId);

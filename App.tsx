@@ -134,11 +134,10 @@ const AppContent: React.FC = () => {
     return recipes
       .filter(r => {
         if (libraryView === 'public') return r.status === 'approved';
-        // Personal Collection: show private items belonging to user OR their brewery
-        return r.status === 'private' && (
-          (!r.user_id || r.user_id === user?.id) ||
-          (profile?.brewery_id && r.brewery_id === profile.brewery_id)
-        );
+        // Personal Collection: show items belonging to user OR their brewery
+        // We include both 'private' and 'submitted' status here.
+        const isOwner = (!r.user_id || r.user_id === user?.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id);
+        return isOwner && (r.status === 'private' || r.status === 'submitted');
       })
       .map(r => ({ recipe: r, stock: checkRecipeStock(r, library) }))
       .filter(({ stock }) => !showBrewableOnly || stock.isBrewable)
@@ -260,6 +259,7 @@ const AppContent: React.FC = () => {
 
           // Safely merge column data into JSONB data
           const mergedData = { ...newRecord.data };
+          if (newRecord.id) mergedData.id = newRecord.id;
           if (newRecord.user_id) mergedData.user_id = newRecord.user_id;
           if (newRecord.brewery_id) mergedData.brewery_id = newRecord.brewery_id;
           if (newRecord.status) mergedData.status = newRecord.status;
@@ -299,7 +299,7 @@ const AppContent: React.FC = () => {
           }
         }
 
-        const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id);
+        const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
         if (remoteData) {
           setRecipes(remoteData.recipes);
           setBrewLogs(remoteData.brewLogs);
@@ -816,6 +816,21 @@ const AppContent: React.FC = () => {
     alert("Recipe added to your personal collection!");
   };
 
+  const handleRefreshAppData = async () => {
+    setSyncError(false);
+    const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
+    if (remoteData) {
+      setRecipes(remoteData.recipes);
+      setBrewLogs(remoteData.brewLogs);
+      setTastingNotes(remoteData.tastingNotes);
+      setLibrary(remoteData.library);
+      alert('Data successfully re-synchronized!');
+    } else {
+      setSyncError(true);
+      alert('Re-sync failed. Please check your connection.');
+    }
+  };
+
   const handleOpenSyncDetails = async () => {
     setShowSyncDetails(true);
     setTableStatus({});
@@ -867,6 +882,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{"units
 CREATE TABLE IF NOT EXISTS invitations (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS brewery_id UUID NOT NULL REFERENCES breweries(id) ON DELETE CASCADE;
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS role TEXT NOT NULL CHECK (role IN ('admin', 'brewmaster', 'brewer', 'taster'));
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS code TEXT NOT NULL;
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT (now() + interval '7 days');
@@ -966,8 +982,10 @@ BEGIN
         brewery_id = EXCLUDED.brewery_id,
         brewery_role = EXCLUDED.brewery_role;
 
-      -- Cleanup used invitation
-      DELETE FROM invitations WHERE code = invite_code;
+      -- Cleanup used invitation (Match by code and/or email for safety)
+      DELETE FROM invitations
+      WHERE code = invite_code
+      OR (email = new.email AND brewery_id = invite_brewery_id);
 
       RETURN new;
     END IF;
@@ -1002,8 +1020,8 @@ BEGIN
     -- To be precise, we'd need the code on the profile, but deleting by brewery+role is a good fallback
     -- if we assume codes are unique per role in a brewery (which they usually are).
     DELETE FROM invitations
-    WHERE brewery_id = NEW.brewery_id
-    AND role = NEW.brewery_role;
+    WHERE (brewery_id = NEW.brewery_id AND role = NEW.brewery_role)
+    OR (email = NEW.email AND brewery_id = NEW.brewery_id);
   END IF;
   RETURN NEW;
 END;
@@ -1458,15 +1476,26 @@ END \$\$;
                 <h1 className="text-2xl font-black font-serif italic text-stone-900 uppercase">brewbindr</h1>
               </div>
 
-              <button
-                onClick={handleOpenSyncDetails}
-                className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
-              >
-                <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500' : supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                  {syncError ? 'Connection Error' : supabase ? t('cloud_sync') : t('local_mode')}
-                </span>
-              </button>
+              <div className="hidden lg:flex items-center gap-2">
+                <button
+                  onClick={handleOpenSyncDetails}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
+                >
+                  <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500' : supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                    {syncError ? 'Connection Error' : supabase ? t('cloud_sync') : t('local_mode')}
+                  </span>
+                </button>
+                {user && (
+                   <button
+                    onClick={handleRefreshAppData}
+                    title="Refresh Data"
+                    className="w-8 h-8 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center text-stone-400 hover:text-amber-600 hover:bg-white transition-all"
+                   >
+                     <i className="fas fa-sync-alt text-[10px]"></i>
+                   </button>
+                )}
+              </div>
               </div>
               <nav className="hidden md:flex gap-8">
                 <button onClick={() => setView('recipes')} className={`font-bold transition-all text-sm ${view === 'recipes' ? 'text-amber-600' : 'text-stone-400 hover:text-stone-600'}`}>{t('nav_recipes')}</button>

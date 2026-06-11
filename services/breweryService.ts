@@ -59,7 +59,7 @@ export const breweryService = {
     if (error) throw error;
   },
 
-  async generateInvitation(breweryId: string, role: BreweryRole): Promise<Invitation | null> {
+  async generateInvitation(breweryId: string, role: BreweryRole, email?: string): Promise<Invitation | null> {
     if (!supabase) return null;
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     const { data, error } = await supabase
@@ -67,6 +67,7 @@ export const breweryService = {
       .insert({
         brewery_id: breweryId,
         role,
+        email,
         code,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       })

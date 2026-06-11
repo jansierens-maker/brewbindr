@@ -36,6 +36,7 @@ export interface Invitation {
   id: string;
   brewery_id: string;
   role: BreweryRole;
+  email?: string;
   code: string;
   created_at: string;
   expires_at: string;

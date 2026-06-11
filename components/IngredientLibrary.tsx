@@ -213,7 +213,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             {ingredients.filter(i => i.type === filter && (
               libraryView === 'public'
                 ? i.status === 'approved'
-                : (i.status === 'private' && ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id)))
+                : (
+                   (i.status === 'private' || i.status === 'submitted') &&
+                   ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
+                  )
             )).length} {t('items_in_collection')}
           </p>
         </div>
@@ -247,7 +250,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         {ingredients.filter(i => i.type === filter && (
           libraryView === 'public'
             ? i.status === 'approved'
-            : (i.status === 'private' && ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id)))
+            : (
+                (i.status === 'private' || i.status === 'submitted') &&
+                ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
+              )
         )).length === 0 ? (
           <div className="col-span-full py-20 text-center text-stone-300 font-medium bg-white rounded-3xl border-2 border-dashed border-stone-100">
             {t('no_brews')}
@@ -257,7 +263,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             .filter(i => i.type === filter && (
               libraryView === 'public'
                 ? i.status === 'approved'
-                : (i.status === 'private' && ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id)))
+                : (
+                    (i.status === 'private' || i.status === 'submitted') &&
+                    ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
+                  )
             ))
             .sort((a, b) => a.name.localeCompare(b.name))
             .map(item => (

@@ -66,7 +66,7 @@ const BrewerySettings: React.FC = () => {
 
     setSendingInvite(true);
     try {
-      const invite = await breweryService.generateInvitation(profile.brewery_id, inviteRole);
+      const invite = await breweryService.generateInvitation(profile.brewery_id, inviteRole, inviteEmail.trim());
       if (invite) {
         // Send email via API
         const res = await fetch('/api/send-invite', {
@@ -213,7 +213,10 @@ const BrewerySettings: React.FC = () => {
               {invitations.map(invite => (
                 <div key={invite.id} className="p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Role: {invite.role}</span>
+                    <div>
+                        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block">Role: {invite.role}</span>
+                        {invite.email && <span className="text-[10px] font-bold text-amber-600 block">{invite.email}</span>}
+                    </div>
                     <button onClick={() => handleDeleteInvite(invite.id)} className="text-stone-300 hover:text-red-500 transition-colors text-xs">
                       <i className="fas fa-trash-alt"></i>
                     </button>
