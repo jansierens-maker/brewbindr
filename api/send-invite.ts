@@ -15,7 +15,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Brewbindr <onboarding@resend.dev>', // Note: This is the default Resend sandbox sender
+      from: 'Brewbindr <noreply@sierens.com>',
       to: [email],
       subject: `You're invited to join ${breweryName} on Brewbindr`,
       html: `
