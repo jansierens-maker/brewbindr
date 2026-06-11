@@ -6,6 +6,7 @@ ALTER TABLE breweries ALTER COLUMN name DROP DEFAULT;
 
 CREATE TABLE IF NOT EXISTS profiles (id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE);
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user'));
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS brewery_id UUID REFERENCES breweries(id);
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS brewery_role TEXT CHECK (brewery_role IN ('admin', 'brewmaster', 'brewer', 'taster'));
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm", "language": "en"}'::jsonb;
@@ -84,13 +85,50 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (auth.uid() != id AND is_admin());
 
--- Trigger to create profile on signup
+-- Trigger to create profile and brewery on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
+DECLARE
+  new_brewery_id UUID;
+  invite_code TEXT;
+  invite_role TEXT;
+  invite_brewery_id UUID;
 BEGIN
-  INSERT INTO public.profiles (id)
-  VALUES (new.id)
-  ON CONFLICT (id) DO NOTHING;
+  -- Extract invite code from user metadata if provided
+  invite_code := (new.raw_user_meta_data->>'invite_code');
+
+  IF invite_code IS NOT NULL THEN
+    -- Try to join existing brewery
+    SELECT brewery_id, role INTO invite_brewery_id, invite_role
+    FROM invitations
+    WHERE code = invite_code AND expires_at > now()
+    LIMIT 1;
+
+    IF invite_brewery_id IS NOT NULL THEN
+      INSERT INTO public.profiles (id, email, brewery_id, brewery_role)
+      VALUES (new.id, new.email, invite_brewery_id, invite_role)
+      ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        brewery_id = EXCLUDED.brewery_id,
+        brewery_role = EXCLUDED.brewery_role;
+
+      -- Cleanup used invitation
+      DELETE FROM invitations WHERE code = invite_code;
+
+      RETURN new;
+    END IF;
+  END IF;
+
+  -- Default: Create new brewery for the user
+  INSERT INTO breweries (name) VALUES ('My Brewery') RETURNING id INTO new_brewery_id;
+
+  INSERT INTO public.profiles (id, email, brewery_id, brewery_role)
+  VALUES (new.id, new.email, new_brewery_id, 'admin')
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    brewery_id = EXCLUDED.brewery_id,
+    brewery_role = EXCLUDED.brewery_role;
+
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
@@ -100,11 +138,36 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Policies for invitations
-DROP POLICY IF EXISTS "Admins can manage invitations" ON invitations;
-CREATE POLICY "Admins can manage invitations" ON invitations FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() = 'admin');
+-- Trigger to delete invitation when profile is linked (idempotency safety)
+CREATE OR REPLACE FUNCTION delete_used_invitation()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.brewery_id IS NOT NULL AND OLD.brewery_id IS NULL THEN
+    DELETE FROM invitations
+    WHERE brewery_id = NEW.brewery_id
+    AND role = NEW.brewery_role;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- RLS Policies for Data Tables
+DROP TRIGGER IF EXISTS on_brewery_linked ON profiles;
+CREATE TRIGGER on_brewery_linked
+  AFTER UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION delete_used_invitation();
+
+-- Set brewery_id automatically based on owner's profile if missing
+CREATE OR REPLACE FUNCTION set_brewery_id()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.brewery_id IS NULL AND NEW.user_id IS NOT NULL THEN
+    NEW.brewery_id := (SELECT brewery_id FROM public.profiles WHERE id = NEW.user_id);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Policies and Triggers for Data Tables
 DO $$
 DECLARE
   t text;
@@ -149,6 +212,10 @@ BEGIN
     -- Admins of the app (global role) can still do everything
     EXECUTE format('DROP POLICY IF EXISTS "Allow global admin manage %I" ON %I;', t, t);
     EXECUTE format('CREATE POLICY "Allow global admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
+
+    -- Apply brewery linking trigger
+    EXECUTE format('DROP TRIGGER IF EXISTS on_%I_brewery_link ON %I;', t, t);
+    EXECUTE format('CREATE TRIGGER on_%I_brewery_link BEFORE INSERT OR UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION set_brewery_id();', t, t);
   END LOOP;
 END $$;
 
@@ -202,6 +269,13 @@ DECLARE
   u_record RECORD;
   new_brewery_id UUID;
 BEGIN
+  -- 1. Sync emails for existing profiles
+  UPDATE public.profiles p
+  SET email = u.email
+  FROM auth.users u
+  WHERE p.id = u.id AND p.email IS NULL;
+
+  -- 2. Create breweries for solo users
   FOR u_record IN SELECT id FROM profiles WHERE brewery_id IS NULL
   LOOP
     INSERT INTO breweries (name) VALUES ('My Brewery') RETURNING id INTO new_brewery_id;

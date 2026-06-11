@@ -257,12 +257,18 @@ const AppContent: React.FC = () => {
             return prev.filter(item => item.id !== (oldRecord?.id || oldRecord?.data?.id));
           }
           if (!newRecord) return prev;
-          const itemData = { ...newRecord.data, user_id: newRecord.user_id, brewery_id: newRecord.brewery_id, status: newRecord.status };
-          const exists = prev.find(item => item.id === itemData.id);
+
+          // Safely merge column data into JSONB data
+          const mergedData = { ...newRecord.data };
+          if (newRecord.user_id) mergedData.user_id = newRecord.user_id;
+          if (newRecord.brewery_id) mergedData.brewery_id = newRecord.brewery_id;
+          if (newRecord.status) mergedData.status = newRecord.status;
+
+          const exists = prev.find(item => item.id === mergedData.id);
           if (exists) {
-            return prev.map(item => item.id === itemData.id ? itemData : item);
+            return prev.map(item => item.id === mergedData.id ? mergedData : item);
           }
-          return [itemData, ...prev];
+          return [mergedData, ...prev];
         });
       };
 
@@ -1012,7 +1018,18 @@ CREATE TRIGGER on_brewery_linked
 DROP POLICY IF EXISTS "Admins can manage invitations" ON invitations;
 CREATE POLICY "Admins can manage invitations" ON invitations FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() = 'admin');
 
--- RLS Policies for Data Tables
+-- Set brewery_id automatically based on owner's profile if missing
+CREATE OR REPLACE FUNCTION set_brewery_id()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.brewery_id IS NULL AND NEW.user_id IS NOT NULL THEN
+    NEW.brewery_id := (SELECT brewery_id FROM public.profiles WHERE id = NEW.user_id);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- RLS Policies and Triggers for Data Tables
 DO \$\$
 DECLARE
   t text;
@@ -1057,6 +1074,10 @@ BEGIN
     -- Admins of the app (global role) can still do everything
     EXECUTE format('DROP POLICY IF EXISTS "Allow global admin manage %I" ON %I;', t, t);
     EXECUTE format('CREATE POLICY "Allow global admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
+
+    -- Apply brewery linking trigger
+    EXECUTE format('DROP TRIGGER IF EXISTS on_%I_brewery_link ON %I;', t, t);
+    EXECUTE format('CREATE TRIGGER on_%I_brewery_link BEFORE INSERT OR UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION set_brewery_id();', t, t);
   END LOOP;
 END \$\$;
 

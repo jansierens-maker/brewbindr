@@ -132,12 +132,13 @@ export const supabaseService = {
       const data: any = {};
 
       tableList.forEach((table, idx) => {
-        data[table] = responses[idx].data?.map((r: any) => ({
-          ...r.data,
-          user_id: r.user_id,
-          brewery_id: r.brewery_id,
-          status: r.status
-        })) || [];
+        data[table] = responses[idx].data?.map((r: any) => {
+          const merged = { ...r.data };
+          if (r.user_id) merged.user_id = r.user_id;
+          if (r.brewery_id) merged.brewery_id = r.brewery_id;
+          if (r.status) merged.status = r.status;
+          return merged;
+        }) || [];
       });
 
       // Merge library tables back into a single array
