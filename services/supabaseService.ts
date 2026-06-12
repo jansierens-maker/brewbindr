@@ -101,17 +101,21 @@ export const supabaseService = {
       const tableList = ['recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
 
       const requests = tableList.map(t => {
-        let query = client.from(t).select('data, user_id, brewery_id, status');
+        let query = client.from(t).select('id, data, user_id, brewery_id, status');
 
         // For items that can be public, fetch owned/brewery OR approved
         if (['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'].includes(t)) {
-          if (breweryId) {
-             query = query.or(`brewery_id.eq.${breweryId},status.eq.approved`);
+          if (breweryId && userId) {
+            query = query.or(`brewery_id.eq.${breweryId},user_id.eq.${userId},status.eq.approved`);
+          } else if (breweryId) {
+            query = query.or(`brewery_id.eq.${breweryId},status.eq.approved`);
           } else if (userId) {
             query = query.or(`user_id.eq.${userId},status.eq.approved`);
           } else {
             query = query.eq('status', 'approved');
           }
+        } else if (breweryId && userId) {
+          query = query.or(`brewery_id.eq.${breweryId},user_id.eq.${userId}`);
         } else if (breweryId) {
            query = query.eq('brewery_id', breweryId);
         } else if (userId) {
@@ -134,6 +138,7 @@ export const supabaseService = {
       tableList.forEach((table, idx) => {
         data[table] = responses[idx].data?.map((r: any) => {
           const merged = { ...r.data };
+          if (r.id) merged.id = r.id;
           if (r.user_id) merged.user_id = r.user_id;
           if (r.brewery_id) merged.brewery_id = r.brewery_id;
           if (r.status) merged.status = r.status;
