@@ -243,6 +243,7 @@ const AppContent: React.FC = () => {
   }, [user, authLoading]);
 
   useEffect(() => {
+    let cancelled = false;
     let userDataChannel: any = null;
     let breweryDataChannel: any = null;
     let publicDataChannel: any = null;
@@ -289,6 +290,7 @@ const AppContent: React.FC = () => {
 
         if (!user) {
           const health = await supabaseService.checkTableHealth();
+          if (cancelled) return;
           const allOk = Object.values(health).every(v => v === true);
           if (allOk) {
             // Tables exist, redirect guest to login
@@ -300,6 +302,7 @@ const AppContent: React.FC = () => {
         }
 
         const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
+        if (cancelled) return;
         if (remoteData) {
           setRecipes(remoteData.recipes);
           setBrewLogs(remoteData.brewLogs);
@@ -314,13 +317,17 @@ const AppContent: React.FC = () => {
           setLibrary(EXAMPLES);
         }
       } catch (err) {
+        if (cancelled) return;
         console.error("Initial connection failed:", err);
         if (user) setSyncError(true);
         else setShowSyncDetails(true);
       }
 
+      if (cancelled) return;
+
       if (isAdmin) {
         const pending = await supabaseService.fetchPendingSubmissions();
+        if (cancelled) return;
         setPendingSubmissions(pending);
       }
 
@@ -379,6 +386,7 @@ const AppContent: React.FC = () => {
     setupRealtime();
 
     return () => {
+      cancelled = true;
       if (userDataChannel) supabase?.removeChannel(userDataChannel);
       if (breweryDataChannel) supabase?.removeChannel(breweryDataChannel);
       if (publicDataChannel) supabase?.removeChannel(publicDataChannel);
