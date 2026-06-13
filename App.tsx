@@ -237,11 +237,9 @@ const AppContent: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      setLibraryView('public');
+    if (!authLoading) {
+      setLibraryView(user ? 'personal' : 'public');
     }
-    // 'personal' is set inside setupRealtime after user data is fetched,
-    // so the view never flashes empty while the fetch is in-flight.
   }, [user, authLoading]);
 
   useEffect(() => {
@@ -310,7 +308,6 @@ const AppContent: React.FC = () => {
           setBrewLogs(remoteData.brewLogs);
           setTastingNotes(remoteData.tastingNotes);
           setLibrary(remoteData.library);
-          if (user) setLibraryView('personal');
         } else if (user) {
           setSyncError(true);
         } else {
@@ -1204,7 +1201,13 @@ END \$\$;
             <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-black text-stone-900">{t('sync_details')}</h3>
-                <button onClick={() => setShowSyncDetails(false)} className="text-stone-300 hover:text-stone-900 transition-colors"><i className="fas fa-times text-xl"></i></button>
+                <button
+                  onClick={() => setShowSyncDetails(false)}
+                  className="text-stone-300 hover:text-stone-900 transition-colors"
+                  aria-label="Close Sync Details"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
               </div>
 
               <div className="space-y-6">
@@ -1364,7 +1367,13 @@ END \$\$;
             <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-black text-stone-900">Import Demo Data</h3>
-                <button onClick={() => setShowDemoModal(false)} className="text-stone-300 hover:text-stone-900 transition-colors"><i className="fas fa-times text-xl"></i></button>
+                <button
+                  onClick={() => setShowDemoModal(false)}
+                  className="text-stone-300 hover:text-stone-900 transition-colors"
+                  aria-label="Close Demo Import"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
               </div>
               
               <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
@@ -1380,6 +1389,7 @@ END \$\$;
                 {DEMO_OPTIONS.map(opt => (
                   <label 
                     key={opt.id}
+                    htmlFor={`demo-opt-${opt.id}`}
                     className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer group ${selectedDemoIds.includes(opt.id) ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500' : 'bg-stone-50 border-stone-200 hover:bg-white'}`}
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-all ${selectedDemoIds.includes(opt.id) ? 'bg-amber-500 text-white' : 'bg-white text-stone-400 group-hover:text-amber-500'}`}>
@@ -1393,6 +1403,8 @@ END \$\$;
                       {selectedDemoIds.includes(opt.id) && <i className="fas fa-check text-white text-[10px]"></i>}
                     </div>
                     <input 
+                        id={`demo-opt-${opt.id}`}
+                        name="demo_option"
                         type="checkbox" 
                         className="hidden" 
                         checked={selectedDemoIds.includes(opt.id)}
@@ -1520,10 +1532,20 @@ END \$\$;
                     <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{user ? t('logged_in_as') : t('guest_mode')}</p>
                     <p className="text-[10px] font-bold text-stone-900 truncate max-w-[120px]">{user?.email || t('guest_user')}</p>
                   </div>
-                  <button onClick={() => setView(user ? 'settings' : 'auth')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'settings' || view === 'auth' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
+                  <button
+                    onClick={() => setView(user ? 'settings' : 'auth')}
+                    title={user ? t('settings_label') : t('nav_auth' as any) || 'Login'}
+                    aria-label={user ? t('settings_label') : t('nav_auth' as any) || 'Login'}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'settings' || view === 'auth' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}
+                  >
                     <i className="fas fa-user"></i>
                   </button>
-                  <button onClick={() => setView('help')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'help' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
+                  <button
+                    onClick={() => setView('help')}
+                    title="Help & Manuals"
+                    aria-label="Help & Manuals"
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'help' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}
+                  >
                     <i className="fas fa-question-circle"></i>
                   </button>
                 </div>

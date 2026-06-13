@@ -181,16 +181,18 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
             {/* Log Metadata */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('brew_date')}</label>
-                <input type="date" className="w-full p-4 bg-stone-50 border rounded-xl font-bold" value={entry.brewDate || ''} onChange={e => setEntry({...entry, brewDate: e.target.value})} />
+                <label htmlFor="brew_date" className="text-xs font-bold text-stone-400 uppercase">{t('brew_date')}</label>
+                <input id="brew_date" name="brew_date" type="date" className="w-full p-4 bg-stone-50 border rounded-xl font-bold" value={entry.brewDate || ''} onChange={e => setEntry({...entry, brewDate: e.target.value})} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('actual_og')}</label>
-                <input type="number" step="0.001" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg" value={entry.measurements.actual_og || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, actual_og: parseFloat(e.target.value)}})} />
+                <label htmlFor="actual_og" className="text-xs font-bold text-stone-400 uppercase">{t('actual_og')}</label>
+                <input id="actual_og" name="actual_og" type="number" step="0.001" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg" value={entry.measurements.actual_og || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, actual_og: parseFloat(e.target.value)}})} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('volume_fermenter')} ({preferences.units === 'imperial' ? 'Gal' : 'L'})</label>
+                <label htmlFor="volume_fermenter" className="text-xs font-bold text-stone-400 uppercase">{t('volume_fermenter')} ({preferences.units === 'imperial' ? 'Gal' : 'L'})</label>
                 <input
+                  id="volume_fermenter"
+                  name="actual_volume"
                   type="number"
                   step="0.1"
                   className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg"
@@ -262,8 +264,10 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                       </div>
                       
                       <div className="flex items-center gap-3 bg-stone-50 p-2 rounded-xl border border-stone-100">
-                        <label className="text-[10px] font-black text-stone-400 uppercase pl-2">Alpha %</label>
+                <label htmlFor={`alpha-override-${i}`} className="text-[10px] font-black text-stone-400 uppercase pl-2">Alpha %</label>
                         <input 
+                  id={`alpha-override-${i}`}
+                  name={`alpha_${h.name}`}
                           type="number" 
                           step="0.1" 
                           className="w-20 p-2 bg-white border border-stone-200 rounded-lg text-right font-black text-stone-900"
@@ -291,7 +295,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
               </div>
             </div>
 
-            <textarea className="w-full p-4 bg-stone-50 border rounded-xl min-h-[120px]" placeholder={t('brew_notes')} value={entry.notes} onChange={e => setEntry({...entry, notes: e.target.value})} />
+            <label htmlFor="brew_notes" className="sr-only">{t('brew_notes')}</label>
+            <textarea id="brew_notes" name="notes" className="w-full p-4 bg-stone-50 border rounded-xl min-h-[120px]" placeholder={t('brew_notes')} value={entry.notes} onChange={e => setEntry({...entry, notes: e.target.value})} maxLength={2000} />
             {entry.status === 'brewing' && canEdit && <button onClick={() => handleStatusChange('fermenting')} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black text-lg shadow-xl uppercase">{t('next_step')} <i className="fas fa-arrow-right ml-2"></i></button>}
           </div>
         )}
@@ -301,12 +306,14 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
             <h3 className="text-xl font-black">{t('fermentation')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('actual_fg')}</label>
-                <input disabled={!canEdit} type="number" step="0.001" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg disabled:opacity-50" value={entry.measurements.actual_fg || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, actual_fg: parseFloat(e.target.value)}})} />
+                <label htmlFor="actual_fg" className="text-xs font-bold text-stone-400 uppercase">{t('actual_fg')}</label>
+                <input id="actual_fg" name="actual_fg" disabled={!canEdit} type="number" step="0.001" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg disabled:opacity-50" value={entry.measurements.actual_fg || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, actual_fg: parseFloat(e.target.value)}})} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">Max Fermentation Temp (°{preferences.units === 'imperial' ? 'F' : 'C'})</label>
+                <label htmlFor="fermentation_temp" className="text-xs font-bold text-stone-400 uppercase">Max Fermentation Temp (°{preferences.units === 'imperial' ? 'F' : 'C'})</label>
                 <input
+                  id="fermentation_temp"
+                  name="fermentation_temp"
                   disabled={!canEdit}
                   type="number"
                   className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg disabled:opacity-50"
@@ -328,8 +335,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
             <h3 className="text-xl font-black">{t('lagering')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('lagering_date')}</label>
-                <input disabled={!canEdit} type="date" className="w-full p-4 bg-stone-50 border rounded-xl font-bold disabled:opacity-50" value={entry.lageringDate || ''} onChange={e => setEntry({...entry, lageringDate: e.target.value})} />
+                <label htmlFor="lagering_date" className="text-xs font-bold text-stone-400 uppercase">{t('lagering_date')}</label>
+                <input id="lagering_date" name="lagering_date" disabled={!canEdit} type="date" className="w-full p-4 bg-stone-50 border rounded-xl font-bold disabled:opacity-50" value={entry.lageringDate || ''} onChange={e => setEntry({...entry, lageringDate: e.target.value})} />
               </div>
             </div>
             {entry.status === 'lagering' && canEdit && <button onClick={() => setActiveTab('bottle')} className="w-full py-5 bg-stone-900 text-white rounded-2xl font-black text-lg uppercase shadow-xl">{t('next_step')} <i className="fas fa-flask ml-2"></i></button>}
@@ -351,12 +358,14 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('bottling_date')}</label>
-                <input disabled={!canEdit} type="date" className="w-full p-4 bg-stone-50 border rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.date || ''} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, date: e.target.value}})} />
+                <label htmlFor="bottling_date" className="text-xs font-bold text-stone-400 uppercase">{t('bottling_date')}</label>
+                <input id="bottling_date" name="bottling_date" disabled={!canEdit} type="date" className="w-full p-4 bg-stone-50 border rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.date || ''} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, date: e.target.value}})} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('bottling_volume')} ({preferences.units === 'imperial' ? 'Gal' : 'L'})</label>
+                <label htmlFor="bottling_volume" className="text-xs font-bold text-stone-400 uppercase">{t('bottling_volume')} ({preferences.units === 'imperial' ? 'Gal' : 'L'})</label>
                 <input
+                  id="bottling_volume"
+                  name="bottling_volume"
                   disabled={!canEdit}
                   type="number"
                   step="0.1"
@@ -372,8 +381,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('co2_volume')}</label>
-                <select disabled={!canEdit} className="w-full p-4 bg-white border border-stone-200 rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.target_co2} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, target_co2: parseFloat(e.target.value)}})}>
+                <label htmlFor="target_co2" className="text-xs font-bold text-stone-400 uppercase">{t('co2_volume')}</label>
+                <select id="target_co2" name="target_co2" disabled={!canEdit} className="w-full p-4 bg-white border border-stone-200 rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.target_co2} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, target_co2: parseFloat(e.target.value)}})}>
                   <option value="2.0">Standard Ale (2.0)</option>
                   <option value="2.3">Pale Ale / IPA (2.3)</option>
                   <option value="2.6">Blond / Tripel (2.6)</option>
@@ -381,8 +390,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-400 uppercase">{t('sugar_type')}</label>
-                <select disabled={!canEdit} className="w-full p-4 bg-white border border-stone-200 rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.sugar_type} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, sugar_type: e.target.value as any}})}>
+                <label htmlFor="sugar_type" className="text-xs font-bold text-stone-400 uppercase">{t('sugar_type')}</label>
+                <select id="sugar_type" name="sugar_type" disabled={!canEdit} className="w-full p-4 bg-white border border-stone-200 rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.sugar_type} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, sugar_type: e.target.value as any}})}>
                   <option value="table_sugar">Table Sugar (Sucrose)</option>
                   <option value="glucose">Glucose / Dextrose</option>
                   <option value="dme">Dry Malt Extract</option>

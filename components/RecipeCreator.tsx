@@ -320,11 +320,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2">
             <label htmlFor="recipe_name" className="text-xs font-bold text-stone-400 uppercase">{t('recipe_name')}</label>
-            <input id="recipe_name" className="w-full p-3 bg-stone-50 border rounded-xl text-stone-900 font-bold" value={recipe.name} onChange={e => setRecipe({...recipe, name: e.target.value})} />
+            <input id="recipe_name" name="name" className="w-full p-3 bg-stone-50 border rounded-xl text-stone-900 font-bold" value={recipe.name} onChange={e => setRecipe({...recipe, name: e.target.value})} maxLength={100} />
           </div>
           <div className="md:col-span-2">
             <label htmlFor="recipe_style" className="text-xs font-bold text-stone-400 uppercase">{t('style_label')}</label>
-            <select id="recipe_style" className="w-full p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.style?.libraryId || ""} onChange={e => handleLibrarySelect('style', 0, e.target.value)}>
+            <select id="recipe_style" name="style" className="w-full p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.style?.libraryId || ""} onChange={e => handleLibrarySelect('style', 0, e.target.value)}>
               <option value="">-- Choose Style --</option>
               {library.filter(l => l.type === 'style').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
@@ -332,8 +332,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div>
             <label htmlFor="batch_size" className="text-xs font-bold text-stone-400 uppercase">{t('batch_size')}</label>
             <div className="flex items-center gap-2">
-              <input id="batch_size" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.batch_size.value} onChange={e => setRecipe({...recipe, batch_size: {...recipe.batch_size, value: parseFloat(e.target.value) || 0}})} />
+              <input id="batch_size" name="batch_size" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.batch_size.value} onChange={e => setRecipe({...recipe, batch_size: {...recipe.batch_size, value: parseFloat(e.target.value) || 0}})} />
               <select
+                id="batch_size_unit"
                 aria-label="Batch Size Unit"
                 className="bg-transparent text-xs font-bold text-stone-400 outline-none"
                 value={recipe.batch_size.unit}
@@ -348,21 +349,21 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             <div className="flex items-center gap-1.5 mb-1">
               <label htmlFor="efficiency" className="text-xs font-bold text-stone-400 uppercase">{t('efficiency')}</label>
               <div className="group relative">
-                <i className="fas fa-info-circle text-[10px] text-stone-300"></i>
+                <i className="fas fa-info-circle text-[10px] text-stone-300" title="Efficiency Info"></i>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-stone-800 text-white text-[9px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
                   Adjust based on your equipment's performance to improve OG predictions.
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <input id="efficiency" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold border-amber-200/50 focus:border-amber-500 transition-colors" value={recipe.efficiency.brewhouse} onChange={e => setRecipe({...recipe, efficiency: {brewhouse: parseFloat(e.target.value) || 0}})} />
+              <input id="efficiency" name="efficiency" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold border-amber-200/50 focus:border-amber-500 transition-colors" value={recipe.efficiency.brewhouse} onChange={e => setRecipe({...recipe, efficiency: {brewhouse: parseFloat(e.target.value) || 0}})} />
               <span className="text-xs font-bold text-amber-600">%</span>
             </div>
           </div>
           <div>
             <label htmlFor="boil_time" className="text-xs font-bold text-stone-400 uppercase">{t('boil_time')}</label>
             <div className="flex items-center gap-2">
-              <input id="boil_time" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.boil_time.value} onChange={e => setRecipe({...recipe, boil_time: {...recipe.boil_time, value: parseFloat(e.target.value) || 0}})} />
+              <input id="boil_time" name="boil_time" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.boil_time.value} onChange={e => setRecipe({...recipe, boil_time: {...recipe.boil_time, value: parseFloat(e.target.value) || 0}})} />
               <span className="text-xs font-bold text-stone-400">min</span>
             </div>
           </div>
@@ -374,13 +375,19 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="space-y-3">
             {recipe.ingredients.fermentables.map((f, i) => (
               <div key={i} className="flex gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
-                <select className="flex-1 p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={f.libraryId || ""} onChange={e => handleLibrarySelect('fermentable', i, e.target.value)}>
-                  <option value="">{f.name || '-- Select Malt --'}</option>
-                  {library.filter(l => l.type === 'fermentable').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
+                <div className="flex-1">
+                  <label htmlFor={`ferm-select-${i}`} className="sr-only">Select Fermentable</label>
+                  <select id={`ferm-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={f.libraryId || ""} onChange={e => handleLibrarySelect('fermentable', i, e.target.value)}>
+                    <option value="">{f.name || '-- Select Malt --'}</option>
+                    {library.filter(l => l.type === 'fermentable').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                </div>
                 <div className="flex items-center gap-2">
-                  <input className="w-20 p-2 bg-white border rounded-xl text-right font-black" type="number" step="0.001" value={f.amount?.value ?? 0} onChange={e => updateField('fermentable', i, 'amount', parseFloat(e.target.value) || 0)} />
+                  <label htmlFor={`ferm-amount-${i}`} className="sr-only">Amount</label>
+                  <input id={`ferm-amount-${i}`} className="w-20 p-2 bg-white border rounded-xl text-right font-black" type="number" step="0.001" value={f.amount?.value ?? 0} onChange={e => updateField('fermentable', i, 'amount', parseFloat(e.target.value) || 0)} />
+                  <label htmlFor={`ferm-unit-${i}`} className="sr-only">Unit</label>
                   <select
+                    id={`ferm-unit-${i}`}
                     className="bg-transparent text-[10px] font-black text-stone-400 uppercase outline-none"
                     value={f.amount.unit}
                     onChange={e => {
@@ -411,13 +418,19 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="space-y-3">
             {recipe.ingredients.hops.map((h, i) => (
               <div key={i} className="flex gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
-                <select className="flex-1 p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={h.libraryId || ""} onChange={e => handleLibrarySelect('hop', i, e.target.value)}>
-                  <option value="">{h.name || '-- Select Hop --'}</option>
-                  {library.filter(l => l.type === 'hop').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
+                <div className="flex-1">
+                  <label htmlFor={`hop-select-${i}`} className="sr-only">Select Hop</label>
+                  <select id={`hop-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={h.libraryId || ""} onChange={e => handleLibrarySelect('hop', i, e.target.value)}>
+                    <option value="">{h.name || '-- Select Hop --'}</option>
+                    {library.filter(l => l.type === 'hop').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                </div>
                 <div className="flex items-center gap-2">
-                  <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.amount?.value ?? 0} onChange={e => updateField('hop', i, 'amount', parseFloat(e.target.value) || 0)} />
+                  <label htmlFor={`hop-amount-${i}`} className="sr-only">Amount</label>
+                  <input id={`hop-amount-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.amount?.value ?? 0} onChange={e => updateField('hop', i, 'amount', parseFloat(e.target.value) || 0)} />
+                  <label htmlFor={`hop-unit-${i}`} className="sr-only">Unit</label>
                   <select
+                    id={`hop-unit-${i}`}
                     className="bg-transparent text-[10px] font-black text-stone-400 uppercase outline-none"
                     value={h.amount.unit}
                     onChange={e => {
@@ -438,7 +451,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
+                  <label htmlFor={`hop-time-${i}`} className="sr-only">Time (min)</label>
+                  <input id={`hop-time-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">min</span>
                 </div>
                 <button onClick={() => removeIngredient('hop', i)} aria-label="Remove Hop"><i className="fas fa-trash-alt text-stone-300"></i></button>
@@ -452,12 +466,16 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="space-y-3">
             {recipe.ingredients.cultures.map((c, i) => (
               <div key={i} className="flex gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
-                <select className="flex-1 p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={c.libraryId || ""} onChange={e => handleLibrarySelect('culture', i, e.target.value)}>
-                  <option value="">{c.name || '-- Select Yeast --'}</option>
-                  {library.filter(l => l.type === 'culture').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
+                <div className="flex-1">
+                  <label htmlFor={`culture-select-${i}`} className="sr-only">Select Yeast</label>
+                  <select id={`culture-select-${i}`} className="flex-1 p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={c.libraryId || ""} onChange={e => handleLibrarySelect('culture', i, e.target.value)}>
+                    <option value="">{c.name || '-- Select Yeast --'}</option>
+                    {library.filter(l => l.type === 'culture').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                </div>
                 <div className="flex items-center gap-2">
-                  <input className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={c.attenuation ?? 75} onChange={e => updateField('culture', i, 'attenuation', parseFloat(e.target.value) || 0)} />
+                  <label htmlFor={`culture-att-${i}`} className="sr-only">Attenuation (%)</label>
+                  <input id={`culture-att-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={c.attenuation ?? 75} onChange={e => updateField('culture', i, 'attenuation', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">%</span>
                 </div>
                 {preferences.enableStockManagement && c.libraryId && library.find(l => l.id === c.libraryId && l.status === 'private')?.stock && (
@@ -478,7 +496,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h4 className="font-bold uppercase text-stone-900 flex items-center gap-2"><i className="fas fa-thermometer-half text-red-600"></i> {t('mash_profile')}</h4>
             <div className="flex flex-wrap gap-3">
-              <select className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-stone-600" value="" onChange={e => handleLibrarySelect('mash_profile', 0, e.target.value)}>
+              <label htmlFor="load_mash_profile" className="sr-only">Load Mash Profile</label>
+              <select id="load_mash_profile" className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-stone-600" value="" onChange={e => handleLibrarySelect('mash_profile', 0, e.target.value)}>
                 <option value="">Load From Library</option>
                 {library.filter(l => l.type === 'mash_profile').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
@@ -488,7 +507,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="space-y-4 bg-stone-50 p-6 rounded-3xl border border-stone-100">
             <div className="mb-4">
                <label htmlFor="mash_profile_name" className="text-[10px] font-black text-stone-400 uppercase mb-1 block">Profile Name</label>
-               <input id="mash_profile_name" className="w-full p-3 bg-white border border-stone-200 rounded-xl text-sm font-bold shadow-sm" value={recipe.mash?.name || ""} onChange={e => setRecipe({...recipe, mash: { ...(recipe.mash || { steps: [] }), name: e.target.value}})} placeholder="e.g., Single Infusion" />
+               <input id="mash_profile_name" name="mash_name" className="w-full p-3 bg-white border border-stone-200 rounded-xl text-sm font-bold shadow-sm" value={recipe.mash?.name || ""} onChange={e => setRecipe({...recipe, mash: { ...(recipe.mash || { steps: [] }), name: e.target.value}})} placeholder="e.g., Single Infusion" maxLength={100} />
             </div>
             <div className="space-y-3">
               {(recipe.mash?.steps || []).map((s, idx) => (
@@ -496,13 +515,14 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
                     <div className="md:col-span-2">
                       <label htmlFor={`step_name_${idx}`} className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_name')}</label>
-                      <input id={`step_name_${idx}`} className="w-full p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} />
+                      <input id={`step_name_${idx}`} name={`step_name_${idx}`} className="w-full p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} maxLength={100} />
                     </div>
                     <div>
                       <label htmlFor={`step_temp_${idx}`} className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_temp')}</label>
                       <div className="flex items-center gap-2">
                         <input
                           id={`step_temp_${idx}`}
+                          name={`step_temp_${idx}`}
                           type="number"
                           className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold"
                           value={preferences.units === 'imperial' ? Math.round((s.step_temp * 9/5) + 32) : s.step_temp}
@@ -518,12 +538,12 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     <div>
                       <label htmlFor={`step_time_${idx}`} className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_time')}</label>
                       <div className="flex items-center gap-2">
-                        <input id={`step_time_${idx}`} type="number" className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.step_time} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
+                        <input id={`step_time_${idx}`} name={`step_time_${idx}`} type="number" className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.step_time} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
                         <span className="text-xs font-bold text-stone-400">min</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between pb-1">
-                      <select aria-label="Mash Step Type" className="p-2 bg-stone-100 border border-stone-200 rounded-lg text-[10px] font-black uppercase tracking-tight text-stone-500" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
+                      <select id={`step_type_${idx}`} aria-label="Mash Step Type" className="p-2 bg-stone-100 border border-stone-200 rounded-lg text-[10px] font-black uppercase tracking-tight text-stone-500" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
                         <option value="infusion">Infusion</option>
                         <option value="temperature">Temp</option>
                         <option value="decoction">Decoc</option>
@@ -542,10 +562,12 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <label htmlFor="recipe_notes" className="font-bold uppercase text-stone-900 mb-4 flex items-center gap-2"><i className="fas fa-sticky-note text-stone-400"></i> {t('notes')}</label>
           <textarea 
             id="recipe_notes"
+            name="notes"
             className="w-full p-4 bg-stone-50 border border-stone-100 rounded-2xl min-h-[120px] text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
             placeholder="Brewing tips, profile notes, or general thoughts..."
             value={recipe.notes || ""}
             onChange={e => setRecipe({...recipe, notes: e.target.value})}
+            maxLength={2000}
           />
         </div>
 

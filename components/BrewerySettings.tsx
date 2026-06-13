@@ -137,13 +137,16 @@ const BrewerySettings: React.FC = () => {
 
         {isAdmin && (
           <div className="space-y-4 pt-4 border-t border-stone-100">
-            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Brewery Name</p>
+            <label htmlFor="brewery-name-input" className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Brewery Name</label>
             <div className="flex gap-2">
               <input
+                id="brewery-name-input"
+                name="brewery_name"
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 className="flex-1 px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold focus:ring-2 focus:ring-amber-500/20 outline-none"
+                maxLength={100}
               />
               <button
                 onClick={handleUpdateName}
@@ -243,20 +246,26 @@ const BrewerySettings: React.FC = () => {
             <h3 className="text-2xl font-black text-stone-900 mb-6">Create Invitation</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">Email Address</label>
+              <label htmlFor="invite-email" className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">Email Address</label>
                 <input
+                id="invite-email"
+                name="email"
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="brewmaster@example.com"
                   className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold focus:ring-2 focus:ring-amber-500/20 outline-none mb-4"
+                maxLength={255}
                 />
 
-                <label className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">Assign Role</label>
-                <div className="grid grid-cols-2 gap-2">
+              <label id="invite-role-label" className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">Assign Role</label>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-labelledby="invite-role-label">
                   {(['brewmaster', 'brewer', 'taster'] as BreweryRole[]).map(role => (
                     <button
                       key={role}
+                      type="button"
+                      role="radio"
+                      aria-checked={inviteRole === role}
                       onClick={() => setInviteRole(role)}
                       className={`p-3 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all ${inviteRole === role ? 'bg-amber-50 border-amber-500 text-amber-600' : 'bg-white border-stone-100 text-stone-400'}`}
                     >

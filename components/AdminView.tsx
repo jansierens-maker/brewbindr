@@ -107,14 +107,16 @@ const AdminView: React.FC<AdminViewProps> = ({
               <label className="group flex flex-col items-center justify-center w-full h-40 bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl cursor-pointer hover:bg-stone-100 transition-all">
                 <i className="fas fa-cloud-upload-alt text-3xl text-stone-300 group-hover:text-amber-500 mb-2"></i>
                 <p className="text-sm text-stone-500 font-bold">{t('dropzone_text')}</p>
-                <input type="file" className="hidden" accept=".xml,.beerxml" onChange={onFileImport} disabled={!user} />
+                <input id="xml-file-import" name="xml_file" type="file" className="hidden" accept=".xml,.beerxml" onChange={onFileImport} disabled={!user} aria-label="Upload BeerXML File" />
               </label>
             </div>
 
             <div className="space-y-4 opacity-50 pointer-events-none" style={{ opacity: user ? 1 : 0.5, pointerEvents: user ? 'auto' : 'none' }}>
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('via_url')}</p>
+              <label htmlFor="xml-url-import" className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('via_url')}</label>
               <div className="flex flex-col md:flex-row gap-3">
                 <input 
+                  id="xml-url-import"
+                  name="xml_url"
                   type="text" 
                   placeholder="https://..." 
                   className="flex-1 px-4 h-12 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium" 
@@ -201,7 +203,7 @@ const AdminView: React.FC<AdminViewProps> = ({
               </p>
               <label className="block w-full bg-white border border-stone-200 text-stone-900 py-4 rounded-xl font-bold cursor-pointer hover:bg-stone-100 transition-all shadow-sm text-center text-sm">
                 {t('restore')}
-                <input type="file" className="hidden" accept=".json" onChange={onRestore} disabled={!user} />
+                <input id="json-restore-file" name="json_restore" type="file" className="hidden" accept=".json" onChange={onRestore} disabled={!user} aria-label="Upload JSON Backup File" />
               </label>
             </div>
           </div>
