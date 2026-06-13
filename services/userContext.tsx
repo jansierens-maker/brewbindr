@@ -84,7 +84,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
            table: 'profiles',
            filter: `id=eq.${user.id}`
          }, (payload) => {
-           setProfile(prev => ({ ...prev, ...payload.new } as UserProfile));
+           setProfile(prev => {
+             const updated = payload.new as UserProfile;
+             // Return the same reference if nothing meaningful changed.
+             // This prevents the debounced sync from re-writing unchanged preferences
+             // back to the DB on every realtime event, which would create an infinite loop.
+             if (
+               prev?.brewery_id === updated.brewery_id &&
+               prev?.brewery_role === updated.brewery_role &&
+               prev?.role === updated.role &&
+               JSON.stringify(prev?.preferences) === JSON.stringify(updated.preferences)
+             ) {
+               return prev;
+             }
+             return { ...prev, ...updated } as UserProfile;
+           });
          })
          .subscribe();
     }

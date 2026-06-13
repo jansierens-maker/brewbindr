@@ -237,9 +237,11 @@ const AppContent: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!authLoading) {
-      setLibraryView(user ? 'personal' : 'public');
+    if (!authLoading && !user) {
+      setLibraryView('public');
     }
+    // 'personal' is set inside setupRealtime after user data is fetched,
+    // so the view never flashes empty while the fetch is in-flight.
   }, [user, authLoading]);
 
   useEffect(() => {
@@ -308,6 +310,7 @@ const AppContent: React.FC = () => {
           setBrewLogs(remoteData.brewLogs);
           setTastingNotes(remoteData.tastingNotes);
           setLibrary(remoteData.library);
+          if (user) setLibraryView('personal');
         } else if (user) {
           setSyncError(true);
         } else {
