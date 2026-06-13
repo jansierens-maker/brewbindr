@@ -99,12 +99,19 @@ export const supabaseService = {
     if (!client) return null;
     try {
       const tableList = ['recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
+      // Tables that have a `status` column
+      const STATUS_TABLES = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
 
       const requests = tableList.map(t => {
-        let query = client.from(t).select('id, data, user_id, brewery_id, status');
+        const hasStatus = STATUS_TABLES.includes(t);
+        const selectFields = hasStatus
+          ? 'id, data, user_id, brewery_id, status'
+          : 'id, data, user_id, brewery_id';
+
+        let query = client.from(t).select(selectFields);
 
         // For items that can be public, fetch owned/brewery OR approved
-        if (['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'].includes(t)) {
+        if (hasStatus) {
           if (breweryId && userId) {
             query = query.or(`brewery_id.eq.${breweryId},user_id.eq.${userId},status.eq.approved`);
           } else if (breweryId) {
