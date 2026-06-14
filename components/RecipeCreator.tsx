@@ -55,9 +55,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
         });
         setPrompt('');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI Generation failed:", error);
-      alert("Failed to generate recipe. Please check your API key.");
+      alert(error?.message || "Failed to generate recipe. Please try again later.");
     } finally {
       setIsGenerating(false);
     }
@@ -71,9 +71,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
     try {
       const feedback = await gemini.analyzeRecipe(recipe);
       setAiAnalysis(feedback);
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI Analysis failed:", error);
-      alert("Failed to analyze recipe. Please check your API key.");
+      alert(error?.message || "Failed to analyze recipe. Please try again later.");
     } finally {
       setIsAnalyzing(false);
     }
