@@ -183,8 +183,9 @@ export default async function handler(req: any, res: any) {
 
     res.status(200).json(JSON.parse(response.text || '{}'));
   } catch (error: any) {
-    // Log detailed error for debugging, but return generic message to client
     console.error("API Error:", error.message || "Unknown error occurred");
-    res.status(500).json({ error: 'An error occurred during recipe generation. Please try again later.' });
+    let clientMessage = 'An error occurred during recipe generation. Please try again later.';
+    try { const parsed = JSON.parse(error.message); if (parsed?.error?.message) clientMessage = parsed.error.message; } catch {}
+    res.status(500).json({ error: clientMessage });
   }
 }
