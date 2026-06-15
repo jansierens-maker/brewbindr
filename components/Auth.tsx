@@ -10,6 +10,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,10 +19,13 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
     setError(null);
     try {
       if (isSignUp) {
-        await authService.signUp(email, password);
+        await authService.signUp(email, password, inviteCode.trim() || undefined);
         alert('Check your email for the confirmation link!');
       } else {
         await authService.signIn(email, password);
+        if (inviteCode.trim()) {
+           localStorage.setItem('pending_invite_code', inviteCode.trim());
+        }
         if (onSuccess) onSuccess();
       }
     } catch (err: any) {
@@ -45,27 +49,50 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Email Address</label>
+          <label htmlFor="auth-email" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Email Address</label>
           <input
+            id="auth-email"
+            name="email"
             type="email"
             required
             className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="brewmaster@example.com"
+            maxLength={255}
           />
         </div>
         <div>
-          <label className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Password</label>
+          <label htmlFor="auth-password" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Password</label>
           <input
+            id="auth-password"
+            name="password"
             type="password"
             required
             className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
+            maxLength={100}
           />
         </div>
+
+        {isSignUp && (
+          <div>
+            <label htmlFor="auth-invite-code" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Invite Code (Optional)</label>
+            <input
+              id="auth-invite-code"
+              name="invite_code"
+              type="text"
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all uppercase placeholder:normal-case"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+              placeholder="ABCDEF"
+              maxLength={20}
+            />
+            <p className="text-[9px] text-stone-400 mt-1 ml-1 font-bold italic">Joining a brewery? Enter the code here.</p>
+          </div>
+        )}
 
         {error && (
           <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold flex items-center gap-2 animate-in slide-in-from-top-2">

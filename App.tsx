@@ -132,11 +132,17 @@ const AppContent: React.FC = () => {
 
   const processedRecipes = useMemo(() => {
     return recipes
-      .filter(r => libraryView === 'personal' ? (r.status === 'private' && (!r.user_id || r.user_id === user?.id)) : r.status === 'approved')
+      .filter(r => {
+        if (libraryView === 'public') return r.status === 'approved';
+        // Personal Collection: show items belonging to user OR their brewery
+        // We include both 'private' and 'submitted' status here.
+        const isOwner = (!r.user_id || r.user_id === user?.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id);
+        return isOwner && (r.status === 'private' || r.status === 'submitted');
+      })
       .map(r => ({ recipe: r, stock: checkRecipeStock(r, library) }))
       .filter(({ stock }) => !showBrewableOnly || stock.isBrewable)
       .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name));
-  }, [recipes, libraryView, user?.id, showBrewableOnly, library]);
+  }, [recipes, libraryView, user?.id, profile?.brewery_id, showBrewableOnly, library]);
 
   useEffect(() => {
     if (printData) {
@@ -170,7 +176,14 @@ const AppContent: React.FC = () => {
 
       // 2. Try to find by name and type with the target status
       if (targetStatus === 'private') {
-        return updatedLib.find(l => l.name.toLowerCase() === name.toLowerCase() && l.type === type && l.status === 'private' && (!l.user_id || l.user_id === user?.id));
+        return updatedLib.find(l =>
+          l.name.toLowerCase() === name.toLowerCase() &&
+          l.type === type &&
+          l.status === 'private' && (
+            (!l.user_id || l.user_id === user?.id) ||
+            (profile?.brewery_id && l.brewery_id === profile.brewery_id)
+          )
+        );
       } else {
         const approved = updatedLib.find(l => l.name.toLowerCase() === name.toLowerCase() && l.type === type && l.status === 'approved');
         if (approved) return approved;
@@ -230,7 +243,9 @@ const AppContent: React.FC = () => {
   }, [user, authLoading]);
 
   useEffect(() => {
+    let cancelled = false;
     let userDataChannel: any = null;
+    let breweryDataChannel: any = null;
     let publicDataChannel: any = null;
 
     const handlePayload = (payload: any, table: string) => {
@@ -242,12 +257,19 @@ const AppContent: React.FC = () => {
             return prev.filter(item => item.id !== (oldRecord?.id || oldRecord?.data?.id));
           }
           if (!newRecord) return prev;
-          const itemData = { ...newRecord.data, user_id: newRecord.user_id, status: newRecord.status };
-          const exists = prev.find(item => item.id === itemData.id);
+
+          // Safely merge column data into JSONB data
+          const mergedData = { ...newRecord.data };
+          if (newRecord.id) mergedData.id = newRecord.id;
+          if (newRecord.user_id) mergedData.user_id = newRecord.user_id;
+          if (newRecord.brewery_id) mergedData.brewery_id = newRecord.brewery_id;
+          if (newRecord.status) mergedData.status = newRecord.status;
+
+          const exists = prev.find(item => item.id === mergedData.id);
           if (exists) {
-            return prev.map(item => item.id === itemData.id ? itemData : item);
+            return prev.map(item => item.id === mergedData.id ? mergedData : item);
           }
-          return [itemData, ...prev];
+          return [mergedData, ...prev];
         });
       };
 
@@ -268,6 +290,7 @@ const AppContent: React.FC = () => {
 
         if (!user) {
           const health = await supabaseService.checkTableHealth();
+          if (cancelled) return;
           const allOk = Object.values(health).every(v => v === true);
           if (allOk) {
             // Tables exist, redirect guest to login
@@ -278,7 +301,8 @@ const AppContent: React.FC = () => {
           }
         }
 
-        const remoteData = await supabaseService.fetchAppData(user?.id);
+        const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
+        if (cancelled) return;
         if (remoteData) {
           setRecipes(remoteData.recipes);
           setBrewLogs(remoteData.brewLogs);
@@ -293,19 +317,23 @@ const AppContent: React.FC = () => {
           setLibrary(EXAMPLES);
         }
       } catch (err) {
+        if (cancelled) return;
         console.error("Initial connection failed:", err);
         if (user) setSyncError(true);
         else setShowSyncDetails(true);
       }
 
+      if (cancelled) return;
+
       if (isAdmin) {
         const pending = await supabaseService.fetchPendingSubmissions();
+        if (cancelled) return;
         setPendingSubmissions(pending);
       }
 
       if (!supabase) return;
 
-      // Channel 1: User's own data across all relevant tables
+      // Channel 1: User's own data (legacy support / private profiles)
       if (user?.id) {
         userDataChannel = supabase.channel('user-updates');
         const tables = ['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
@@ -320,6 +348,23 @@ const AppContent: React.FC = () => {
         });
 
         userDataChannel.subscribe();
+      }
+
+      // Channel 1.5: Brewery shared data
+      if (profile?.brewery_id) {
+        breweryDataChannel = supabase.channel('brewery-updates');
+        const tables = ['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+
+        tables.forEach(table => {
+          breweryDataChannel.on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: table,
+            filter: `brewery_id=eq.${profile.brewery_id}`
+          }, (payload: any) => handlePayload(payload, table));
+        });
+
+        breweryDataChannel.subscribe();
       }
 
       // Channel 2: Publicly approved data
@@ -341,10 +386,12 @@ const AppContent: React.FC = () => {
     setupRealtime();
 
     return () => {
+      cancelled = true;
       if (userDataChannel) supabase?.removeChannel(userDataChannel);
+      if (breweryDataChannel) supabase?.removeChannel(breweryDataChannel);
       if (publicDataChannel) supabase?.removeChannel(publicDataChannel);
     };
-  }, [user?.id, authLoading, isAdmin]);
+  }, [user?.id, profile?.brewery_id, authLoading, isAdmin]);
 
   const handleSaveRecipe = async (recipe: Recipe) => {
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
@@ -352,13 +399,13 @@ const AppContent: React.FC = () => {
     if (newIngredients.length > 0) {
       setLibrary(prev => [...prev, ...newIngredients]);
       if (user?.id) {
-        await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
+        await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id, profile?.brewery_id);
       }
     }
 
     const targetRecipe = selectedRecipe && selectedRecipe.id
-      ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id }
-      : { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id };
+      ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id, brewery_id: profile?.brewery_id }
+      : { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id };
 
     setRecipes(prev => {
       const exists = prev.find(r => r.id === targetRecipe.id);
@@ -367,7 +414,7 @@ const AppContent: React.FC = () => {
     });
 
     if (user?.id) {
-      await supabaseService.saveRecipe(targetRecipe, user.id);
+      await supabaseService.saveRecipe(targetRecipe, user.id, profile?.brewery_id);
     }
 
     setSelectedRecipe(null);
@@ -382,14 +429,14 @@ const AppContent: React.FC = () => {
   };
 
   const handleUpdateBrewLog = async (entry: BrewLogEntry) => {
-    const targetLog = { ...entry, user_id: user?.id };
+    const targetLog = { ...entry, user_id: user?.id, brewery_id: profile?.brewery_id };
     setBrewLogs(prev => {
       const exists = prev.find(l => l.id === entry.id);
       if (exists) return prev.map(l => l.id === entry.id ? targetLog : l);
       return [targetLog, ...prev];
     });
     if (user?.id) {
-      await supabaseService.saveBrewLog(targetLog, user.id);
+      await supabaseService.saveBrewLog(targetLog, user.id, profile?.brewery_id);
     }
   };
 
@@ -501,8 +548,14 @@ const AppContent: React.FC = () => {
     const next = currentQueue[0];
 
     // Only check for duplicates in personal collection
-    const personalRecipes = currentRecipes.filter(r => !r.user_id || r.user_id === user?.id);
-    const personalLib = currentLib.filter(l => !l.user_id || l.user_id === user?.id);
+    const personalRecipes = currentRecipes.filter(r =>
+      (!r.user_id || r.user_id === user?.id) ||
+      (profile?.brewery_id && r.brewery_id === profile.brewery_id)
+    );
+    const personalLib = currentLib.filter(l =>
+      (!l.user_id || l.user_id === user?.id) ||
+      (profile?.brewery_id && l.brewery_id === profile.brewery_id)
+    );
 
     let isDuplicate = false;
     let exactMatches: any[] = [];
@@ -583,11 +636,21 @@ const AppContent: React.FC = () => {
     if (action === 'overwrite') {
       if (currentDuplicate.type === 'recipe') {
         const { recipe: linked, addedToLibrary } = linkIngredientsToLibrary(currentDuplicate.data, updatedLib);
-        updatedRecipes = recipes.map(r => (!r.user_id || r.user_id === user?.id) && r.name.toLowerCase() === linked.name.toLowerCase() ? { ...linked, id: r.id, user_id: user?.id } : r);
+        updatedRecipes = recipes.map(r => {
+          const isOwnOrBrewery = (!r.user_id || r.user_id === user?.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id);
+          return isOwnOrBrewery && r.name.toLowerCase() === linked.name.toLowerCase()
+            ? { ...linked, id: r.id, user_id: user?.id, brewery_id: profile?.brewery_id }
+            : r;
+        });
         nextSummary.updated += 1;
         nextSummary.inserted += addedToLibrary;
       } else {
-        updatedLib = library.map(l => (!l.user_id || l.user_id === user?.id) && l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type ? { ...currentDuplicate.data, id: l.id, user_id: user?.id } : l);
+        updatedLib = library.map(l => {
+          const isOwnOrBrewery = (!l.user_id || l.user_id === user?.id) || (profile?.brewery_id && l.brewery_id === profile.brewery_id);
+          return isOwnOrBrewery && l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type
+            ? { ...currentDuplicate.data, id: l.id, user_id: user?.id, brewery_id: profile?.brewery_id }
+            : l;
+        });
         nextSummary.updated += 1;
       }
     } else if (action === 'copy') {
@@ -761,6 +824,21 @@ const AppContent: React.FC = () => {
     alert("Recipe added to your personal collection!");
   };
 
+  const handleRefreshAppData = async () => {
+    setSyncError(false);
+    const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
+    if (remoteData) {
+      setRecipes(remoteData.recipes);
+      setBrewLogs(remoteData.brewLogs);
+      setTastingNotes(remoteData.tastingNotes);
+      setLibrary(remoteData.library);
+      alert('Data successfully re-synchronized!');
+    } else {
+      setSyncError(true);
+      alert('Re-sync failed. Please check your connection.');
+    }
+  };
+
   const handleOpenSyncDetails = async () => {
     setShowSyncDetails(true);
     setTableStatus({});
@@ -796,18 +874,79 @@ const AppContent: React.FC = () => {
   };
 
   const SQL_SCHEMA = `
--- Create profiles table
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
-  role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user')),
-  preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm", "language": "en"}'::jsonb
-);
+-- 1. Create/Update Tables Idempotently
+CREATE TABLE IF NOT EXISTS breweries (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
+ALTER TABLE breweries ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT 'My Brewery';
+ALTER TABLE breweries ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE breweries ALTER COLUMN name DROP DEFAULT;
 
--- Enable RLS on profiles
+CREATE TABLE IF NOT EXISTS profiles (id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE);
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user'));
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS brewery_id UUID REFERENCES breweries(id);
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS brewery_role TEXT CHECK (brewery_role IN ('admin', 'brewmaster', 'brewer', 'taster'));
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{"units": "metric", "colorScale": "srm", "language": "en"}'::jsonb;
+
+CREATE TABLE IF NOT EXISTS invitations (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS brewery_id UUID NOT NULL REFERENCES breweries(id) ON DELETE CASCADE;
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS role TEXT NOT NULL CHECK (role IN ('admin', 'brewmaster', 'brewer', 'taster'));
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS code TEXT NOT NULL;
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT (now() + interval '7 days');
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_code_key') THEN
+    ALTER TABLE invitations ADD CONSTRAINT invitations_code_key UNIQUE (code);
+  END IF;
+END $$;
+
+-- Create application tables idempotently
+DO $$
+DECLARE
+  t text;
+  tables text[] := ARRAY['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+BEGIN
+  FOR t IN SELECT unnest(tables) LOOP
+    EXECUTE format('CREATE TABLE IF NOT EXISTS %I (id TEXT PRIMARY KEY);', t);
+    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS data JSONB;', t);
+    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users;', t);
+    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS brewery_id UUID REFERENCES breweries(id);', t);
+
+    IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
+      EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS status TEXT DEFAULT ''private'' CHECK (status IN (''private'', ''submitted'', ''approved''));', t);
+    END IF;
+  END LOOP;
+END $$;
+
+-- Enable RLS
+ALTER TABLE breweries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
 
+-- Helper Functions for RLS
+CREATE OR REPLACE FUNCTION get_user_brewery_id() RETURNS UUID AS $$
+  SELECT brewery_id FROM profiles WHERE id = auth.uid();
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION get_user_brewery_role() RETURNS TEXT AS $$
+  SELECT brewery_role FROM profiles WHERE id = auth.uid();
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+-- Policies for breweries
+DROP POLICY IF EXISTS "Members can view their brewery" ON breweries;
+CREATE POLICY "Members can view their brewery" ON breweries FOR SELECT USING (id = get_user_brewery_id());
+
+DROP POLICY IF EXISTS "Admins can update brewery" ON breweries;
+CREATE POLICY "Admins can update brewery" ON breweries FOR UPDATE USING (id = get_user_brewery_id() AND get_user_brewery_role() = 'admin');
+
+-- Policies for profiles
 DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can view brewery members" ON profiles;
+CREATE POLICY "Users can view brewery members" ON profiles FOR SELECT USING (brewery_id = get_user_brewery_id());
 
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id AND (role = (SELECT role FROM profiles WHERE id = auth.uid())));
@@ -815,7 +954,7 @@ CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.
 DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Helper to check if user is admin (moved up to avoid recursion in policies)
+-- Helper to check if user is admin (global app admin)
 CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
   SELECT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin');
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
@@ -824,87 +963,99 @@ DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (auth.uid() != id AND is_admin());
 
 -- Trigger to create profile on signup
+-- Trigger to create profile and brewery on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
+DECLARE
+  new_brewery_id UUID;
+  invite_code TEXT;
+  invite_role TEXT;
+  invite_brewery_id UUID;
 BEGIN
-  INSERT INTO public.profiles (id)
-  VALUES (new.id);
+  -- Extract invite code from user metadata if provided
+  invite_code := (new.raw_user_meta_data->>'invite_code');
+
+  IF invite_code IS NOT NULL THEN
+    -- Try to join existing brewery
+    SELECT brewery_id, role INTO invite_brewery_id, invite_role
+    FROM invitations
+    WHERE code = invite_code AND expires_at > now()
+    LIMIT 1;
+
+    IF invite_brewery_id IS NOT NULL THEN
+      INSERT INTO public.profiles (id, email, brewery_id, brewery_role)
+      VALUES (new.id, new.email, invite_brewery_id, invite_role)
+      ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        brewery_id = EXCLUDED.brewery_id,
+        brewery_role = EXCLUDED.brewery_role;
+
+      -- Cleanup used invitation (Match by code and/or email for safety)
+      DELETE FROM invitations
+      WHERE code = invite_code
+      OR (email = new.email AND brewery_id = invite_brewery_id);
+
+      RETURN new;
+    END IF;
+  END IF;
+
+  -- Default: Create new brewery for the user
+  INSERT INTO breweries (name) VALUES ('My Brewery') RETURNING id INTO new_brewery_id;
+
+  INSERT INTO public.profiles (id, email, brewery_id, brewery_role)
+  VALUES (new.id, new.email, new_brewery_id, 'admin')
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    brewery_id = EXCLUDED.brewery_id,
+    brewery_role = EXCLUDED.brewery_role;
+
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Backfill profiles for existing users
-INSERT INTO public.profiles (id)
-SELECT id FROM auth.users
-ON CONFLICT (id) DO NOTHING;
+-- Trigger to delete invitation when profile is linked (idempotency safety)
+CREATE OR REPLACE FUNCTION delete_used_invitation()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.brewery_id IS NOT NULL AND OLD.brewery_id IS NULL THEN
+    -- If we don't have the code anymore, we might have matched via metadata in handle_new_user.
+    -- This trigger handles cases where brewery_id is set later.
+    -- To be precise, we'd need the code on the profile, but deleting by brewery+role is a good fallback
+    -- if we assume codes are unique per role in a brewery (which they usually are).
+    DELETE FROM invitations
+    WHERE (brewery_id = NEW.brewery_id AND role = NEW.brewery_role)
+    OR (email = NEW.email AND brewery_id = NEW.brewery_id);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Create application tables with user_id and status
--- We use TEXT for id to support existing random string IDs, but UUID for user_id
-CREATE TABLE IF NOT EXISTS recipes (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS brew_logs (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
-CREATE TABLE IF NOT EXISTS tasting_notes (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
-CREATE TABLE IF NOT EXISTS fermentables (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS hops (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS cultures (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS styles (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS miscs (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS mash_profiles (
-  id TEXT PRIMARY KEY,
-  data JSONB,
-  user_id UUID REFERENCES auth.users,
-  status TEXT DEFAULT 'private' CHECK (status IN ('private', 'submitted', 'approved'))
-);
-CREATE TABLE IF NOT EXISTS equipment (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
-CREATE TABLE IF NOT EXISTS waters (id TEXT PRIMARY KEY, data JSONB, user_id UUID REFERENCES auth.users);
+DROP TRIGGER IF EXISTS on_brewery_linked ON profiles;
+CREATE TRIGGER on_brewery_linked
+  AFTER UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION delete_used_invitation();
 
--- Enable Row Level Security (RLS)
-ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE brew_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tasting_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE fermentables ENABLE ROW LEVEL SECURITY;
-ALTER TABLE hops ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cultures ENABLE ROW LEVEL SECURITY;
-ALTER TABLE styles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE miscs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE mash_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE waters ENABLE ROW LEVEL SECURITY;
+-- Policies for invitations
+DROP POLICY IF EXISTS "Admins can manage invitations" ON invitations;
+CREATE POLICY "Admins can manage invitations" ON invitations FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() = 'admin');
 
--- RLS Policies for Data Tables
+-- Set brewery_id automatically based on owner's profile if missing
+CREATE OR REPLACE FUNCTION set_brewery_id()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.brewery_id IS NULL AND NEW.user_id IS NOT NULL THEN
+    NEW.brewery_id := (SELECT brewery_id FROM public.profiles WHERE id = NEW.user_id);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- RLS Policies and Triggers for Data Tables
 DO \$\$
 DECLARE
   t text;
@@ -912,38 +1063,67 @@ DECLARE
 BEGIN
   FOR t IN SELECT unnest(tables)
   LOOP
+    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY;', t);
+
     -- Everyone can read approved items (if the table has a status column)
     IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
       EXECUTE format('DROP POLICY IF EXISTS "Allow read approved %I" ON %I;', t, t);
       EXECUTE format('CREATE POLICY "Allow read approved %I" ON %I FOR SELECT USING (status = ''approved'');', t, t);
     END IF;
 
-    -- Users can read/write their own items (Non-admins cannot set status to approved)
+    -- Drop old user-only policy
     EXECUTE format('DROP POLICY IF EXISTS "Allow user manage own %I" ON %I;', t, t);
+
+    -- SELECT: Any member of the brewery
+    EXECUTE format('DROP POLICY IF EXISTS "Allow brewery members read %I" ON %I;', t, t);
+    EXECUTE format('CREATE POLICY "Allow brewery members read %I" ON %I FOR SELECT USING (brewery_id = get_user_brewery_id());', t, t);
+
+    -- INSERT/UPDATE/DELETE based on roles
     IF t IN ('recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles') THEN
-      EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id AND (status != ''approved'' OR is_admin()));', t, t);
-    ELSE
-      EXECUTE format('CREATE POLICY "Allow user manage own %I" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t, t);
+      -- admin and brewmaster can manage (with status check)
+      EXECUTE format('DROP POLICY IF EXISTS "Allow admin/brewmaster manage %I" ON %I;', t, t);
+      EXECUTE format('CREATE POLICY "Allow admin/brewmaster manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() IN (''admin'', ''brewmaster'')) WITH CHECK (brewery_id = get_user_brewery_id() AND (status != ''approved'' OR is_admin()));', t, t);
+    ELSIF t IN ('equipment', 'waters') THEN
+      -- admin and brewmaster can manage (no status check)
+      EXECUTE format('DROP POLICY IF EXISTS "Allow admin/brewmaster manage %I" ON %I;', t, t);
+      EXECUTE format('CREATE POLICY "Allow admin/brewmaster manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() IN (''admin'', ''brewmaster'')) WITH CHECK (brewery_id = get_user_brewery_id());', t, t);
+    ELSIF t = 'brew_logs' THEN
+      -- admin, brewmaster, brewer can manage
+      EXECUTE format('DROP POLICY IF EXISTS "Allow admin/brewmaster/brewer manage %I" ON %I;', t, t);
+      EXECUTE format('CREATE POLICY "Allow admin/brewmaster/brewer manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() IN (''admin'', ''brewmaster'', ''brewer''));', t, t);
+    ELSIF t = 'tasting_notes' THEN
+      -- everyone in brewery can manage
+      EXECUTE format('DROP POLICY IF EXISTS "Allow brewery members manage %I" ON %I;', t, t);
+      EXECUTE format('CREATE POLICY "Allow brewery members manage %I" ON %I FOR ALL USING (brewery_id = get_user_brewery_id());', t, t);
     END IF;
 
-    -- Admins can do everything
-    EXECUTE format('DROP POLICY IF EXISTS "Allow admin manage %I" ON %I;', t, t);
-    EXECUTE format('CREATE POLICY "Allow admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
+    -- Admins of the app (global role) can still do everything
+    EXECUTE format('DROP POLICY IF EXISTS "Allow global admin manage %I" ON %I;', t, t);
+    EXECUTE format('CREATE POLICY "Allow global admin manage %I" ON %I FOR ALL USING (is_admin());', t, t);
+
+    -- Apply brewery linking trigger
+    EXECUTE format('DROP TRIGGER IF EXISTS on_%I_brewery_link ON %I;', t, t);
+    EXECUTE format('CREATE TRIGGER on_%I_brewery_link BEFORE INSERT OR UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION set_brewery_id();', t, t);
   END LOOP;
 END \$\$;
 
--- Enable Realtime for all tables
-ALTER PUBLICATION supabase_realtime ADD TABLE recipes;
-ALTER PUBLICATION supabase_realtime ADD TABLE brew_logs;
-ALTER PUBLICATION supabase_realtime ADD TABLE tasting_notes;
-ALTER PUBLICATION supabase_realtime ADD TABLE fermentables;
-ALTER PUBLICATION supabase_realtime ADD TABLE hops;
-ALTER PUBLICATION supabase_realtime ADD TABLE cultures;
-ALTER PUBLICATION supabase_realtime ADD TABLE styles;
-ALTER PUBLICATION supabase_realtime ADD TABLE miscs;
-ALTER PUBLICATION supabase_realtime ADD TABLE mash_profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE equipment;
-ALTER PUBLICATION supabase_realtime ADD TABLE waters;
+-- Enable Realtime for all tables idempotently
+DO $$
+DECLARE
+  t text;
+  tables text[] := ARRAY['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+BEGIN
+  FOR t IN SELECT unnest(tables) LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = t
+    ) THEN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE %I;', t);
+    END IF;
+  END LOOP;
+END $$;
 
 -- Grant PostgREST access to public schema
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
@@ -970,6 +1150,39 @@ GRANT ALL ON TABLE mash_profiles TO authenticated;
 GRANT ALL ON TABLE equipment TO authenticated;
 GRANT ALL ON TABLE waters TO authenticated;
 GRANT ALL ON TABLE profiles TO authenticated;
+
+-- Migration for existing users: Create a default brewery for each user and link their data
+DO \$\$
+DECLARE
+  u_record RECORD;
+  new_brewery_id UUID;
+BEGIN
+  -- 1. Sync emails for existing profiles
+  UPDATE public.profiles p
+  SET email = u.email
+  FROM auth.users u
+  WHERE p.id = u.id AND p.email IS NULL;
+
+  -- 2. Create breweries for solo users
+  FOR u_record IN SELECT id FROM profiles WHERE brewery_id IS NULL
+  LOOP
+    INSERT INTO breweries (name) VALUES ('My Brewery') RETURNING id INTO new_brewery_id;
+    UPDATE profiles SET brewery_id = new_brewery_id, brewery_role = 'admin' WHERE id = u_record.id;
+
+    -- Link existing data
+    UPDATE recipes SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE brew_logs SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE tasting_notes SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE fermentables SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE hops SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE cultures SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE styles SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE miscs SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE mash_profiles SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE equipment SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+    UPDATE waters SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
+  END LOOP;
+END \$\$;
 `.trim();
 
   const handleDismissFallback = () => {
@@ -988,7 +1201,13 @@ GRANT ALL ON TABLE profiles TO authenticated;
             <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-black text-stone-900">{t('sync_details')}</h3>
-                <button onClick={() => setShowSyncDetails(false)} className="text-stone-300 hover:text-stone-900 transition-colors"><i className="fas fa-times text-xl"></i></button>
+                <button
+                  onClick={() => setShowSyncDetails(false)}
+                  className="text-stone-300 hover:text-stone-900 transition-colors"
+                  aria-label="Close Sync Details"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
               </div>
 
               <div className="space-y-6">
@@ -1148,7 +1367,13 @@ GRANT ALL ON TABLE profiles TO authenticated;
             <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-black text-stone-900">Import Demo Data</h3>
-                <button onClick={() => setShowDemoModal(false)} className="text-stone-300 hover:text-stone-900 transition-colors"><i className="fas fa-times text-xl"></i></button>
+                <button
+                  onClick={() => setShowDemoModal(false)}
+                  className="text-stone-300 hover:text-stone-900 transition-colors"
+                  aria-label="Close Demo Import"
+                >
+                  <i className="fas fa-times text-xl"></i>
+                </button>
               </div>
               
               <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
@@ -1164,6 +1389,7 @@ GRANT ALL ON TABLE profiles TO authenticated;
                 {DEMO_OPTIONS.map(opt => (
                   <label 
                     key={opt.id}
+                    htmlFor={`demo-opt-${opt.id}`}
                     className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer group ${selectedDemoIds.includes(opt.id) ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500' : 'bg-stone-50 border-stone-200 hover:bg-white'}`}
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-all ${selectedDemoIds.includes(opt.id) ? 'bg-amber-500 text-white' : 'bg-white text-stone-400 group-hover:text-amber-500'}`}>
@@ -1177,6 +1403,8 @@ GRANT ALL ON TABLE profiles TO authenticated;
                       {selectedDemoIds.includes(opt.id) && <i className="fas fa-check text-white text-[10px]"></i>}
                     </div>
                     <input 
+                        id={`demo-opt-${opt.id}`}
+                        name="demo_option"
                         type="checkbox" 
                         className="hidden" 
                         checked={selectedDemoIds.includes(opt.id)}
@@ -1271,15 +1499,26 @@ GRANT ALL ON TABLE profiles TO authenticated;
                 <h1 className="text-2xl font-black font-serif italic text-stone-900 uppercase">brewbindr</h1>
               </div>
 
-              <button
-                onClick={handleOpenSyncDetails}
-                className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
-              >
-                <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500' : supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
-                  {syncError ? 'Connection Error' : supabase ? t('cloud_sync') : t('local_mode')}
-                </span>
-              </button>
+              <div className="hidden lg:flex items-center gap-2">
+                <button
+                  onClick={handleOpenSyncDetails}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-100 hover:bg-white transition-all"
+                >
+                  <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500' : supabase ? 'bg-green-500 animate-pulse' : 'bg-stone-300'}`}></div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                    {syncError ? 'Connection Error' : supabase ? t('cloud_sync') : t('local_mode')}
+                  </span>
+                </button>
+                {user && (
+                   <button
+                    onClick={handleRefreshAppData}
+                    title="Refresh Data"
+                    className="w-8 h-8 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center text-stone-400 hover:text-amber-600 hover:bg-white transition-all"
+                   >
+                     <i className="fas fa-sync-alt text-[10px]"></i>
+                   </button>
+                )}
+              </div>
               </div>
               <nav className="hidden md:flex gap-8">
                 <button onClick={() => setView('recipes')} className={`font-bold transition-all text-sm ${view === 'recipes' ? 'text-amber-600' : 'text-stone-400 hover:text-stone-600'}`}>{t('nav_recipes')}</button>
@@ -1293,10 +1532,20 @@ GRANT ALL ON TABLE profiles TO authenticated;
                     <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{user ? t('logged_in_as') : t('guest_mode')}</p>
                     <p className="text-[10px] font-bold text-stone-900 truncate max-w-[120px]">{user?.email || t('guest_user')}</p>
                   </div>
-                  <button onClick={() => setView(user ? 'settings' : 'auth')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'settings' || view === 'auth' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
+                  <button
+                    onClick={() => setView(user ? 'settings' : 'auth')}
+                    title={user ? t('settings_label') : t('nav_auth' as any) || 'Login'}
+                    aria-label={user ? t('settings_label') : t('nav_auth' as any) || 'Login'}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'settings' || view === 'auth' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}
+                  >
                     <i className="fas fa-user"></i>
                   </button>
-                  <button onClick={() => setView('help')} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'help' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}>
+                  <button
+                    onClick={() => setView('help')}
+                    title="Help & Manuals"
+                    aria-label="Help & Manuals"
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${view === 'help' ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:text-stone-600'}`}
+                  >
                     <i className="fas fa-question-circle"></i>
                   </button>
                 </div>
@@ -1489,7 +1738,7 @@ GRANT ALL ON TABLE profiles TO authenticated;
 
                   if (user?.id && changed.length > 0) {
                     for (const item of changed) {
-                      await supabaseService.saveLibraryIngredient(item, user.id);
+                      await supabaseService.saveLibraryIngredient(item, user.id, profile?.brewery_id);
                     }
                   }
                 }}
@@ -1518,10 +1767,10 @@ GRANT ALL ON TABLE profiles TO authenticated;
                 recipe={selectedRecipe}
                 brewLogId={selectedBrewLog.id}
                 onSave={async (note) => {
-                  const targetNote = { ...note, user_id: user?.id };
+                  const targetNote = { ...note, user_id: user?.id, brewery_id: profile?.brewery_id };
                   setTastingNotes([targetNote, ...tastingNotes]);
                   if (user?.id) {
-                    await supabaseService.saveTastingNote(targetNote, user.id);
+                    await supabaseService.saveTastingNote(targetNote, user.id, profile?.brewery_id);
                   }
                   setView('brews');
                 }}

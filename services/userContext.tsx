@@ -4,6 +4,7 @@ import { UserProfile, UserPreferences } from '../types';
 import { Language } from './i18n';
 import { supabase } from './supabaseClient';
 import { authService } from './authService';
+import { breweryService } from './breweryService';
 
 interface UserContextType {
   user: User | null;
@@ -13,6 +14,7 @@ interface UserContextType {
   updatePreferences: (prefs: Partial<UserPreferences>) => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  breweryRole: string | null;
 }
 
 const getDefaultLanguage = (): Language => {
@@ -71,18 +73,43 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  useEffect(() => {
+    let profileSubscription: any = null;
+    if (user?.id && supabase) {
+       profileSubscription = supabase
+         .channel('profile-updates')
+         .on('postgres_changes', {
+           event: 'UPDATE',
+           schema: 'public',
+           table: 'profiles',
+           filter: `id=eq.${user.id}`
+         }, (payload) => {
+           setProfile(prev => ({ ...prev, ...payload.new } as UserProfile));
+         })
+         .subscribe();
+    }
+    return () => {
+       if (profileSubscription) supabase?.removeChannel(profileSubscription);
+    }
+  }, [user?.id]);
+
   const fetchProfile = async (userId: string) => {
     try {
       let p = await authService.getProfile(userId);
+
+      const pendingInviteCode = localStorage.getItem('pending_invite_code');
+
       if (!p) {
-        // Create default profile if not exists
-        const newProfile: UserProfile = {
+        // This case should ideally be handled by handle_new_user trigger.
+        // If it isn't (e.g. race condition or trigger error), we create a minimal profile.
+        // The trigger in SQL_SCHEMA handles brewery creation more reliably.
+        const minimalProfile: UserProfile = {
           id: userId,
           role: 'user',
           preferences: defaultPreferences
         };
-        await authService.updateProfile(newProfile);
-        p = newProfile;
+        await authService.updateProfile(minimalProfile);
+        p = await authService.getProfile(userId) || minimalProfile;
       } else {
         // Ensure fetched profile has all default preference keys (e.g. language)
         const mergedPrefs = { ...defaultPreferences, ...p.preferences };
@@ -91,6 +118,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
            await authService.updateProfile(p);
         }
       }
+
+      // Handle pending invite for existing user who just logged in
+      if (p && pendingInviteCode) {
+         if (p.brewery_id) {
+            alert("You are already part of a brewery. Please export your data, delete your account, and re-join if you want to switch.");
+         } else {
+            try {
+               await breweryService.joinBrewery(pendingInviteCode, userId);
+               p = await authService.getProfile(userId);
+            } catch (err: any) {
+               alert(`Join failed: ${err.message}`);
+            }
+         }
+         localStorage.removeItem('pending_invite_code');
+      }
+
       setProfile(p);
     } catch (err) {
       console.error('Critical Error in fetchProfile:', err);
@@ -162,7 +205,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     preferences: { ...defaultPreferences, ...profile?.preferences },
     updatePreferences,
     signOut,
-    isAdmin: profile?.role === 'admin'
+    isAdmin: profile?.role === 'admin',
+    breweryRole: profile?.brewery_role ?? null
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

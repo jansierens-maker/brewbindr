@@ -15,15 +15,37 @@ export interface UserPreferences {
   enableStockManagement: boolean;
 }
 
+export type BreweryRole = 'admin' | 'brewmaster' | 'brewer' | 'taster';
+
 export interface UserProfile {
   id: string;
+  email?: string;
   role: 'admin' | 'user';
   preferences: UserPreferences;
+  brewery_id?: string;
+  brewery_role?: BreweryRole;
+}
+
+export interface Brewery {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface Invitation {
+  id: string;
+  brewery_id: string;
+  role: BreweryRole;
+  email?: string;
+  code: string;
+  created_at: string;
+  expires_at: string;
 }
 
 export interface LibraryIngredient {
   id: string;
   user_id?: string;
+  brewery_id?: string;
   status?: ItemStatus;
   name: string;
   type: string; // 'fermentable' | 'hop' | 'culture' | 'mash_profile' | 'misc' | 'style'
@@ -91,6 +113,7 @@ export interface MashProfile {
 export interface Recipe {
   id?: string;
   user_id?: string;
+  brewery_id?: string;
   status?: ItemStatus;
   name: string;
   type: 'extract' | 'partial_mash' | 'all_grain';
@@ -173,6 +196,7 @@ export interface Water {
 export interface BrewLogEntry {
   id: string;
   user_id?: string;
+  brewery_id?: string;
   recipeId: string;
   date: string; // Original start date
   brewDate?: string;
@@ -201,6 +225,7 @@ export interface BrewLogEntry {
 export interface TastingNote {
   id: string;
   user_id?: string;
+  brewery_id?: string;
   recipeId: string;
   brewLogId: string;
   date: string;

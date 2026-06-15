@@ -11,13 +11,16 @@ interface TastingNotesProps {
 }
 
 const RatingField: React.FC<{ label: string, value: number, onChange: (val: number) => void }> = ({ label, value, onChange }) => (
-  <div className="flex justify-between items-center">
-    <span className="font-semibold text-stone-700">{label}</span>
+  <div className="flex justify-between items-center" role="group" aria-label={label}>
+    <span className="font-semibold text-stone-700" aria-hidden="true">{label}</span>
     <div className="flex gap-2">
       {[1, 2, 3, 4, 5].map(n => (
         <button 
           key={n}
+          type="button"
           onClick={() => onChange(n)}
+          aria-label={`${n} out of 5`}
+          aria-pressed={value === n}
           className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold transition-all ${value >= n ? 'bg-amber-500 text-white shadow-md' : 'bg-stone-100 text-stone-400'}`}
         >
           {n}
@@ -75,9 +78,12 @@ const TastingNotes: React.FC<TastingNotesProps> = ({ recipe, brewLogId, onSave }
 
           <div className="space-y-4">
             <div className="relative">
+              <label htmlFor="tasting-comments" className="sr-only">{t('notes')}</label>
               <textarea
+                id="tasting-comments"
+                name="comments"
                 className="w-full p-4 bg-white text-stone-900 border border-stone-200 rounded-xl min-h-[200px]"
-                placeholder="..."
+                placeholder={t('notes')}
                 value={note.comments}
                 onChange={(e) => setNote({...note, comments: e.target.value})}
                 maxLength={2000}

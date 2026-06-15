@@ -28,7 +28,9 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   onUpdate
 }) => {
   const { t } = useTranslation();
-  const { user, preferences } = useUser();
+  const { user, preferences, profile, breweryRole } = useUser();
+
+  const canEdit = breweryRole === 'admin' || breweryRole === 'brewmaster' || !breweryRole;
   const [filter, setFilter] = useState<'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style'>('fermentable');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
@@ -52,7 +54,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         status: 'submitted' as const,
         stock: undefined // Remove stock for public submission
       }));
-      await supabaseService.batchSaveLibraryIngredients(submittedClones, user.id);
+      await supabaseService.batchSaveLibraryIngredients(submittedClones, user.id, profile?.brewery_id);
       alert(`${selectedIds.length} items submitted for review!`);
     } else {
       // Bulk Import to Personal
@@ -63,12 +65,12 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         user_id: user.id,
         status: 'private' as const
       }));
-      await supabaseService.batchSaveLibraryIngredients(newItems, user.id);
+      await supabaseService.batchSaveLibraryIngredients(newItems, user.id, profile?.brewery_id);
       alert(`${selectedIds.length} items added to your collection!`);
     }
 
     // Refresh parent data
-    const remoteData = await supabaseService.fetchAppData(user.id);
+    const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
     if (remoteData) {
       onUpdate(remoteData.library);
     }
@@ -92,6 +94,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     const newItem: LibraryIngredient = {
       id: newId,
       user_id: user?.id,
+      brewery_id: profile?.brewery_id,
       status: 'private',
       name: (filter === 'misc' || filter === 'style') ? defaultName : `${t('new_btn')} ${defaultName}`,
       type: filter as string,
@@ -207,12 +210,19 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             {filter === 'fermentable' ? t('malt') : filter === 'hop' ? t('hops') : filter === 'culture' ? t('yeast_lib') : filter === 'mash_profile' ? t('mash_profile') : filter === 'misc' ? t('miscs_label') : t('style_label')}
           </h3>
           <p className="text-stone-400 text-xs font-bold">
-            {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length} {t('items_in_collection')}
+            {ingredients.filter(i => i.type === filter && (
+              libraryView === 'public'
+                ? i.status === 'approved'
+                : (
+                   (i.status === 'private' || i.status === 'submitted') &&
+                   ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
+                  )
+            )).length} {t('items_in_collection')}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {selectedIds.length > 0 && user && (
+          {selectedIds.length > 0 && user && canEdit && (
             <div className="flex items-center gap-3 bg-amber-50 px-4 py-2 rounded-xl border border-amber-100 animate-in slide-in-from-right-4 duration-300 mr-auto md:mr-0">
                <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">{selectedIds.length} {t('selected')}</span>
                <button
@@ -221,11 +231,18 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                >
                  {libraryView === 'personal' ? t('bulk_submit') : t('bulk_import')}
                </button>
-               <button onClick={() => setSelectedIds([])} className="text-amber-400 hover:text-amber-600 transition-colors"><i className="fas fa-times text-xs"></i></button>
+               <button
+                onClick={() => setSelectedIds([])}
+                className="text-amber-400 hover:text-amber-600 transition-colors"
+                aria-label="Clear Selection"
+                title="Clear Selection"
+               >
+                 <i className="fas fa-times text-xs"></i>
+               </button>
             </div>
           )}
 
-          {libraryView === 'personal' && (
+          {libraryView === 'personal' && canEdit && (
             <button
               onClick={handleAddNew}
               className="bg-stone-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg hover:bg-black transition-all flex items-center gap-2"
@@ -237,13 +254,27 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ingredients.filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved')).length === 0 ? (
+        {ingredients.filter(i => i.type === filter && (
+          libraryView === 'public'
+            ? i.status === 'approved'
+            : (
+                (i.status === 'private' || i.status === 'submitted') &&
+                ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
+              )
+        )).length === 0 ? (
           <div className="col-span-full py-20 text-center text-stone-300 font-medium bg-white rounded-3xl border-2 border-dashed border-stone-100">
             {t('no_brews')}
           </div>
         ) : (
           ingredients
-            .filter(i => i.type === filter && (libraryView === 'personal' ? (i.status === 'private' && (!i.user_id || i.user_id === user?.id)) : i.status === 'approved'))
+            .filter(i => i.type === filter && (
+              libraryView === 'public'
+                ? i.status === 'approved'
+                : (
+                    (i.status === 'private' || i.status === 'submitted') &&
+                    ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
+                  )
+            ))
             .sort((a, b) => a.name.localeCompare(b.name))
             .map(item => (
             <div key={item.id} className={`bg-white p-8 rounded-3xl border shadow-sm relative transition-all ${editingId === item.id ? 'border-amber-400 ring-2 ring-amber-100' : selectedIds.includes(item.id) ? 'border-amber-500 ring-2 ring-amber-100' : 'border-stone-200'}`}>
@@ -256,7 +287,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                    >
                      <i className="fas fa-check text-[10px]"></i>
                    </button>
-                   {(!item.user_id || item.user_id === user?.id) && (
+                   {((!item.user_id || item.user_id === user?.id) || (item.brewery_id === profile?.brewery_id)) && canEdit && (
                       <button onClick={() => startEditing(item)} className="text-stone-300 hover:text-amber-500 transition-colors">
                         <i className="fas fa-edit text-xs"></i>
                       </button>
@@ -267,15 +298,15 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
               {editingId === item.id ? (
                 <div className="space-y-4 animate-in zoom-in-95 duration-200">
                   <div>
-                    <label htmlFor="ingredient-name" className="text-[10px] font-black text-stone-400 uppercase">{t('name_label')}</label>
-                    <input id="ingredient-name" className="w-full p-2 bg-stone-50 border rounded-lg text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+                    <label htmlFor={`ing-name-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('name_label')}</label>
+                    <input id={`ing-name-${item.id}`} name="name" className="w-full p-2 bg-stone-50 border rounded-lg text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} maxLength={100} />
                   </div>
                   
                   {filter === 'misc' && (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[10px] font-black text-stone-400 uppercase">{t('misc_type')}</label>
-                        <select className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.misc_type} onChange={e => setEditForm({...editForm, misc_type: e.target.value as any})}>
+                        <label htmlFor={`ing-misc-type-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('misc_type')}</label>
+                        <select id={`ing-misc-type-${item.id}`} name="misc_type" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.misc_type} onChange={e => setEditForm({...editForm, misc_type: e.target.value as any})}>
                           <option value="spice">Spice</option>
                           <option value="fining">Fining</option>
                           <option value="water_agent">Water Agent</option>
@@ -285,8 +316,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-stone-400 uppercase">{t('misc_use')}</label>
-                        <select className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.misc_use} onChange={e => setEditForm({...editForm, misc_use: e.target.value as any})}>
+                        <label htmlFor={`ing-misc-use-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('misc_use')}</label>
+                        <select id={`ing-misc-use-${item.id}`} name="misc_use" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.misc_use} onChange={e => setEditForm({...editForm, misc_use: e.target.value as any})}>
                           <option value="boil">Boil</option>
                           <option value="mash">Mash</option>
                           <option value="primary">Primary</option>
@@ -300,24 +331,24 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                   {filter === 'style' && (
                     <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
                       <div className="col-span-2">
-                        <label className="text-[10px] font-black text-stone-400 uppercase">{t('style_category')}</label>
-                        <input className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.category || ""} onChange={e => setEditForm({...editForm, category: e.target.value})} />
+                        <label htmlFor={`ing-style-cat-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('style_category')}</label>
+                        <input id={`ing-style-cat-${item.id}`} name="category" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.category || ""} onChange={e => setEditForm({...editForm, category: e.target.value})} maxLength={100} />
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-stone-400 uppercase">OG Min</label>
-                        <input type="number" step="0.001" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.og_min || ""} onChange={e => setEditForm({...editForm, og_min: parseFloat(e.target.value)})} />
+                        <label htmlFor={`ing-style-og-min-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">OG Min</label>
+                        <input id={`ing-style-og-min-${item.id}`} name="og_min" type="number" step="0.001" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.og_min || ""} onChange={e => setEditForm({...editForm, og_min: parseFloat(e.target.value)})} />
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-stone-400 uppercase">OG Max</label>
-                        <input type="number" step="0.001" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.og_max || ""} onChange={e => setEditForm({...editForm, og_max: parseFloat(e.target.value)})} />
+                        <label htmlFor={`ing-style-og-max-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">OG Max</label>
+                        <input id={`ing-style-og-max-${item.id}`} name="og_max" type="number" step="0.001" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.og_max || ""} onChange={e => setEditForm({...editForm, og_max: parseFloat(e.target.value)})} />
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-stone-400 uppercase">IBU Min</label>
-                        <input type="number" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.ibu_min || ""} onChange={e => setEditForm({...editForm, ibu_min: parseFloat(e.target.value)})} />
+                        <label htmlFor={`ing-style-ibu-min-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">IBU Min</label>
+                        <input id={`ing-style-ibu-min-${item.id}`} name="ibu_min" type="number" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.ibu_min || ""} onChange={e => setEditForm({...editForm, ibu_min: parseFloat(e.target.value)})} />
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-stone-400 uppercase">IBU Max</label>
-                        <input type="number" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.ibu_max || ""} onChange={e => setEditForm({...editForm, ibu_max: parseFloat(e.target.value)})} />
+                        <label htmlFor={`ing-style-ibu-max-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">IBU Max</label>
+                        <input id={`ing-style-ibu-max-${item.id}`} name="ibu_max" type="number" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.ibu_max || ""} onChange={e => setEditForm({...editForm, ibu_max: parseFloat(e.target.value)})} />
                       </div>
                     </div>
                   )}
@@ -334,15 +365,25 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                             <button onClick={() => removeMashStep(idx)} className="absolute top-2 right-2 text-stone-300 hover:text-red-500">
                               <i className="fas fa-times"></i>
                             </button>
-                            <input className="w-full p-1.5 bg-white border rounded text-[10px] font-bold" placeholder="Step Name" value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} />
+                            <label htmlFor={`ing-step-name-${item.id}-${idx}`} className="sr-only">Step Name</label>
+                            <input id={`ing-step-name-${item.id}-${idx}`} name={`step_name_${idx}`} className="w-full p-1.5 bg-white border rounded text-[10px] font-bold" placeholder="Step Name" value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} maxLength={100} />
                             <div className="grid grid-cols-3 gap-2">
-                              <input type="number" className="p-1.5 bg-white border rounded text-[10px] font-bold" placeholder="Temp" value={s.step_temp} onChange={e => updateMashStep(idx, 'step_temp', parseFloat(e.target.value) || 0)} />
-                              <input type="number" className="p-1.5 bg-white border rounded text-[10px] font-bold" placeholder="Time" value={s.step_time} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
-                              <select className="p-1.5 bg-white border rounded text-[10px] font-bold" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
-                                <option value="infusion">Infusion</option>
-                                <option value="temperature">Temp</option>
-                                <option value="decoction">Decoc</option>
-                              </select>
+                              <div>
+                                <label htmlFor={`ing-step-temp-${item.id}-${idx}`} className="sr-only">Temp</label>
+                                <input id={`ing-step-temp-${item.id}-${idx}`} name={`step_temp_${idx}`} type="number" className="p-1.5 bg-white border rounded text-[10px] font-bold w-full" placeholder="Temp" value={s.step_temp} onChange={e => updateMashStep(idx, 'step_temp', parseFloat(e.target.value) || 0)} />
+                              </div>
+                              <div>
+                                <label htmlFor={`ing-step-time-${item.id}-${idx}`} className="sr-only">Time</label>
+                                <input id={`ing-step-time-${item.id}-${idx}`} name={`step_time_${idx}`} type="number" className="p-1.5 bg-white border rounded text-[10px] font-bold w-full" placeholder="Time" value={s.step_time} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
+                              </div>
+                              <div>
+                                <label htmlFor={`ing-step-type-${item.id}-${idx}`} className="sr-only">Type</label>
+                                <select id={`ing-step-type-${item.id}-${idx}`} name={`step_type_${idx}`} className="p-1.5 bg-white border rounded text-[10px] font-bold w-full" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
+                                  <option value="infusion">Infusion</option>
+                                  <option value="temperature">Temp</option>
+                                  <option value="decoction">Decoc</option>
+                                </select>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -352,10 +393,11 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
 
                   {preferences.enableStockManagement && editForm.status === 'private' && ['fermentable', 'hop', 'culture', 'misc'].includes(filter) && (
                     <div className="pt-2 border-t border-stone-100">
-                      <label htmlFor="ingredient-stock" className="text-[10px] font-black text-stone-400 uppercase">{t('stock_label')}</label>
+                      <label htmlFor={`ing-stock-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('stock_label')}</label>
                       <div className="grid grid-cols-2 gap-3 mt-1">
                         <input
-                          id="ingredient-stock"
+                          id={`ing-stock-${item.id}`}
+                          name="stock_amount"
                           type="number"
                           step="0.01"
                           className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold"
@@ -364,6 +406,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                           onChange={e => setEditForm({...editForm, stock: { amount: parseFloat(e.target.value) || 0, unit: editForm.stock?.unit || (filter === 'hop' || filter === 'misc' ? 'g' : 'kg') }})}
                         />
                         <select
+                          id={`ing-stock-unit-${item.id}`}
+                          aria-label="Stock Unit"
                           className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold"
                           value={editForm.stock?.unit || (filter === 'hop' || filter === 'misc' ? 'g' : 'kg')}
                           onChange={e => setEditForm({...editForm, stock: { amount: editForm.stock?.amount || 0, unit: e.target.value }})}
@@ -437,18 +481,19 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                   )}
 
                   <div className="mt-6 pt-6 border-t border-stone-100 flex flex-col gap-2">
-                    {user && libraryView === 'personal' && (item.user_id === user.id || !item.user_id) && item.status === 'private' && (
+                    {user && libraryView === 'personal' && ((item.user_id === user.id || !item.user_id) || item.brewery_id === profile?.brewery_id) && item.status === 'private' && canEdit && (
                        <button
                         onClick={async () => {
                           const clone = {
                             ...item,
                             id: crypto.randomUUID(),
                             user_id: user.id,
+                            brewery_id: profile?.brewery_id,
                             status: 'submitted' as const,
                             stock: undefined
                           };
-                          await supabaseService.saveLibraryIngredient(clone, user.id);
-                          const remoteData = await supabaseService.fetchAppData(user.id);
+                          await supabaseService.saveLibraryIngredient(clone, user.id, profile?.brewery_id);
+                          const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
                           if (remoteData) onUpdate(remoteData.library);
                           alert(`${item.name} submitted for review!`);
                         }}
@@ -462,10 +507,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     {libraryView === 'public' && (
                        <button
                         onClick={async () => {
-                          const newItem = { ...item, id: crypto.randomUUID(), user_id: user?.id, status: 'private' as const };
+                          const newItem = { ...item, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' as const };
                           onUpdate([...ingredients, newItem]);
                           if (user?.id) {
-                            await supabaseService.saveLibraryIngredient(newItem, user.id);
+                            await supabaseService.saveLibraryIngredient(newItem, user.id, profile?.brewery_id);
                           }
                           alert(`${item.name} added to your collection!`);
                         }}
