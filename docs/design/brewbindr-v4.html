@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrewBindr v4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg-s:#F5F7FA;--bg-h:#EDF1F7;
+  --bd:#E2E8F0;--bd-s:#CBD5E1;
+  --tx:#0F1B2D;--mu:#64748B;--xmu:#94A3B8;
+  --ac:#F59E0B;--ac-l:#FEF3C7;--ac-d:#D97706;
+  --bl:#3B82F6;--bl-l:#EFF6FF;
+  --gr:#10B981;--gr-l:#ECFDF5;
+  --pu:#7C3AED;--pu-l:#F5F3FF;
+  --sw:240px;--dh:43px;--th:56px;
+  --r:10px;--rs:6px;
+  --sha:0 1px 3px rgba(15,27,45,.06);
+  --shb:0 4px 12px rgba(15,27,45,.08);
+}
+body{font-family:'Inter',sans-serif;color:var(--tx);font-size:14px;line-height:1.5;background:#1a1a2e}
+
+/* DEMO BAR */
+.dbar{position:fixed;top:0;left:0;right:0;z-index:9999;height:var(--dh);background:#111827;border-bottom:1px solid #1F2937;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 16px}
+.dlbl{font-size:11px;color:#4B5563;font-weight:500}
+.dsep{width:1px;height:18px;background:#374151;margin:0 4px}
+.db{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:7px;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;background:#1F2937;color:#6B7280;transition:all .15s}
+.db.a{background:var(--ac);color:#fff}
+.db.b{background:var(--bl);color:#fff}
+
+/* ATOMS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .12s;white-space:nowrap}
+.bp{background:var(--tx);color:#fff}.bp:hover{background:#1e3251}
+.bs{background:var(--bg);color:var(--tx);border:1px solid var(--bd-s)}.bs:hover{background:var(--bg-h)}
+.ba{background:var(--ac);color:#fff}.ba:hover{background:var(--ac-d)}
+.ib{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:12px;color:var(--mu);border:none;background:none;cursor:pointer}
+.ib:hover{background:var(--bg-h);color:var(--tx)}
+.tag{font-size:11px;font-weight:500;color:var(--mu);background:var(--bg-s);border:1px solid var(--bd);padding:2px 8px;border-radius:20px}
+.aip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--pu);background:var(--pu-l);border:1px solid #DDD6FE;padding:2px 8px;border-radius:20px}
+.sp{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.sp-a{background:var(--ac-l);color:var(--ac-d)}
+.sp-d{background:var(--gr-l);color:var(--gr)}
+.sp-p{background:#F1F5F9;color:#64748B}
+.sp-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.bdg{margin-left:auto;background:var(--ac);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px}
+.card{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sha);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);background:var(--bg-s);border-bottom:1px solid var(--bd);text-align:left}
+tbody td{padding:11px 16px;font-size:13px;border-bottom:1px solid var(--bd);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg-s)}
+
+/* BUBBLES */
+@keyframes br{0%{transform:translateY(0) scale(1);opacity:.4}100%{transform:translateY(-110px) scale(1.4);opacity:0}}
+.bbl{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);animation:br linear infinite;pointer-events:none}
+#bbls{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+
+/* DESKTOP VIEW */
+#dv{display:none;min-height:100vh;padding-top:var(--dh);background:linear-gradient(135deg,#fff7ed 0%,#fef3c7 40%,#fde68a 100%);position:relative}
+#dv.on{display:flex}
+
+/* Sidebar */
+.sb{width:var(--sw);background:var(--bg);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:fixed;top:var(--dh);left:0;bottom:0;z-index:100;overflow-y:auto}
+.sb::-webkit-scrollbar{width:3px}.sb::-webkit-scrollbar-thumb{background:var(--bd)}
+.lrow{padding:17px 20px 13px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.lmk{width:32px;height:32px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lmk svg{width:17px;height:17px;fill:#fff}
+.ltx{font-family:'Outfit',sans-serif;font-weight:800;font-size:15px;letter-spacing:-.3px;text-transform:uppercase;color:var(--tx)}
+.ltx em{color:var(--ac);font-style:normal}
+.nsec{padding:12px 12px 2px}
+.nlbl{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--xmu);padding:0 8px;margin-bottom:3px}
+.ni{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--rs);color:var(--mu);font-size:13.5px;font-weight:500;cursor:pointer;transition:background .1s,color .1s;user-select:none;position:relative}
+.ni:hover{background:var(--bg-h);color:var(--tx)}
+.ni.on{background:var(--ac-l);color:var(--ac-d);font-weight:600}
+.ni.on .nic{color:var(--ac)}
+.ni.gated{opacity:.38;pointer-events:auto;cursor:default}
+.ni.gated:hover{background:none;color:var(--mu)}
+.nic{width:16px;text-align:center;font-size:13px;color:var(--xmu);flex-shrink:0}
+.nlk{margin-left:auto;font-size:10px;color:var(--xmu)}
+.ntip{display:none;position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);background:var(--tx);color:#fff;font-size:11px;font-weight:500;padding:5px 10px;border-radius:6px;white-space:nowrap;z-index:200;pointer-events:none;box-shadow:var(--shb)}
+.ntip::before{content:'';position:absolute;right:100%;top:50%;transform:translateY(-50%);border:5px solid transparent;border-right-color:var(--tx)}
+.ni.gated:hover .ntip{display:flex;align-items:center;gap:5px}
+.sbft{margin-top:auto;border-top:1px solid var(--bd);padding:12px;flex-shrink:0}
+.urow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--rs);cursor:pointer}
+.urow:hover{background:var(--bg-h)}
+.av{width:30px;height:30px;border-radius:50%;background:var(--ac-l);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ac-d);flex-shrink:0}
+.gfoot{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+.gmsg{font-size:12px;color:var(--mu);line-height:1.5}
+
+/* Main */
+.dmain{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;position:relative;z-index:1}
+.tbar{background:var(--bg);border-bottom:1px solid var(--bd);padding:0 28px;height:var(--th);display:flex;align-items:center;gap:14px;position:sticky;top:var(--dh);z-index:50}
+.ptitle{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;flex:1}
+.sbox{display:flex;align-items:center;gap:8px;background:var(--bg-s);border:1px solid var(--bd);border-radius:var(--rs);padding:6px 12px;font-size:13px;color:var(--mu);min-width:210px}
+.lbnr{display:flex;align-items:center;gap:12px;background:var(--ac-l);border-bottom:1px solid #FDE68A;padding:10px 28px;font-size:13px;color:var(--ac-d)}
+.ct{padding:26px}
+
+/* Stats */
+.sgrd{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.scd{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sha)}
+.sic{float:right;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.ia{background:var(--ac-l);color:var(--ac)}.ib2{background:var(--bl-l);color:var(--bl)}.ig{background:var(--gr-l);color:var(--gr)}.is{background:#F1F5F9;color:#64748B}
+.slb{font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.svl{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1;margin-bottom:5px}
+.ssb{font-size:12px;color:var(--xmu)}
+.ntc{display:flex;align-items:center;gap:12px;background:var(--bl-l);border:1px solid #BFDBFE;border-radius:var(--r);padding:11px 16px;margin-bottom:22px;font-size:13px;color:#1E40AF}
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:13px}
+.sht{font-size:15px;font-weight:700;flex:1}
+.tabs{display:flex;gap:2px;background:var(--bg-s);border:1px solid var(--bd);border-radius:var(--rs);padding:3px}
+.tab{padding:4px 11px;border-radius:4px;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer}
+.tab.on{background:var(--bg);color:var(--tx);font-weight:600;box-shadow:var(--sha)}
+
+/* Recipe grid */
+.rgrd{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:26px}
+.rc{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;box-shadow:var(--sha);cursor:pointer;transition:box-shadow .15s,transform .15s,border-color .15s}
+.rc:hover{box-shadow:var(--shb);transform:translateY(-1px);border-color:var(--bd-s)}
+.rcs{height:5px}.rcb{padding:15px}
+.rcm{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.rcn{font-size:15px;font-weight:700;margin-bottom:4px;line-height:1.3}
+.rcd{font-size:12.5px;color:var(--mu);line-height:1.5;margin-bottom:13px}
+.rcst{display:flex;gap:14px;padding-top:11px;border-top:1px solid var(--bd)}
+.rcsi{display:flex;flex-direction:column;gap:1px}
+.rcsv{font-size:14px;font-weight:700}
+.rcsl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--xmu);font-weight:500}
+.rcf{padding:9px 15px;border-top:1px solid var(--bd);background:var(--bg-s);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.abt{display:flex;gap:3px}
+
+/* MOBILE VIEW */
+#mv{display:none;min-height:100vh;justify-content:center;align-items:flex-start;padding:16px;padding-top:calc(var(--dh) + 16px);background:#1a1a2e}
+#mv.on{display:flex}
+.ph{width:390px;max-width:calc(100vw - 24px);border-radius:46px;overflow:hidden;background:var(--bg-s);border:8px solid #0c0c0c;box-shadow:0 40px 80px rgba(0,0,0,.65)}
+.phn{background:#0c0c0c;height:26px;display:flex;align-items:center;justify-content:center}
+.ntch{width:88px;height:10px;background:#000;border-radius:10px}
+.phs{overflow-y:auto;max-height:800px;background:var(--bg-s)}
+.mbr{background:var(--bg);border-bottom:1px solid var(--bd);padding:0 14px;height:50px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.mlo{display:flex;align-items:center;gap:7px;flex:1}
+.mlm{width:27px;height:27px;background:var(--ac);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.mlm svg{width:14px;height:14px;fill:#fff}
+.mlt{font-family:'Outfit',sans-serif;font-weight:800;font-size:14px;letter-spacing:-.2px;text-transform:uppercase}
+.mlt em{color:var(--ac);font-style:normal}
+.mlb{display:flex;align-items:center;gap:8px;background:var(--ac-l);border-bottom:1px solid #FDE68A;padding:8px 14px;font-size:12px;color:var(--ac-d)}
+.mct{padding:13px;padding-bottom:70px}
+.mst{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+.msc{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px}
+.msic{float:right;width:27px;height:27px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.mslb{font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.msv{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;line-height:1;margin-bottom:2px}
+.mss{font-size:11px;color:var(--xmu)}
+.mntc{background:var(--bl-l);border:1px solid #BFDBFE;border-radius:var(--r);padding:11px 13px;margin-bottom:14px;font-size:12px;color:#1E40AF}
+.msh{display:flex;align-items:center;margin-bottom:9px}
+.msht{font-size:14px;font-weight:700;flex:1}
+.mcs{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.mrc{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+.mrcs{height:4px}.mrcb{padding:11px 13px}
+.mrcn{font-size:14px;font-weight:700;margin-bottom:2px}
+.mrcm{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.mrcst{display:flex;gap:12px;padding-top:9px;border-top:1px solid var(--bd);margin-top:9px}
+.mrcsi{display:flex;flex-direction:column;gap:1px}
+.mrcsv{font-size:13px;font-weight:700}
+.mrcsl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--xmu);font-weight:500}
+.mrcf{padding:8px 13px;border-top:1px solid var(--bd);background:var(--bg-s);display:flex;align-items:center;justify-content:space-between}
+.mnav{position:sticky;bottom:0;z-index:100;background:var(--bg);border-top:1px solid var(--bd);display:flex;height:60px}
+.mni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--xmu);font-size:10px;font-weight:500;position:relative}
+.mni.on{color:var(--ac-d)}.mni i{font-size:18px}.mni.on i{color:var(--ac)}
+.mni.gated{opacity:.38}
+.mdot{position:absolute;top:9px;right:calc(50% - 13px);width:7px;height:7px;background:var(--ac);border-radius:50%;border:2px solid var(--bg)}
+</style>
+</head>
+<body>
+
+<div class="dbar">
+  <span class="dlbl">Weergave:</span>
+  <button class="db a" id="btnD" onclick="sv('d')"><i class="fa-solid fa-desktop"></i> Desktop</button>
+  <button class="db"   id="btnM" onclick="sv('m')"><i class="fa-solid fa-mobile-screen"></i> Mobiel</button>
+  <div class="dsep"></div>
+  <span class="dlbl">Inlogstatus:</span>
+  <button class="db"   id="btnG" onclick="sa('guest')"><i class="fa-solid fa-user-slash"></i> Gast</button>
+  <button class="db b" id="btnL" onclick="sa('logged')"><i class="fa-solid fa-user-check"></i> Ingelogd</button>
+</div>
+
+<div id="bbls"></div>
+
+<!-- DESKTOP -->
+<div id="dv" class="on">
+  <aside class="sb">
+    <div class="lrow">
+      <div class="lmk"><svg viewBox="0 0 24 24"><path d="M5 3l1.5 14.5A2 2 0 008.5 19h7a2 2 0 002-1.5L19 3H5zm2.2 2h9.6l-1.2 12H8.4L7.2 5zm1.3 2l.8 8h5l.8-8H8.5z"/></svg></div>
+      <span class="ltx">BREW<em>BINDR</em></span>
+    </div>
+    <div class="nsec">
+      <div class="nlbl">Brouwerij</div>
+      <div class="ni gated" id="dN0"><span class="nic"><i class="fa-solid fa-flask"></i></span>Recepten<span class="nlk"><i class="fa-solid fa-lock"></i></span><span class="ntip"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden voor toegang</span></div>
+      <div class="ni gated" id="dN1"><span class="nic"><i class="fa-solid fa-clipboard-list"></i></span>Brouwlogboek<span class="nlk"><i class="fa-solid fa-lock"></i></span><span class="ntip"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden voor toegang</span></div>
+      <div class="ni gated" id="dN2"><span class="nic"><i class="fa-solid fa-star-half-stroke"></i></span>Proefnotities<span class="nlk"><i class="fa-solid fa-lock"></i></span><span class="ntip"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden voor toegang</span></div>
+      <div class="ni gated" id="dN3"><span class="nic"><i class="fa-solid fa-boxes-stacked"></i></span>Voorraad<span class="nlk"><i class="fa-solid fa-lock"></i></span><span class="ntip"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden voor toegang</span></div>
+      <div class="ni gated" id="dN4"><span class="nic"><i class="fa-solid fa-users"></i></span>Team<span class="nlk"><i class="fa-solid fa-lock"></i></span><span class="ntip"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden voor toegang</span></div>
+      <div class="ni gated" id="dN5"><span class="nic"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>Importeren<span class="nlk"><i class="fa-solid fa-lock"></i></span><span class="ntip"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden voor toegang</span></div>
+      <div class="ni gated" id="dN6"><span class="nic"><i class="fa-solid fa-temperature-half"></i></span>Brouwinstallatie<span class="nlk"><i class="fa-solid fa-lock"></i></span><span class="ntip"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden voor toegang</span></div>
+    </div>
+    <div class="nsec">
+      <div class="nlbl">Bibliotheek</div>
+      <div class="ni on" id="dNB0"><span class="nic"><i class="fa-solid fa-flask"></i></span>Recepten</div>
+      <div class="ni"    id="dNB1"><span class="nic"><i class="fa-solid fa-seedling"></i></span>Ingrediënten</div>
+    </div>
+    <div class="nsec">
+      <div class="nlbl">Systeem</div>
+      <div class="ni"><span class="nic"><i class="fa-solid fa-gear"></i></span>Instellingen</div>
+    </div>
+    <div class="sbft">
+      <div id="sfG" class="gfoot">
+        <p class="gmsg">Maak een account aan om eigen recepten bij te houden.</p>
+        <button class="btn ba" style="width:100%;justify-content:center"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden</button>
+        <button class="btn bs" style="width:100%;justify-content:center;font-size:12px">Account aanmaken</button>
+      </div>
+      <div id="sfL" style="display:none">
+        <div class="urow">
+          <div class="av">JS</div>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Jan Sierens</div><div style="font-size:11px;color:var(--xmu)">Admin · De Gouden Hop</div></div>
+          <i class="fa-solid fa-ellipsis-vertical" style="color:var(--xmu);font-size:12px"></i>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="dmain">
+    <div class="tbar">
+      <span class="ptitle" id="dTit">Bibliotheek — Recepten</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="sbox"><i class="fa-solid fa-magnifying-glass" style="font-size:12px"></i> Zoek recept…</div>
+        <button class="btn ba" id="dBL"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden</button>
+        <button class="btn bp" id="dBN" style="display:none"><i class="fa-solid fa-plus"></i> Nieuw recept</button>
+      </div>
+    </div>
+
+    <div class="lbnr" id="dBnr" style="display:flex">
+      <i class="fa-solid fa-circle-info" style="flex-shrink:0"></i>
+      <span>Je bekijkt de publieke bibliotheek. <strong>Meld je aan</strong> om eigen recepten te bewaren en te brouwen.</span>
+      <button class="btn ba" style="margin-left:auto;font-size:12px;padding:5px 12px" onclick="sa('logged')">Aanmelden</button>
+    </div>
+
+    <div class="ct">
+      <div id="dLO" style="display:none">
+        <div class="sgrd">
+          <div class="scd"><div class="sic ia"><i class="fa-solid fa-flask"></i></div><div class="slb">Recepten</div><div class="svl">14</div><div class="ssb">3 nieuw deze maand</div></div>
+          <div class="scd"><div class="sic ib2"><i class="fa-solid fa-clipboard-check"></i></div><div class="slb">Brouwsessies</div><div class="svl">27</div><div class="ssb">1 actief in fermentatie</div></div>
+          <div class="scd"><div class="sic ig"><i class="fa-solid fa-star"></i></div><div class="slb">Proefnotities</div><div class="svl">19</div><div class="ssb">Gem. score 4.2 / 5</div></div>
+          <div class="scd"><div class="sic is"><i class="fa-solid fa-users"></i></div><div class="slb">Team</div><div class="svl">3</div><div class="ssb">2 brouwers · 1 admin</div></div>
+        </div>
+        <div class="ntc">
+          <i class="fa-solid fa-circle-info" style="font-size:15px;flex-shrink:0"></i>
+          <span><strong>AI-receptgenerator beschikbaar.</strong> Beschrijf je bierstijl en laat Gemini een volledig BeerJSON-recept opstellen.</span>
+          <button class="btn bs" style="margin-left:auto;font-size:12px;padding:5px 10px">Probeer het <i class="fa-solid fa-arrow-right" style="font-size:10px"></i></button>
+        </div>
+      </div>
+
+      <div class="sh">
+        <span class="sht" id="dST">Publieke bibliotheek</span>
+        <div class="tabs"><span class="tab on">Alle</span><span class="tab">Brouwbaar</span><span class="tab">In fermentatie</span></div>
+        <div class="aip" id="dAP" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> AI genereren</div>
+      </div>
+
+      <div class="rgrd">
+        <div class="rc"><div class="rcs" style="background:linear-gradient(90deg,#C97D2B,#E8A73A)"></div><div class="rcb"><div class="rcm"><span class="tag">Belgian Tripel</span></div><div class="rcn">Gouden Dageraad</div><div class="rcd">Fruitige tripel met noten van banaan en kruidnagel, licht honingzoet afgerond met een droge bitterheid.</div><div class="rcst"><div class="rcsi"><span class="rcsv">9.2%</span><span class="rcsl">ABV</span></div><div class="rcsi"><span class="rcsv">22</span><span class="rcsl">IBU</span></div><div class="rcsi"><span class="rcsv">5 SRM</span><span class="rcsl">Kleur</span></div><div class="rcsi"><span class="rcsv">20L</span><span class="rcsl">Vol.</span></div></div></div><div class="rcf"><span style="font-size:11px;color:var(--mu)"><i class="fa-solid fa-user" style="margin-right:3px"></i>De Gouden Hop</span><div class="abt"><button class="ib"><i class="fa-solid fa-bookmark"></i></button><button class="ib"><i class="fa-solid fa-ellipsis"></i></button></div></div></div>
+        <div class="rc"><div class="rcs" style="background:linear-gradient(90deg,#2A1A0E,#5C3820)"></div><div class="rcb"><div class="rcm"><span class="tag">Imperial Stout</span></div><div class="rcn">Nachtschade</div><div class="rcd">Robuuste imperiale stout met intense chocolade- en koffietonen, licht rookig met een volle body.</div><div class="rcst"><div class="rcsi"><span class="rcsv">11.4%</span><span class="rcsl">ABV</span></div><div class="rcsi"><span class="rcsv">65</span><span class="rcsl">IBU</span></div><div class="rcsi"><span class="rcsv">45 SRM</span><span class="rcsl">Kleur</span></div><div class="rcsi"><span class="rcsv">15L</span><span class="rcsl">Vol.</span></div></div></div><div class="rcf"><span style="font-size:11px;color:var(--xmu)"><i class="fa-solid fa-clock" style="margin-right:3px"></i>In fermentatie</span><div class="abt"><button class="ib"><i class="fa-solid fa-pen"></i></button><button class="ib"><i class="fa-solid fa-ellipsis"></i></button></div></div></div>
+        <div class="rc"><div class="rcs" style="background:linear-gradient(90deg,#D4A830,#F0C84A)"></div><div class="rcb"><div class="rcm"><span class="tag">West Coast IPA</span><div class="aip" style="font-size:10px;padding:1px 6px"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</div></div><div class="rcn">Kust &amp; Kegels</div><div class="rcd">Droge, harsige West Coast IPA met Simcoe en Centennial — heldere bitterheid, nauwelijks restzoetheid.</div><div class="rcst"><div class="rcsi"><span class="rcsv">6.8%</span><span class="rcsl">ABV</span></div><div class="rcsi"><span class="rcsv">58</span><span class="rcsl">IBU</span></div><div class="rcsi"><span class="rcsv">8 SRM</span><span class="rcsl">Kleur</span></div><div class="rcsi"><span class="rcsv">20L</span><span class="rcsl">Vol.</span></div></div></div><div class="rcf"><span style="font-size:11px;color:var(--mu)"><i class="fa-solid fa-user" style="margin-right:3px"></i>Jan Sierens</span><div class="abt"><button class="ib"><i class="fa-solid fa-bookmark"></i></button><button class="ib"><i class="fa-solid fa-ellipsis"></i></button></div></div></div>
+      </div>
+
+      <div id="dLS" style="display:none">
+        <div class="sh"><span class="sht">Recente brouwsessies</span><button class="btn bs" style="font-size:12px;padding:5px 10px">Alle bekijken</button></div>
+        <div class="card"><table>
+          <thead><tr><th>Recept</th><th>Brouwdatum</th><th>OG</th><th>FG</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><strong>Nachtschade</strong><span style="display:block;font-size:11px;color:var(--mu)">Imperial Stout</span></td><td>8 jun 2026</td><td>1.112</td><td>—</td><td><span class="sp sp-a"><span class="sp-dot"></span>Fermentatie</span></td><td style="text-align:right"><button class="ib"><i class="fa-solid fa-arrow-right"></i></button></td></tr>
+            <tr><td><strong>Gouden Dageraad</strong><span style="display:block;font-size:11px;color:var(--mu)">Belgian Tripel</span></td><td>22 mei 2026</td><td>1.081</td><td>1.009</td><td><span class="sp sp-d"><span class="sp-dot"></span>Voltooid</span></td><td style="text-align:right"><button class="ib"><i class="fa-solid fa-arrow-right"></i></button></td></tr>
+            <tr><td><strong>Kust &amp; Kegels</strong><span style="display:block;font-size:11px;color:var(--mu)">West Coast IPA</span></td><td>3 mei 2026</td><td>1.068</td><td>1.011</td><td><span class="sp sp-d"><span class="sp-dot"></span>Voltooid</span></td><td style="text-align:right"><button class="ib"><i class="fa-solid fa-arrow-right"></i></button></td></tr>
+            <tr><td><strong>Winterbitter #3</strong><span style="display:block;font-size:11px;color:var(--mu)">English Bitter</span></td><td>—</td><td>—</td><td>—</td><td><span class="sp sp-p"><span class="sp-dot"></span>Gepland</span></td><td style="text-align:right"><button class="ib"><i class="fa-solid fa-arrow-right"></i></button></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE -->
+<div id="mv">
+  <div class="ph">
+    <div class="phn"><div class="ntch"></div></div>
+    <div class="phs">
+      <div class="mbr">
+        <div class="mlo"><div class="mlm"><svg viewBox="0 0 24 24"><path d="M5 3l1.5 14.5A2 2 0 008.5 19h7a2 2 0 002-1.5L19 3H5zm2.2 2h9.6l-1.2 12H8.4L7.2 5zm1.3 2l.8 8h5l.8-8H8.5z"/></svg></div><span class="mlt">BREW<em>BINDR</em></span></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <div style="background:var(--bg-s);border:1px solid var(--bd);border-radius:var(--rs);padding:5px 9px;color:var(--mu)"><i class="fa-solid fa-magnifying-glass" style="font-size:11px"></i></div>
+          <button class="btn ba" id="mBL" style="font-size:12px;padding:5px 10px"><i class="fa-solid fa-right-to-bracket"></i> Aanmelden</button>
+          <button class="btn bp" id="mBN" style="display:none;padding:6px 10px;font-size:13px"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+      <div class="mlb" id="mBnr"><i class="fa-solid fa-circle-info" style="flex-shrink:0"></i><span>Publieke bibliotheek — <strong>meld aan</strong> voor je eigen brouwerij.</span></div>
+      <div class="mct">
+        <div id="mLO" style="display:none">
+          <div class="mst">
+            <div class="msc"><div class="msic ia"><i class="fa-solid fa-flask"></i></div><div class="mslb">Recepten</div><div class="msv">14</div><div class="mss">3 nieuw</div></div>
+            <div class="msc"><div class="msic ib2"><i class="fa-solid fa-clipboard-check"></i></div><div class="mslb">Sessies</div><div class="msv">27</div><div class="mss">1 actief</div></div>
+            <div class="msc"><div class="msic ig"><i class="fa-solid fa-star"></i></div><div class="mslb">Proeven</div><div class="msv">19</div><div class="mss">Gem. 4.2/5</div></div>
+            <div class="msc"><div class="msic is"><i class="fa-solid fa-users"></i></div><div class="mslb">Team</div><div class="msv">3</div><div class="mss">2 brouwers</div></div>
+          </div>
+          <div class="mntc"><div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:7px"><i class="fa-solid fa-wand-magic-sparkles" style="flex-shrink:0;margin-top:1px"></i><span><strong>AI-receptgenerator</strong> — beschrijf je bier, laat Gemini de rest doen.</span></div><button class="btn bs" style="font-size:11px;padding:4px 10px">Probeer het</button></div>
+        </div>
+        <div class="msh"><span class="msht" id="mST">Publieke bibliotheek</span><div class="aip" id="mAP" style="display:none;font-size:10px"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</div></div>
+        <div class="mcs">
+          <div class="mrc"><div class="mrcs" style="background:linear-gradient(90deg,#C97D2B,#E8A73A)"></div><div class="mrcb"><div class="mrcm"><span class="tag">Belgian Tripel</span></div><div class="mrcn">Gouden Dageraad</div><div class="mrcst"><div class="mrcsi"><span class="mrcsv">9.2%</span><span class="mrcsl">ABV</span></div><div class="mrcsi"><span class="mrcsv">22</span><span class="mrcsl">IBU</span></div><div class="mrcsi"><span class="mrcsv">5 SRM</span><span class="mrcsl">Kleur</span></div><div class="mrcsi"><span class="mrcsv">20L</span><span class="mrcsl">Vol.</span></div></div></div><div class="mrcf"><span style="font-size:11px;color:var(--mu)"><i class="fa-solid fa-user" style="margin-right:3px"></i>De Gouden Hop</span><button class="ib"><i class="fa-solid fa-bookmark"></i></button></div></div>
+          <div class="mrc"><div class="mrcs" style="background:linear-gradient(90deg,#2A1A0E,#5C3820)"></div><div class="mrcb"><div class="mrcm"><span class="tag">Imperial Stout</span></div><div class="mrcn">Nachtschade</div><div class="mrcst"><div class="mrcsi"><span class="mrcsv">11.4%</span><span class="mrcsl">ABV</span></div><div class="mrcsi"><span class="mrcsv">65</span><span class="mrcsl">IBU</span></div><div class="mrcsi"><span class="mrcsv">45 SRM</span><span class="mrcsl">Kleur</span></div><div class="mrcsi"><span class="mrcsv">15L</span><span class="mrcsl">Vol.</span></div></div></div><div class="mrcf"><span style="font-size:11px;color:var(--xmu)"><i class="fa-solid fa-clock" style="margin-right:3px"></i>Fermentatie</span><button class="ib"><i class="fa-solid fa-ellipsis"></i></button></div></div>
+          <div class="mrc"><div class="mrcs" style="background:linear-gradient(90deg,#D4A830,#F0C84A)"></div><div class="mrcb"><div class="mrcm"><span class="tag">West Coast IPA</span><div class="aip" style="font-size:10px;padding:1px 6px"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</div></div><div class="mrcn">Kust &amp; Kegels</div><div class="mrcst"><div class="mrcsi"><span class="mrcsv">6.8%</span><span class="mrcsl">ABV</span></div><div class="mrcsi"><span class="mrcsv">58</span><span class="mrcsl">IBU</span></div><div class="mrcsi"><span class="mrcsv">8 SRM</span><span class="mrcsl">Kleur</span></div><div class="mrcsi"><span class="mrcsv">20L</span><span class="mrcsl">Vol.</span></div></div></div><div class="mrcf"><span style="font-size:11px;color:var(--mu)"><i class="fa-solid fa-user" style="margin-right:3px"></i>Jan Sierens</span><button class="ib"><i class="fa-solid fa-bookmark"></i></button></div></div>
+        </div>
+        <div id="mLS" style="display:none">
+          <div class="msh"><span class="msht">Recente sessies</span><span style="font-size:12px;color:var(--mu);font-weight:500">Alle <i class="fa-solid fa-arrow-right" style="font-size:10px"></i></span></div>
+          <div class="card"><table><thead><tr><th>Recept</th><th>Status</th><th></th></tr></thead><tbody>
+            <tr><td><strong style="font-size:13px">Nachtschade</strong><span style="display:block;font-size:11px;color:var(--mu)">8 jun 2026</span></td><td><span class="sp sp-a" style="font-size:10px"><span class="sp-dot"></span>Fermentatie</span></td><td><button class="ib"><i class="fa-solid fa-arrow-right"></i></button></td></tr>
+            <tr><td><strong style="font-size:13px">Gouden Dageraad</strong><span style="display:block;font-size:11px;color:var(--mu)">22 mei 2026</span></td><td><span class="sp sp-d" style="font-size:10px"><span class="sp-dot"></span>Voltooid</span></td><td><button class="ib"><i class="fa-solid fa-arrow-right"></i></button></td></tr>
+          </tbody></table></div>
+        </div>
+      </div>
+      <div class="mnav">
+        <div class="mni gated" id="mN0"><i class="fa-solid fa-flask"></i><span>Recepten</span></div>
+        <div class="mni gated" id="mN1"><i class="fa-solid fa-clipboard-list"></i><span>Logboek</span></div>
+        <div class="mni on"    id="mN2"><i class="fa-solid fa-book-open"></i><span>Bibliotheek</span></div>
+        <div class="mni gated" id="mN3"><i class="fa-solid fa-ellipsis"></i><span>Meer</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function sv(v){
+  document.getElementById('dv').classList.toggle('on',v==='d');
+  document.getElementById('mv').classList.toggle('on',v==='m');
+  document.getElementById('btnD').className='db'+(v==='d'?' a':'');
+  document.getElementById('btnM').className='db'+(v==='m'?' a':'');
+  document.body.style.background=v==='d'?'linear-gradient(135deg,#fff7ed 0%,#fef3c7 40%,#fde68a 100%)':'#1a1a2e';
+}
+function sa(auth){
+  const g=auth==='guest';
+  document.getElementById('btnG').className='db'+(g?' b':'');
+  document.getElementById('btnL').className='db'+(!g?' b':'');
+  // Brouwerij items
+  ['dN0','dN1','dN2','dN3','dN4','dN5','dN6'].forEach(id=>document.getElementById(id).classList.toggle('gated',g));
+  document.getElementById('dN0').classList.toggle('on',!g);
+  document.getElementById('dNB0').classList.toggle('on',g);
+  // Titles
+  document.getElementById('dTit').textContent=g?'Bibliotheek — Recepten':'Mijn recepten';
+  document.getElementById('dST').textContent=g?'Publieke bibliotheek':'Persoonlijke collectie';
+  document.getElementById('mST').textContent=g?'Publieke bibliotheek':'Mijn recepten';
+  // Topbar
+  document.getElementById('dBL').style.display=g?'':'none';
+  document.getElementById('dBN').style.display=g?'none':'';
+  // Banners
+  document.getElementById('dBnr').style.display=g?'flex':'none';
+  document.getElementById('mBnr').style.display=g?'flex':'none';
+  // Footer
+  document.getElementById('sfG').style.display=g?'':'none';
+  document.getElementById('sfL').style.display=g?'none':'';
+  // Logged-in blocks (all display:block when logged in)
+  ['dLO','mLO','dLS','mLS'].forEach(id=>document.getElementById(id).style.display=g?'none':'block');
+  // AI pill
+  document.getElementById('dAP').style.display=g?'none':'';
+  document.getElementById('mAP').style.display=g?'none':'';
+  // Mobile buttons
+  document.getElementById('mBL').style.display=g?'':'none';
+  document.getElementById('mBN').style.display=g?'none':'';
+  // Mobile nav
+  ['mN0','mN1','mN3'].forEach(id=>document.getElementById(id).classList.toggle('gated',g));
+  document.getElementById('mN0').classList.toggle('on',!g);
+  document.getElementById('mN2').classList.toggle('on',g);
+  const lb=document.getElementById('mN1');
+  let dot=lb.querySelector('.mdot');
+  if(!g&&!dot){dot=document.createElement('div');dot.className='mdot';lb.appendChild(dot);}
+  if(g&&dot)dot.remove();
+}
+// Bubbles
+(function(){
+  const c=document.getElementById('bbls');
+  setInterval(()=>{
+    const b=document.createElement('div');
+    b.className='bbl';
+    const s=4+Math.random()*10,l=Math.random()*100,d=3+Math.random()*4,dl=Math.random()*2;
+    b.style.cssText=`width:${s}px;height:${s}px;left:${l}%;bottom:0;animation-duration:${d}s;animation-delay:${dl}s`;
+    c.appendChild(b);
+    setTimeout(()=>b.remove(),(d+dl)*1000+500);
+  },400);
+})();
+sv('d');sa('logged');
+</script>
+</body>
+</html>
