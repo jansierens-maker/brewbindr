@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrewBindr — Voorraad indicator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F5F7FA; --white: #fff; --border: #E2E8F0;
+  --text: #0F1B2D; --muted: #64748B; --xmuted: #94A3B8;
+  --accent: #F59E0B; --accent-l: #FEF3C7; --accent-d: #D97706;
+  --green: #10B981; --green-l: #ECFDF5;
+  --red: #EF4444; --red-l: #FEF2F2;
+  --orange: #F97316; --orange-l: #FFF7ED;
+  --r: 10px; --rs: 6px;
+  --shadow: 0 1px 3px rgba(15,27,45,.06);
+  --shadow-b: 0 4px 16px rgba(15,27,45,.10);
+}
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 32px; }
+
+h2 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 18px; text-transform: uppercase; letter-spacing: -.3px; margin-bottom: 6px; }
+h2 em { color: var(--accent); font-style: normal; }
+.sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
+
+/* ── GLASS INDICATOR ── */
+.glass-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer;
+}
+
+.glass-svg { position: relative; }
+
+/* Fill level via clip-path on the liquid rect */
+.glass-liquid {
+  transition: height .4s cubic-bezier(.34,1.56,.64,1), y .4s cubic-bezier(.34,1.56,.64,1);
+}
+
+.glass-pct {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  text-align: center; line-height: 1;
+}
+
+.glass-label {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  text-align: center; max-width: 80px; line-height: 1.3;
+}
+
+.glass-qty {
+  font-size: 11px; color: var(--muted); text-align: center;
+}
+
+/* ── GRID ── */
+.section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--xmuted); margin-bottom: 12px; }
+
+.ing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 14px; margin-bottom: 36px; }
+
+.ing-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 16px 12px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  box-shadow: var(--shadow); transition: box-shadow .15s, transform .15s;
+  cursor: pointer;
+}
+.ing-card:hover { box-shadow: var(--shadow-b); transform: translateY(-1px); }
+.ing-card.critical { border-color: #FECACA; background: var(--red-l); }
+.ing-card.low      { border-color: #FED7AA; background: var(--orange-l); }
+.ing-card.ok       { border-color: var(--border); }
+
+/* ── DEMO SLIDER ── */
+.demo-section { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 24px; margin-bottom: 36px; box-shadow: var(--shadow); }
+.demo-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+.demo-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.slider-wrap { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+.slider-wrap label { font-size: 12px; font-weight: 600; color: var(--muted); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.sizes-row { display: flex; gap: 16px; align-items: flex-end; }
+
+/* ── LIST VIEW ── */
+.list-view { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); }
+.list-header { display: grid; grid-template-columns: 1fr 80px 120px 80px; gap: 12px; padding: 9px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); background: var(--bg); border-bottom: 1px solid var(--border); }
+.list-row { display: grid; grid-template-columns: 1fr 80px 120px 80px; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border); align-items: center; }
+.list-row:last-child { border-bottom: none; }
+.list-row:hover { background: var(--bg); }
+.ing-name { font-size: 13px; font-weight: 600; }
+.ing-type { font-size: 11px; color: var(--muted); }
+.ing-qty  { font-size: 13px; font-weight: 500; }
+
+/* Inline mini glass */
+.mini-glass { display: flex; align-items: center; gap: 8px; }
+.mini-glass-svg { flex-shrink: 0; }
+.mini-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; position: relative; }
+.mini-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+</style>
+</head>
+<body>
+
+<h2>BREW<em>BINDR</em></h2>
+<p class="sub">Prototype · Voorraad indicator — bierglas vulling</p>
+
+<!-- DEMO SLIDER -->
+<div class="demo-section">
+  <div class="demo-title">Interactieve demo — sleep de slider</div>
+  <div class="demo-row">
+    <div class="slider-wrap">
+      <label>Voorraad: <span id="sliderVal">65</span>%</label>
+      <input type="range" min="0" max="100" value="65" id="demoSlider" oninput="updateDemo(this.value)">
+    </div>
+    <div class="sizes-row">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <span style="font-size:10px;font-weight:600;color:var(--muted)">Klein</span>
+        <div id="demoSm"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <span style="font-size:10px;font-weight:600;color:var(--muted)">Normaal</span>
+        <div id="demoMd"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <span style="font-size:10px;font-weight:600;color:var(--muted)">Groot</span>
+        <div id="demoLg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CARD GRID VIEW -->
+<div class="section-title">Kaart weergave</div>
+<div class="ing-grid" id="ingGrid"></div>
+
+<!-- LIST VIEW -->
+<div class="section-title">Lijst weergave</div>
+<div class="list-view">
+  <div class="list-header"><span>Ingrediënt</span><span>Type</span><span>Voorraad</span><span>Hoeveelheid</span></div>
+  <div id="listRows"></div>
+</div>
+
+<script>
+// ── COLOR FUNCTIONS ──
+function glassColor(pct) {
+  const stops = [
+    { at: 100, r: 249, g: 243, b: 160 },
+    { at:  75, r: 245, g: 200, b:  66 },
+    { at:  50, r: 212, g: 130, b:  26 },
+    { at:  25, r: 123, g:  63, b:  16 },
+    { at:   0, r:  26, g:  10, b:   2 },
+  ];
+  for (let i = 0; i < stops.length - 1; i++) {
+    const a = stops[i], b = stops[i + 1];
+    if (pct <= a.at && pct >= b.at) {
+      const t = (pct - b.at) / (a.at - b.at);
+      const r  = Math.round(b.r  + t * (a.r  - b.r));
+      const g  = Math.round(b.g  + t * (a.g  - b.g));
+      const bl = Math.round(b.b  + t * (a.b  - b.b));
+      return `rgb(${r},${g},${bl})`;
+    }
+  }
+  return '#F9F3A0';
+}
+
+function statusColor(pct) {
+  if (pct <= 10) return '#EF4444';
+  if (pct <= 30) return '#F97316';
+  if (pct <= 60) return '#F59E0B';
+  return '#10B981';
+}
+
+function mapY(pct) {
+  return 62 - (pct / 100) * 54;
+}
+
+let _uid = 0;
+function glassSVG(pct, size) {
+  size = size || 48;
+  const id = 'gc' + (++_uid);
+  const color = glassColor(pct);
+  const lY = mapY(pct);
+  const lH = 62 - lY;
+  const scale = size / 48;
+  const h = Math.round(72 * scale);
+  const foam = pct > 5
+    ? '<ellipse cx="24" cy="' + (lY + 1) + '" rx="13" ry="3.5" fill="rgba(255,255,255,.75)" clip-path="url(#' + id + ')"/>'
+    : '';
+  return '<svg width="' + size + '" height="' + h + '" viewBox="0 0 48 72" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs><clipPath id="' + id + '"><path d="M8 6 L6 64 Q6 66 8 66 L40 66 Q42 66 42 64 L40 6 Z"/></clipPath></defs>'
+    + '<path d="M8 6 L6 64 Q6 67 8 67 L40 67 Q42 67 42 64 L40 6 Z" fill="rgba(255,255,255,.15)" stroke="#CBD5E1" stroke-width="1.5"/>'
+    + '<rect x="6.5" y="' + lY + '" width="35" height="' + lH + '" fill="' + color + '" opacity="0.85" clip-path="url(#' + id + ')"/>'
+    + foam
+    + '<line x1="13" y1="10" x2="11" y2="60" stroke="rgba(255,255,255,.35)" stroke-width="2" stroke-linecap="round"/>'
+    + '<path d="M42 20 Q52 20 52 30 Q52 40 42 40" stroke="#CBD5E1" stroke-width="2" fill="none" stroke-linecap="round"/>'
+    + '<line x1="8" y1="6" x2="40" y2="6" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>'
+    + '<line x1="5" y1="67" x2="43" y2="67" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>'
+    + '</svg>';
+}
+
+function cardClass(pct) {
+  if (pct <= 10) return 'ing-card critical';
+  if (pct <= 30) return 'ing-card low';
+  return 'ing-card ok';
+}
+
+// ── SAMPLE DATA ──
+var ingredients = [
+  { name: 'Pilsner Mout',  type: 'Mout', pct: 85,  qty: '8.5 kg',  max: '10 kg' },
+  { name: 'Simcoe Hop',    type: 'Hop',  pct: 22,  qty: '110 g',   max: '500 g' },
+  { name: 'Centennial',    type: 'Hop',  pct: 60,  qty: '300 g',   max: '500 g' },
+  { name: 'Saaz Hop',      type: 'Hop',  pct: 8,   qty: '40 g',    max: '500 g' },
+  { name: 'Belgian Abbey', type: 'Gist', pct: 100, qty: '2 zakjes',max: '2 zakjes' },
+  { name: 'Munich Mout',   type: 'Mout', pct: 45,  qty: '2.2 kg',  max: '5 kg' },
+  { name: 'Caramel 60L',   type: 'Mout', pct: 30,  qty: '300 g',   max: '1 kg' },
+  { name: 'Citra Hop',     type: 'Hop',  pct: 5,   qty: '25 g',    max: '500 g' },
+];
+
+// ── RENDER CARDS ──
+var grid = document.getElementById('ingGrid');
+ingredients.forEach(function(ing) {
+  var card = document.createElement('div');
+  card.className = cardClass(ing.pct);
+  card.innerHTML =
+    glassSVG(ing.pct, 48)
+    + '<div class="glass-pct" style="color:' + statusColor(ing.pct) + '">' + ing.pct + '%</div>'
+    + '<div class="glass-label">' + ing.name + '</div>'
+    + '<div class="glass-qty">' + ing.qty + '</div>';
+  grid.appendChild(card);
+});
+
+// ── RENDER LIST ──
+var listEl = document.getElementById('listRows');
+ingredients.forEach(function(ing) {
+  var row = document.createElement('div');
+  row.className = 'list-row';
+  row.innerHTML =
+    '<div><div class="ing-name">' + ing.name + '</div><div class="ing-type">' + ing.type + '</div></div>'
+    + '<div class="ing-type">' + ing.type + '</div>'
+    + '<div class="mini-glass">'
+      + glassSVG(ing.pct, 24)
+      + '<div class="mini-bar"><div class="mini-bar-fill" style="width:' + ing.pct + '%;background:' + statusColor(ing.pct) + '"></div></div>'
+    + '</div>'
+    + '<div class="ing-qty">' + ing.qty + ' <span style="color:var(--xmuted);font-size:11px">/ ' + ing.max + '</span></div>';
+  listEl.appendChild(row);
+});
+
+// ── DEMO SLIDER ──
+function updateDemo(val) {
+  val = parseInt(val);
+  document.getElementById('sliderVal').textContent = val;
+  document.getElementById('demoSm').innerHTML = glassSVG(val, 32);
+  document.getElementById('demoMd').innerHTML = glassSVG(val, 48);
+  document.getElementById('demoLg').innerHTML = glassSVG(val, 72);
+}
+updateDemo(65);
+</script>
+</body>
+</html>
