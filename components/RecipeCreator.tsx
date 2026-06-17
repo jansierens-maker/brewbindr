@@ -42,7 +42,12 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+
   const gemini = useMemo(() => new GeminiService(), []);
+
+  // ⚡ Bolt: Create O(1) lookup map to avoid O(N) array scans during render loops
+  const libraryMap = useMemo(() => new Map(library.map(l => [l.id, l])), [library]);
+
 
   const handleAiGenerate = async () => {
     if (!prompt.trim()) return;
@@ -83,18 +88,36 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
   
   const selectedStyleGuideline = useMemo(() => {
     if (!recipe.style?.libraryId) return null;
-    return library.find(l => l.id === recipe.style?.libraryId);
-  }, [recipe.style?.libraryId, library]);
+    return libraryMap.get(recipe.style?.libraryId);
+  }, [recipe.style?.libraryId, libraryMap]);
 
   const checkInRange = (val: number, min?: number, max?: number) => {
     if (min === undefined || max === undefined) return true;
     return val >= min && val <= max;
   };
 
+
   const getStatColor = (val: number, min?: number, max?: number) => {
     if (min === undefined && max === undefined) return 'text-white';
     return checkInRange(val, min, max) ? 'text-green-500' : 'text-red-500';
   };
+
+  // ⚡ Bolt: Helper to replace inline stock rendering and eliminate redundant lookups
+  const renderStock = (libraryId: string | undefined, requiredAmount: number) => {
+    if (!preferences.enableStockManagement || !libraryId) return null;
+    const item = libraryMap.get(libraryId);
+    if (!item || item.status !== 'private' || !item.stock) return null;
+
+    const isSufficient = item.stock.amount >= requiredAmount;
+    return (
+      <div className="text-[10px] font-black text-stone-400 uppercase">
+        {t('stock_label')}: <span className={isSufficient ? 'text-green-600' : 'text-red-500'}>
+          {item.stock.amount} {item.stock.unit}
+        </span>
+      </div>
+    );
+  };
+
 
   const addIngredient = (type: 'fermentable' | 'hop' | 'culture' | 'misc') => {
     setRecipe(prev => {
@@ -113,7 +136,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
   };
 
   const handleLibrarySelect = (type: 'fermentable' | 'hop' | 'culture' | 'misc' | 'style' | 'mash_profile', idx: number, libId: string) => {
-    const item = library.find(i => i.id === libId);
+    const item = libraryMap.get(libId);
     if (!item) return;
 
     setRecipe(prev => {
@@ -400,13 +423,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     <option value="pounds">lb</option>
                   </select>
                 </div>
-                {preferences.enableStockManagement && f.libraryId && library.find(l => l.id === f.libraryId && l.status === 'private')?.stock && (
-                  <div className="text-[10px] font-black text-stone-400 uppercase">
-                    {t('stock_label')}: <span className={library.find(l => l.id === f.libraryId)!.stock!.amount < f.amount.value ? 'text-red-500' : 'text-green-600'}>
-                      {library.find(l => l.id === f.libraryId)!.stock!.amount} {library.find(l => l.id === f.libraryId)!.stock!.unit}
-                    </span>
-                  </div>
-                )}
+                {renderStock(f.libraryId, f.amount.value)}
                 <button onClick={() => removeIngredient('fermentable', i)} aria-label="Remove Fermentable"><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
             ))}
@@ -443,13 +460,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     <option value="ounces">oz</option>
                   </select>
                 </div>
-                {preferences.enableStockManagement && h.libraryId && library.find(l => l.id === h.libraryId && l.status === 'private')?.stock && (
-                  <div className="text-[10px] font-black text-stone-400 uppercase">
-                    {t('stock_label')}: <span className={library.find(l => l.id === h.libraryId)!.stock!.amount < h.amount.value ? 'text-red-500' : 'text-green-600'}>
-                      {library.find(l => l.id === h.libraryId)!.stock!.amount} {library.find(l => l.id === h.libraryId)!.stock!.unit}
-                    </span>
-                  </div>
-                )}
+                {renderStock(h.libraryId, h.amount.value)}
                 <div className="flex items-center gap-2">
                   <label htmlFor={`hop-time-${i}`} className="sr-only">Time (min)</label>
                   <input id={`hop-time-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
@@ -478,13 +489,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   <input id={`culture-att-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={c.attenuation ?? 75} onChange={e => updateField('culture', i, 'attenuation', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">%</span>
                 </div>
-                {preferences.enableStockManagement && c.libraryId && library.find(l => l.id === c.libraryId && l.status === 'private')?.stock && (
-                  <div className="text-[10px] font-black text-stone-400 uppercase">
-                    {t('stock_label')}: <span className={library.find(l => l.id === c.libraryId)!.stock!.amount < 1 ? 'text-red-500' : 'text-green-600'}>
-                      {library.find(l => l.id === c.libraryId)!.stock!.amount} {library.find(l => l.id === c.libraryId)!.stock!.unit}
-                    </span>
-                  </div>
-                )}
+                {renderStock(c.libraryId, 1)}
                 <button onClick={() => removeIngredient('culture', i)} aria-label="Remove Culture"><i className="fas fa-trash-alt text-stone-300"></i></button>
               </div>
             ))}
