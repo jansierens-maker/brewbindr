@@ -21,11 +21,12 @@ export function Bubbles() {
       b.style.animationDuration = `${duration}s`;
       b.style.animationDelay = `${delay}s`;
 
-      containerRef.current.appendChild(b);
+      const container = containerRef.current;
+      container.appendChild(b);
 
       setTimeout(() => {
-        if (b.parentNode === containerRef.current) {
-          containerRef.current.removeChild(b);
+        if (container && b.parentNode === container) {
+          container.removeChild(b);
         }
       }, (duration + delay) * 1000 + 500);
     }, 400);
