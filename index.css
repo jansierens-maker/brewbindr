@@ -1,1 +1,65 @@
 @import "tailwindcss";
+
+:root {
+  /* Kleuren */
+  --color-bg:          #FFFFFF;
+  --color-bg-subtle:   #F5F7FA;
+  --color-bg-hover:    #EDF1F7;
+  --color-border:      #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-text:        #0F1B2D;
+  --color-text-muted:  #64748B;
+  --color-text-xmuted: #94A3B8;
+  --color-accent:      #F59E0B;
+  --color-accent-light:#FEF3C7;
+  --color-accent-dark: #D97706;
+  --color-blue:        #3B82F6;
+  --color-blue-light:  #EFF6FF;
+  --color-green:       #10B981;
+  --color-green-light: #ECFDF5;
+  --color-purple:      #7C3AED;
+  --color-purple-light:#F5F3FF;
+
+  /* Typografie */
+  --font-body:    'Inter', sans-serif;
+  --font-display: 'Playfair Display', serif;
+  --font-brand:   'Outfit', sans-serif;
+
+  /* Ruimte & vorm */
+  --radius:    10px;
+  --radius-sm:  6px;
+  --sidebar-w: 240px;
+  --topbar-h:   56px;
+  --bottomnav-h:60px;
+
+  /* Schaduwen */
+  --shadow-sm: 0 1px 3px rgba(15,27,45,.06), 0 1px 2px rgba(15,27,45,.04);
+  --shadow:    0 4px 12px rgba(15,27,45,.08), 0 1px 3px rgba(15,27,45,.05);
+}
+
+body {
+  background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 40%, #fde68a 100%);
+  min-height: 100vh;
+}
+
+/* BUBBLE ANIMATION */
+@keyframes br {
+  0% { transform: translateY(0) scale(1); opacity: .4; }
+  100% { transform: translateY(-110px) scale(1.4); opacity: 0; }
+}
+
+.bbl {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .55);
+  animation: br linear infinite;
+  pointer-events: none;
+}
+
+#bbls {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext, useContext, useMemo } from 'react';
 import RecipeCreator from './components/RecipeCreator';
+import Bubbles from './components/Bubbles';
 import BrewLog from './components/BrewLog';
 import TastingNotes from './components/TastingNotes';
 import IngredientLibrary from './components/IngredientLibrary';
@@ -1195,7 +1196,8 @@ END \$\$;
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
-      <div className="min-h-screen bg-stone-50 text-stone-900 print:bg-white print:p-0">
+      <div className="min-h-screen bg-transparent text-stone-900 print:bg-white print:p-0">
+        <Bubbles />
         {showSyncDetails && (
           <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[250] flex items-center justify-center p-6">
             <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
