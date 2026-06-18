@@ -3,21 +3,25 @@ import React from 'react';
 interface TopbarProps {
   title: string;
   showNewRecipeButton: boolean;
+  isGuest?: boolean;
   syncError?: boolean;
   onRefresh?: () => void;
   onShowHelp?: () => void;
   onOpenSyncDetails?: () => void;
   onNewRecipe?: () => void;
+  onAuth?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
   title,
   showNewRecipeButton,
+  isGuest,
   syncError,
   onRefresh,
   onShowHelp,
   onOpenSyncDetails,
-  onNewRecipe
+  onNewRecipe,
+  onAuth
 }) => {
   return (
     <header className="bg-[var(--color-bg)] border-b border-[var(--color-border)] px-4 md:px-7 h-[var(--topbar-h)] flex items-center gap-2 md:gap-3.5 sticky top-0 z-50 shadow-sm md:shadow-none">
@@ -65,15 +69,25 @@ export const Topbar: React.FC<TopbarProps> = ({
           <i className="fas fa-question-circle text-sm md:text-base"></i>
         </button>
 
-        {/* New Recipe Button */}
-        {showNewRecipeButton && (
+        {/* Auth/New Recipe Button */}
+        {isGuest ? (
           <button
-            onClick={onNewRecipe}
-            className="bg-[var(--color-text)] text-white flex items-center gap-1.5 p-[6px_12px] md:p-[7px_14px] rounded-[var(--radius-sm)] text-[12px] md:text-[13px] font-semibold hover:bg-[#1e3251] transition-all shadow-sm active:scale-95"
+            onClick={onAuth}
+            className="bg-[var(--color-accent)] text-white flex items-center gap-1.5 p-[6px_12px] md:p-[7px_14px] rounded-[var(--radius-sm)] text-[12px] md:text-[13px] font-bold hover:opacity-90 transition-all shadow-sm active:scale-95"
           >
-            <i className="fas fa-plus text-[10px] md:text-xs"></i>
-            <span className="hidden xs:inline">Nieuw recept</span>
+            <i className="fas fa-user text-[10px] md:text-xs"></i>
+            <span>Aanmelden</span>
           </button>
+        ) : (
+          showNewRecipeButton && (
+            <button
+              onClick={onNewRecipe}
+              className="bg-[var(--color-text)] text-white flex items-center gap-1.5 p-[6px_12px] md:p-[7px_14px] rounded-[var(--radius-sm)] text-[12px] md:text-[13px] font-semibold hover:bg-[#1e3251] transition-all shadow-sm active:scale-95"
+            >
+              <i className="fas fa-plus text-[10px] md:text-xs"></i>
+              <span className="hidden xs:inline">Nieuw recept</span>
+            </button>
+          )
         )}
       </div>
     </header>
