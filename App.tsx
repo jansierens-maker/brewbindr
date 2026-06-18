@@ -13,6 +13,7 @@ import HelpView from './components/HelpView';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { BottomNav } from './components/BottomNav';
+import { InfoBanner } from './components/InfoBanner';
 import BrewerySettings from './components/BrewerySettings';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, checkRecipeStock } from './services/calculations';
@@ -120,6 +121,7 @@ const AppContent: React.FC = () => {
   const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
   const [syncError, setSyncError] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
 
@@ -298,12 +300,17 @@ const AppContent: React.FC = () => {
           if (cancelled) return;
           const allOk = Object.values(health).every(v => v === true);
           if (allOk) {
-            // Tables exist, redirect guest to login
-            setView('auth');
+            // Tables exist, default to public recipes for guests
+            setView('recipes');
+            setLibraryView('public');
           } else {
             // Tables missing or error, show connection details
             setShowSyncDetails(true);
           }
+        } else {
+          // Logged in: default to personal recipes
+          setView('recipes');
+          setLibraryView('personal');
         }
 
         const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
@@ -842,6 +849,11 @@ const AppContent: React.FC = () => {
       setSyncError(true);
       alert('Re-sync failed. Please check your connection.');
     }
+  };
+
+  const handleAuthRedirect = (mode: 'signin' | 'signup' = 'signin') => {
+    setAuthMode(mode);
+    setView('auth');
   };
 
   const handleOpenSyncDetails = async () => {
@@ -1463,6 +1475,7 @@ END \$\$;
               libraryView={libraryView}
               onViewChange={setView}
               onLibraryViewChange={setLibraryView}
+              onAuth={handleAuthRedirect}
             />
           </div>
 
@@ -1470,12 +1483,16 @@ END \$\$;
             <Topbar
               title={getPageTitle()}
               showNewRecipeButton={view === 'recipes' && libraryView === 'personal'}
+              isGuest={!user}
               syncError={syncError}
               onRefresh={handleRefreshAppData}
               onShowHelp={() => setView('help')}
               onOpenSyncDetails={handleOpenSyncDetails}
               onNewRecipe={() => { setSelectedRecipe(null); setView('create'); }}
+              onAuth={() => handleAuthRedirect('signin')}
             />
+
+            {!user && <InfoBanner />}
 
             <main className="flex-1 p-4 md:p-8 pb-32 lg:pb-8 max-w-7xl mx-auto w-full print:p-0 print:pb-0">
               {importStatus !== 'idle' && (
@@ -1748,7 +1765,7 @@ END \$\$;
                   onReject={handleReject}
                 />
               )}
-              {view === 'auth' && <Auth onSuccess={() => setView('recipes')} />}
+              {view === 'auth' && <Auth onSuccess={() => setView('recipes')} initialIsSignUp={authMode === 'signup'} />}
               {view === 'settings' && <Settings />}
               {view === 'team' && <BrewerySettings />}
               {view === 'tasting' && selectedRecipe && selectedBrewLog && (
@@ -1783,6 +1800,7 @@ END \$\$;
               libraryView={libraryView}
               onViewChange={setView}
               onLibraryViewChange={setLibraryView}
+              onAuth={handleAuthRedirect}
             />
           </div>
         </div>
