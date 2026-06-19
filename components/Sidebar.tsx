@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Logo } from './Logo';
+import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { breweryService } from '../services/breweryService';
 import { Brewery } from '../types';
@@ -19,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLibraryViewChange,
   onAuth
 }) => {
+  const { t } = useTranslation();
   const { user, profile, breweryRole } = useUser();
   const [brewery, setBrewery] = useState<Brewery | null>(null);
 
@@ -30,12 +32,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems = [
     { section: 'Brouwerij', items: [
-      { id: 'recipes-personal', label: 'Recepten', icon: 'fa-flask', view: 'recipes', libView: 'personal' },
-      { id: 'brouwlogboek', label: 'Brouwlogboek', icon: 'fa-clipboard-list', view: 'brouwlogboek' },
+      { id: 'recipes-personal', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
+      { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
       { id: 'proefnotities', label: 'Proefnotities', icon: 'fa-star-half-stroke', view: 'proefnotities' },
       { id: 'voorraad', label: 'Voorraad', icon: 'fa-boxes-stacked', view: 'voorraad' },
       { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
-      { id: 'importeren', label: 'Importeren', icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
+      { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
       { id: 'brouwinstallatie', label: 'Brouwinstallatie', icon: 'fa-temperature-half', view: 'brouwinstallatie' },
     ]},
     { section: 'Bibliotheek', items: [

@@ -5,12 +5,8 @@ import { useUser } from '../services/userContext';
 
 interface AdminViewProps {
   onExport: () => void;
-  onExportBeerXml: () => void;
   onRestore: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onFileImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onUrlImport: () => void;
-  xmlUrl: string;
-  onXmlUrlChange: (url: string) => void;
   importStatus: string;
   pendingSubmissions: any[];
   onApprove: (id: string, type: string, table?: string) => void;
@@ -19,12 +15,8 @@ interface AdminViewProps {
 
 const AdminView: React.FC<AdminViewProps> = ({ 
   onExport, 
-  onExportBeerXml,
   onRestore, 
-  onFileImport, 
   onUrlImport, 
-  xmlUrl, 
-  onXmlUrlChange, 
   importStatus,
   pendingSubmissions,
   onApprove,
@@ -86,82 +78,29 @@ const AdminView: React.FC<AdminViewProps> = ({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* BeerXML Management */}
+        {/* Management Tools */}
         <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8">
           <div className="flex items-center gap-3">
             <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
-              <i className="fas fa-file-code text-2xl"></i>
+              <i className="fas fa-tools text-2xl"></i>
             </div>
-            <h3 className="text-2xl font-black text-stone-900">{t('import_tool')} (BeerXML)</h3>
+            <h3 className="text-2xl font-black text-stone-900">Beheertools</h3>
           </div>
 
           <div className="space-y-6">
-            {!user && (
-              <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-center gap-3">
-                <i className="fas fa-lock text-amber-600"></i>
-                <p className="text-xs font-bold text-amber-900">{t('login_to_import')}</p>
+            <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4">
+              <div className="flex items-center gap-3">
+                <i className="fas fa-download text-amber-600"></i>
+                <h4 className="font-bold text-stone-900 text-sm">Demo Data</h4>
               </div>
-            )}
-            <div className="space-y-4 opacity-50 pointer-events-none" style={{ opacity: user ? 1 : 0.5, pointerEvents: user ? 'auto' : 'none' }}>
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('via_file')}</p>
-              <label className="group flex flex-col items-center justify-center w-full h-40 bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl cursor-pointer hover:bg-stone-100 transition-all">
-                <i className="fas fa-cloud-upload-alt text-3xl text-stone-300 group-hover:text-amber-500 mb-2"></i>
-                <p className="text-sm text-stone-500 font-bold">{t('dropzone_text')}</p>
-                <input id="xml-file-import" name="xml_file" type="file" className="hidden" accept=".xml,.beerxml" onChange={onFileImport} disabled={!user} aria-label="Upload BeerXML File" />
-              </label>
-            </div>
-
-            <div className="space-y-4 opacity-50 pointer-events-none" style={{ opacity: user ? 1 : 0.5, pointerEvents: user ? 'auto' : 'none' }}>
-              <label htmlFor="xml-url-import" className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('via_url')}</label>
-              <div className="flex flex-col md:flex-row gap-3">
-                <input 
-                  id="xml-url-import"
-                  name="xml_url"
-                  type="text" 
-                  placeholder="https://..." 
-                  className="flex-1 px-4 h-12 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium" 
-                  value={xmlUrl} 
-                  onChange={(e) => onXmlUrlChange(e.target.value)} 
-                  disabled={!user}
-                  maxLength={2048}
-                />
-                <button 
-                  onClick={() => onUrlImport()} 
-                  disabled={!xmlUrl || !user}
-                  className="px-6 h-12 bg-stone-900 text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50"
-                >
-                  Import
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-4">
-              <h4 className="font-bold text-stone-900 text-xs uppercase tracking-widest">BeerXML Samples</h4>
               <p className="text-xs text-stone-500 leading-relaxed">
-                Looking for recipes or ingredients? You can find extensive samples and guidelines at:
+                Importeer voorbeeldrecepten en ingrediënten om de applicatie te testen of te demonstreren aan nieuwe gebruikers.
               </p>
-              <div className="flex flex-col gap-2">
-                <a href="https://beerxml.com" target="_blank" rel="noopener noreferrer" className="text-amber-600 font-bold text-sm hover:underline flex items-center gap-2">
-                  <i className="fas fa-external-link-alt text-xs"></i> BeerXML.com Samples
-                </a>
-                <a href="https://brewdogrecipes.com" target="_blank" rel="noopener noreferrer" className="text-amber-600 font-bold text-sm hover:underline flex items-center gap-2">
-                  <i className="fas fa-external-link-alt text-xs"></i> BrewDog Recipes (BeerXML format)
-                </a>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-stone-100 flex flex-col gap-3">
               <button 
                 onClick={onUrlImport} 
                 className="w-full bg-amber-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-3"
               >
                 <i className="fas fa-download"></i> {t('import_demo')}
-              </button>
-              <button 
-                onClick={onExportBeerXml} 
-                className="w-full bg-white border border-stone-200 text-stone-600 py-4 rounded-xl font-black hover:bg-stone-50 transition-all flex items-center justify-center gap-3"
-              >
-                <i className="fas fa-file-export"></i> {t('export_library_xml')}
               </button>
             </div>
           </div>
