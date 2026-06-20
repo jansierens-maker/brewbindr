@@ -7,6 +7,7 @@ import IngredientLibrary from './components/IngredientLibrary';
 import BrewHistory from './components/BrewHistory';
 import PrintView from './components/PrintView';
 import AdminView from './components/AdminView';
+import ImportView from './components/ImportView';
 import Auth from './components/Auth';
 import Settings from './components/Settings';
 import HelpView from './components/HelpView';
@@ -883,7 +884,7 @@ const AppContent: React.FC = () => {
       case 'proefnotities': return 'Proefnotities';
       case 'voorraad': return 'Voorraad';
       case 'team': return 'Team';
-      case 'importeren': return 'Importeren';
+      case 'importeren': return t('nav_import');
       case 'brouwinstallatie': return 'Brouwinstallatie';
       case 'library': return t('nav_library');
       case 'brews': return t('nav_brews');
@@ -1753,12 +1754,8 @@ END \$\$;
               {view === 'admin' && (
                 <AdminView
                   onExport={handleExportData}
-                  onExportBeerXml={handleExportLibraryBeerXml}
                   onRestore={handleRestoreData}
-                  onFileImport={handleFileImport}
                   onUrlImport={handleImportDemoData}
-                  xmlUrl={xmlUrl}
-                  onXmlUrlChange={setXmlUrl}
                   importStatus={importStatus}
                   pendingSubmissions={pendingSubmissions}
                   onApprove={handleApprove}
@@ -1783,11 +1780,21 @@ END \$\$;
                 />
               )}
               {view === 'help' && <HelpView />}
+              {view === 'importeren' && (
+                <ImportView
+                  onFileImport={handleFileImport}
+                  onExportBeerXml={handleExportLibraryBeerXml}
+                  importStatus={importStatus}
+                  xmlUrl={xmlUrl}
+                  onXmlUrlChange={setXmlUrl}
+                  onUrlImport={handleUrlImport}
+                />
+              )}
 
               {/* Placeholders for new views */}
-              {['voorraad', 'importeren', 'brouwinstallatie'].includes(view) && (
+              {['voorraad', 'brouwinstallatie'].includes(view) && (
                 <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
-                  <i className={`fas ${view === 'voorraad' ? 'fa-boxes-stacked' : view === 'importeren' ? 'fa-arrow-up-from-bracket' : 'fa-temperature-half'} text-6xl mb-6`}></i>
+                  <i className={`fas ${view === 'voorraad' ? 'fa-boxes-stacked' : 'fa-temperature-half'} text-6xl mb-6`}></i>
                   <h3 className="text-2xl font-black uppercase tracking-widest">{view}</h3>
                   <p className="font-bold">Deze module is nog in ontwikkeling.</p>
                 </div>

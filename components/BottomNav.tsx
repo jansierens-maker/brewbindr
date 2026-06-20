@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 
 interface BottomNavProps {
@@ -16,12 +17,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onLibraryViewChange,
   onAuth
 }) => {
+  const { t } = useTranslation();
   const { user } = useUser();
   const [showMore, setShowMore] = useState(false);
 
   const tabs = [
-    { id: 'recipes', label: 'Recepten', icon: 'fa-flask', view: 'recipes', libView: 'personal' },
-    { id: 'brouwlogboek', label: 'Logboek', icon: 'fa-clipboard-list', view: 'brouwlogboek' },
+    { id: 'recipes', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
+    { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
     { id: 'recipes-public', label: 'Bieb', icon: 'fa-book-open', view: 'recipes', libView: 'public' },
     { id: 'proefnotities', label: 'Proeven', icon: 'fa-star-half-stroke', view: 'proefnotities' },
     { id: 'more', label: 'Meer', icon: 'fa-ellipsis-h' },
@@ -30,7 +32,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const moreItems = [
     { id: 'voorraad', label: 'Voorraad', icon: 'fa-boxes-stacked', view: 'voorraad' },
     { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
-    { id: 'importeren', label: 'Importeren', icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
+    { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
     { id: 'brouwinstallatie', label: 'Brouwinstallatie', icon: 'fa-temperature-half', view: 'brouwinstallatie' },
     { id: 'settings', label: 'Instellingen', icon: 'fa-gear', view: 'settings' },
     { id: 'help', label: 'Help & Handleidingen', icon: 'fa-question-circle', view: 'help' },
