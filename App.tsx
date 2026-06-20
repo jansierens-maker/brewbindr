@@ -11,6 +11,7 @@ import ImportView from './components/ImportView';
 import Auth from './components/Auth';
 import Settings from './components/Settings';
 import HelpView from './components/HelpView';
+import BrewingInstallationView from './components/BrewingInstallationView';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { BottomNav } from './components/BottomNav';
@@ -885,7 +886,7 @@ const AppContent: React.FC = () => {
       case 'voorraad': return 'Voorraad';
       case 'team': return 'Team';
       case 'importeren': return t('nav_import');
-      case 'brouwinstallatie': return 'Brouwinstallatie';
+      case 'brouwinstallatie': return t('nav_installation');
       case 'library': return t('nav_library');
       case 'brews': return t('nav_brews');
       case 'settings': return t('settings_label');
@@ -1791,8 +1792,15 @@ END \$\$;
                 />
               )}
 
+              {view === 'brouwinstallatie' && (
+                <BrewingInstallationView
+                  library={library}
+                  onUpdate={(newLib) => setLibrary(newLib)}
+                />
+              )}
+
               {/* Placeholders for new views */}
-              {['voorraad', 'brouwinstallatie'].includes(view) && (
+              {['voorraad'].includes(view) && (
                 <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
                   <i className={`fas ${view === 'voorraad' ? 'fa-boxes-stacked' : 'fa-temperature-half'} text-6xl mb-6`}></i>
                   <h3 className="text-2xl font-black uppercase tracking-widest">{view}</h3>

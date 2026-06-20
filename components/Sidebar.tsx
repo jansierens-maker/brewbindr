@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       { id: 'voorraad', label: 'Voorraad', icon: 'fa-boxes-stacked', view: 'voorraad' },
       { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
       { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
-      { id: 'brouwinstallatie', label: 'Brouwinstallatie', icon: 'fa-temperature-half', view: 'brouwinstallatie' },
+      { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
     ]},
     { section: 'Bibliotheek', items: [
       { id: 'recipes-public', label: 'Recepten', icon: 'fa-flask', view: 'recipes', libView: 'public' },

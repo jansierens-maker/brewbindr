@@ -210,7 +210,20 @@ export const translations = {
     ready_to_brew: "Ready to brew",
     missing_ingredients: "Missing ingredients",
     enable_stock_title: "Stock Management",
-    enable_stock_desc: "Track inventory and brewability"
+    enable_stock_desc: "Track inventory and brewability",
+    nav_installation: "Brewing Installation",
+    tab_equipment: "Equipment",
+    tab_mash_profiles: "Mash Profiles",
+    add_equipment: "Add Equipment",
+    add_mash_profile: "Add Mash Profile",
+    boil_size_label: "Boil Size",
+    trub_loss_label: "Trub/Chiller Loss",
+    infusion: "Infusion",
+    temperature: "Temperature",
+    decoction: "Decoction",
+    description_label: "Description",
+    installation_subtitle: "Manage brewing installations and mash profiles",
+    no_items_found: "No items found in your collection."
   },
   nl: {
     nav_recipes: "Recepten",
@@ -421,7 +434,20 @@ export const translations = {
     ready_to_brew: "Klaar om te brouwen",
     missing_ingredients: "Ontbrekende ingrediënten",
     enable_stock_title: "Voorraadbeheer",
-    enable_stock_desc: "Houd voorraad en brouwbaarheid bij"
+    enable_stock_desc: "Houd voorraad en brouwbaarheid bij",
+    nav_installation: "Brouwinstallatie",
+    tab_equipment: "Installatie",
+    tab_mash_profiles: "Maischprofielen",
+    add_equipment: "Installatie toevoegen",
+    add_mash_profile: "Maischprofiel toevoegen",
+    boil_size_label: "Kookvolume",
+    trub_loss_label: "Trub/koelerverlies",
+    infusion: "Infusie",
+    temperature: "Temperatuur",
+    decoction: "Decoctie",
+    description_label: "Beschrijving",
+    installation_subtitle: "Beheer brouwinstallaties en maischschema's",
+    no_items_found: "Nog geen items gevonden in je collectie."
   },
   fr: {
     nav_recipes: "Recettes",
@@ -632,6 +658,19 @@ export const translations = {
     ready_to_brew: "Prêt à brasser",
     missing_ingredients: "Ingrédients manquants",
     enable_stock_title: "Gestion des stocks",
-    enable_stock_desc: "Suivre l'inventaire et la brassabilité"
+    enable_stock_desc: "Suivre l'inventaire et la brassabilité",
+    nav_installation: "Installation de brassage",
+    tab_equipment: "Équipement",
+    tab_mash_profiles: "Profils d'empâtage",
+    add_equipment: "Ajouter un équipement",
+    add_mash_profile: "Ajouter un profil d'empâtage",
+    boil_size_label: "Volume d'ébullition",
+    trub_loss_label: "Perte Trub/refroidisseur",
+    infusion: "Infusion",
+    temperature: "Température",
+    decoction: "Décoction",
+    description_label: "Description",
+    installation_subtitle: "Gérer les installations de brassage et les profils d'empâtage",
+    no_items_found: "Aucun article trouvé dans votre collection."
   }
 };

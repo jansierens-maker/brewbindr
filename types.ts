@@ -78,7 +78,12 @@ export interface LibraryIngredient {
   profile?: string;
   examples?: string;
 
-  // Mash specific library fields
+  // Equipment & Mash specific library fields
+  description?: string;
+  boil_size?: number;
+  efficiency?: number;
+  boil_time?: number;
+  trub_chiller_loss?: number;
   grain_temp?: number;
   sparge_temp?: number;
   ph?: number;
