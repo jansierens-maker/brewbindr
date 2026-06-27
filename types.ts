@@ -80,10 +80,19 @@ export interface LibraryIngredient {
 
   // Equipment & Mash specific library fields
   description?: string;
+  equipment_type?: 'biab' | 'all_in_one' | 'two_vessel' | 'three_vessel' | 'rims' | 'herms' | 'custom';
+  preset?: string;
+  vessels?: Vessel[];
+  batch_size?: number;
   boil_size?: number;
   efficiency?: number;
   boil_time?: number;
   trub_chiller_loss?: number;
+  fermenter_loss?: number;
+  evap_rate?: number;
+  top_up_water?: number;
+  lauter_deadspace?: number;
+  tun_specific_heat?: number;
   grain_temp?: number;
   sparge_temp?: number;
   ph?: number;
@@ -95,12 +104,22 @@ export interface LibraryIngredient {
   };
 }
 
+export interface Vessel {
+  name: string;
+  role: 'mash' | 'boil' | 'hlt' | 'combined';
+  volume: number;
+  heating: 'electric' | 'gas' | 'none';
+  pump: boolean;
+}
+
 export interface MashStep {
   name: string;
   type: 'infusion' | 'temperature' | 'decoction';
   infuse_amount?: number; // Liters
-  step_temp: number; // Celsius
-  step_time: number; // Minutes
+   step_temp?: number; // Celsius (Legacy)
+   step_time?: number; // Minutes (Legacy)
+  temperature?: number; // Celsius
+  duration?: number; // Minutes
   ramp_time?: number; // Minutes
   end_temp?: number; // Celsius
   description?: string;
