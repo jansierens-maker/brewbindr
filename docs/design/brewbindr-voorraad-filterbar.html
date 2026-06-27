@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrewBindr — VoorraadView filter mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F5F7FA; --white: #fff; --border: #E2E8F0; --border-s: #CBD5E1;
+  --text: #0F1B2D; --muted: #64748B; --xmuted: #94A3B8;
+  --accent: #F59E0B; --accent-l: #FEF3C7; --accent-d: #D97706;
+  --green: #10B981; --green-l: #ECFDF5;
+  --r: 10px; --rs: 6px;
+  --shadow: 0 1px 3px rgba(15,27,45,.06);
+  --shadow-b: 0 4px 16px rgba(15,27,45,.10);
+}
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 32px; }
+
+h2 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 18px; text-transform: uppercase; letter-spacing: -.3px; margin-bottom: 4px; }
+h2 em { color: var(--accent); font-style: normal; }
+.sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  box-shadow: var(--shadow); margin-bottom: 16px;
+}
+
+/* Type toggles */
+.type-toggles { display: flex; gap: 6px; }
+
+.type-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: var(--rs);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border-s);
+  background: var(--white); color: var(--muted);
+  transition: all .15s; user-select: none;
+}
+.type-btn:hover { border-color: var(--accent); color: var(--text); }
+.type-btn.on {
+  background: var(--accent-l); border-color: var(--accent);
+  color: var(--accent-d);
+}
+.type-btn .ico { font-size: 13px; }
+
+/* Fermentables */
+.type-btn.ferm.on  { background: #FEF3C7; border-color: #F59E0B; color: #92400E; }
+/* Hops */
+.type-btn.hops.on  { background: #ECFDF5; border-color: #10B981; color: #065F46; }
+/* Cultures */
+.type-btn.cult.on  { background: #EFF6FF; border-color: #3B82F6; color: #1E40AF; }
+/* Miscs */
+.type-btn.misc.on  { background: #F5F3FF; border-color: #7C3AED; color: #4C1D95; }
+
+/* Divider */
+.divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+
+/* Search */
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--rs); padding: 7px 12px;
+  font-size: 13px; color: var(--muted); flex: 1; min-width: 160px;
+}
+.search-box input {
+  border: none; background: none; outline: none;
+  font-size: 13px; color: var(--text); width: 100%;
+  font-family: 'Inter', sans-serif;
+}
+.search-box input::placeholder { color: var(--xmuted); }
+
+/* Sort */
+.sort-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.sort-label { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+
+.sort-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 10px; border-radius: var(--rs);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--white); color: var(--muted);
+  transition: all .15s;
+}
+.sort-btn:hover { border-color: var(--border-s); color: var(--text); }
+.sort-btn.on {
+  background: var(--text); border-color: var(--text);
+  color: white; font-weight: 600;
+}
+.sort-btn i { font-size: 11px; }
+
+/* View toggle */
+.view-toggle { display: flex; gap: 2px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--rs); padding: 3px; }
+.view-btn {
+  width: 30px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; cursor: pointer; color: var(--xmuted); font-size: 13px;
+  transition: all .15s; border: none; background: none;
+}
+.view-btn.on { background: var(--white); color: var(--text); box-shadow: var(--shadow); }
+
+/* ── RESULT COUNT ── */
+.result-meta { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.result-meta strong { color: var(--text); }
+
+/* ── DEMO CARDS ── */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.ing-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px 10px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  box-shadow: var(--shadow); transition: box-shadow .15s, transform .15s; cursor: pointer;
+}
+.ing-card:hover { box-shadow: var(--shadow-b); transform: translateY(-1px); }
+.ing-type-dot { width: 6px; height: 6px; border-radius: 50%; margin-bottom: 2px; }
+.ing-name { font-size: 12px; font-weight: 600; text-align: center; line-height: 1.3; }
+.ing-qty  { font-size: 11px; color: var(--muted); }
+.ing-pct  { font-size: 11px; font-weight: 700; }
+
+/* Simple glass placeholder */
+.glass-ph {
+  width: 40px; height: 52px; border: 1.5px solid var(--border-s);
+  border-radius: 3px 3px 5px 5px; position: relative; overflow: hidden;
+  background: rgba(255,255,255,.5);
+}
+.glass-fill {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  transition: height .3s;
+}
+.glass-foam {
+  position: absolute; left: 2px; right: 2px; height: 5px;
+  background: rgba(255,255,255,.8); border-radius: 2px;
+}
+.glass-handle {
+  position: absolute; right: -8px; top: 10px;
+  width: 8px; height: 16px;
+  border: 1.5px solid var(--border-s);
+  border-left: none; border-radius: 0 4px 4px 0;
+}
+
+/* ── MOBILE VERSION ── */
+.mobile-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--xmuted); margin-bottom: 8px; margin-top: 28px; }
+
+.filter-bar-mobile {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  box-shadow: var(--shadow); max-width: 390px;
+}
+
+.type-toggles-mobile { display: flex; gap: 5px; flex-wrap: wrap; }
+.type-btn-mobile {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 10px; border-radius: var(--rs);
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border-s);
+  background: var(--white); color: var(--muted);
+  transition: all .15s;
+}
+.type-btn-mobile.ferm.on { background: #FEF3C7; border-color: #F59E0B; color: #92400E; }
+.type-btn-mobile.hops.on { background: #ECFDF5; border-color: #10B981; color: #065F46; }
+.type-btn-mobile.cult.on { background: #EFF6FF; border-color: #3B82F6; color: #1E40AF; }
+.type-btn-mobile.misc.on { background: #F5F3FF; border-color: #7C3AED; color: #4C1D95; }
+
+.mobile-row2 { display: flex; gap: 8px; align-items: center; }
+
+.sort-select {
+  flex: 1; padding: 7px 10px; border-radius: var(--rs);
+  border: 1px solid var(--border); background: var(--bg);
+  font-size: 12px; color: var(--text); font-family: 'Inter', sans-serif;
+  outline: none;
+}
+</style>
+</head>
+<body>
+
+<h2>BREW<em>BINDR</em></h2>
+<p class="sub">Mockup · VoorraadView — filterbar & type-toggles</p>
+
+<!-- DESKTOP -->
+<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--xmuted);margin-bottom:8px">Desktop</div>
+
+<div class="filter-bar">
+  <!-- Type toggles -->
+  <div class="type-toggles">
+    <button class="type-btn ferm on" onclick="toggle(this)">
+      <span class="ico">🌾</span> Fermentables
+    </button>
+    <button class="type-btn hops on" onclick="toggle(this)">
+      <span class="ico">🌿</span> Hops
+    </button>
+    <button class="type-btn cult on" onclick="toggle(this)">
+      <span class="ico">🧫</span> Cultures
+    </button>
+    <button class="type-btn misc on" onclick="toggle(this)">
+      <span class="ico">⚗️</span> Miscs
+    </button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Search -->
+  <div class="search-box">
+    <span style="font-size:12px;color:var(--xmuted)">🔍</span>
+    <input type="text" placeholder="Zoek ingrediënt…">
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Sort -->
+  <div class="sort-wrap">
+    <span class="sort-label">↕ Sorteren:</span>
+    <button class="sort-btn on" onclick="setSort(this)">Type</button>
+    <button class="sort-btn" onclick="setSort(this)">Naam A-Z</button>
+    <button class="sort-btn" onclick="setSort(this)">↑ Voorraad</button>
+    <button class="sort-btn" onclick="setSort(this)">↓ Voorraad</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- View toggle -->
+  <div class="view-toggle">
+    <button class="view-btn on" onclick="setView(this)">⊞</button>
+    <button class="view-btn" onclick="setView(this)">☰</button>
+  </div>
+</div>
+
+<div class="result-meta"><strong>27 ingrediënten</strong> · Fermentables, Hops, Cultures, Miscs</div>
+
+<!-- Sample cards -->
+<div class="card-grid">
+  <!-- Fermentable -->
+  <div class="ing-card">
+    <div class="ing-type-dot" style="background:#F59E0B"></div>
+    <div class="glass-ph">
+      <div class="glass-fill" style="height:85%;background:rgb(249,243,160);opacity:.85"></div>
+      <div class="glass-foam" style="bottom:calc(85% - 3px)"></div>
+      <div class="glass-handle"></div>
+    </div>
+    <div class="ing-pct" style="color:#10B981">85%</div>
+    <div class="ing-name">Pilsner Mout</div>
+    <div class="ing-qty">8.5 kg</div>
+  </div>
+  <!-- Hop -->
+  <div class="ing-card">
+    <div class="ing-type-dot" style="background:#10B981"></div>
+    <div class="glass-ph">
+      <div class="glass-fill" style="height:22%;background:rgb(212,130,26);opacity:.85"></div>
+      <div class="glass-foam" style="bottom:calc(22% - 3px)"></div>
+      <div class="glass-handle"></div>
+    </div>
+    <div class="ing-pct" style="color:#F97316">22%</div>
+    <div class="ing-name">Simcoe</div>
+    <div class="ing-qty">110 g</div>
+  </div>
+  <!-- Hop leeg -->
+  <div class="ing-card">
+    <div class="ing-type-dot" style="background:#10B981"></div>
+    <div class="glass-ph">
+      <div class="glass-fill" style="height:5%;background:rgb(26,10,2);opacity:.85"></div>
+      <div class="glass-handle"></div>
+    </div>
+    <div class="ing-pct" style="color:#EF4444">5%</div>
+    <div class="ing-name">Citra</div>
+    <div class="ing-qty">25 g</div>
+  </div>
+  <!-- Culture -->
+  <div class="ing-card">
+    <div class="ing-type-dot" style="background:#3B82F6"></div>
+    <div class="glass-ph">
+      <div class="glass-fill" style="height:100%;background:rgb(249,243,160);opacity:.85"></div>
+      <div class="glass-foam" style="bottom:calc(100% - 5px)"></div>
+      <div class="glass-handle"></div>
+    </div>
+    <div class="ing-pct" style="color:#10B981">100%</div>
+    <div class="ing-name">Belgian Abbey</div>
+    <div class="ing-qty">2 zakjes</div>
+  </div>
+  <!-- Misc -->
+  <div class="ing-card">
+    <div class="ing-type-dot" style="background:#7C3AED"></div>
+    <div class="glass-ph">
+      <div class="glass-fill" style="height:60%;background:rgb(212,130,26);opacity:.85"></div>
+      <div class="glass-foam" style="bottom:calc(60% - 3px)"></div>
+      <div class="glass-handle"></div>
+    </div>
+    <div class="ing-pct" style="color:#F59E0B">60%</div>
+    <div class="ing-name">Irish Moss</div>
+    <div class="ing-qty">15 g</div>
+  </div>
+</div>
+
+<!-- MOBILE -->
+<div class="mobile-label">Mobiel (390px)</div>
+
+<div class="filter-bar-mobile">
+  <!-- Type toggles -->
+  <div class="type-toggles-mobile">
+    <button class="type-btn-mobile ferm on" onclick="toggle(this)">🌾 Ferm.</button>
+    <button class="type-btn-mobile hops on" onclick="toggle(this)">🌿 Hops</button>
+    <button class="type-btn-mobile cult on" onclick="toggle(this)">🧫 Cult.</button>
+    <button class="type-btn-mobile misc on" onclick="toggle(this)">⚗️ Miscs</button>
+  </div>
+
+  <div class="mobile-row2">
+    <!-- Search -->
+    <div class="search-box" style="flex:1">
+      <span style="font-size:11px;color:var(--xmuted)">🔍</span>
+      <input type="text" placeholder="Zoek…">
+    </div>
+
+    <!-- Sort dropdown -->
+    <select class="sort-select">
+      <option>Type</option>
+      <option>Naam A-Z</option>
+      <option>Naam Z-A</option>
+      <option>Voorraad ↑</option>
+      <option>Voorraad ↓</option>
+    </select>
+
+    <!-- View toggle -->
+    <div class="view-toggle">
+      <button class="view-btn on"><span>⊞</span></button>
+      <button class="view-btn"><span>☰</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggle(btn) {
+  btn.classList.toggle('on');
+  updateMeta();
+}
+function setSort(btn) {
+  btn.closest('.sort-wrap').querySelectorAll('.sort-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function setView(btn) {
+  btn.closest('.view-toggle').querySelectorAll('.view-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function updateMeta() {
+  const active = document.querySelectorAll('.type-btn.on');
+  const names = [...active].map(b => b.textContent.trim());
+  const meta = document.querySelector('.result-meta');
+  if (meta) meta.innerHTML = `<strong>27 ingrediënten</strong> · ${names.join(', ') || 'geen type geselecteerd'}`;
+}
+</script>
+</body>
+</html>

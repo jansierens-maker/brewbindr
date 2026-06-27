@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Supabase Service for Brewbindr
@@ -229,13 +230,22 @@ export const supabaseService = {
     const client = supabase;
     const table = TABLE_MAP[item.type];
     if (!client || !table) return;
-    return client.from(table).upsert({
-      id: item.id,
+
+    const payload = {
+      id: item.id || uuidv4(),
       data: item,
       user_id: userId || item.user_id,
       brewery_id: breweryId || item.brewery_id,
       status: item.status || 'private'
-    });
+    };
+
+    const { error } = await client.from(table).upsert(payload);
+
+    if (error) {
+      console.error(`Save error for ${table}:`, error.message, error.details, error.hint, error.code);
+    }
+
+    return { error };
   },
 
   async deleteLibraryIngredient(id: string, type: string) {
@@ -318,14 +328,18 @@ export const supabaseService = {
       }
     });
 
-    const tasks = Object.entries(libraryByType).map(([table, items]) => {
-      return client.from(table).upsert(items.map(i => ({
-        id: i.id,
+    const tasks = Object.entries(libraryByType).map(async ([table, items]) => {
+      const { error } = await client.from(table).upsert(items.map(i => ({
+        id: i.id || uuidv4(),
         data: i,
         user_id: userId,
         brewery_id: breweryId || i.brewery_id,
         status: i.status || 'private'
       })));
+      if (error) {
+        console.error(`Batch save error for ${table}:`, error.message, error.details, error.hint, error.code);
+      }
+      return { error };
     });
 
     return Promise.all(tasks);
