@@ -151,7 +151,11 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
     if (!editForm.name) return;
     const updatedItem = { ...editForm, type: activeTab === 'equipment' ? 'equipment' : 'mash_profile' } as LibraryIngredient;
 
-    onUpdate(library.map(i => i.id === editingId ? updatedItem : i));
+    if (editingId === 'new') {
+        onUpdate([...library, updatedItem]);
+    } else {
+        onUpdate(library.map(i => i.id === editingId ? updatedItem : i));
+    }
 
     if (user?.id) {
       await supabaseService.saveLibraryIngredient(updatedItem, user.id, profile?.brewery_id);
