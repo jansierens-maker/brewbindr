@@ -2,7 +2,7 @@ name: E2E Tests
 
 on:
   push:
-    branches: [main, v4-design]
+    branches: [main, design-v4]
   pull_request:
     branches: [main]
 
