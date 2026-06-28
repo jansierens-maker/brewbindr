@@ -29,14 +29,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     { id: 'more', label: 'Meer', icon: 'fa-ellipsis-h' },
   ];
 
-  const moreItems = [
-    ...(preferences.enableStockManagement ? [{ id: 'voorraad', label: t('nav_inventory'), icon: 'fa-boxes-stacked', view: 'voorraad' }] : []),
-    { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
-    { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
-    { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
-    { id: 'settings', label: 'Instellingen', icon: 'fa-gear', view: 'settings' },
-    { id: 'help', label: 'Help & Handleidingen', icon: 'fa-question-circle', view: 'help' },
-  ];
+   
 
   const isActive = (tab: any) => {
     if (tab.id === 'more') return showMore;
