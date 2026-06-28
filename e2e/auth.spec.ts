@@ -1,47 +1,53 @@
-name: E2E Tests
+import { test, expect } from '@playwright/test';
 
-on:
-  push:
-    branches: [main, v4-design]
-  pull_request:
-    branches: [main]
+const TEST_EMAIL = process.env.TEST_USER_EMAIL!;
+const TEST_PASSWORD = process.env.TEST_USER_PASSWORD!;
 
-jobs:
-  e2e:
-    name: Playwright E2E
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+test.describe('Auth / Login', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  test('toont de loginpagina voor niet-ingelogde gebruikers', async ({ page }) => {
+    // Verwacht dat de login/auth pagina zichtbaar is
+    await expect(page).toHaveURL(/\/(login|auth|sign-in)?$/);
+    await expect(page.getByRole('textbox', { name: /e-?mail/i })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /wachtwoord|password/i })).toBeVisible();
+  });
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+  test('kan inloggen met geldige credentials', async ({ page }) => {
+    await page.getByRole('textbox', { name: /e-?mail/i }).fill(TEST_EMAIL);
+    await page.getByRole('textbox', { name: /wachtwoord|password/i }).fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: /inlog|sign.?in|login/i }).click();
 
-      - name: Install dependencies
-        run: npm ci
+    // Na login: verwacht redirect naar dashboard of home
+    await expect(page).not.toHaveURL(/\/(login|auth|sign-in)/);
+    // Controleer dat er iets van de app zichtbaar is (pas selector aan indien nodig)
+    await expect(page.getByRole('navigation')).toBeVisible({ timeout: 10000 });
+  });
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+  test('toont foutmelding bij verkeerde credentials', async ({ page }) => {
+    await page.getByRole('textbox', { name: /e-?mail/i }).fill(TEST_EMAIL);
+    await page.getByRole('textbox', { name: /wachtwoord|password/i }).fill('fout-wachtwoord-123!');
+    await page.getByRole('button', { name: /inlog|sign.?in|login/i }).click();
 
-      - name: Run E2E tests
-        run: npx playwright test
-        env:
-          CI: true
-          # De live Vercel URL (of preview URL) waartegen getest wordt
-          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
-          # Testaccount credentials (aanmaken in Supabase Dashboard)
-          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
-          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+    // Verwacht een foutmelding
+    await expect(
+      page.getByText(/ongeldig|invalid|incorrect|fout|onjuist/i)
+    ).toBeVisible({ timeout: 5000 });
+  });
 
-      - name: Upload test rapport
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 14
+  test('kan uitloggen na inloggen', async ({ page }) => {
+    // Login
+    await page.getByRole('textbox', { name: /e-?mail/i }).fill(TEST_EMAIL);
+    await page.getByRole('textbox', { name: /wachtwoord|password/i }).fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: /inlog|sign.?in|login/i }).click();
+    await expect(page).not.toHaveURL(/\/(login|auth|sign-in)/, { timeout: 10000 });
+
+    // Logout — pas selector aan op jouw UI
+    await page.getByRole('button', { name: /uitlog|sign.?out|logout/i }).click();
+
+    // Verwacht terug op loginpagina
+    await expect(page).toHaveURL(/\/(login|auth|sign-in)?$/);
+  });
+});
