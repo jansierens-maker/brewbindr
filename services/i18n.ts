@@ -254,7 +254,17 @@ export const translations = {
     herms: "HERMS",
     custom: "Custom",
     duration_label: "Duration (min)",
-    temp_label: "Temp (°C)"
+    temp_label: "Temp (°C)",
+    nav_inventory: "Inventory",
+    search_placeholder: "Search ingredient...",
+    sort_label: "Sort by",
+    sort_name_az: "Name A-Z",
+    sort_name_za: "Name Z-A",
+    sort_stock_up: "Stock ↑",
+    sort_stock_down: "Stock ↓",
+    max_amount_label: "Max Amount",
+    adjust_stock: "Adjust Stock",
+    total_ingredients: "total ingredients"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -509,7 +519,17 @@ export const translations = {
     herms: "HERMS",
     custom: "Aangepast",
     duration_label: "Duur (min)",
-    temp_label: "Temp (°C)"
+    temp_label: "Temp (°C)",
+    nav_inventory: "Voorraad",
+    search_placeholder: "Zoek ingrediënt...",
+    sort_label: "Sorteren",
+    sort_name_az: "Naam A-Z",
+    sort_name_za: "Naam Z-A",
+    sort_stock_up: "Voorraad ↑",
+    sort_stock_down: "Voorraad ↓",
+    max_amount_label: "Maximale voorraad",
+    adjust_stock: "Voorraad aanpassen",
+    total_ingredients: "totaal ingrediënten"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -764,6 +784,16 @@ export const translations = {
     herms: "HERMS",
     custom: "Personnalisé",
     duration_label: "Durée (min)",
-    temp_label: "Temp (°C)"
+    temp_label: "Temp (°C)",
+    nav_inventory: "Stock",
+    search_placeholder: "Rechercher un ingrédient...",
+    sort_label: "Trier par",
+    sort_name_az: "Nom A-Z",
+    sort_name_za: "Nom Z-A",
+    sort_stock_up: "Stock ↑",
+    sort_stock_down: "Stock ↓",
+    max_amount_label: "Quantité Max",
+    adjust_stock: "Ajuster le stock",
+    total_ingredients: "ingrédients au total"
   }
 };

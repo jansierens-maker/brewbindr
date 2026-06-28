@@ -18,7 +18,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onAuth
 }) => {
   const { t } = useTranslation();
-  const { user } = useUser();
+  const { user, preferences } = useUser();
   const [showMore, setShowMore] = useState(false);
 
   const tabs = [
@@ -30,7 +30,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   ];
 
   const moreItems = [
-    { id: 'voorraad', label: 'Voorraad', icon: 'fa-boxes-stacked', view: 'voorraad' },
+    ...(preferences.enableStockManagement ? [{ id: 'voorraad', label: t('nav_inventory'), icon: 'fa-boxes-stacked', view: 'voorraad' }] : []),
     { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
     { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
     { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },

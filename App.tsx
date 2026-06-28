@@ -12,6 +12,7 @@ import Auth from './components/Auth';
 import Settings from './components/Settings';
 import HelpView from './components/HelpView';
 import BrewingInstallationView from './components/BrewingInstallationView';
+import { VoorraadView } from './components/VoorraadView';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { BottomNav } from './components/BottomNav';
@@ -883,7 +884,6 @@ const AppContent: React.FC = () => {
       case 'recipes': return libraryView === 'personal' ? t('nav_recipes') : t('public_library');
       case 'brouwlogboek': return t('nav_brews');
       case 'proefnotities': return 'Proefnotities';
-      case 'voorraad': return 'Voorraad';
       case 'team': return 'Team';
       case 'importeren': return t('nav_import');
       case 'brouwinstallatie': return t('nav_installation');
@@ -892,6 +892,7 @@ const AppContent: React.FC = () => {
       case 'settings': return t('settings_label');
       case 'admin': return t('nav_admin');
       case 'help': return 'Help & Handleidingen';
+      case 'voorraad': return t('nav_inventory');
       case 'create': return selectedRecipe ? 'Recept bewerken' : t('nav_new');
       case 'log': return 'Brouwsessie';
       case 'tasting': return 'Proefnotitie';
@@ -1781,6 +1782,20 @@ END \$\$;
                 />
               )}
               {view === 'help' && <HelpView />}
+              {view === 'voorraad' && preferences.enableStockManagement && (
+                <VoorraadView
+                  ingredients={library}
+                  onUpdateStock={async (id, type, stock) => {
+                    const item = library.find(l => l.id === id);
+                    if (!item) return;
+                    const updatedItem = { ...item, stock };
+                    setLibrary(prev => prev.map(l => l.id === id ? updatedItem : l));
+                    if (user?.id) {
+                      await supabaseService.saveLibraryIngredient(updatedItem, user.id, profile?.brewery_id);
+                    }
+                  }}
+                />
+              )}
               {view === 'importeren' && (
                 <ImportView
                   onFileImport={handleFileImport}
@@ -1800,7 +1815,7 @@ END \$\$;
               )}
 
               {/* Placeholders for new views */}
-              {['voorraad'].includes(view) && (
+              {['brouwinstallatie_placeholder_example'].includes(view) && (
                 <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
                   <i className={`fas ${view === 'voorraad' ? 'fa-boxes-stacked' : 'fa-temperature-half'} text-6xl mb-6`}></i>
                   <h3 className="text-2xl font-black uppercase tracking-widest">{view}</h3>

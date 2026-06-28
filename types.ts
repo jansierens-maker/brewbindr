@@ -101,6 +101,7 @@ export interface LibraryIngredient {
   stock?: {
     amount: number;
     unit: string;
+    max_amount?: number;
   };
 }
 

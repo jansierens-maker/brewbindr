@@ -21,7 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAuth
 }) => {
   const { t } = useTranslation();
-  const { user, profile, breweryRole } = useUser();
+  const { user, profile, preferences, breweryRole } = useUser();
   const [brewery, setBrewery] = useState<Brewery | null>(null);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       { id: 'recipes-personal', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
       { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
       { id: 'proefnotities', label: 'Proefnotities', icon: 'fa-star-half-stroke', view: 'proefnotities' },
-      { id: 'voorraad', label: 'Voorraad', icon: 'fa-boxes-stacked', view: 'voorraad' },
+      ...(preferences.enableStockManagement ? [{ id: 'voorraad', label: t('nav_inventory'), icon: 'fa-boxes-stacked', view: 'voorraad' }] : []),
       { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
       { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
       { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
