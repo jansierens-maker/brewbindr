@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 
 // Laad .env.test lokaal; in CI komen vars via GitHub Secrets
-dotenv.config({ path: '.env.test' });
+// dotenv.config({ path: '.env.test' });
 
 export default defineConfig({
   testDir: './e2e',
