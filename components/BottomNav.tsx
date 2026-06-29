@@ -18,7 +18,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onAuth
 }) => {
   const { t } = useTranslation();
-  const { user } = useUser();
+  const { user, preferences } = useUser();
   const [showMore, setShowMore] = useState(false);
 
   const tabs = [
@@ -30,7 +30,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   ];
 
   const moreItems = [
-    { id: 'voorraad', label: 'Voorraad', icon: 'fa-boxes-stacked', view: 'voorraad' },
+    { id: 'voorraad', label: t('nav_stock'), icon: 'fa-boxes-stacked', view: 'voorraad', hideIf: !preferences.enableStockManagement },
     { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
     { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
     { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
@@ -86,7 +86,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           <div className="absolute bottom-[var(--bottomnav-h)] left-0 right-0 bg-[var(--color-bg)] rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-hidden border-t border-[var(--color-border)]">
             <div className="w-10 h-1 bg-[var(--color-border-strong)] rounded-full mx-auto my-3"></div>
             <div className="px-4 pb-8 space-y-1">
-              {moreItems.map((item) => {
+              {moreItems.filter(item => !(item as any).hideIf).map((item) => {
                 const gated = isGated(item);
                 return (
                   <button
