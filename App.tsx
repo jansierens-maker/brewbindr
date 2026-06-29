@@ -12,6 +12,7 @@ import Auth from './components/Auth';
 import Settings from './components/Settings';
 import HelpView from './components/HelpView';
 import BrewingInstallationView from './components/BrewingInstallationView';
+import { VoorraadView } from './components/VoorraadView';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { BottomNav } from './components/BottomNav';
@@ -883,7 +884,7 @@ const AppContent: React.FC = () => {
       case 'recipes': return libraryView === 'personal' ? t('nav_recipes') : t('public_library');
       case 'brouwlogboek': return t('nav_brews');
       case 'proefnotities': return 'Proefnotities';
-      case 'voorraad': return 'Voorraad';
+      case 'voorraad': return t('nav_stock');
       case 'team': return 'Team';
       case 'importeren': return t('nav_import');
       case 'brouwinstallatie': return t('nav_installation');
@@ -1781,6 +1782,17 @@ END \$\$;
                 />
               )}
               {view === 'help' && <HelpView />}
+              {view === 'voorraad' && (
+                <VoorraadView
+                  ingredients={library}
+                  onUpdate={async (item) => {
+                    setLibrary(prev => prev.map(l => l.id === item.id ? item : l));
+                    if (user?.id) {
+                      await supabaseService.saveLibraryIngredient(item, user.id, profile?.brewery_id);
+                    }
+                  }}
+                />
+              )}
               {view === 'importeren' && (
                 <ImportView
                   onFileImport={handleFileImport}
@@ -1800,7 +1812,7 @@ END \$\$;
               )}
 
               {/* Placeholders for new views */}
-              {['voorraad'].includes(view) && (
+              {['team-placeholder'].includes(view) && (
                 <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
                   <i className={`fas ${view === 'voorraad' ? 'fa-boxes-stacked' : 'fa-temperature-half'} text-6xl mb-6`}></i>
                   <h3 className="text-2xl font-black uppercase tracking-widest">{view}</h3>

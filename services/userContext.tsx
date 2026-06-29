@@ -31,7 +31,8 @@ const defaultPreferences: UserPreferences = {
   units: 'metric',
   colorScale: 'srm',
   language: getDefaultLanguage(),
-  enableStockManagement: false
+  // TODO: verwijder deze tijdelijke default na implementatie van stap 5 (Instellingen)
+  enableStockManagement: true
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
