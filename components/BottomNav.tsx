@@ -31,11 +31,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
   const moreItems = [
     { id: 'voorraad', label: t('nav_stock'), icon: 'fa-boxes-stacked', view: 'voorraad', hideIf: !preferences.enableStockManagement },
-    { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
+    { id: 'team', label: t('team_label'), icon: 'fa-users', view: 'team' },
     { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
     { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
-    { id: 'settings', label: 'Instellingen', icon: 'fa-gear', view: 'settings' },
-    { id: 'help', label: 'Help & Handleidingen', icon: 'fa-question-circle', view: 'help' },
+    { id: 'settings', label: t('settings_nav_label'), icon: 'fa-gear', view: 'settings' },
+    { id: 'help', label: t('help_nav_label'), icon: 'fa-question-circle', view: 'help' },
   ];
 
   const isActive = (tab: any) => {

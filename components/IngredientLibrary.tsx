@@ -161,25 +161,25 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     <div className="space-y-8 animate-in fade-in duration-500">
       {itemToDelete && (
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl p-8 max-md w-full shadow-2xl animate-in zoom-in-95 duration-300 text-center">
+          <div className="bg-[var(--color-bg)] rounded-[var(--radius)] p-8 max-md w-full shadow-[var(--shadow)] animate-in zoom-in-95 duration-300 text-center">
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
               <i className="fas fa-trash-alt text-2xl text-red-600"></i>
             </div>
-            <h3 className="text-2xl font-black text-stone-900 mb-2">{t('delete_ingredient')}?</h3>
-            <p className="text-stone-500 font-medium mb-1 text-sm">"{itemToDelete.name}"</p>
-            <p className="text-stone-400 text-xs mb-8">
+            <h3 className="text-2xl font-black text-[var(--color-text)] mb-2">{t('delete_ingredient')}?</h3>
+            <p className="text-[var(--color-text-muted)] font-medium mb-1 text-sm">"{itemToDelete.name}"</p>
+            <p className="text-[var(--color-text-xmuted)] text-xs mb-8">
               {t('confirm_delete')}
             </p>
             <div className="flex gap-4">
               <button 
                 onClick={() => setItemToDelete(null)} 
-                className="flex-1 py-4 bg-stone-100 text-stone-600 rounded-2xl font-black text-sm hover:bg-stone-200 transition-all uppercase tracking-widest"
+                className="flex-1 py-4 bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] rounded-[var(--radius-sm)] font-black text-sm hover:bg-[var(--color-bg-hover)] transition-all uppercase tracking-widest"
               >
                 {t('cancel_btn')}
               </button>
               <button 
                 onClick={confirmDelete} 
-                className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-100 uppercase tracking-widest"
+                className="flex-1 py-4 bg-red-600 text-white rounded-[var(--radius-sm)] font-black text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-100 uppercase tracking-widest"
               >
                 {t('delete_btn')}
               </button>
@@ -188,14 +188,14 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between bg-white p-6 rounded-3xl shadow-sm border border-stone-200">
+      <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between bg-[var(--color-bg)] p-6 rounded-[var(--radius)] shadow-[var(--shadow-sm)] border border-[var(--color-border)]">
         <div className="w-full">
           <div className="flex flex-wrap gap-1">
             {['fermentable', 'hop', 'culture', 'misc', 'mash_profile', 'style'].map((f: any) => (
               <button 
                 key={f}
                 onClick={() => { setFilter(f); cancelEditing(); setSelectedIds([]); }}
-                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all ${filter === f ? 'bg-amber-600 text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'}`}
+                className={`px-5 py-2.5 rounded-[var(--radius-sm)] font-bold text-xs transition-all ${filter === f ? 'bg-[var(--color-accent)] text-white shadow-lg' : 'text-[var(--color-text-xmuted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-muted)]'}`}
               >
                 {f === 'fermentable' ? t('malt') : f === 'hop' ? t('hops') : f === 'culture' ? t('yeast_lib') : f === 'mash_profile' ? t('mash_profile') : f === 'misc' ? t('miscs_label') : t('style_label')}
               </button>
@@ -206,10 +206,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end px-2 gap-4">
         <div>
-          <h3 className="text-2xl font-black capitalize text-stone-900">
+          <h3 className="text-2xl font-black capitalize text-[var(--color-text)] font-[var(--font-display)]">
             {filter === 'fermentable' ? t('malt') : filter === 'hop' ? t('hops') : filter === 'culture' ? t('yeast_lib') : filter === 'mash_profile' ? t('mash_profile') : filter === 'misc' ? t('miscs_label') : t('style_label')}
           </h3>
-          <p className="text-stone-400 text-xs font-bold">
+          <p className="text-[var(--color-text-xmuted)] text-xs font-bold">
             {ingredients.filter(i => i.type === filter && (
               libraryView === 'public'
                 ? i.status === 'approved'
@@ -245,7 +245,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
           {libraryView === 'personal' && canEdit && (
             <button
               onClick={handleAddNew}
-              className="bg-stone-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg hover:bg-black transition-all flex items-center gap-2"
+              className="bg-[var(--color-text)] text-white px-6 py-2.5 rounded-[var(--radius-sm)] font-bold text-xs shadow-lg hover:opacity-90 transition-all flex items-center gap-2"
             >
               <i className="fas fa-plus"></i> {t('new_btn')}
             </button>
@@ -262,8 +262,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                 ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
               )
         )).length === 0 ? (
-          <div className="col-span-full py-20 text-center text-stone-300 font-medium bg-white rounded-3xl border-2 border-dashed border-stone-100">
-            {t('no_brews')}
+          <div className="col-span-full py-20 text-center text-[var(--color-text-xmuted)] font-medium bg-[var(--color-bg)] rounded-[var(--radius)] border-2 border-dashed border-[var(--color-border)] shadow-[var(--shadow-sm)]">
+            {t('no_items_found')}
           </div>
         ) : (
           ingredients
@@ -277,7 +277,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             ))
             .sort((a, b) => a.name.localeCompare(b.name))
             .map(item => (
-            <div key={item.id} className={`bg-white p-8 rounded-3xl border shadow-sm relative transition-all ${editingId === item.id ? 'border-amber-400 ring-2 ring-amber-100' : selectedIds.includes(item.id) ? 'border-amber-500 ring-2 ring-amber-100' : 'border-stone-200'}`}>
+            <div key={item.id} className={`bg-[var(--color-bg)] p-8 rounded-[var(--radius)] border shadow-[var(--shadow-sm)] relative transition-all ${editingId === item.id ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent-light)]' : selectedIds.includes(item.id) ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent-light)]' : 'border-[var(--color-border)]'}`}>
 
               {editingId !== item.id && (
                 <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
@@ -288,7 +288,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                      <i className="fas fa-check text-[10px]"></i>
                    </button>
                    {((!item.user_id || item.user_id === user?.id) || (item.brewery_id === profile?.brewery_id)) && canEdit && (
-                      <button onClick={() => startEditing(item)} className="text-stone-300 hover:text-amber-500 transition-colors">
+                      <button onClick={() => startEditing(item)} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors">
                         <i className="fas fa-edit text-xs"></i>
                       </button>
                     )}
@@ -298,15 +298,15 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
               {editingId === item.id ? (
                 <div className="space-y-4 animate-in zoom-in-95 duration-200">
                   <div>
-                    <label htmlFor={`ing-name-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('name_label')}</label>
-                    <input id={`ing-name-${item.id}`} name="name" className="w-full p-2 bg-stone-50 border rounded-lg text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} maxLength={100} />
+                    <label htmlFor={`ing-name-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('name_label')}</label>
+                    <input id={`ing-name-${item.id}`} name="name" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} maxLength={100} />
                   </div>
                   
                   {filter === 'misc' && (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label htmlFor={`ing-misc-type-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('misc_type')}</label>
-                        <select id={`ing-misc-type-${item.id}`} name="misc_type" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.misc_type} onChange={e => setEditForm({...editForm, misc_type: e.target.value as any})}>
+                        <label htmlFor={`ing-misc-type-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('misc_type')}</label>
+                        <select id={`ing-misc-type-${item.id}`} name="misc_type" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.misc_type} onChange={e => setEditForm({...editForm, misc_type: e.target.value as any})}>
                           <option value="spice">Spice</option>
                           <option value="fining">Fining</option>
                           <option value="water_agent">Water Agent</option>
@@ -316,8 +316,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label htmlFor={`ing-misc-use-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('misc_use')}</label>
-                        <select id={`ing-misc-use-${item.id}`} name="misc_use" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.misc_use} onChange={e => setEditForm({...editForm, misc_use: e.target.value as any})}>
+                        <label htmlFor={`ing-misc-use-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('misc_use')}</label>
+                        <select id={`ing-misc-use-${item.id}`} name="misc_use" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.misc_use} onChange={e => setEditForm({...editForm, misc_use: e.target.value as any})}>
                           <option value="boil">Boil</option>
                           <option value="mash">Mash</option>
                           <option value="primary">Primary</option>
@@ -331,24 +331,24 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                   {filter === 'style' && (
                     <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
                       <div className="col-span-2">
-                        <label htmlFor={`ing-style-cat-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('style_category')}</label>
-                        <input id={`ing-style-cat-${item.id}`} name="category" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.category || ""} onChange={e => setEditForm({...editForm, category: e.target.value})} maxLength={100} />
+                        <label htmlFor={`ing-style-cat-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('style_category')}</label>
+                        <input id={`ing-style-cat-${item.id}`} name="category" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.category || ""} onChange={e => setEditForm({...editForm, category: e.target.value})} maxLength={100} />
                       </div>
                       <div>
-                        <label htmlFor={`ing-style-og-min-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">OG Min</label>
-                        <input id={`ing-style-og-min-${item.id}`} name="og_min" type="number" step="0.001" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.og_min || ""} onChange={e => setEditForm({...editForm, og_min: parseFloat(e.target.value)})} />
+                        <label htmlFor={`ing-style-og-min-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">OG Min</label>
+                        <input id={`ing-style-og-min-${item.id}`} name="og_min" type="number" step="0.001" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.og_min || ""} onChange={e => setEditForm({...editForm, og_min: parseFloat(e.target.value)})} />
                       </div>
                       <div>
-                        <label htmlFor={`ing-style-og-max-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">OG Max</label>
-                        <input id={`ing-style-og-max-${item.id}`} name="og_max" type="number" step="0.001" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.og_max || ""} onChange={e => setEditForm({...editForm, og_max: parseFloat(e.target.value)})} />
+                        <label htmlFor={`ing-style-og-max-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">OG Max</label>
+                        <input id={`ing-style-og-max-${item.id}`} name="og_max" type="number" step="0.001" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.og_max || ""} onChange={e => setEditForm({...editForm, og_max: parseFloat(e.target.value)})} />
                       </div>
                       <div>
-                        <label htmlFor={`ing-style-ibu-min-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">IBU Min</label>
-                        <input id={`ing-style-ibu-min-${item.id}`} name="ibu_min" type="number" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.ibu_min || ""} onChange={e => setEditForm({...editForm, ibu_min: parseFloat(e.target.value)})} />
+                        <label htmlFor={`ing-style-ibu-min-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">IBU Min</label>
+                        <input id={`ing-style-ibu-min-${item.id}`} name="ibu_min" type="number" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.ibu_min || ""} onChange={e => setEditForm({...editForm, ibu_min: parseFloat(e.target.value)})} />
                       </div>
                       <div>
-                        <label htmlFor={`ing-style-ibu-max-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">IBU Max</label>
-                        <input id={`ing-style-ibu-max-${item.id}`} name="ibu_max" type="number" className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold" value={editForm.ibu_max || ""} onChange={e => setEditForm({...editForm, ibu_max: parseFloat(e.target.value)})} />
+                        <label htmlFor={`ing-style-ibu-max-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">IBU Max</label>
+                        <input id={`ing-style-ibu-max-${item.id}`} name="ibu_max" type="number" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.ibu_max || ""} onChange={e => setEditForm({...editForm, ibu_max: parseFloat(e.target.value)})} />
                       </div>
                     </div>
                   )}
@@ -356,29 +356,29 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                   {filter === 'mash_profile' && (
                     <div className="space-y-4 pt-2">
                       <div className="flex justify-between items-center">
-                         <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('mash_steps')}</p>
-                         <button onClick={addMashStep} className="text-amber-600 font-black text-[10px] uppercase">+ {t('add_mash_step')}</button>
+                         <p className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('mash_steps')}</p>
+                         <button onClick={addMashStep} className="text-[var(--color-accent-dark)] font-black text-[10px] uppercase tracking-wider">+ {t('add_mash_step')}</button>
                       </div>
                       <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
                         {(editForm.steps || []).map((s, idx) => (
-                          <div key={idx} className="p-3 bg-stone-50 rounded-xl border border-stone-100 space-y-2 relative">
-                            <button onClick={() => removeMashStep(idx)} className="absolute top-2 right-2 text-stone-300 hover:text-red-500">
+                          <div key={idx} className="p-3 bg-[var(--color-bg-subtle)] rounded-[var(--radius-sm)] border border-[var(--color-border)] space-y-2 relative">
+                            <button onClick={() => removeMashStep(idx)} className="absolute top-2 right-2 text-[var(--color-text-xmuted)] hover:text-red-500">
                               <i className="fas fa-times"></i>
                             </button>
                             <label htmlFor={`ing-step-name-${item.id}-${idx}`} className="sr-only">Step Name</label>
-                            <input id={`ing-step-name-${item.id}-${idx}`} name={`step_name_${idx}`} className="w-full p-1.5 bg-white border rounded text-[10px] font-bold" placeholder="Step Name" value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} maxLength={100} />
+                            <input id={`ing-step-name-${item.id}-${idx}`} name={`step_name_${idx}`} className="w-full p-1.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded text-[10px] font-bold" placeholder="Step Name" value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} maxLength={100} />
                             <div className="grid grid-cols-3 gap-2">
                               <div>
                                 <label htmlFor={`ing-step-temp-${item.id}-${idx}`} className="sr-only">Temp</label>
-                                <input id={`ing-step-temp-${item.id}-${idx}`} name={`step_temp_${idx}`} type="number" className="p-1.5 bg-white border rounded text-[10px] font-bold w-full" placeholder="Temp" value={s.step_temp} onChange={e => updateMashStep(idx, 'step_temp', parseFloat(e.target.value) || 0)} />
+                                <input id={`ing-step-temp-${item.id}-${idx}`} name={`step_temp_${idx}`} type="number" className="p-1.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded text-[10px] font-bold w-full" placeholder="Temp" value={s.step_temp} onChange={e => updateMashStep(idx, 'step_temp', parseFloat(e.target.value) || 0)} />
                               </div>
                               <div>
                                 <label htmlFor={`ing-step-time-${item.id}-${idx}`} className="sr-only">Time</label>
-                                <input id={`ing-step-time-${item.id}-${idx}`} name={`step_time_${idx}`} type="number" className="p-1.5 bg-white border rounded text-[10px] font-bold w-full" placeholder="Time" value={s.step_time} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
+                                <input id={`ing-step-time-${item.id}-${idx}`} name={`step_time_${idx}`} type="number" className="p-1.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded text-[10px] font-bold w-full" placeholder="Time" value={s.step_time} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
                               </div>
                               <div>
                                 <label htmlFor={`ing-step-type-${item.id}-${idx}`} className="sr-only">Type</label>
-                                <select id={`ing-step-type-${item.id}-${idx}`} name={`step_type_${idx}`} className="p-1.5 bg-white border rounded text-[10px] font-bold w-full" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
+                                <select id={`ing-step-type-${item.id}-${idx}`} name={`step_type_${idx}`} className="p-1.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded text-[10px] font-bold w-full" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
                                   <option value="infusion">Infusion</option>
                                   <option value="temperature">Temp</option>
                                   <option value="decoction">Decoc</option>
@@ -392,15 +392,15 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                   )}
 
                   {preferences.enableStockManagement && editForm.status === 'private' && ['fermentable', 'hop', 'culture', 'misc'].includes(filter) && (
-                    <div className="pt-2 border-t border-stone-100">
-                      <label htmlFor={`ing-stock-${item.id}`} className="text-[10px] font-black text-stone-400 uppercase">{t('stock_label')}</label>
+                    <div className="pt-2 border-t border-[var(--color-border)]">
+                      <label htmlFor={`ing-stock-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('stock_label')}</label>
                       <div className="grid grid-cols-2 gap-3 mt-1">
                         <input
                           id={`ing-stock-${item.id}`}
                           name="stock_amount"
                           type="number"
                           step="0.01"
-                          className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold"
+                          className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold"
                           placeholder={t('stock_amount')}
                           value={editForm.stock?.amount ?? ""}
                           onChange={e => setEditForm({...editForm, stock: { amount: parseFloat(e.target.value) || 0, unit: editForm.stock?.unit || (filter === 'hop' || filter === 'misc' ? 'g' : 'kg') }})}
@@ -408,7 +408,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                         <select
                           id={`ing-stock-unit-${item.id}`}
                           aria-label="Stock Unit"
-                          className="w-full p-2 bg-stone-50 border rounded-lg text-xs font-bold"
+                          className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold"
                           value={editForm.stock?.unit || (filter === 'hop' || filter === 'misc' ? 'g' : 'kg')}
                           onChange={e => setEditForm({...editForm, stock: { amount: editForm.stock?.amount || 0, unit: e.target.value }})}
                         >
@@ -424,11 +424,11 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
 
                   <div className="flex flex-col gap-2 pt-2">
                     <div className="flex gap-2">
-                      <button onClick={saveEditing} className="flex-1 bg-amber-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-amber-700">{t('save_btn')}</button>
-                      <button onClick={cancelEditing} className="px-4 bg-stone-100 text-stone-400 py-2.5 rounded-xl text-xs font-bold hover:bg-stone-200">{t('cancel_btn')}</button>
+                      <button onClick={saveEditing} className="flex-1 bg-[var(--color-accent)] text-white py-2.5 rounded-[var(--radius-sm)] text-xs font-bold hover:opacity-90">{t('save_btn')}</button>
+                      <button onClick={cancelEditing} className="px-4 bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] py-2.5 rounded-[var(--radius-sm)] text-xs font-bold hover:bg-[var(--color-bg-hover)]">{t('cancel_btn')}</button>
                     </div>
 
-                    <button onClick={() => deleteItem(item)} className="w-full mt-2 py-2 text-red-500 text-[10px] font-black uppercase hover:bg-red-50 rounded-xl transition-all">
+                    <button onClick={() => deleteItem(item)} className="w-full mt-2 py-2 text-red-500 text-[10px] font-black uppercase hover:bg-red-50 rounded-[var(--radius-sm)] transition-all">
                       <i className="fas fa-trash-alt mr-2"></i> {t('delete_ingredient')}
                     </button>
                   </div>
@@ -437,32 +437,32 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                 <>
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex flex-col pr-14">
-                      <h4 className="font-black text-lg text-stone-900 leading-tight">{item.name}</h4>
+                      <h4 className="font-black text-lg text-[var(--color-text)] leading-tight">{item.name}</h4>
                       {item.status === 'approved' && <span className="text-[8px] font-black text-green-600 uppercase tracking-widest mt-1"><i className="fas fa-check-circle mr-1"></i>Public Library</span>}
-                      {item.status === 'submitted' && <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest mt-1"><i className="fas fa-clock mr-1"></i>Pending Review</span>}
+                      {item.status === 'submitted' && <span className="text-[8px] font-black text-[var(--color-accent)] uppercase tracking-widest mt-1"><i className="fas fa-clock mr-1"></i>Pending Review</span>}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-2 text-[10px] font-black uppercase tracking-widest text-stone-400">
+                  <div className="grid grid-cols-1 gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">
                     {item.type === 'misc' && (
                       <div className="flex justify-between"><span>{item.misc_type}</span><span>{item.misc_use}</span></div>
                     )}
                     {item.type === 'style' && (
                       <div className="space-y-1">
                         <p>{item.category}</p>
-                        <div className="flex flex-wrap gap-2 text-[8px] text-stone-900">
-                          <span className="bg-stone-100 px-1 rounded">OG: {item.og_min}-{item.og_max}</span>
-                          <span className="bg-stone-100 px-1 rounded">IBU: {item.ibu_min}-{item.ibu_max}</span>
+                        <div className="flex flex-wrap gap-2 text-[8px] text-[var(--color-text)]">
+                          <span className="bg-[var(--color-bg-subtle)] px-1 rounded border border-[var(--color-border)]">OG: {item.og_min}-{item.og_max}</span>
+                          <span className="bg-[var(--color-bg-subtle)] px-1 rounded border border-[var(--color-border)]">IBU: {item.ibu_min}-{item.ibu_max}</span>
                         </div>
                       </div>
                     )}
                     {item.type === 'fermentable' && (
-                      <div className="flex justify-between"><span>{t('color')}: <span className="text-stone-900">{item.color} SRM</span></span><span>{t('efficiency')}: <span className="text-stone-900">{item.yield}%</span></span></div>
+                      <div className="flex justify-between"><span>{t('color')}: <span className="text-[var(--color-text)]">{item.color} SRM</span></span><span>{t('efficiency')}: <span className="text-[var(--color-text)]">{item.yield}%</span></span></div>
                     )}
                     {item.type === 'hop' && (
-                      <div>Alpha: <span className="text-stone-900">{item.alpha}%</span></div>
+                      <div>Alpha: <span className="text-[var(--color-text)]">{item.alpha}%</span></div>
                     )}
                     {item.type === 'culture' && (
-                      <div className="flex justify-between"><span>Atten: <span className="text-stone-900">{item.attenuation}%</span></span><span>{t('form_label')}: <span className="text-stone-900">{item.form}</span></span></div>
+                      <div className="flex justify-between"><span>Atten: <span className="text-[var(--color-text)]">{item.attenuation}%</span></span><span>{t('form_label')}: <span className="text-[var(--color-text)]">{item.form}</span></span></div>
                     )}
                     {item.type === 'mash_profile' && (
                       <div className="space-y-1">
@@ -472,15 +472,15 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                   </div>
 
                   {preferences.enableStockManagement && item.status === 'private' && item.stock && ['fermentable', 'hop', 'culture', 'misc'].includes(item.type) && (
-                    <div className="mt-4 p-3 bg-stone-50 rounded-2xl border border-stone-100 flex justify-between items-center">
-                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('stock_label')}</span>
-                      <span className={`text-xs font-black ${item.stock.amount > 0 ? 'text-stone-900' : 'text-red-500'}`}>
+                    <div className="mt-4 p-3 bg-[var(--color-bg-subtle)] rounded-[var(--radius-sm)] border border-[var(--color-border)] flex justify-between items-center">
+                      <span className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('stock_label')}</span>
+                      <span className={`text-xs font-black ${item.stock.amount > 0 ? 'text-[var(--color-text)]' : 'text-red-500'}`}>
                         {item.stock.amount} {item.stock.unit}
                       </span>
                     </div>
                   )}
 
-                  <div className="mt-6 pt-6 border-t border-stone-100 flex flex-col gap-2">
+                  <div className="mt-6 pt-6 border-t border-[var(--color-border)] flex flex-col gap-2">
                     {user && libraryView === 'personal' && ((item.user_id === user.id || !item.user_id) || item.brewery_id === profile?.brewery_id) && item.status === 'private' && canEdit && (
                        <button
                         onClick={async () => {
@@ -497,7 +497,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                           if (remoteData) onUpdate(remoteData.library);
                           alert(`${item.name} submitted for review!`);
                         }}
-                        className="w-full bg-amber-100 text-amber-700 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-amber-200 transition-all tracking-widest"
+                        className="w-full bg-[var(--color-accent-light)] text-[var(--color-accent-dark)] py-2.5 rounded-[var(--radius-sm)] text-[10px] font-black uppercase hover:opacity-80 transition-all tracking-widest"
                        >
                          <i className="fas fa-cloud-upload-alt mr-2"></i>
                          {t('submit_to_public')}
@@ -514,7 +514,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                           }
                           alert(`${item.name} added to your collection!`);
                         }}
-                        className="w-full bg-stone-900 text-white py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-black transition-all tracking-widest"
+                        className="w-full bg-[var(--color-text)] text-white py-2.5 rounded-[var(--radius-sm)] text-[10px] font-black uppercase hover:opacity-90 transition-all tracking-widest"
                        >
                          <i className="fas fa-plus-circle mr-2"></i>
                          {t('add_to_collection')}

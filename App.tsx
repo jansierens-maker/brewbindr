@@ -3,8 +3,9 @@ import RecipeCreator from './components/RecipeCreator';
 import Bubbles from './components/Bubbles';
 import BrewLog from './components/BrewLog';
 import TastingNotes from './components/TastingNotes';
+import BrewLogView from './components/BrewLogView';
+import TastingNotesView from './components/TastingNotesView';
 import IngredientLibrary from './components/IngredientLibrary';
-import BrewHistory from './components/BrewHistory';
 import PrintView from './components/PrintView';
 import AdminView from './components/AdminView';
 import ImportView from './components/ImportView';
@@ -24,6 +25,7 @@ import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
 import { supabaseService } from './services/supabaseService';
+import { breweryService } from './services/breweryService';
 import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
@@ -123,6 +125,8 @@ const AppContent: React.FC = () => {
   const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
   const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
+  const [recipeTab, setRecipeTab] = useState<'all' | 'brewable' | 'fermenting'>('all');
+  const [teamCount, setTeamCount] = useState(1);
   const [syncError, setSyncError] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
@@ -149,10 +153,18 @@ const AppContent: React.FC = () => {
         const isOwner = (!r.user_id || r.user_id === user?.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id);
         return isOwner && (r.status === 'private' || r.status === 'submitted');
       })
-      .map(r => ({ recipe: r, stock: checkRecipeStock(r, library) }))
-      .filter(({ stock }) => !showBrewableOnly || stock.isBrewable)
+      .map(r => {
+        const stock = checkRecipeStock(r, library);
+        const activeBrews = brewLogs.filter(l => l.recipeId === r.id && (l.status === 'brewing' || l.status === 'fermenting' || l.status === 'lagering'));
+        return { recipe: r, stock, activeBrews };
+      })
+      .filter(({ stock, activeBrews }) => {
+        if (recipeTab === 'brewable' && preferences.enableStockManagement) return stock.isBrewable;
+        if (recipeTab === 'fermenting') return activeBrews.length > 0;
+        return true;
+      })
       .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name));
-  }, [recipes, libraryView, user?.id, profile?.brewery_id, showBrewableOnly, library]);
+  }, [recipes, libraryView, user?.id, profile?.brewery_id, recipeTab, preferences.enableStockManagement, library, brewLogs]);
 
   useEffect(() => {
     if (printData) {
@@ -259,6 +271,16 @@ const AppContent: React.FC = () => {
       setLibraryView('personal');
     }
   }, [preferences.enableStockManagement, view]);
+
+  useEffect(() => {
+    if (profile?.brewery_id) {
+      breweryService.getMembers(profile.brewery_id).then(members => {
+        setTeamCount(members.length);
+      });
+    } else {
+      setTeamCount(1);
+    }
+  }, [profile?.brewery_id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1573,35 +1595,90 @@ END \$\$;
                 <div className="space-y-10 animate-in fade-in duration-500">
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                      <h2 className="text-4xl font-black text-stone-900">{t('nav_recipes')}</h2>
+                      <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{t('nav_recipes')}</h2>
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
-                      {preferences.enableStockManagement && (
-                        <button
-                          onClick={() => setShowBrewableOnly(!showBrewableOnly)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${showBrewableOnly ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-100' : 'bg-white text-stone-400 border-stone-200 hover:border-stone-400'}`}
-                        >
-                          <i className={`fas ${showBrewableOnly ? 'fa-check-circle' : 'fa-circle'}`}></i>
-                          {t('show_brewable_only')}
-                        </button>
-                      )}
-
-                      <div className="flex bg-stone-100 p-1 rounded-2xl w-fit">
+                      <div className="flex bg-[var(--color-bg-subtle)] p-1 rounded-[var(--radius)] w-fit border border-[var(--color-border)]">
                         <button
                           onClick={() => setLibraryView('personal')}
-                          className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'personal' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                          className={`px-6 py-2 rounded-[var(--radius-sm)] text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'personal' ? 'bg-white text-[var(--color-text)] shadow-sm' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
                         >
                           {t('personal_collection')}
                         </button>
                         <button
                           onClick={() => setLibraryView('public')}
-                          className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'public' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                          className={`px-6 py-2 rounded-[var(--radius-sm)] text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'public' ? 'bg-white text-[var(--color-text)] shadow-sm' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
                         >
                           {t('public_library')}
                         </button>
                       </div>
                     </div>
                   </div>
+
+                  {user && libraryView === 'personal' && (
+                    <>
+                      {/* Stats Row */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {[
+                          { label: t('stat_recipes'), value: recipes.filter(r => (!r.user_id || r.user_id === user.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id)).length, icon: 'fa-flask' },
+                          { label: t('stat_brews'), value: brewLogs.length, icon: 'fa-history' },
+                          { label: t('stat_notes'), value: tastingNotes.length, icon: 'fa-star' },
+                          { label: t('stat_team'), value: teamCount, icon: 'fa-users' },
+                        ].map((stat, idx) => (
+                          <div key={idx} className="bg-[var(--color-bg)] p-5 rounded-[var(--radius)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-8 h-8 rounded-lg bg-[var(--color-bg-subtle)] flex items-center justify-center text-[var(--color-accent)] text-xs">
+                                <i className={`fas ${stat.icon}`}></i>
+                              </div>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-xmuted)]">{stat.label}</span>
+                            </div>
+                            <p className="text-2xl font-black text-[var(--color-text)]">{stat.value}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* AI Promo Banner */}
+                      <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-[var(--radius)] p-6 text-white shadow-lg relative overflow-hidden group">
+                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                          <div className="space-y-1">
+                            <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                              <i className="fas fa-magic"></i> {t('ai_banner_title')}
+                            </h3>
+                            <p className="text-sm font-medium opacity-90 max-w-2xl">
+                              {t('ai_banner_desc')}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => { setSelectedRecipe(null); setView('create'); }}
+                            className="bg-white text-amber-600 px-8 py-3 rounded-[var(--radius-sm)] font-black text-xs uppercase tracking-widest hover:bg-amber-50 transition-colors shadow-md whitespace-nowrap"
+                          >
+                            {t('ai_banner_btn')}
+                          </button>
+                        </div>
+                        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+                      </div>
+
+                      {/* Tabs */}
+                      <div className="flex border-b border-[var(--color-border)] gap-8">
+                        {[
+                          { id: 'all', label: t('tab_all') },
+                          { id: 'brewable', label: t('tab_brewable'), hideIf: !preferences.enableStockManagement },
+                          { id: 'fermenting', label: t('tab_fermenting') },
+                        ].filter(t => !t.hideIf).map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setRecipeTab(tab.id as any)}
+                            className={`pb-4 text-xs font-black uppercase tracking-widest transition-all relative ${recipeTab === tab.id ? 'text-[var(--color-text)]' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
+                          >
+                            {tab.label}
+                            {recipeTab === tab.id && (
+                              <div className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--color-accent)] rounded-t-full"></div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {libraryView === 'personal' && (
                       <button
@@ -1618,7 +1695,8 @@ END \$\$;
                       </button>
                     )}
                     {processedRecipes.map(({ recipe: r, stock }) => (
-                      <div key={r.id} className="bg-white rounded-3xl border border-stone-200 p-6 hover:shadow-xl transition-all border-b-4 group relative flex flex-col" style={{ borderBottomColor: getSRMColor(r.specifications?.color?.value || 0) }}>
+                      <div key={r.id} className="bg-[var(--color-bg)] rounded-[var(--radius)] border border-[var(--color-border)] p-6 hover:shadow-[var(--shadow)] transition-all group relative flex flex-col pt-8" >
+                        <div className="absolute top-0 left-0 right-0 h-[5px]" style={{ backgroundColor: getSRMColor(r.specifications?.color?.value || 0) }}></div>
                         <div className="absolute top-4 right-4 flex gap-2">
                           <button onClick={() => handlePrintRecipe(r)} title={t('print_recipe')} className="text-stone-300 hover:text-stone-900 transition-colors"> <i className="fas fa-print text-lg"></i> </button>
                           <button onClick={() => handleExportRecipeBeerXml(r)} title="Export BeerXML" className="text-stone-300 hover:text-amber-600 transition-colors"> <i className="fas fa-file-export text-lg"></i> </button>
@@ -1700,8 +1778,11 @@ END \$\$;
                   </div>
                 </div>
               )}
-              {(view === 'brews' || view === 'brouwlogboek' || view === 'proefnotities') && (
-                <BrewHistory logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('tasting'); } }} onPrintReport={handlePrintBrewReport} />
+              {view === 'brouwlogboek' && (
+                <BrewLogView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('tasting'); } }} onPrintReport={handlePrintBrewReport} />
+              )}
+              {view === 'proefnotities' && (
+                <TastingNotesView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('tasting'); } }} />
               )}
               {view === 'log' && selectedRecipe && (
                 <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} />
