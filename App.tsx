@@ -252,6 +252,14 @@ const AppContent: React.FC = () => {
     }
   }, [user, authLoading]);
 
+  // Handle redirect if stock management is disabled while on Voorraad view
+  useEffect(() => {
+    if (!preferences.enableStockManagement && view === 'voorraad') {
+      setView('recipes');
+      setLibraryView('personal');
+    }
+  }, [preferences.enableStockManagement, view]);
+
   useEffect(() => {
     let cancelled = false;
     let userDataChannel: any = null;
