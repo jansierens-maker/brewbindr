@@ -113,29 +113,33 @@ const Settings: React.FC = () => {
 
           {/* Stock Management Setting */}
           <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8 flex flex-col">
-            <div className="flex items-center gap-3">
-              <div className="bg-stone-100 p-3 rounded-2xl text-stone-600">
-                <i className="fas fa-boxes text-2xl"></i>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-stone-100 p-3 rounded-2xl text-stone-600">
+                  <i className="fas fa-boxes text-2xl"></i>
+                </div>
+                <h3 className="text-2xl font-black text-stone-900">{t('enable_stock_title')}</h3>
               </div>
-              <h3 className="text-2xl font-black text-stone-900">{t('enable_stock_title')}</h3>
-            </div>
-
-            <div className="flex-1 space-y-6">
-              <p className="text-sm text-stone-500 font-medium leading-relaxed">
-                {t('enable_stock_desc')}
-              </p>
 
               <button
                 onClick={() => updatePreferences({ enableStockManagement: !preferences.enableStockManagement })}
-                className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest border-2 transition-all flex items-center justify-center gap-3 ${
-                  preferences.enableStockManagement
-                    ? 'bg-green-50 border-green-500 text-green-700 shadow-sm'
-                    : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all focus:outline-none ${
+                  preferences.enableStockManagement ? 'bg-amber-500 shadow-sm shadow-amber-200' : 'bg-stone-200'
                 }`}
+                aria-label={t('enable_stock_title')}
               >
-                <i className={`fas ${preferences.enableStockManagement ? 'fa-check-circle' : 'fa-circle'}`}></i>
-                {preferences.enableStockManagement ? 'Enabled' : 'Disabled'}
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-all duration-300 ${
+                    preferences.enableStockManagement ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
               </button>
+            </div>
+
+            <div className="flex-1">
+              <p className="text-sm text-stone-500 font-medium leading-relaxed">
+                {t('enable_stock_desc')}
+              </p>
             </div>
           </div>
 
