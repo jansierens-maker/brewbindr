@@ -32,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems = [
     { section: 'Brouwerij', items: [
-      { id: 'recipes-personal', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
+      { id: 'recipes-personal', label: t('nav_brewery'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
       { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
       { id: 'proefnotities', label: t('proefnotities_label'), icon: 'fa-star-half-stroke', view: 'proefnotities' },
       { id: 'voorraad', label: t('nav_stock'), icon: 'fa-boxes-stacked', view: 'voorraad', hideIf: !preferences.enableStockManagement },

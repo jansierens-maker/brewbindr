@@ -125,7 +125,7 @@ const AppContent: React.FC = () => {
   const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
   const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
-  const [recipeTab, setRecipeTab] = useState<'all' | 'brewable' | 'fermenting'>('all');
+  const [recipeTab, setRecipeTab] = useState<'all' | 'brewable' | 'brewing' | 'fermenting' | 'lagering' | 'bottled'>('all');
   const [teamCount, setTeamCount] = useState(1);
   const [syncError, setSyncError] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
@@ -156,11 +156,15 @@ const AppContent: React.FC = () => {
       .map(r => {
         const stock = checkRecipeStock(r, library);
         const activeBrews = brewLogs.filter(l => l.recipeId === r.id && (l.status === 'brewing' || l.status === 'fermenting' || l.status === 'lagering'));
-        return { recipe: r, stock, activeBrews };
+        const hasBottledBrews = brewLogs.some(l => l.recipeId === r.id && l.status === 'bottled');
+        return { recipe: r, stock, activeBrews, hasBottledBrews };
       })
-      .filter(({ stock, activeBrews }) => {
+      .filter(({ stock, activeBrews, hasBottledBrews }) => {
         if (recipeTab === 'brewable' && preferences.enableStockManagement) return stock.isBrewable;
-        if (recipeTab === 'fermenting') return activeBrews.length > 0;
+        if (recipeTab === 'brewing') return activeBrews.some(b => b.status === 'brewing');
+        if (recipeTab === 'fermenting') return activeBrews.some(b => b.status === 'fermenting');
+        if (recipeTab === 'lagering') return activeBrews.some(b => b.status === 'lagering');
+        if (recipeTab === 'bottled') return hasBottledBrews;
         return true;
       })
       .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name));
@@ -911,7 +915,7 @@ const AppContent: React.FC = () => {
 
   const getPageTitle = () => {
     switch (view) {
-      case 'recipes': return libraryView === 'personal' ? t('nav_recipes') : t('public_library');
+      case 'recipes': return libraryView === 'personal' ? t('nav_brewery') : t('public_library');
       case 'brouwlogboek': return t('nav_brews');
       case 'proefnotities': return 'Proefnotities';
       case 'voorraad': return t('nav_stock');
@@ -1595,23 +1599,7 @@ END \$\$;
                 <div className="space-y-10 animate-in fade-in duration-500">
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                      <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{t('nav_recipes')}</h2>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex bg-[var(--color-bg-subtle)] p-1 rounded-[var(--radius)] w-fit border border-[var(--color-border)]">
-                        <button
-                          onClick={() => setLibraryView('personal')}
-                          className={`px-6 py-2 rounded-[var(--radius-sm)] text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'personal' ? 'bg-white text-[var(--color-text)] shadow-sm' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
-                        >
-                          {t('personal_collection')}
-                        </button>
-                        <button
-                          onClick={() => setLibraryView('public')}
-                          className={`px-6 py-2 rounded-[var(--radius-sm)] text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'public' ? 'bg-white text-[var(--color-text)] shadow-sm' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
-                        >
-                          {t('public_library')}
-                        </button>
-                      </div>
+                      <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{libraryView === 'personal' ? t('nav_brewery') : t('public_library')}</h2>
                     </div>
                   </div>
 
@@ -1620,20 +1608,27 @@ END \$\$;
                       {/* Stats Row */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                          { label: t('stat_recipes'), value: recipes.filter(r => (!r.user_id || r.user_id === user.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id)).length, icon: 'fa-flask' },
-                          { label: t('stat_brews'), value: brewLogs.length, icon: 'fa-history' },
-                          { label: t('stat_notes'), value: tastingNotes.length, icon: 'fa-star' },
-                          { label: t('stat_team'), value: teamCount, icon: 'fa-users' },
+                          { label: t('stat_recipes'), value: recipes.filter(r => (r.status === 'private' || r.status === 'submitted') && ((!r.user_id || r.user_id === user.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id))).length, icon: 'fa-flask', view: 'recipes' as View, libView: 'personal' as const },
+                          { label: t('stat_brews_alt'), value: brewLogs.length, icon: 'fa-history', view: 'brouwlogboek' as View },
+                          { label: t('stat_notes'), value: tastingNotes.length, icon: 'fa-star', view: 'proefnotities' as View },
+                          { label: t('stat_team'), value: teamCount, icon: 'fa-users', view: 'team' as View },
                         ].map((stat, idx) => (
-                          <div key={idx} className="bg-[var(--color-bg)] p-5 rounded-[var(--radius)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
+                          <button
+                            key={idx}
+                            onClick={() => {
+                               setView(stat.view);
+                               if ('libView' in stat && stat.libView) setLibraryView(stat.libView);
+                            }}
+                            className="bg-[var(--color-bg)] p-5 rounded-[var(--radius)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] text-left hover:border-[var(--color-accent)] transition-colors group"
+                          >
                             <div className="flex items-center gap-3 mb-2">
-                              <div className="w-8 h-8 rounded-lg bg-[var(--color-bg-subtle)] flex items-center justify-center text-[var(--color-accent)] text-xs">
+                              <div className="w-8 h-8 rounded-lg bg-[var(--color-bg-subtle)] flex items-center justify-center text-[var(--color-accent)] text-xs group-hover:bg-[var(--color-accent)] group-hover:text-white transition-colors">
                                 <i className={`fas ${stat.icon}`}></i>
                               </div>
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-xmuted)]">{stat.label}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-xmuted)] group-hover:text-[var(--color-text)] transition-colors">{stat.label}</span>
                             </div>
                             <p className="text-2xl font-black text-[var(--color-text)]">{stat.value}</p>
-                          </div>
+                          </button>
                         ))}
                       </div>
 
@@ -1659,16 +1654,19 @@ END \$\$;
                       </div>
 
                       {/* Tabs */}
-                      <div className="flex border-b border-[var(--color-border)] gap-8">
+                      <div className="flex border-b border-[var(--color-border)] gap-8 overflow-x-auto custom-scrollbar">
                         {[
                           { id: 'all', label: t('tab_all') },
                           { id: 'brewable', label: t('tab_brewable'), hideIf: !preferences.enableStockManagement },
+                          { id: 'brewing', label: t('tab_brewing') },
                           { id: 'fermenting', label: t('tab_fermenting') },
+                          { id: 'lagering', label: t('tab_lagering') },
+                          { id: 'bottled', label: t('tab_bottled') },
                         ].filter(t => !t.hideIf).map((tab) => (
                           <button
                             key={tab.id}
                             onClick={() => setRecipeTab(tab.id as any)}
-                            className={`pb-4 text-xs font-black uppercase tracking-widest transition-all relative ${recipeTab === tab.id ? 'text-[var(--color-text)]' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
+                            className={`pb-4 text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${recipeTab === tab.id ? 'text-[var(--color-text)]' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
                           >
                             {tab.label}
                             {recipeTab === tab.id && (
