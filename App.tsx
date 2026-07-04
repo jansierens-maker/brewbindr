@@ -1736,24 +1736,23 @@ END \$\$;
                                 <p className="text-2xl font-black text-[var(--color-text)]">{stat.count}</p>
                               </div>
 
-                              {stat.tab !== 'bottled' && (
-                                <div className="mt-4 hidden md:block space-y-1">
-                                  {stat.logs.slice(0, 3).map(log => {
-                                    const recipeName = recipes.find(r => r.id === log.recipeId)?.name || 'Unknown';
-                                    const days = Math.floor((new Date().getTime() - new Date(log.date).getTime()) / (1000 * 60 * 60 * 24));
-                                    return (
-                                      <p key={log.id} className="text-[9px] font-bold text-[var(--color-text-muted)] truncate">
-                                        • {recipeName} ({days} {t('days_label' as any)})
-                                      </p>
-                                    );
-                                  })}
-                                  {stat.logs.length > 3 && (
-                                    <p className="text-[9px] font-black text-[var(--color-accent)] uppercase tracking-widest mt-1">
-                                      + {stat.logs.length - 3} {t('more_label' as any)}
+                              <div className="mt-4 hidden md:block space-y-1">
+                                {stat.logs.slice(0, 3).map(log => {
+                                  const recipeName = recipes.find(r => r.id === log.recipeId)?.name || 'Unknown';
+                                  const startDate = (stat.tab === 'bottled' ? (log.bottling?.date || log.date) : log.date);
+                                  const days = Math.floor((new Date().getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+                                  return (
+                                    <p key={log.id} className="text-[9px] font-bold text-[var(--color-text-muted)] truncate">
+                                      • {recipeName} ({days} {t('days_label' as any)})
                                     </p>
-                                  )}
-                                </div>
-                              )}
+                                  );
+                                })}
+                                {stat.logs.length > 3 && (
+                                  <p className="text-[9px] font-black text-[var(--color-accent)] uppercase tracking-widest mt-1">
+                                    + {stat.logs.length - 3} {t('more_label' as any)}
+                                  </p>
+                                )}
+                              </div>
                             </button>
                           ));
                         })()}
