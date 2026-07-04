@@ -47,14 +47,18 @@ export const authService = {
   async updateProfile(profile: Partial<UserProfile>) {
     if (!supabase || !profile.id) return;
 
-    // Ensure we are only sending valid columns to avoid potential upsert issues.
-    // We explicitly omit 'role' and brewery fields to prevent client-side privilege escalation.
-    const profileData: any = { id: profile.id };
+    // Ensure we are only sending valid columns to avoid potential destructive updates.
+    // We explicitly omit 'role' and brewery fields to prevent client-side privilege escalation
+    // and to avoid wiping those columns if they already exist (which they should via trigger).
+    const profileData: any = {};
     if (profile.preferences) profileData.preferences = profile.preferences;
+    if (profile.email) profileData.email = profile.email;
+
+    if (Object.keys(profileData).length === 0) return;
 
     const { error } = await supabase
       .from('profiles')
-      .upsert(profileData);
+      .upsert({ id: profile.id, ...profileData });
 
     if (error) {
       console.error('Detailed error in updateProfile:', error);

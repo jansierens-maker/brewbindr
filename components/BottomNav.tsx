@@ -24,9 +24,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const tabs = [
     { id: 'recipes', label: t('nav_brewery'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
     { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
-    { id: 'recipes-public', label: 'Bieb', icon: 'fa-book-open', view: 'recipes', libView: 'public' },
-    { id: 'proefnotities', label: 'Proeven', icon: 'fa-star-half-stroke', view: 'proefnotities' },
-    { id: 'more', label: 'Meer', icon: 'fa-ellipsis-h' },
+    { id: 'recipes-public', label: t('nav_library_short'), icon: 'fa-book-open', view: 'recipes', libView: 'public' },
+    { id: 'proefnotities', label: t('nav_tasting_short'), icon: 'fa-star-half-stroke', view: 'proefnotities' },
+    { id: 'more', label: t('nav_more'), icon: 'fa-ellipsis-h' },
   ];
 
   const moreItems = [

@@ -296,7 +296,13 @@ export const translations = {
     tab_bottled: "Bottled",
     no_notes_found: "No tasting notes yet",
     no_notes_desc: "Brew a recipe and add a review after you have bottled it.",
-    notes_subtitle: "View the scores and experiences of your brews."
+    notes_subtitle: "View the scores and experiences of your brews.",
+    view_btn: "View",
+    update_btn: "Update",
+    no_brews_with_status: "No brew sessions found with this status.",
+    nav_library_short: "Library",
+    nav_tasting_short: "Tasting",
+    nav_more: "More"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -593,7 +599,13 @@ export const translations = {
     tab_bottled: "Gebotteld",
     no_notes_found: "Nog geen proefnotities",
     no_notes_desc: "Brouw een recept en voeg een review toe nadat je het gebotteld hebt.",
-    notes_subtitle: "Bekijk de scores en ervaringen van je brouwsels."
+    notes_subtitle: "Bekijk de scores en ervaringen van je brouwsels.",
+    view_btn: "Bekijken",
+    update_btn: "Bijwerken",
+    no_brews_with_status: "Geen brouwsessies gevonden met deze status.",
+    nav_library_short: "Bieb",
+    nav_tasting_short: "Proeven",
+    nav_more: "Meer"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -890,6 +902,12 @@ export const translations = {
     tab_bottled: "Embouteillé",
     no_notes_found: "Pas encore de notes de dégustation",
     no_notes_desc: "Brassez une recette et ajoutez un avis après l'avoir mise en bouteille.",
-    notes_subtitle: "Consultez les scores et les expériences de vos brassins."
+    notes_subtitle: "Consultez les scores et les expériences de vos brassins.",
+    view_btn: "Voir",
+    update_btn: "Mettre à jour",
+    no_brews_with_status: "Aucun brassin trouvé avec ce statut.",
+    nav_library_short: "Biblio",
+    nav_tasting_short: "Dégust.",
+    nav_more: "Plus"
   }
 };
