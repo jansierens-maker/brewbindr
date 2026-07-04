@@ -118,15 +118,15 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
   return (
     <div className="space-y-6">
       {/* Filter Bar */}
-      <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center gap-4">
+      <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] p-4 shadow-[var(--shadow-sm)] flex flex-col md:flex-row items-center gap-4">
         {/* Type Toggles */}
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => toggleType('all')}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-[var(--radius-sm)] border text-xs font-bold transition-all cursor-pointer ${
               activeTypes.length === 4
-                ? 'bg-stone-900 border-stone-900 text-white'
-                : 'bg-white border-stone-300 text-stone-500'
+                ? 'bg-[var(--color-text)] border-[var(--color-text)] text-white'
+                : 'bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]'
             }`}
           >
             {t('filter_all')}
@@ -141,7 +141,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
             <button
               key={type.id}
               onClick={() => toggleType(type.id)}
-              className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${getTypeStyle(type.id, activeTypes.includes(type.id))}`}
+              className={`px-3 py-1.5 rounded-[var(--radius-sm)] border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${getTypeStyle(type.id, activeTypes.includes(type.id))}`}
             >
               <span>{getTypeIcon(type.id)}</span>
               <span className="hidden sm:inline">{t(type.key as any)}</span>
@@ -150,27 +150,27 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
           ))}
         </div>
 
-        <div className="hidden md:block w-px h-8 bg-stone-100"></div>
+        <div className="hidden md:block w-px h-8 bg-[var(--color-border)]"></div>
 
         {/* Search */}
-        <div className="flex-1 w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 flex items-center gap-2 group focus-within:border-amber-500 transition-colors">
-          <i className="fas fa-search text-stone-400 text-xs"></i>
+        <div className="flex-1 w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-3 py-2 flex items-center gap-2 group focus-within:border-[var(--color-accent)] transition-colors">
+          <i className="fas fa-search text-[var(--color-text-xmuted)] text-xs"></i>
           <input
             type="text"
             placeholder={t('search_placeholder')}
-            className="bg-transparent border-none outline-none text-sm w-full"
+            className="bg-transparent border-none outline-none text-sm w-full text-[var(--color-text)]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <div className="hidden md:block w-px h-8 bg-stone-100"></div>
+        <div className="hidden md:block w-px h-8 bg-[var(--color-border)]"></div>
 
         {/* Sort */}
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <span className="text-xs font-bold text-stone-400 whitespace-nowrap">↕ {t('sort_label')}:</span>
+          <span className="text-xs font-bold text-[var(--color-text-xmuted)] whitespace-nowrap">↕ {t('sort_label')}:</span>
           <select
-            className="bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs font-bold outline-none flex-1 md:flex-initial"
+            className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-2 py-1.5 text-xs font-bold outline-none flex-1 md:flex-initial text-[var(--color-text)]"
             value={sortOption}
             onChange={(e) => setSortOption(e.target.value as SortOption)}
           >
@@ -181,27 +181,27 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
           </select>
         </div>
 
-        <div className="hidden md:block w-px h-8 bg-stone-100"></div>
+        <div className="hidden md:block w-px h-8 bg-[var(--color-border)]"></div>
 
         {/* View Toggle */}
-        <div className="bg-stone-100 p-1 rounded-xl flex gap-1">
+        <div className="bg-[var(--color-bg-subtle)] p-1 rounded-[var(--radius-sm)] flex gap-1 border border-[var(--color-border)]">
           <button
             onClick={() => setViewMode('grid')}
-            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-stone-900' : 'text-stone-400'}`}
+            className={`w-8 h-8 flex items-center justify-center rounded-[var(--radius-sm)] transition-all ${viewMode === 'grid' ? 'bg-[var(--color-bg)] shadow-sm text-[var(--color-text)]' : 'text-[var(--color-text-xmuted)]'}`}
           >
             <i className="fas fa-th-large"></i>
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-stone-900' : 'text-stone-400'}`}
+            className={`w-8 h-8 flex items-center justify-center rounded-[var(--radius-sm)] transition-all ${viewMode === 'list' ? 'bg-[var(--color-bg)] shadow-sm text-[var(--color-text)]' : 'text-[var(--color-text-xmuted)]'}`}
           >
             <i className="fas fa-list"></i>
           </button>
         </div>
       </div>
 
-      <div className="text-xs font-bold text-stone-400">
-        <strong className="text-stone-900">{filteredIngredients.length}</strong> {t('ingredients_header')}
+      <div className="text-xs font-bold text-[var(--color-text-xmuted)]">
+        <strong className="text-[var(--color-text)]">{filteredIngredients.length}</strong> {t('ingredients_header')}
       </div>
 
       {/* Main Content */}
@@ -214,7 +214,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
               <button
                 key={ing.id}
                 onClick={() => setEditingIngredient(ing)}
-                className="bg-white border border-stone-200 rounded-2xl p-4 flex flex-col items-center gap-2 hover:shadow-lg hover:-translate-y-0.5 transition-all group text-left cursor-pointer"
+                className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] p-4 flex flex-col items-center gap-2 hover:shadow-[var(--shadow)] hover:-translate-y-0.5 transition-all group text-left cursor-pointer"
               >
                 <div className={`w-1.5 h-1.5 rounded-full self-start mb-1 ${
                   ing.type === 'fermentable' ? 'bg-[#F59E0B]' :
@@ -227,8 +227,8 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                   showPct={showPct}
                 />
                 <div className="text-center mt-1">
-                  <div className="text-xs font-black text-stone-900 line-clamp-2 leading-tight min-h-[2em]">{ing.name}</div>
-                  <div className="text-[10px] font-bold text-stone-400 mt-1">
+                  <div className="text-xs font-black text-[var(--color-text)] line-clamp-2 leading-tight min-h-[2em]">{ing.name}</div>
+                  <div className="text-[10px] font-bold text-[var(--color-text-xmuted)] mt-1">
                     {ing.stock ? `${ing.stock.amount} ${ing.stock.unit}` : '0 -'}
                   </div>
                 </div>
@@ -237,14 +237,14 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
           })}
         </div>
       ) : (
-        <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] overflow-hidden shadow-[var(--shadow-sm)]">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-stone-50 border-b border-stone-200">
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-400">{t('name_label')}</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-400">{t('misc_type')}</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-400">{t('nav_stock')}</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-400">{t('stock_amount')}</th>
+              <tr className="bg-[var(--color-bg-subtle)] border-b border-[var(--color-border)]">
+                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('name_label')}</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('misc_type')}</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('nav_stock')}</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('stock_amount')}</th>
               </tr>
             </thead>
             <tbody>
@@ -254,21 +254,21 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                   <tr
                     key={ing.id}
                     onClick={() => setEditingIngredient(ing)}
-                    className="border-b border-stone-100 hover:bg-stone-50 transition-colors cursor-pointer"
+                    className="border-b border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3">
-                      <div className="text-sm font-bold text-stone-900">{ing.name}</div>
+                      <div className="text-sm font-bold text-[var(--color-text)]">{ing.name}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-stone-400">{ing.type}</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{ing.type}</div>
                     </td>
                     <td className="px-4 py-3 min-w-[150px]">
                       <MiniGlassBar pct={pct} />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm font-bold text-stone-900">
+                      <div className="text-sm font-bold text-[var(--color-text)]">
                         {ing.stock ? `${ing.stock.amount} ${ing.stock.unit}` : '0 -'}
-                        {ing.stock?.stock_target && <span className="text-stone-300 font-medium ml-1">/ {ing.stock.stock_target} {ing.stock.unit}</span>}
+                        {ing.stock?.stock_target && <span className="text-[var(--color-text-xmuted)] font-medium ml-1">/ {ing.stock.stock_target} {ing.stock.unit}</span>}
                       </div>
                     </td>
                   </tr>
@@ -282,25 +282,25 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
       {/* Edit Modal */}
       {editingIngredient && (
         <div className="fixed inset-0 z-[200] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-[var(--color-bg)] rounded-[var(--radius)] p-6 w-full max-w-sm shadow-[var(--shadow)] animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-black text-stone-900">{t('edit_stock_title')}</h3>
-              <button onClick={() => setEditingIngredient(null)} className="text-stone-300 hover:text-stone-900">
+              <h3 className="text-lg font-black text-[var(--color-text)]">{t('edit_stock_title')}</h3>
+              <button onClick={() => setEditingIngredient(null)} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-text)]">
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
             <form onSubmit={handleSaveStock} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1.5">{t('name_label')}</label>
-                <div className="text-sm font-bold text-stone-900 bg-stone-50 p-3 rounded-xl border border-stone-100">
+                <label className="block text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest mb-1.5">{t('name_label')}</label>
+                <div className="text-sm font-bold text-[var(--color-text)] bg-[var(--color-bg-subtle)] p-3 rounded-[var(--radius-sm)] border border-[var(--color-border)]">
                   {editingIngredient.name}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="amount" className="block text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1.5">{t('stock_amount')}</label>
+                  <label htmlFor="amount" className="block text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest mb-1.5">{t('stock_amount')}</label>
                   <input
                     id="amount"
                     name="amount"
@@ -308,16 +308,16 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                     step="any"
                     defaultValue={editingIngredient.stock?.amount || 0}
                     autoFocus
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-amber-500 transition-colors"
+                    className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--color-accent)] transition-colors text-[var(--color-text)]"
                   />
                 </div>
                 <div>
-                  <label htmlFor="unit" className="block text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1.5">{t('unit_label')}</label>
+                  <label htmlFor="unit" className="block text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest mb-1.5">{t('unit_label')}</label>
                   <select
                     id="unit"
                     name="unit"
                     defaultValue={editingIngredient.stock?.unit || getUnitOptions(editingIngredient.type)[0]}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-amber-500 transition-colors"
+                    className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--color-accent)] transition-colors text-[var(--color-text)]"
                   >
                     {getUnitOptions(editingIngredient.type).map(u => (
                       <option key={u} value={u}>{u}</option>
@@ -327,7 +327,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
               </div>
 
               <div>
-                <label htmlFor="target" className="block text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1.5">{t('stock_target_label')}</label>
+                <label htmlFor="target" className="block text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest mb-1.5">{t('stock_target_label')}</label>
                 <input
                   id="target"
                   name="target"
@@ -335,7 +335,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                   step="any"
                   placeholder={t('optional' as any)}
                   defaultValue={editingIngredient.stock?.stock_target}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-amber-500 transition-colors"
+                  className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--color-accent)] transition-colors text-[var(--color-text)]"
                 />
               </div>
 
@@ -343,13 +343,13 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                 <button
                   type="button"
                   onClick={() => setEditingIngredient(null)}
-                  className="flex-1 py-3 bg-stone-100 text-stone-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-stone-200 transition-all"
+                  className="flex-1 py-3 bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] rounded-[var(--radius-sm)] font-black text-xs uppercase tracking-widest hover:bg-[var(--color-bg-hover)] transition-all"
                 >
                   {t('cancel_btn')}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-stone-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-200"
+                  className="flex-1 py-3 bg-[var(--color-text)] text-white rounded-[var(--radius-sm)] font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
                 >
                   {t('save_btn')}
                 </button>

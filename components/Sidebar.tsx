@@ -32,21 +32,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems = [
     { section: 'Brouwerij', items: [
-      { id: 'recipes-personal', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
+      { id: 'recipes-personal', label: t('nav_brewery'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
       { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
-      { id: 'proefnotities', label: 'Proefnotities', icon: 'fa-star-half-stroke', view: 'proefnotities' },
+      { id: 'proefnotities', label: t('proefnotities_label'), icon: 'fa-star-half-stroke', view: 'proefnotities' },
       { id: 'voorraad', label: t('nav_stock'), icon: 'fa-boxes-stacked', view: 'voorraad', hideIf: !preferences.enableStockManagement },
-      { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
+      { id: 'team', label: t('team_label'), icon: 'fa-users', view: 'team' },
       { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
       { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
     ]},
     { section: 'Bibliotheek', items: [
-      { id: 'recipes-public', label: 'Recepten', icon: 'fa-flask', view: 'recipes', libView: 'public' },
-      { id: 'library', label: 'Ingrediënten', icon: 'fa-seedling', view: 'library' },
+      { id: 'recipes-public', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'public' },
+      { id: 'library', label: t('ingredients_header'), icon: 'fa-seedling', view: 'library' },
     ]},
     { section: 'Systeem', items: [
-      { id: 'settings', label: 'Instellingen', icon: 'fa-gear', view: 'settings' },
-      { id: 'help', label: 'Help & Handleidingen', icon: 'fa-question-circle', view: 'help' },
+      { id: 'settings', label: t('settings_nav_label'), icon: 'fa-gear', view: 'settings' },
+      { id: 'help', label: t('help_nav_label'), icon: 'fa-question-circle', view: 'help' },
     ]}
   ];
 
@@ -150,13 +150,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onAuth?.('signin')}
               className="w-full py-2.5 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all shadow-sm"
             >
-              Aanmelden
+              {t('sign_in_nav_label')}
             </button>
             <button
               onClick={() => onAuth?.('signup')}
               className="w-full py-2.5 bg-white border border-[var(--color-border-strong)] text-[var(--color-text)] rounded-[var(--radius-sm)] text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-bg-hover)] transition-all"
             >
-              Account aanmaken
+              {t('create_account_nav_label')}
             </button>
           </div>
         )}

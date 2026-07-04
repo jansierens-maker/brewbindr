@@ -231,13 +231,19 @@ export const supabaseService = {
     const table = TABLE_MAP[item.type];
     if (!client || !table) return;
 
-    const payload = {
+    const STATUS_TABLES = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+    const hasStatus = STATUS_TABLES.includes(item.type === 'mash_profile' ? 'mash_profiles' : table);
+
+    const payload: any = {
       id: item.id || uuidv4(),
       data: item,
       user_id: userId || item.user_id,
-      brewery_id: breweryId || item.brewery_id,
-      status: item.status || 'private'
+      brewery_id: breweryId || item.brewery_id
     };
+
+    if (hasStatus) {
+      payload.status = item.status || 'private';
+    }
 
     const { error } = await client.from(table).upsert(payload);
 
@@ -328,14 +334,25 @@ export const supabaseService = {
       }
     });
 
+    const STATUS_TABLES = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+
     const tasks = Object.entries(libraryByType).map(async ([table, items]) => {
-      const { error } = await client.from(table).upsert(items.map(i => ({
-        id: i.id || uuidv4(),
-        data: i,
-        user_id: userId,
-        brewery_id: breweryId || i.brewery_id,
-        status: i.status || 'private'
-      })));
+      // Find the ingredient type that corresponds to this table
+      const firstItemType = Object.entries(TABLE_MAP).find(([type, tbl]) => tbl === table)?.[0] || '';
+      const hasStatus = STATUS_TABLES.includes(table) || STATUS_TABLES.includes(firstItemType);
+
+      const { error } = await client.from(table).upsert(items.map(i => {
+        const payload: any = {
+          id: i.id || uuidv4(),
+          data: i,
+          user_id: userId,
+          brewery_id: breweryId || i.brewery_id
+        };
+        if (hasStatus) {
+          payload.status = i.status || 'private';
+        }
+        return payload;
+      }));
       if (error) {
         console.error(`Batch save error for ${table}:`, error.message, error.details, error.hint, error.code);
       }

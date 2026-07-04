@@ -22,20 +22,20 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const [showMore, setShowMore] = useState(false);
 
   const tabs = [
-    { id: 'recipes', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
+    { id: 'recipes', label: t('nav_brewery'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
     { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
-    { id: 'recipes-public', label: 'Bieb', icon: 'fa-book-open', view: 'recipes', libView: 'public' },
-    { id: 'proefnotities', label: 'Proeven', icon: 'fa-star-half-stroke', view: 'proefnotities' },
-    { id: 'more', label: 'Meer', icon: 'fa-ellipsis-h' },
+    { id: 'recipes-public', label: t('nav_library_short'), icon: 'fa-book-open', view: 'recipes', libView: 'public' },
+    { id: 'proefnotities', label: t('nav_tasting_short'), icon: 'fa-star-half-stroke', view: 'proefnotities' },
+    { id: 'more', label: t('nav_more'), icon: 'fa-ellipsis-h' },
   ];
 
   const moreItems = [
     { id: 'voorraad', label: t('nav_stock'), icon: 'fa-boxes-stacked', view: 'voorraad', hideIf: !preferences.enableStockManagement },
-    { id: 'team', label: 'Team', icon: 'fa-users', view: 'team' },
+    { id: 'team', label: t('team_label'), icon: 'fa-users', view: 'team' },
     { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
     { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
-    { id: 'settings', label: 'Instellingen', icon: 'fa-gear', view: 'settings' },
-    { id: 'help', label: 'Help & Handleidingen', icon: 'fa-question-circle', view: 'help' },
+    { id: 'settings', label: t('settings_nav_label'), icon: 'fa-gear', view: 'settings' },
+    { id: 'help', label: t('help_nav_label'), icon: 'fa-question-circle', view: 'help' },
   ];
 
   const isActive = (tab: any) => {
