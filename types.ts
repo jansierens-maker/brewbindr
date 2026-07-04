@@ -13,6 +13,7 @@ export interface UserPreferences {
   colorScale: 'srm' | 'ebc';
   language: Language;
   enableStockManagement: boolean;
+  bottled_period: 'week' | 'month' | 'year' | 'all';
 }
 
 export type BreweryRole = 'admin' | 'brewmaster' | 'brewer' | 'taster';

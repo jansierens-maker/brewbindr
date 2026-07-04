@@ -57,12 +57,6 @@ export const Topbar: React.FC<TopbarProps> = ({
           </button>
         </div>
 
-        {/* Search (Desktop Only) */}
-        <div className="hidden lg:flex items-center gap-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-[6px_12px] text-[13px] text-[var(--color-text-muted)] min-w-[180px] cursor-text">
-          <i className="fas fa-search text-xs"></i>
-          <span>{t('search_placeholder')}</span>
-        </div>
-
         {/* Help Button */}
         <button
           onClick={onShowHelp}

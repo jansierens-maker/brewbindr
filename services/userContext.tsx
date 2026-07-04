@@ -26,8 +26,9 @@ const getDefaultLanguage = (): Language => {
 const defaultPreferences: UserPreferences = {
   units: 'metric',
   colorScale: 'srm',
-  language: getDefaultLanguage(),
-  enableStockManagement: false
+  language: 'en',
+  enableStockManagement: false,
+  bottled_period: 'month'
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -194,7 +195,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     profile,
     loading,
-    preferences: { ...defaultPreferences, ...profile?.preferences },
+    preferences: {
+      ...defaultPreferences,
+      ...(user ? {} : { language: getDefaultLanguage() }),
+      ...profile?.preferences
+    },
     updatePreferences,
     signOut,
     isAdmin: profile?.role === 'admin',
