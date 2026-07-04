@@ -302,7 +302,14 @@ export const translations = {
     no_brews_with_status: "No brew sessions found with this status.",
     nav_library_short: "Library",
     nav_tasting_short: "Tasting",
-    nav_more: "More"
+    nav_more: "More",
+    period_label: "Display Period (Bottled)",
+    period_week: "Week",
+    period_month: "Month",
+    period_year: "Year",
+    period_all: "All",
+    days_label: "days",
+    more_label: "more"
   },
   nl: {
     nav_recipes: "Recepten",
@@ -605,7 +612,14 @@ export const translations = {
     no_brews_with_status: "Geen brouwsessies gevonden met deze status.",
     nav_library_short: "Bieb",
     nav_tasting_short: "Proeven",
-    nav_more: "Meer"
+    nav_more: "Meer",
+    period_label: "Toon periode (Gebotteld)",
+    period_week: "Week",
+    period_month: "Maand",
+    period_year: "Jaar",
+    period_all: "Alles",
+    days_label: "dagen",
+    more_label: "meer"
   },
   fr: {
     nav_recipes: "Recettes",
@@ -908,6 +922,13 @@ export const translations = {
     no_brews_with_status: "Aucun brassin trouvé avec ce statut.",
     nav_library_short: "Biblio",
     nav_tasting_short: "Dégust.",
-    nav_more: "Plus"
+    nav_more: "Plus",
+    period_label: "Période d'affichage (Embouteillé)",
+    period_week: "Semaine",
+    period_month: "Mois",
+    period_year: "Année",
+    period_all: "Tout",
+    days_label: "jours",
+    more_label: "de plus"
   }
 };

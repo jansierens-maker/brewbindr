@@ -175,6 +175,37 @@ const Settings: React.FC = () => {
             </div>
           </div>
 
+          {/* Bottled Period Preferences */}
+          <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8">
+            <div className="flex items-center gap-3">
+              <div className="bg-green-100 p-3 rounded-2xl text-green-600">
+                <i className="fas fa-calendar-alt text-2xl"></i>
+              </div>
+              <h3 className="text-2xl font-black text-stone-900">{t('period_label' as any)}</h3>
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('period_label' as any)}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(['week', 'month', 'year', 'all'] as const).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => updatePreferences({ bottled_period: p })}
+                      className={`py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest border-2 transition-all ${
+                        preferences.bottled_period === p
+                          ? 'bg-green-50 border-green-500 text-green-600 shadow-sm'
+                          : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
+                      }`}
+                    >
+                      {t(`period_${p}` as any)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Account Info */}
           <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8 flex flex-col">
             <div className="flex items-center gap-3">
