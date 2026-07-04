@@ -155,6 +155,43 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
     }
   }
 
+  // Global Equipments
+  const equipments = xmlDoc.getElementsByTagName("EQUIPMENT");
+  for (let i = 0; i < equipments.length; i++) {
+    const e = equipments[i];
+    if (isGlobal(e)) {
+      result.equipments.push({
+        name: getVal(e, "NAME"),
+        type: 'equipment',
+        equipment_type: 'custom',
+        batch_size: getNum(e, "BATCH_SIZE"),
+        boil_size: getNum(e, "BOIL_SIZE"),
+        efficiency: getNum(e, "EFFICIENCY"),
+        boil_time: getNum(e, "BOIL_TIME"),
+        trub_chiller_loss: getNum(e, "TRUB_CHILLER_LOSS"),
+        evap_rate: getNum(e, "EVAP_RATE"),
+        lauter_deadspace: getNum(e, "LAUTER_DEADSPACE"),
+        top_up_water: getNum(e, "TOP_UP_WATER"),
+        tun_specific_heat: getNum(e, "TUN_SPECIFIC_HEAT"),
+        description: getVal(e, "NOTES")
+      });
+    }
+  }
+
+  // Global Waters
+  const waters = xmlDoc.getElementsByTagName("WATER");
+  for (let i = 0; i < waters.length; i++) {
+    const w = waters[i];
+    if (isGlobal(w)) {
+      result.waters.push({
+        name: getVal(w, "NAME"),
+        type: 'water',
+        amount: getNum(w, "AMOUNT"),
+        notes: getVal(w, "NOTES")
+      });
+    }
+  }
+
   // Recipes
   const recipes = xmlDoc.getElementsByTagName("RECIPE");
   for (let i = 0; i < recipes.length; i++) {

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Kleuren */
+  /* Kleuren - Design Tokens v4 */
   --color-bg:          #FFFFFF;
   --color-bg-subtle:   #F5F7FA;
   --color-bg-hover:    #EDF1F7;
@@ -40,6 +40,8 @@
 body {
   background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 40%, #fde68a 100%);
   min-height: 100vh;
+  color: var(--color-text);
+  font-family: var(--font-body);
 }
 
 /* BUBBLE ANIMATION */
@@ -62,4 +64,15 @@ body {
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
+}
+
+/* Custom Scrollbar voor Sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }

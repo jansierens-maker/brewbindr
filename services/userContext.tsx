@@ -18,20 +18,17 @@ interface UserContextType {
 }
 
 const getDefaultLanguage = (): Language => {
-  const saved = localStorage.getItem('brew_lang') as Language;
-  if (saved && (saved === 'en' || saved === 'nl' || saved === 'fr')) return saved;
-
   const browserLang = navigator.language.split('-')[0];
   if (browserLang === 'nl' || browserLang === 'fr') return browserLang as Language;
-
   return 'en';
 };
 
 const defaultPreferences: UserPreferences = {
   units: 'metric',
   colorScale: 'srm',
-  language: getDefaultLanguage(),
-  enableStockManagement: false
+  language: 'en',
+  enableStockManagement: false,
+  bottled_period: 'month'
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -168,15 +165,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const currentPrefs = { ...defaultPreferences, ...prev?.preferences };
       const newPrefs = { ...currentPrefs, ...prefs };
 
-      if (prefs.language) {
-        localStorage.setItem('brew_lang', prefs.language);
-      }
-
       if (prev) {
         return { ...prev, preferences: newPrefs };
       } else {
         // Use the actual user ID if available, even if the profile hasn't loaded yet.
-        // This allows the debounced sync to try and create/update the row.
+        // This allows the debounced sync to try and update the row.
         return { id: user?.id || 'temp', role: 'user', preferences: newPrefs } as UserProfile;
       }
     });
@@ -202,7 +195,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     profile,
     loading,
-    preferences: { ...defaultPreferences, ...profile?.preferences },
+    preferences: {
+      ...defaultPreferences,
+      ...(user ? {} : { language: getDefaultLanguage() }),
+      ...profile?.preferences
+    },
     updatePreferences,
     signOut,
     isAdmin: profile?.role === 'admin',

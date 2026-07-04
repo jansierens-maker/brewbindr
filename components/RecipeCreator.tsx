@@ -525,7 +525,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                           name={`step_temp_${idx}`}
                           type="number"
                           className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold"
-                          value={preferences.units === 'imperial' ? Math.round((s.step_temp * 9/5) + 32) : s.step_temp}
+                          value={preferences.units === 'imperial' ? Math.round(((s.step_temp || 0) * 9/5) + 32) : (s.step_temp || 0)}
                           onChange={e => {
                             const val = parseFloat(e.target.value) || 0;
                             const celsius = preferences.units === 'imperial' ? (val - 32) * 5/9 : val;
@@ -538,7 +538,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     <div>
                       <label htmlFor={`step_time_${idx}`} className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('step_time')}</label>
                       <div className="flex items-center gap-2">
-                        <input id={`step_time_${idx}`} name={`step_time_${idx}`} type="number" className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.step_time} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
+                        <input id={`step_time_${idx}`} name={`step_time_${idx}`} type="number" className="flex-1 p-2.5 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold" value={s.step_time || 0} onChange={e => updateMashStep(idx, 'step_time', parseFloat(e.target.value) || 0)} />
                         <span className="text-xs font-bold text-stone-400">min</span>
                       </div>
                     </div>

@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import { useTranslation } from '../App';
 
 interface AuthProps {
   onSuccess?: () => void;
+  initialIsSignUp?: boolean;
 }
 
-const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
+const Auth: React.FC<AuthProps> = ({ onSuccess, initialIsSignUp = false }) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(initialIsSignUp);
+
+  useEffect(() => {
+    setIsSignUp(initialIsSignUp);
+  }, [initialIsSignUp]);
   const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -17,10 +24,23 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Basic validation
+    if (!email.includes('@')) {
+      setError(t('auth_error_invalid_email' as any));
+      setLoading(false);
+      return;
+    }
+    if (password.length < 6) {
+      setError(t('auth_error_password_short' as any));
+      setLoading(false);
+      return;
+    }
+
     try {
       if (isSignUp) {
         await authService.signUp(email, password, inviteCode.trim() || undefined);
-        alert('Check your email for the confirmation link!');
+        alert(t('auth_signup_confirm' as any));
       } else {
         await authService.signIn(email, password);
         if (inviteCode.trim()) {
@@ -29,7 +49,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
         if (onSuccess) onSuccess();
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      setError(err.message || t('auth_error_generic' as any));
     } finally {
       setLoading(false);
     }
@@ -43,13 +63,13 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
         </div>
         <h2 className="text-3xl font-black text-stone-900 uppercase italic">brewbindr</h2>
         <p className="text-stone-400 font-bold text-xs uppercase tracking-widest mt-1">
-          {isSignUp ? 'Create an account' : 'Sign in to your brewery'}
+          {isSignUp ? t('auth_signup_title' as any) : t('auth_signin_title' as any)}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="auth-email" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Email Address</label>
+          <label htmlFor="auth-email" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">{t('auth_email_label' as any)}</label>
           <input
             id="auth-email"
             name="email"
@@ -63,7 +83,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
           />
         </div>
         <div>
-          <label htmlFor="auth-password" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Password</label>
+          <label htmlFor="auth-password" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">{t('auth_password_label' as any)}</label>
           <input
             id="auth-password"
             name="password"
@@ -79,7 +99,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
 
         {isSignUp && (
           <div>
-            <label htmlFor="auth-invite-code" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">Invite Code (Optional)</label>
+            <label htmlFor="auth-invite-code" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">{t('auth_invite_code_label' as any)}</label>
             <input
               id="auth-invite-code"
               name="invite_code"
@@ -90,7 +110,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
               placeholder="ABCDEF"
               maxLength={20}
             />
-            <p className="text-[9px] text-stone-400 mt-1 ml-1 font-bold italic">Joining a brewery? Enter the code here.</p>
+            <p className="text-[9px] text-stone-400 mt-1 ml-1 font-bold italic">{t('auth_invite_code_hint' as any)}</p>
           </div>
         )}
 
@@ -109,7 +129,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
           {loading ? (
             <i className="fas fa-circle-notch fa-spin"></i>
           ) : (
-            isSignUp ? 'Sign Up' : 'Sign In'
+            isSignUp ? t('auth_signup_btn' as any) : t('auth_signin_btn' as any)
           )}
         </button>
       </form>
@@ -119,7 +139,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
           onClick={() => setIsSignUp(!isSignUp)}
           className="text-stone-400 hover:text-amber-600 font-bold text-xs uppercase tracking-widest transition-colors"
         >
-          {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+          {isSignUp ? t('auth_switch_to_signin' as any) : t('auth_switch_to_signup' as any)}
         </button>
       </div>
     </div>
