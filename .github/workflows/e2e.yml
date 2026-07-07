@@ -32,8 +32,6 @@ jobs:
         run: npx playwright test
         env:
           CI: true
-          # De live Vercel URL (of preview URL) waartegen getest wordt
-          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
           # Testaccount credentials (aanmaken in Supabase Dashboard)
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}

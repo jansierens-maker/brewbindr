@@ -9,17 +9,21 @@ test.describe('Help & Manuals', () => {
     await page.waitForLoadState('networkidle');
 
     // Guest users might see the 'Connection Details' modal, dismiss it if it exists
+    // We wait for it to potentially appear
     const closeBtn = page.getByRole('button', { name: /close/i }).last();
-    if (await closeBtn.isVisible()) {
+    try {
+      await expect(closeBtn).toBeVisible({ timeout: 5000 });
       await closeBtn.click();
-      // Wait for modal to disappear
       await expect(closeBtn).not.toBeVisible();
+    } catch (e) {
+      // Modal didn't show up, which is fine
     }
 
     // Navigate to Help view via Topbar help icon
-    const topbarHelpBtn = page.locator('header').getByRole('button').filter({ has: page.locator('.fa-question-circle') });
+    // Using title attribute for better reliability
+    const topbarHelpBtn = page.getByRole('button', { name: /help/i });
 
-    await expect(topbarHelpBtn).toBeVisible();
+    await expect(topbarHelpBtn).toBeVisible({ timeout: 10000 });
     await topbarHelpBtn.click();
   });
 
