@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrewBindr — GlassIndicator v2 Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-bg-subtle: #F5F7FA;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-text: #0F1B2D;
+  --color-text-muted: #64748B;
+  --color-text-xmuted: #94A3B8;
+  --color-accent: #F59E0B;
+  --color-accent-light: #FEF3C7;
+  --color-red: #EF4444;
+  --color-orange: #F97316;
+  --color-green: #10B981;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', sans-serif; color: var(--color-text);
+  background: var(--color-bg-subtle); padding: 40px 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 32px;
+}
+h1 { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800; }
+h1 span { color: #D97706; }
+.subtitle { font-size: 13px; color: var(--color-text-muted); margin-top: 4px; text-align: center; }
+.panel {
+  background: #fff; border: 1px solid var(--color-border); border-radius: 16px;
+  padding: 28px 32px; max-width: 720px; width: 100%;
+}
+.panel h2 { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--color-text-xmuted); margin-bottom: 18px; }
+
+/* Interactive demo */
+.demo { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
+.demo input[type=range] { width: 240px; accent-color: var(--color-accent); }
+.demo-label { font-size: 12px; font-weight: 700; color: var(--color-text-muted); }
+.demo-pct { font-size: 26px; font-weight: 800; font-family: 'Outfit', sans-serif; margin-top: 4px; }
+.status-pill {
+  display: inline-block; margin-top: 6px; font-size: 10px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .07em; padding: 3px 10px; border-radius: 99px;
+}
+
+/* Reference states row */
+.states { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+.state { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.state .pct { font-size: 12px; font-weight: 800; }
+.state .cap { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-xmuted); }
+
+/* Card usage example */
+.card-example {
+  display: flex; align-items: center; gap: 16px; padding: 16px 18px;
+  border: 1px solid var(--color-border); border-radius: 12px; max-width: 320px;
+}
+.card-example .name { font-weight: 700; font-size: 14px; }
+.card-example .qty { font-size: 12px; color: var(--color-text-muted); }
+</style>
+</head>
+<body>
+
+<div style="text-align:center">
+  <h1>Brew<span>Bindr</span> · GlassIndicator v2</h1>
+  <div class="subtitle">Design mockup — tapered pint glass with foam head, amber fill, status-colored at low stock.<br>Drop-in replacement for the current GlassIndicator (same props: pct, size, label, qty, showPct).</div>
+</div>
+
+<div class="panel">
+  <h2>Interactive — drag to test all levels</h2>
+  <div class="demo">
+    <div id="demoGlass"></div>
+    <div>
+      <div class="demo-label">Stock level</div>
+      <input type="range" id="range" min="0" max="100" value="65" aria-label="Stock percentage">
+      <div class="demo-pct"><span id="pctOut">65</span>%</div>
+      <span class="status-pill" id="statusPill">OK</span>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Reference states</h2>
+  <div class="states" id="statesRow"></div>
+</div>
+
+<div class="panel">
+  <h2>In context — stock card usage</h2>
+  <div class="card-example">
+    <div id="cardGlass"></div>
+    <div>
+      <div class="name">Citra hops</div>
+      <div class="qty">120 g remaining</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * GlassIndicator v2 — reference implementation (vanilla JS, mirrors intended React props)
+ *
+ * Design spec:
+ * - viewBox 0 0 60 80, tapered pint silhouette
+ * - Outer glass: white fill, 2.5px stroke in --color-border-strong (#CBD5E1)
+ * - Liquid: clipped rect inside an inner tapered path (4px inset)
+ * - Foam: ellipse riding on the liquid surface, --color-accent-light (#FEF3C7),
+ *   hidden below 3% fill
+ * - Liquid color: amber (--color-accent #F59E0B) by default,
+ *   orange (#F97316) at <=30%, red (#EF4444) at <=10%
+ * - Fill maps pct 0-100 to y 72 (empty) .. 6 (full) inside the clip
+ */
+var GLASS = {
+  outer: 'M8 4 h44 l-5 66 a6 6 0 0 1 -6 5.5 h-22 a6 6 0 0 1 -6 -5.5 Z',
+  inner: 'M10 6 h40 l-4.5 62 a5 5 0 0 1 -5 4.6 h-21 a5 5 0 0 1 -5 -4.6 Z',
+  top: 6, bottom: 72
+};
+var uid = 0;
+
+function liquidColor(pct) {
+  if (pct <= 10) return '#EF4444';
+  if (pct <= 30) return '#F97316';
+  return '#F59E0B';
+}
+function statusInfo(pct) {
+  if (pct <= 10) return { label: 'Critical', color: '#EF4444', bg: '#FEE2E2' };
+  if (pct <= 30) return { label: 'Low', color: '#F97316', bg: '#FFEDD5' };
+  return { label: 'OK', color: '#10B981', bg: '#ECFDF5' };
+}
+
+function renderGlass(container, pct, size) {
+  size = size || 60;
+  var id = 'clip-' + (++uid);
+  var y = GLASS.bottom - (GLASS.bottom - GLASS.top) * (pct / 100);
+  var h = GLASS.bottom - y + 4;
+  var foamOpacity = pct > 3 ? 1 : 0;
+  container.innerHTML =
+    '<svg width="' + size + '" height="' + Math.round(size * 80 / 60) + '" viewBox="0 0 60 80" role="img" aria-label="Stock ' + pct + ' percent">' +
+      '<defs><clipPath id="' + id + '"><path d="' + GLASS.inner + '"/></clipPath></defs>' +
+      '<path d="' + GLASS.outer + '" fill="#fff" stroke="#CBD5E1" stroke-width="2.5"/>' +
+      '<rect x="0" y="' + y + '" width="60" height="' + h + '" fill="' + liquidColor(pct) + '" clip-path="url(#' + id + ')"/>' +
+      '<ellipse cx="30" cy="' + y + '" rx="19" ry="4" fill="#FEF3C7" clip-path="url(#' + id + ')" style="opacity:' + foamOpacity + '"/>' +
+    '</svg>';
+}
+
+// Interactive demo
+var range = document.getElementById('range');
+var demoGlass = document.getElementById('demoGlass');
+var pctOut = document.getElementById('pctOut');
+var pill = document.getElementById('statusPill');
+function update() {
+  var pct = parseInt(range.value, 10);
+  renderGlass(demoGlass, pct, 74);
+  pctOut.textContent = pct;
+  var s = statusInfo(pct);
+  pill.textContent = s.label;
+  pill.style.color = s.color;
+  pill.style.background = s.bg;
+}
+range.addEventListener('input', update);
+update();
+
+// Reference states
+[100, 75, 50, 30, 10, 0].forEach(function (p) {
+  var s = statusInfo(p);
+  var wrap = document.createElement('div');
+  wrap.className = 'state';
+  var g = document.createElement('div');
+  wrap.appendChild(g);
+  wrap.insertAdjacentHTML('beforeend',
+    '<div class="pct" style="color:' + s.color + '">' + p + '%</div>' +
+    '<div class="cap">' + s.label + '</div>');
+  document.getElementById('statesRow').appendChild(wrap);
+  renderGlass(g, p, 48);
+});
+
+// Card usage
+renderGlass(document.getElementById('cardGlass'), 42, 44);
+</script>
+</body>
+</html>
