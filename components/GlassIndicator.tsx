@@ -2,9 +2,9 @@ import React, { useMemo } from 'react';
 
 /**
  * GlassIndicator
- * Toont de voorraad van een ingrediënt als een vullend bierglas.
- * De glaskleur volgt de SRM-schaal: kristalhelder (vol) tot stout (leeg).
- * Het statuslabel gebruikt groen/oranje/rood.
+ * Toont de voorraad van een ingrediënt als een vullend pintglas (v2).
+ * De vloeistofkleur geeft de voorraadstatus aan: rood (kritiek), oranje (laag) of amber (ok).
+ * Het statuslabel gebruikt groen/amber/oranje/rood.
  *
  * Props:
  *   pct     - Vulpercentage 0-100
@@ -16,26 +16,10 @@ import React, { useMemo } from 'react';
 
 const uidRef = { current: 0 };
 
-function getBeerColor(pct: number): string {
-  const stops = [
-    { at: 100, r: 249, g: 243, b: 160 },
-    { at:  75, r: 245, g: 200, b:  66 },
-    { at:  50, r: 212, g: 130, b:  26 },
-    { at:  25, r: 123, g:  63, b:  16 },
-    { at:   0, r:  26, g:  10, b:   2 },
-  ];
-  for (let i = 0; i < stops.length - 1; i++) {
-    const a = stops[i];
-    const b = stops[i + 1];
-    if (pct <= a.at && pct >= b.at) {
-      const t  = (pct - b.at) / (a.at - b.at);
-      const r  = Math.round(b.r  + t * (a.r  - b.r));
-      const g  = Math.round(b.g  + t * (a.g  - b.g));
-      const bl = Math.round(b.b  + t * (a.b  - b.b));
-      return `rgb(${r},${g},${bl})`;
-    }
-  }
-  return 'rgb(249,243,160)';
+function getLiquidColor(pct: number): string {
+  if (pct <= 10) return '#EF4444'; // Red
+  if (pct <= 30) return '#F97316'; // Orange
+  return '#F59E0B'; // Amber
 }
 
 function getStatusColor(pct: number): string {
@@ -43,10 +27,6 @@ function getStatusColor(pct: number): string {
   if (pct <= 30) return '#F97316';
   if (pct <= 60) return '#F59E0B';
   return '#10B981';
-}
-
-function mapY(pct: number): number {
-  return 62 - (pct / 100) * 54;
 }
 
 interface GlassIndicatorProps {
@@ -57,6 +37,13 @@ interface GlassIndicatorProps {
   showPct?: boolean;
 }
 
+const GLASS = {
+  outer: 'M8 4 h44 l-5 66 a6 6 0 0 1 -6 5.5 h-22 a6 6 0 0 1 -6 -5.5 Z',
+  inner: 'M10 6 h40 l-4.5 62 a5 5 0 0 1 -5 4.6 h-21 a5 5 0 0 1 -5 -4.6 Z',
+  top: 6,
+  bottom: 72
+};
+
 export function GlassIndicator({
   pct = 0,
   size = 48,
@@ -66,82 +53,62 @@ export function GlassIndicator({
 }: GlassIndicatorProps) {
   const safePct = Math.max(0, Math.min(100, pct));
   const id = useMemo(() => `glass-${++uidRef.current}`, []);
-  const beerColor = getBeerColor(safePct);
+  const liquidColor = getLiquidColor(safePct);
   const statusColor = getStatusColor(safePct);
-  const liquidY = mapY(safePct);
-  const liquidH = 62 - liquidY;
-  const svgH = Math.round(72 * (size / 48));
+
+  const liquidY = GLASS.bottom - (GLASS.bottom - GLASS.top) * (safePct / 100);
+  const liquidH = (GLASS.bottom - liquidY) + 4; // +4 to ensure overlap with bottom curve
+  const foamVisible = safePct > 3;
+  const svgH = Math.round(size * 80 / 60);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
       <svg
         width={size}
         height={svgH}
-        viewBox="0 0 48 72"
+        viewBox="0 0 60 80"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-label={`Stock ${safePct} percent`}
       >
         <defs>
           <clipPath id={id}>
-            <path d="M8 6 L6 64 Q6 66 8 66 L40 66 Q42 66 42 64 L40 6 Z" />
+            <path d={GLASS.inner} />
           </clipPath>
         </defs>
 
         {/* Glas outline */}
         <path
-          d="M8 6 L6 64 Q6 67 8 67 L40 67 Q42 67 42 64 L40 6 Z"
-          fill="rgba(255,255,255,.15)"
+          d={GLASS.outer}
+          fill="#FFFFFF"
           stroke="#CBD5E1"
-          strokeWidth="1.5"
+          strokeWidth="2.5"
         />
 
         {/* Vloeistof */}
         {safePct > 0 && (
           <rect
-            x="6.5"
+            x="0"
             y={liquidY}
-            width="35"
+            width="60"
             height={liquidH}
-            fill={beerColor}
-            opacity={0.85}
+            fill={liquidColor}
             clipPath={`url(#${id})`}
           />
         )}
 
-        {/* Schuim */}
-        {safePct > 5 && (
+        {/* Schuimkraag */}
+        {foamVisible && (
           <ellipse
-            cx="24"
-            cy={liquidY + 1}
-            rx="13"
-            ry="3.5"
-            fill="rgba(255,255,255,.75)"
+            cx="30"
+            cy={liquidY}
+            rx="19"
+            ry="4"
+            fill="#FEF3C7"
             clipPath={`url(#${id})`}
           />
         )}
-
-        {/* Glinstering */}
-        <line
-          x1="13" y1="10" x2="11" y2="60"
-          stroke="rgba(255,255,255,.35)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-
-        {/* Handvat */}
-        <path
-          d="M42 20 Q52 20 52 30 Q52 40 42 40"
-          stroke="#CBD5E1"
-          strokeWidth="2"
-          fill="none"
-          strokeLinecap="round"
-        />
-
-        {/* Rand */}
-        <line x1="8" y1="6" x2="40" y2="6" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
-
-        {/* Bodem */}
-        <line x1="5" y1="67" x2="43" y2="67" stroke="#CBD5E1" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
 
       {showPct && (
