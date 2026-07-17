@@ -10,9 +10,12 @@ test.describe('Auth / Login', () => {
 
   test('toont de loginpagina voor niet-ingelogde gebruikers', async ({ page }) => {
     // Verwacht dat de login/auth pagina zichtbaar is
-    await expect(page).toHaveURL(/\/(login|auth|sign-in)?$/);
-    await expect(page.getByRole('textbox', { name: /e-?mail/i })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: /wachtwoord|password/i })).toBeVisible();
+    // Note: Vercel deployment protection can intercept this, however by passing the automation bypass secret we ensure we hit our app.
+    // Either it redirects to /login (or /auth or /sign-in) or it stays on root if not logged in.
+    await expect(page).toHaveURL(/(\/(login|auth|sign-in)|\/$)/);
+
+    await expect(page.getByRole('textbox', { name: /e-?mail/i })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('textbox', { name: /wachtwoord|password/i })).toBeVisible({ timeout: 15000 });
   });
 
   test('kan inloggen met geldige credentials', async ({ page }) => {
@@ -48,6 +51,6 @@ test.describe('Auth / Login', () => {
     await page.getByRole('button', { name: /uitlog|sign.?out|logout/i }).click();
 
     // Verwacht terug op loginpagina
-    await expect(page).toHaveURL(/\/(login|auth|sign-in)?$/);
+    await expect(page).toHaveURL(/(login|auth|sign-in)/);
   });
 });

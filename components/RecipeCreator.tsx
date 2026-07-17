@@ -81,10 +81,33 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
     }
   };
   
+  const libraryMap = useMemo(() => {
+    return new Map(library.map(l => [l.id, l]));
+  }, [library]);
+
+  const libraryByType = useMemo(() => {
+    const grouped = {
+      style: [] as typeof library,
+      fermentable: [] as typeof library,
+      hop: [] as typeof library,
+      culture: [] as typeof library,
+      misc: [] as typeof library,
+      water: [] as typeof library,
+      mash_profile: [] as typeof library,
+      equipment: [] as typeof library,
+    };
+    for (const item of library) {
+      if (item.type in grouped) {
+        grouped[item.type as keyof typeof grouped].push(item);
+      }
+    }
+    return grouped;
+  }, [library]);
+
   const selectedStyleGuideline = useMemo(() => {
     if (!recipe.style?.libraryId) return null;
-    return library.find(l => l.id === recipe.style?.libraryId);
-  }, [recipe.style?.libraryId, library]);
+    return libraryMap.get(recipe.style.libraryId);
+  }, [recipe.style?.libraryId, libraryMap]);
 
   const checkInRange = (val: number, min?: number, max?: number) => {
     if (min === undefined || max === undefined) return true;
@@ -113,7 +136,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
   };
 
   const handleLibrarySelect = (type: 'fermentable' | 'hop' | 'culture' | 'misc' | 'style' | 'mash_profile', idx: number, libId: string) => {
-    const item = library.find(i => i.id === libId);
+    const item = libraryMap.get(libId);
     if (!item) return;
 
     setRecipe(prev => {
@@ -326,7 +349,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             <label htmlFor="recipe_style" className="text-xs font-bold text-stone-400 uppercase">{t('style_label')}</label>
             <select id="recipe_style" name="style" className="w-full p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.style?.libraryId || ""} onChange={e => handleLibrarySelect('style', 0, e.target.value)}>
               <option value="">-- Choose Style --</option>
-              {library.filter(l => l.type === 'style').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+              {libraryByType.style.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
           </div>
           <div>
@@ -379,7 +402,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   <label htmlFor={`ferm-select-${i}`} className="sr-only">Select Fermentable</label>
                   <select id={`ferm-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={f.libraryId || ""} onChange={e => handleLibrarySelect('fermentable', i, e.target.value)}>
                     <option value="">{f.name || '-- Select Malt --'}</option>
-                    {library.filter(l => l.type === 'fermentable').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    {libraryByType.fermentable.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
@@ -400,10 +423,10 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     <option value="pounds">lb</option>
                   </select>
                 </div>
-                {preferences.enableStockManagement && f.libraryId && library.find(l => l.id === f.libraryId && l.status === 'private')?.stock && (
+                {preferences.enableStockManagement && f.libraryId && libraryMap.get(f.libraryId)?.status === 'private' && libraryMap.get(f.libraryId)?.stock && (
                   <div className="text-[10px] font-black text-stone-400 uppercase">
-                    {t('stock_label')}: <span className={library.find(l => l.id === f.libraryId)!.stock!.amount < f.amount.value ? 'text-red-500' : 'text-green-600'}>
-                      {library.find(l => l.id === f.libraryId)!.stock!.amount} {library.find(l => l.id === f.libraryId)!.stock!.unit}
+                    {t('stock_label')}: <span className={libraryMap.get(f.libraryId)!.stock!.amount < f.amount.value ? 'text-red-500' : 'text-green-600'}>
+                      {libraryMap.get(f.libraryId)!.stock!.amount} {libraryMap.get(f.libraryId)!.stock!.unit}
                     </span>
                   </div>
                 )}
@@ -422,7 +445,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   <label htmlFor={`hop-select-${i}`} className="sr-only">Select Hop</label>
                   <select id={`hop-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={h.libraryId || ""} onChange={e => handleLibrarySelect('hop', i, e.target.value)}>
                     <option value="">{h.name || '-- Select Hop --'}</option>
-                    {library.filter(l => l.type === 'hop').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    {libraryByType.hop.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
@@ -443,10 +466,10 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     <option value="ounces">oz</option>
                   </select>
                 </div>
-                {preferences.enableStockManagement && h.libraryId && library.find(l => l.id === h.libraryId && l.status === 'private')?.stock && (
+                {preferences.enableStockManagement && h.libraryId && libraryMap.get(h.libraryId)?.status === 'private' && libraryMap.get(h.libraryId)?.stock && (
                   <div className="text-[10px] font-black text-stone-400 uppercase">
-                    {t('stock_label')}: <span className={library.find(l => l.id === h.libraryId)!.stock!.amount < h.amount.value ? 'text-red-500' : 'text-green-600'}>
-                      {library.find(l => l.id === h.libraryId)!.stock!.amount} {library.find(l => l.id === h.libraryId)!.stock!.unit}
+                    {t('stock_label')}: <span className={libraryMap.get(h.libraryId)!.stock!.amount < h.amount.value ? 'text-red-500' : 'text-green-600'}>
+                      {libraryMap.get(h.libraryId)!.stock!.amount} {libraryMap.get(h.libraryId)!.stock!.unit}
                     </span>
                   </div>
                 )}
@@ -470,7 +493,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   <label htmlFor={`culture-select-${i}`} className="sr-only">Select Yeast</label>
                   <select id={`culture-select-${i}`} className="flex-1 p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={c.libraryId || ""} onChange={e => handleLibrarySelect('culture', i, e.target.value)}>
                     <option value="">{c.name || '-- Select Yeast --'}</option>
-                    {library.filter(l => l.type === 'culture').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    {libraryByType.culture.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
@@ -478,10 +501,10 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   <input id={`culture-att-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={c.attenuation ?? 75} onChange={e => updateField('culture', i, 'attenuation', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">%</span>
                 </div>
-                {preferences.enableStockManagement && c.libraryId && library.find(l => l.id === c.libraryId && l.status === 'private')?.stock && (
+                {preferences.enableStockManagement && c.libraryId && libraryMap.get(c.libraryId)?.status === 'private' && libraryMap.get(c.libraryId)?.stock && (
                   <div className="text-[10px] font-black text-stone-400 uppercase">
-                    {t('stock_label')}: <span className={library.find(l => l.id === c.libraryId)!.stock!.amount < 1 ? 'text-red-500' : 'text-green-600'}>
-                      {library.find(l => l.id === c.libraryId)!.stock!.amount} {library.find(l => l.id === c.libraryId)!.stock!.unit}
+                    {t('stock_label')}: <span className={libraryMap.get(c.libraryId)!.stock!.amount < 1 ? 'text-red-500' : 'text-green-600'}>
+                      {libraryMap.get(c.libraryId)!.stock!.amount} {libraryMap.get(c.libraryId)!.stock!.unit}
                     </span>
                   </div>
                 )}
@@ -499,7 +522,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <label htmlFor="load_mash_profile" className="sr-only">Load Mash Profile</label>
               <select id="load_mash_profile" className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-stone-600" value="" onChange={e => handleLibrarySelect('mash_profile', 0, e.target.value)}>
                 <option value="">Load From Library</option>
-                {library.filter(l => l.type === 'mash_profile').map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                {libraryByType.mash_profile.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
               <button onClick={addMashStep} className="bg-stone-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-black transition-all">+ {t('add_mash_step')}</button>
             </div>
