@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrewBindr — User Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800;900&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root {
+  --color-bg: #FFFFFF;
+  --color-bg-subtle: #F5F7FA;
+  --color-bg-hover: #EDF1F7;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-text: #0F1B2D;
+  --color-text-muted: #64748B;
+  --color-text-xmuted: #94A3B8;
+  --color-accent: #F59E0B;
+  --color-accent-light: #FEF3C7;
+  --color-accent-dark: #D97706;
+  --color-blue: #3B82F6;
+  --color-blue-light: #EFF6FF;
+  --color-green: #10B981;
+  --color-green-light: #ECFDF5;
+  --color-purple: #7C3AED;
+  --color-purple-light: #F5F3FF;
+  --font-body: 'Inter', sans-serif;
+  --font-display: 'Playfair Display', serif;
+  --font-brand: 'Outfit', sans-serif;
+  --radius-sm: 8px;
+  --radius: 14px;
+  --sidebar-w: 280px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation: none !important; transition: none !important; } }
+body {
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-bg-subtle);
+  line-height: 1.65;
+  font-size: 15px;
+}
+
+/* ============ Sidebar ============ */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--color-bg);
+  border-right: 1px solid var(--color-border);
+  display: flex; flex-direction: column;
+  z-index: 100;
+}
+.sidebar-brand {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex; align-items: center; gap: 11px;
+}
+.brand-glass { width: 30px; height: 38px; flex-shrink: 0; }
+.brand-name {
+  font-family: var(--font-brand); font-weight: 800; font-size: 19px;
+  letter-spacing: -0.02em;
+}
+.brand-name span { color: var(--color-accent-dark); }
+.brand-sub { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--color-text-xmuted); }
+
+.sidebar-search { padding: 12px 12px 4px; }
+.sidebar-search input {
+  width: 100%; padding: 8px 12px 8px 32px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 13px; color: var(--color-text);
+  background: var(--color-bg-subtle) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 512 512'%3E%3Cpath fill='%2394A3B8' d='M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z'/%3E%3C/svg%3E") no-repeat 11px center;
+}
+.sidebar-search input:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; }
+
+.sidebar-nav { flex: 1; overflow-y: auto; padding-bottom: 12px; }
+.nav-section { padding: 12px 12px 2px; }
+.nav-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--color-text-xmuted); padding: 0 8px; margin-bottom: 4px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 7px 10px; border: none; background: none; cursor: pointer; text-align: left;
+  border-radius: var(--radius-sm); font-family: var(--font-body);
+  font-size: 13.5px; font-weight: 500; color: var(--color-text-muted);
+  text-decoration: none; transition: background .15s, color .15s;
+}
+.nav-item i { width: 16px; text-align: center; font-size: 12px; color: var(--color-text-xmuted); }
+.nav-item:hover { background: var(--color-bg-hover); color: var(--color-text); }
+.nav-item.active { background: var(--color-accent-light); color: var(--color-accent-dark); font-weight: 600; }
+.nav-item.active i { color: var(--color-accent); }
+.nav-item .badge-mini {
+  margin-left: auto; font-size: 8.5px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .06em; padding: 1.5px 6px; border-radius: 99px;
+}
+.badge-mini.admin { background: var(--color-purple-light); color: var(--color-purple); }
+
+.sidebar-progress {
+  border-top: 1px solid var(--color-border); padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.progress-glass { width: 26px; height: 34px; flex-shrink: 0; }
+.progress-meta { font-size: 11px; color: var(--color-text-muted); font-weight: 600; }
+.progress-meta strong { color: var(--color-text); font-size: 13px; display: block; }
+
+/* ============ Main ============ */
+.main { margin-left: var(--sidebar-w); }
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--color-border);
+  padding: 12px 40px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.topbar-title { font-size: 13px; font-weight: 600; color: var(--color-text-muted); margin-right: auto; }
+.audience-toggle { display: flex; gap: 4px; background: var(--color-bg-subtle); border: 1px solid var(--color-border); border-radius: 99px; padding: 3px; }
+.audience-toggle button {
+  border: none; background: none; cursor: pointer; font-family: var(--font-body);
+  font-size: 12px; font-weight: 700; color: var(--color-text-muted);
+  padding: 5px 14px; border-radius: 99px; transition: all .15s;
+}
+.audience-toggle button.active { background: var(--color-text); color: #fff; }
+.audience-toggle button:focus-visible { outline: 2px solid var(--color-accent); }
+
+.content { max-width: 860px; margin: 0 auto; padding: 40px 40px 120px; }
+
+/* Hero */
+.hero {
+  background: linear-gradient(120deg, #FDE68A 0%, #F59E0B 55%, #D97706 100%);
+  border-radius: 22px; padding: 46px 44px; color: #fff; position: relative; overflow: hidden;
+  margin-bottom: 44px;
+}
+.hero::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 82% 18%, rgba(255,255,255,.28), transparent 45%);
+}
+.hero h1 { font-family: var(--font-display); font-weight: 900; font-size: 42px; line-height: 1.1; position: relative; }
+.hero p { position: relative; margin-top: 12px; max-width: 520px; font-weight: 500; color: rgba(255,255,255,.92); }
+.hero .hero-chips { position: relative; display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+.hero .chip {
+  background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.35);
+  padding: 4px 12px; border-radius: 99px; font-size: 11.5px; font-weight: 700; letter-spacing: .03em;
+}
+.hero-bubbles { position: absolute; inset: 0; pointer-events: none; }
+.hero-bubbles span {
+  position: absolute; bottom: -20px; border-radius: 50%;
+  background: rgba(255,255,255,.25); animation: rise 7s linear infinite;
+}
+@keyframes rise { to { transform: translateY(-360px); opacity: 0; } }
+
+/* Sections */
+section.doc { margin-bottom: 40px; scroll-margin-top: 70px; }
+section.doc.hidden-by-filter { display: none; }
+.card {
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  border-radius: var(--radius); padding: 30px 34px;
+}
+.section-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--color-accent-dark); margin-bottom: 8px;
+}
+.section-eyebrow.admin { color: var(--color-purple); }
+h2 { font-family: var(--font-display); font-weight: 800; font-size: 27px; margin-bottom: 12px; letter-spacing: -0.01em; }
+h3 { font-size: 15px; font-weight: 700; margin: 22px 0 8px; }
+p + p { margin-top: 10px; }
+.muted { color: var(--color-text-muted); }
+code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12.5px;
+  background: var(--color-bg-subtle); border: 1px solid var(--color-border);
+  padding: 1.5px 6px; border-radius: 5px;
+}
+pre {
+  background: #0F1B2D; color: #E2E8F0; border-radius: var(--radius-sm);
+  padding: 16px 18px; font-size: 12.5px; overflow-x: auto; margin: 12px 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace; line-height: 1.7;
+}
+ul.doc-list { margin: 10px 0 10px 20px; }
+ul.doc-list li { margin-bottom: 7px; }
+ul.doc-list li strong { font-weight: 700; }
+a { color: var(--color-accent-dark); font-weight: 600; }
+
+/* Role badges */
+.role-badge {
+  display: inline-block; font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .07em; padding: 3px 10px; border-radius: 99px; vertical-align: middle;
+}
+.role-badge.brewer { background: var(--color-accent-light); color: var(--color-accent-dark); }
+.role-badge.admin { background: var(--color-purple-light); color: var(--color-purple); }
+.role-badge.all { background: var(--color-blue-light); color: var(--color-blue); }
+
+/* Callouts */
+.callout {
+  display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--radius-sm);
+  font-size: 13.5px; margin: 14px 0; border: 1px solid;
+}
+.callout i { margin-top: 2px; }
+.callout.tip { background: var(--color-green-light); border-color: #A7F3D0; color: #065F46; }
+.callout.note { background: var(--color-blue-light); border-color: #BFDBFE; color: #1E40AF; }
+.callout.warn { background: var(--color-accent-light); border-color: #FDE68A; color: #92400E; }
+
+/* Step list */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+  display: flex; gap: 14px; padding: 12px 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+.step:last-child { border-bottom: none; }
+.step::before {
+  counter-increment: step; content: counter(step);
+  width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%;
+  background: var(--color-text); color: #fff; font-weight: 800; font-size: 12.5px;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.step b { font-weight: 700; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th {
+  text-align: left; font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--color-text-xmuted);
+  padding: 8px 12px; border-bottom: 2px solid var(--color-border);
+}
+td { padding: 9px 12px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+tr:hover td { background: var(--color-bg-subtle); }
+
+/* Collapsibles */
+details {
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  margin: 10px 0; background: var(--color-bg);
+}
+details summary {
+  cursor: pointer; padding: 12px 16px; font-weight: 700; font-size: 13.5px;
+  list-style: none; display: flex; align-items: center; gap: 10px;
+}
+details summary::before {
+  content: '\f054'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+  font-size: 10px; color: var(--color-text-xmuted); transition: transform .15s;
+}
+details[open] summary::before { transform: rotate(90deg); }
+details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
+
+/* Brew phase pipeline */
+.pipeline { display: flex; gap: 8px; margin: 18px 0; flex-wrap: wrap; }
+.phase {
+  flex: 1; min-width: 130px; background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  padding: 14px; text-align: center; position: relative;
+}
+.phase i { font-size: 18px; color: var(--color-accent-dark); }
+.phase .phase-name { font-weight: 800; font-size: 13px; margin-top: 8px; }
+.phase .phase-desc { font-size: 11.5px; color: var(--color-text-muted); margin-top: 3px; }
+.phase:not(:last-child)::after {
+  content: '\f061'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+  position: absolute; right: -12px; top: 50%; transform: translateY(-50%);
+  color: var(--color-text-xmuted); font-size: 11px; z-index: 1;
+}
+
+/* Interactive glass demo */
+.glass-demo { display: flex; align-items: center; gap: 28px; margin: 18px 0; flex-wrap: wrap; }
+.glass-demo .glass-svg { width: 74px; height: 100px; }
+.glass-demo input[type=range] { width: 220px; accent-color: var(--color-accent); }
+.glass-demo .demo-label { font-size: 12px; font-weight: 700; color: var(--color-text-muted); }
+.glass-demo .demo-pct { font-size: 22px; font-weight: 800; font-family: var(--font-brand); }
+
+.kbd-note { font-size: 12px; color: var(--color-text-xmuted); margin-top: 6px; }
+
+/* Search highlight / empty */
+.search-empty {
+  display: none; text-align: center; padding: 60px 20px; color: var(--color-text-xmuted);
+  font-weight: 600; border: 2px dashed var(--color-border); border-radius: var(--radius);
+}
+
+/* Footer */
+.doc-footer {
+  margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--color-border);
+  font-size: 12.5px; color: var(--color-text-xmuted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .content { padding: 24px 18px 80px; }
+  .hero { padding: 32px 24px; }
+  .hero h1 { font-size: 30px; }
+  .topbar { padding: 10px 18px; }
+  .card { padding: 22px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <svg class="brand-glass" viewBox="0 0 30 38" aria-hidden="true">
+      <path d="M4 2 h22 l-2.5 32 a3 3 0 0 1 -3 2.8 h-11 a3 3 0 0 1 -3 -2.8 Z" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+      <path d="M6.2 12 h17.6 l-1.6 20 a2 2 0 0 1 -2 1.8 h-10.4 a2 2 0 0 1 -2 -1.8 Z" fill="#F59E0B"/>
+      <ellipse cx="15" cy="11" rx="9.2" ry="2.6" fill="#fff"/>
+    </svg>
+    <div>
+      <div class="brand-name">Brew<span>Bindr</span></div>
+      <div class="brand-sub">User Manual</div>
+    </div>
+  </div>
+
+  <div class="sidebar-search">
+    <input type="search" id="docSearch" placeholder="Search the manual…" aria-label="Search the manual">
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav" aria-label="Manual contents">
+    <div class="nav-section">
+      <div class="nav-section-label">Getting Started</div>
+      <a class="nav-item" href="#overview"><i class="fas fa-flask"></i>What is BrewBindr</a>
+      <a class="nav-item" href="#accounts"><i class="fas fa-user"></i>Accounts &amp; sign-in</a>
+      <a class="nav-item" href="#interface"><i class="fas fa-table-columns"></i>The interface</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Brewer's Guide</div>
+      <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recipes &amp; AI</a>
+      <a class="nav-item" href="#brewlogs"><i class="fas fa-clipboard-list"></i>Brew logs</a>
+      <a class="nav-item" href="#tasting"><i class="fas fa-star-half-stroke"></i>Tasting notes</a>
+      <a class="nav-item" href="#stock"><i class="fas fa-boxes-stacked"></i>Stock</a>
+      <a class="nav-item" href="#library"><i class="fas fa-seedling"></i>Ingredient library</a>
+      <a class="nav-item" href="#installation"><i class="fas fa-temperature-half"></i>Brewing installation</a>
+      <a class="nav-item" href="#import"><i class="fas fa-arrow-up-from-bracket"></i>Import &amp; export</a>
+      <a class="nav-item" href="#team"><i class="fas fa-users"></i>Team &amp; roles</a>
+      <a class="nav-item" href="#settings"><i class="fas fa-gear"></i>Settings</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Admin Guide</div>
+      <a class="nav-item" href="#admin-submissions"><i class="fas fa-clipboard-check"></i>Submissions<span class="badge-mini admin">Admin</span></a>
+      <a class="nav-item" href="#admin-tools"><i class="fas fa-tools"></i>Demo data &amp; backups<span class="badge-mini admin">Admin</span></a>
+      <a class="nav-item" href="#admin-hosting"><i class="fas fa-server"></i>Self-hosting<span class="badge-mini admin">Admin</span></a>
+    </div>
+  </nav>
+
+  <div class="sidebar-progress">
+    <svg class="progress-glass" viewBox="0 0 30 38" aria-hidden="true">
+      <defs><clipPath id="glassClip"><path d="M5 3 h20 l-2.3 30 a2.6 2.6 0 0 1 -2.6 2.4 h-10.2 a2.6 2.6 0 0 1 -2.6 -2.4 Z"/></clipPath></defs>
+      <path d="M4 2 h22 l-2.5 32 a3 3 0 0 1 -3 2.8 h-11 a3 3 0 0 1 -3 -2.8 Z" fill="#F5F7FA" stroke="#CBD5E1" stroke-width="2"/>
+      <rect id="progressFill" x="0" y="38" width="30" height="38" fill="#F59E0B" clip-path="url(#glassClip)"/>
+    </svg>
+    <div class="progress-meta"><strong id="progressPct">0%</strong>Reading progress</div>
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">BrewBindr Manual · v4</div>
+    <div class="audience-toggle" role="group" aria-label="Filter sections by audience">
+      <button class="active" data-audience="all">All</button>
+      <button data-audience="brewer">Brewers</button>
+      <button data-audience="admin">Admins</button>
+    </div>
+  </div>
+
+  <main class="content">
+
+    <div class="hero">
+      <div class="hero-bubbles" aria-hidden="true">
+        <span style="left:12%;width:8px;height:8px;animation-delay:0s"></span>
+        <span style="left:28%;width:5px;height:5px;animation-delay:2.2s"></span>
+        <span style="left:55%;width:10px;height:10px;animation-delay:1.1s"></span>
+        <span style="left:72%;width:6px;height:6px;animation-delay:3.4s"></span>
+        <span style="left:88%;width:7px;height:7px;animation-delay:0.7s"></span>
+      </div>
+      <h1>From grain to glass,<br>everything in one binder.</h1>
+      <p>BrewBindr is a brewing companion for creating recipes, logging brew days, tracking fermentation, managing stock, and recording tasting notes — with AI assistance where it counts.</p>
+      <div class="hero-chips">
+        <span class="chip"><i class="fas fa-wand-magic-sparkles"></i> AI recipe generation</span>
+        <span class="chip"><i class="fas fa-file-code"></i> BeerXML import/export</span>
+        <span class="chip"><i class="fas fa-users"></i> Team breweries</span>
+        <span class="chip"><i class="fas fa-globe"></i> EN · NL · FR</span>
+      </div>
+    </div>
+
+    <div class="search-empty" id="searchEmpty">No sections match your search. Try a different term.</div>
+
+    <!-- ================= GETTING STARTED ================= -->
+    <section class="doc" id="overview" data-audience="all">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-flask"></i> Getting Started</div>
+        <h2>What is BrewBindr? <span class="role-badge all">All users</span></h2>
+        <p>BrewBindr is a web application for home and hobby brewers. It runs in your browser on desktop and mobile — no installation required. Your data is stored in the cloud and syncs in real time across all your devices.</p>
+        <h3>Core features</h3>
+        <ul class="doc-list">
+          <li><strong>AI recipe generation</strong> — describe a beer in plain language and get a complete recipe in the BeerJSON format.</li>
+          <li><strong>Brew log tracking</strong> — record your brew day from mash temperatures through fermentation gravity to bottling.</li>
+          <li><strong>AI tasting analysis</strong> — get feedback comparing your tasting notes to the recipe's original specifications.</li>
+          <li><strong>Ingredient library</strong> — manage your own fermentables, hops, cultures, and miscellaneous ingredients.</li>
+          <li><strong>Stock management</strong> — optional inventory tracking with visual "glass fill" indicators.</li>
+          <li><strong>BeerXML support</strong> — import and export recipes in the industry-standard format used by most brewing software.</li>
+          <li><strong>Team breweries</strong> — brew together: invite members with roles from taster to brewmaster.</li>
+        </ul>
+        <div class="callout note"><i class="fas fa-globe"></i><div>The interface is available in <b>English, Dutch, and French</b>. Switch languages any time under <b>System → Settings</b>.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="accounts" data-audience="all">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-user"></i> Getting Started</div>
+        <h2>Accounts &amp; sign-in <span class="role-badge all">All users</span></h2>
+        <p>You can browse BrewBindr without an account, but most features require signing in.</p>
+        <h3>Guest mode</h3>
+        <p>Without an account you can explore the <b>public recipe library</b>, browse <b>ingredients</b>, and open <b>Settings</b> and <b>Help</b>. Locked items in the sidebar show a <i class="fas fa-lock" style="font-size:11px"></i> icon — clicking them opens the sign-in dialog.</p>
+        <h3>Creating an account</h3>
+        <div class="steps">
+          <div class="step"><div><b>Click "Create account"</b> at the bottom of the sidebar.</div></div>
+          <div class="step"><div><b>Enter your e-mail and a password.</b> If you received a brewery <b>invite code</b>, enter it during sign-up — you'll automatically join that brewery with the role attached to the invite.</div></div>
+          <div class="step"><div><b>Confirm your e-mail</b> if prompted, then sign in. Your personal brewery workspace is created automatically.</div></div>
+        </div>
+        <div class="callout tip"><i class="fas fa-lightbulb"></i><div>Signing in on a second device? Your recipes, logs, and stock sync live — changes appear on both screens without refreshing.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="interface" data-audience="all">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-table-columns"></i> Getting Started</div>
+        <h2>The interface <span class="role-badge all">All users</span></h2>
+        <p>The sidebar on the left is your main navigation. It's organised in three groups — the same grouping this manual follows:</p>
+        <table>
+          <thead><tr><th>Group</th><th>Contains</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><b>Brouwerij</b> (Brewery)</td><td>Brewery recipes, Brews, Tasting Notes, Stock, Team, Import, Brewing Installation</td><td>Your own workspace: everything you and your team brew.</td></tr>
+            <tr><td><b>Bibliotheek</b> (Library)</td><td>Public Recipes, Ingredients</td><td>Shared community content and your ingredient catalogue.</td></tr>
+            <tr><td><b>Systeem</b> (System)</td><td>Settings, Help &amp; Manuals</td><td>Preferences, language, units, and documentation.</td></tr>
+          </tbody>
+        </table>
+        <p>The card at the bottom of the sidebar shows your account: your e-mail, your <b>brewery role</b>, and the name of the brewery you belong to. Click it to jump to Settings.</p>
+        <div class="callout note"><i class="fas fa-mobile-screen"></i><div>On mobile, the sidebar is replaced by a <b>bottom navigation bar</b> with the most-used views.</div></div>
+      </div>
+    </section>
+
+    <!-- ================= BREWER'S GUIDE ================= -->
+    <section class="doc" id="recipes" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-wand-magic-sparkles"></i> Brewer's Guide</div>
+        <h2>Recipes &amp; AI generation <span class="role-badge brewer">Brewer</span></h2>
+        <p>Recipes live in two places: your <b>Brewery</b> (private, yours and your team's) and the public <b>Recipes</b> library (shared with everyone). Recipes are stored internally in the modern <b>BeerJSON</b> format.</p>
+        <h3>Creating a recipe with AI</h3>
+        <div class="steps">
+          <div class="step"><div><b>Open Brewery → New recipe.</b></div></div>
+          <div class="step"><div><b>Describe the beer you want</b> in the prompt field — style, ABV, bitterness, special ingredients. For example: <code>A sessionable Belgian blond, ~5.5% ABV, spicy yeast character, 20 L batch</code>.</div></div>
+          <div class="step"><div><b>Generate.</b> The AI (Google Gemini) returns a complete recipe: fermentables, hops with additions, yeast culture, mash steps, and target values (OG, FG, IBU, colour).</div></div>
+          <div class="step"><div><b>Review and adjust.</b> Every field is editable — treat the AI output as a strong first draft, not gospel. Then save it to your brewery.</div></div>
+        </div>
+        <h3>Manual recipes</h3>
+        <p>You can also build a recipe from scratch: add fermentables, hops, cultures, and misc ingredients from your library, define the mash profile, and set batch parameters. Vitals like estimated OG and IBU are calculated as you type.</p>
+        <div class="callout tip"><i class="fas fa-print"></i><div>Every recipe has a <b>print view</b> — a clean brew-day sheet you can print or save as PDF and take to the kettle.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="brewlogs" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-clipboard-list"></i> Brewer's Guide</div>
+        <h2>Brew logs <span class="role-badge brewer">Brewer</span></h2>
+        <p>A brew log turns a recipe into an actual batch. Each brew moves through four phases, and the log follows along — the active tab switches automatically as you advance the batch status.</p>
+        <div class="pipeline">
+          <div class="phase"><i class="fas fa-fire-burner"></i><div class="phase-name">1. Brew day</div><div class="phase-desc">Mash, boil, actual OG, volume in fermenter</div></div>
+          <div class="phase"><i class="fas fa-flask"></i><div class="phase-name">2. Fermentation</div><div class="phase-desc">Gravity readings, fermentation temperature</div></div>
+          <div class="phase"><i class="fas fa-snowflake"></i><div class="phase-name">3. Lagering</div><div class="phase-desc">Conditioning period</div></div>
+          <div class="phase"><i class="fas fa-bottle-water"></i><div class="phase-name">4. Bottling</div><div class="phase-desc">Packaging, carbonation, final volume</div></div>
+        </div>
+        <h3>What to record</h3>
+        <ul class="doc-list">
+          <li><strong>Brew day:</strong> actual original gravity (OG) and the volume that went into the fermenter. Your recipe's mash profile is shown alongside as a checklist (step temperature, duration, type).</li>
+          <li><strong>Fermentation:</strong> gravity measurements over time and fermentation temperature. The log estimates attenuation and current ABV from your readings.</li>
+          <li><strong>Dates:</strong> phase-transition dates are filled in automatically when you change status (e.g. moving to "fermenting" stamps the fermentation start date), but remain editable.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-chart-line"></i><div>Consistent gravity readings during fermentation give you an honest picture of attenuation — and better AI tasting feedback later, since the analysis compares actuals against recipe targets.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="tasting" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-star-half-stroke"></i> Brewer's Guide</div>
+        <h2>Tasting notes <span class="role-badge brewer">Brewer</span></h2>
+        <p>Once a batch is bottled and conditioned, record how it actually tastes. A tasting note scores the beer on dimensions such as <b>aroma</b> and <b>flavour</b>, plus free-text comments.</p>
+        <h3>AI tasting analysis</h3>
+        <div class="steps">
+          <div class="step"><div><b>Write your comments</b> — be specific: "banana esters dominate, bitterness lower than expected, slightly thin body".</div></div>
+          <div class="step"><div><b>Click Analyze</b> <i class="fas fa-brain" style="font-size:11px"></i>. The AI compares your description against the recipe's specifications.</div></div>
+          <div class="step"><div><b>Read the feedback:</b> likely causes for deviations and concrete suggestions for the next brew of this recipe.</div></div>
+        </div>
+        <div class="callout note"><i class="fas fa-circle-info"></i><div>The analysis button is only active once you've written comments — scores alone aren't enough for the AI to work with.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="stock" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-boxes-stacked"></i> Brewer's Guide</div>
+        <h2>Stock management <span class="role-badge brewer">Brewer</span></h2>
+        <p>Stock is an <b>optional feature</b> — enable it under <b>Settings → Stock management</b> and a "Stock" item appears in the Brewery section of the sidebar.</p>
+        <p>The Stock view lists every stockable ingredient in your library (fermentables, hops, cultures, misc) with the amount you have on hand. Each ingredient shows a <b>glass indicator</b>: a beer glass that fills according to your remaining stock. Try it:</p>
+        <div class="glass-demo">
+          <svg class="glass-svg" viewBox="0 0 60 80" aria-hidden="true">
+            <defs><clipPath id="demoClip"><path d="M10 6 h40 l-4.5 62 a5 5 0 0 1 -5 4.6 h-21 a5 5 0 0 1 -5 -4.6 Z"/></clipPath></defs>
+            <path d="M8 4 h44 l-5 66 a6 6 0 0 1 -6 5.5 h-22 a6 6 0 0 1 -6 -5.5 Z" fill="#fff" stroke="#CBD5E1" stroke-width="2.5"/>
+            <rect id="demoFill" x="0" y="28" width="60" height="80" fill="#F59E0B" clip-path="url(#demoClip)"/>
+            <ellipse id="demoFoam" cx="30" cy="28" rx="19" ry="4" fill="#FEF3C7" clip-path="url(#demoClip)"/>
+          </svg>
+          <div>
+            <div class="demo-label">Drag to simulate stock level</div>
+            <input type="range" id="demoRange" min="0" max="100" value="65" aria-label="Simulated stock percentage">
+            <div class="demo-pct"><span id="demoPct">65</span>%</div>
+          </div>
+        </div>
+        <h3>Working with the view</h3>
+        <ul class="doc-list">
+          <li><strong>Filter</strong> by ingredient type (fermentables, hops, cultures, misc) or search by name.</li>
+          <li><strong>Switch layout</strong> between a card grid (with full glass indicators) and a compact table.</li>
+          <li><strong>Update amounts</strong> directly from the view when you buy or use ingredients.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="doc" id="library" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-seedling"></i> Brewer's Guide</div>
+        <h2>Ingredient library <span class="role-badge brewer">Brewer</span></h2>
+        <p>The library is your catalogue of raw materials, organised by type:</p>
+        <table>
+          <thead><tr><th>Type</th><th>Examples</th><th>Key properties</th></tr></thead>
+          <tbody>
+            <tr><td><b>Fermentables</b></td><td>Pilsner malt, Munich, candi sugar</td><td>Yield, colour (EBC/SRM)</td></tr>
+            <tr><td><b>Hops</b></td><td>Saaz, Citra, East Kent Goldings</td><td>Alpha acid %, form</td></tr>
+            <tr><td><b>Cultures</b></td><td>Yeast strains, bacteria</td><td>Attenuation, temperature range</td></tr>
+            <tr><td><b>Misc</b></td><td>Irish moss, coriander, orange peel</td><td>Use, timing</td></tr>
+          </tbody>
+        </table>
+        <p>Ingredients you add are private to you and your brewery. When you build recipes, you pick from this library — so a well-maintained library makes recipe creation fast.</p>
+        <div class="callout note"><i class="fas fa-upload"></i><div>You can <b>submit</b> ingredients or recipes to the public library. Submissions are held for review and only appear publicly after an admin approves them (see <a href="#admin-submissions">Submissions</a>).</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="installation" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-temperature-half"></i> Brewer's Guide</div>
+        <h2>Brewing installation <span class="role-badge brewer">Brewer</span></h2>
+        <p>Describe your physical equipment so recipes and calculations match reality. The view has two tabs: <b>Equipment</b> and <b>Mash profiles</b>.</p>
+        <h3>Equipment profiles</h3>
+        <p>An equipment profile defines your batch size, mash efficiency, trub loss, and the vessels in your setup (with volume, heating type, and pump). Start from a preset and tweak, or build a custom profile:</p>
+        <details>
+          <summary>Built-in equipment presets</summary>
+          <div class="details-body">
+            <table>
+              <thead><tr><th>Preset</th><th>Type</th><th>Batch</th><th>Efficiency</th></tr></thead>
+              <tbody>
+                <tr><td>Brewie</td><td>Two-vessel</td><td>23 L</td><td>70%</td></tr>
+                <tr><td>Grainfather G30</td><td>All-in-one</td><td>25 L</td><td>72%</td></tr>
+                <tr><td>Grainfather G40</td><td>All-in-one</td><td>35 L</td><td>72%</td></tr>
+                <tr><td>Robobrew / BrewZilla</td><td>All-in-one</td><td>30 L</td><td>70%</td></tr>
+                <tr><td>BIAB 20 L</td><td>Brew-in-a-bag</td><td>20 L</td><td>65%</td></tr>
+                <tr><td>BIAB 30 L</td><td>Brew-in-a-bag</td><td>30 L</td><td>65%</td></tr>
+                <tr><td>Classic 3-vessel 20 L</td><td>HLT + MLT + kettle</td><td>20 L</td><td>75%</td></tr>
+                <tr><td>Classic 3-vessel 30 L</td><td>HLT + MLT + kettle</td><td>30 L</td><td>75%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <h3>Mash profiles</h3>
+        <p>Define reusable mash schedules (step temperature, duration, type) — single infusion, step mash, decoction. Attach a mash profile to a recipe and it appears as the checklist on your brew-day log.</p>
+        <div class="callout tip"><i class="fas fa-users"></i><div>Equipment and mash profiles are shared with your <b>brewery</b>, so the whole team brews against the same setup.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="import" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-arrow-up-from-bracket"></i> Brewer's Guide</div>
+        <h2>Import &amp; export <span class="role-badge brewer">Brewer</span></h2>
+        <p>BrewBindr speaks <b>BeerXML</b>, the de-facto exchange format of brewing software (BeerSmith, Brewfather, Brew Target, and others).</p>
+        <h3>Importing</h3>
+        <div class="steps">
+          <div class="step"><div><b>Open Brewery → Import.</b> You must be signed in.</div></div>
+          <div class="step"><div><b>Select a file</b> — <code>.xml</code> or <code>.beerxml</code>, up to <b>10 MB</b>. Files can contain recipes or ingredient collections.</div></div>
+          <div class="step"><div><b>Review the result.</b> Imported recipes land in your brewery; imported ingredients in your library.</div></div>
+        </div>
+        <h3>Exporting</h3>
+        <p>Recipes can be exported back to BeerXML from the recipe view — handy for backups or for sharing with brewers on other software. Brewing installation data (equipment) also travels via BeerXML.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="team" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-users"></i> Brewer's Guide</div>
+        <h2>Team &amp; roles <span class="role-badge brewer">Brewer</span></h2>
+        <p>Every user belongs to a <b>brewery</b> — a shared workspace. Brew alone in your own brewery, or invite others to collaborate. Each member has one of four brewery roles:</p>
+        <table>
+          <thead><tr><th>Role</th><th>Typical rights</th></tr></thead>
+          <tbody>
+            <tr><td><b>Admin</b></td><td>Full control: manages members, invites, and brewery settings.</td></tr>
+            <tr><td><b>Brewmaster</b></td><td>Manages recipes, equipment, and brews for the whole brewery.</td></tr>
+            <tr><td><b>Brewer</b></td><td>Creates and edits recipes, logs brews, updates stock.</td></tr>
+            <tr><td><b>Taster</b></td><td>Views recipes and brews, adds tasting notes.</td></tr>
+          </tbody>
+        </table>
+        <h3>Inviting members</h3>
+        <p>From the <b>Team</b> view, generate an <b>invite code</b> tied to a role. The invitee enters this code when creating their account and joins your brewery with that role automatically. Invite codes have an expiry date.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="settings" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-gear"></i> Brewer's Guide</div>
+        <h2>Settings <span class="role-badge all">All users</span></h2>
+        <p>Under <b>System → Settings</b> you tailor BrewBindr to your habits:</p>
+        <ul class="doc-list">
+          <li><strong>Unit system</strong> — metric (litres, kg, °C) or imperial (gallons, lb, °F). Applied everywhere, including brew logs.</li>
+          <li><strong>Colour scale</strong> — SRM or EBC for beer colour values.</li>
+          <li><strong>Stock management</strong> — toggle the Stock feature on or off (see <a href="#stock">Stock</a>).</li>
+          <li><strong>Language</strong> — English, Nederlands, or Français.</li>
+          <li><strong>Account</strong> — see who you're signed in as, and sign out.</li>
+        </ul>
+        <p class="kbd-note">Preferences are stored with your profile, so they follow you across devices.</p>
+      </div>
+    </section>
+
+    <!-- ================= ADMIN GUIDE ================= -->
+    <section class="doc" id="admin-submissions" data-audience="admin">
+      <div class="card">
+        <div class="section-eyebrow admin"><i class="fas fa-clipboard-check"></i> Admin Guide</div>
+        <h2>Reviewing submissions <span class="role-badge admin">Admin</span></h2>
+        <p>Users can submit recipes and ingredients to the public library. Nothing goes live without review: submissions queue up in the <b>Admin</b> view under <b>Pending Submissions</b>.</p>
+        <div class="steps">
+          <div class="step"><div><b>Open the Admin view.</b> Each pending item shows its type (recipe / ingredient), name, and who submitted it.</div></div>
+          <div class="step"><div><b>Assess quality:</b> is the data complete and plausible? Are names sensible? No duplicates of existing public entries?</div></div>
+          <div class="step"><div><b>Approve</b> to publish it to the public library, or <b>Reject</b> to discard it. The action is immediate.</div></div>
+        </div>
+        <div class="callout warn"><i class="fas fa-triangle-exclamation"></i><div>Approved content is visible to <b>every</b> user, including guests. Review carefully — there is no second moderation step.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="admin-tools" data-audience="admin">
+      <div class="card">
+        <div class="section-eyebrow admin"><i class="fas fa-tools"></i> Admin Guide</div>
+        <h2>Demo data &amp; backups <span class="role-badge admin">Admin</span></h2>
+        <h3>Demo data</h3>
+        <p>The <b>Import demo data</b> button loads a curated set of sample recipes and ingredients. Use it to populate a fresh instance for testing, or to give new users something to explore before they've built their own library.</p>
+        <h3>JSON backup &amp; restore</h3>
+        <ul class="doc-list">
+          <li><strong>Export</strong> downloads a full JSON backup of the application data.</li>
+          <li><strong>Restore</strong> uploads a previously exported JSON file and reinstates its contents.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Take a JSON export before large operations (bulk imports, demo-data loads) so you can roll back if something goes wrong. Note that Supabase itself is the primary datastore — JSON backups complement, not replace, database-level backups.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="admin-hosting" data-audience="admin">
+      <div class="card">
+        <div class="section-eyebrow admin"><i class="fas fa-server"></i> Admin Guide</div>
+        <h2>Self-hosting &amp; configuration <span class="role-badge admin">Admin</span></h2>
+        <p>BrewBindr is open source. To run your own instance you need <b>Node.js 18+</b>, a <b>Supabase</b> project (auth, database, realtime), and a <b>Google Gemini API key</b> for the AI features.</p>
+        <div class="steps">
+          <div class="step"><div><b>Clone and install:</b></div></div>
+        </div>
+<pre>git clone https://github.com/jansierens-maker/brewbindr
+cd brewbindr
+npm install</pre>
+        <div class="steps" style="counter-reset: step 1">
+          <div class="step"><div><b>Configure</b> a <code>.env.local</code> file:</div></div>
+        </div>
+<pre>NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+GEMINI_API_KEY=your_gemini_api_key</pre>
+        <div class="steps" style="counter-reset: step 2">
+          <div class="step"><div><b>Set up the database:</b> run the SQL schema from the repository README in the Supabase SQL editor. It creates the tables, the <code>profiles</code> table with roles, and the row-level security (RLS) policies.</div></div>
+          <div class="step"><div><b>Run it:</b> <code>npm run dev</code> for development, <code>npm run build</code> for a production build. The reference deployment runs on <b>Vercel</b>.</div></div>
+        </div>
+        <h3>Application roles</h3>
+        <p>Besides brewery roles, profiles carry an application-level role: <code>user</code> or <code>admin</code>. Only <code>admin</code> profiles see the Admin view. Promote a user by updating their row in the <code>profiles</code> table.</p>
+        <div class="callout note"><i class="fas fa-shield-halved"></i><div>Data isolation is enforced by Supabase <b>RLS policies</b>, not by the frontend. If you modify the schema, verify the policies still restrict each brewery's data to its members.</div></div>
+      </div>
+    </section>
+
+    <div class="doc-footer">
+      <div>BrewBindr — brewed with care · <a href="https://github.com/jansierens-maker/brewbindr">github.com/jansierens-maker/brewbindr</a></div>
+      <div>Manual matches design-v4</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section.doc'));
+  var navItems = Array.prototype.slice.call(document.querySelectorAll('.nav-item'));
+  var searchInput = document.getElementById('docSearch');
+  var emptyMsg = document.getElementById('searchEmpty');
+  var audienceButtons = Array.prototype.slice.call(document.querySelectorAll('.audience-toggle button'));
+  var currentAudience = 'all';
+  var currentQuery = '';
+
+  function applyFilters() {
+    var visibleCount = 0;
+    sections.forEach(function (sec) {
+      var matchAudience = currentAudience === 'all' ||
+        sec.dataset.audience === currentAudience ||
+        sec.dataset.audience === 'all';
+      var matchQuery = !currentQuery ||
+        sec.textContent.toLowerCase().indexOf(currentQuery) !== -1;
+      var show = matchAudience && matchQuery;
+      sec.classList.toggle('hidden-by-filter', !show);
+      if (show) visibleCount++;
+      var link = document.querySelector('.nav-item[href="#' + sec.id + '"]');
+      if (link) link.style.display = show ? '' : 'none';
+    });
+    emptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+    updateProgress();
+  }
+
+  audienceButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      audienceButtons.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentAudience = btn.dataset.audience;
+      applyFilters();
+    });
+  });
+
+  searchInput.addEventListener('input', function () {
+    currentQuery = searchInput.value.trim().toLowerCase();
+    applyFilters();
+  });
+
+  // Active section highlighting
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        navItems.forEach(function (n) { n.classList.remove('active'); });
+        var link = document.querySelector('.nav-item[href="#' + entry.target.id + '"]');
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function (s) { observer.observe(s); });
+
+  // Reading progress -> glass fill
+  var fill = document.getElementById('progressFill');
+  var pctLabel = document.getElementById('progressPct');
+  function updateProgress() {
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0;
+    var h = 38 * (pct / 100);
+    fill.setAttribute('y', String(38 - h));
+    fill.setAttribute('height', String(h));
+    pctLabel.textContent = Math.round(pct) + '%';
+  }
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  window.addEventListener('resize', updateProgress);
+  updateProgress();
+
+  // Glass indicator demo
+  var range = document.getElementById('demoRange');
+  var demoFill = document.getElementById('demoFill');
+  var demoFoam = document.getElementById('demoFoam');
+  var demoPct = document.getElementById('demoPct');
+  function updateDemo() {
+    var pct = parseInt(range.value, 10);
+    var top = 6, bottom = 72;
+    var y = bottom - (bottom - top) * (pct / 100);
+    demoFill.setAttribute('y', String(y));
+    demoFill.setAttribute('height', String(bottom - y + 4));
+    demoFoam.setAttribute('cy', String(y));
+    demoFoam.style.opacity = pct > 2 ? '1' : '0';
+    var color = pct <= 20 ? '#EF4444' : pct <= 45 ? '#F59E0B' : '#F59E0B';
+    demoFill.setAttribute('fill', color);
+    demoPct.textContent = pct;
+  }
+  range.addEventListener('input', updateDemo);
+  updateDemo();
+})();
+</script>
+</body>
+</html>

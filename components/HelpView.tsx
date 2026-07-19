@@ -3,7 +3,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 
 const HelpView: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { isAdmin } = useUser();
 
   return (
@@ -22,6 +22,22 @@ const HelpView: React.FC = () => {
         </div>
         <div className="space-y-4 text-stone-600 leading-relaxed">
           <p>{t('user_manual_desc')}</p>
+
+          <div className="pt-2">
+            <a
+              href="/manual.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-amber-500 text-white font-bold px-5 py-3 rounded-2xl hover:bg-amber-600 transition-colors shadow-sm"
+            >
+              <i className="fas fa-book-open"></i>
+              {t('open_full_manual')}
+              {lang !== 'en' && (
+                <span className="text-stone-400 text-xs ml-1">(EN)</span>
+              )}
+            </a>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
             <div className="space-y-2">
               <h4 className="font-bold text-stone-900 uppercase text-[10px] tracking-widest">{t('nav_recipes')}</h4>

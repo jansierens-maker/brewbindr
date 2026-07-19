@@ -10,7 +10,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? 'github' : 'html',
+  reporter: process.env.CI ? [['github'], ['html']] : 'html',
 
   use: {
     // Gebruik PLAYWRIGHT_BASE_URL in CI (Vercel preview/prod URL),
@@ -32,16 +32,11 @@ export default defineConfig({
     },
   ],
 
-  // Lokaal: start de Vite dev server automatisch
-  // In CI: de app draait al op PLAYWRIGHT_BASE_URL, dus geen webServer nodig
-  ...(process.env.CI
-    ? {}
-    : {
-        webServer: {
-          command: 'npm run dev',
-          url: 'http://localhost:5173',
-          reuseExistingServer: true,
-          timeout: 30000,
-        },
-      }),
+  // Start de Vite dev server automatisch
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: true,
+    timeout: 30000,
+  },
 });
