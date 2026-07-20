@@ -45,8 +45,9 @@ test.describe('Auth / Login', () => {
 
     // Na login: verwacht redirect naar dashboard of home
     await expect(page).not.toHaveURL(/\/(login|auth|sign-in)/);
-    // Controleer dat er iets van de app zichtbaar is (pas selector aan indien nodig)
-    await expect(page.getByRole('navigation')).toBeVisible({ timeout: 10000 });
+    // Controleer dat er iets van de app zichtbaar is. De sidebar heeft
+    // meerdere <nav>'s (een per sectie), dus .first() volstaat hier.
+    await expect(page.getByRole('navigation').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('toont foutmelding bij verkeerde credentials', async ({ page }) => {
@@ -71,10 +72,13 @@ test.describe('Auth / Login', () => {
     await page.locator('main').getByRole('button', { name: /inlog|sign.?in|login/i }).click();
     await expect(page).not.toHaveURL(/\/(login|auth|sign-in)/, { timeout: 10000 });
 
-    // Logout — pas selector aan op jouw UI
-    await page.getByRole('button', { name: /uitlog|sign.?out|logout/i }).click();
+    // Logout: the sign-out button lives in the Settings view, not on the
+    // dashboard, so navigate there first via the sidebar nav item.
+    await page.getByRole('button', { name: /settings|instellingen|paramètres/i }).first().click();
+    await page.getByRole('button', { name: /uitlog|sign.?out|logout|déconnexion/i }).click();
 
-    // Verwacht terug op loginpagina
-    await expect(page).toHaveURL(/(login|auth|sign-in)/);
+    // This SPA has no dedicated /login route, so verify the guest state
+    // (the Sign In CTA) is back instead of asserting on a URL change.
+    await expect(page.getByRole('button', { name: /sign.?in|aanmelden/i }).first()).toBeVisible({ timeout: 10000 });
   });
 });
