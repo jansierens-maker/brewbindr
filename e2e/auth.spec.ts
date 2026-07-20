@@ -39,7 +39,9 @@ test.describe('Auth / Login', () => {
   test('kan inloggen met geldige credentials', async ({ page }) => {
     await page.getByRole('textbox', { name: /e-?mail/i }).fill(TEST_EMAIL);
     await page.getByRole('textbox', { name: /wachtwoord|password/i }).fill(TEST_PASSWORD);
-    await page.getByRole('button', { name: /inlog|sign.?in|login/i }).click();
+    // Scoped to <main>: the sidebar also has a "Sign In" nav CTA with the
+    // same accessible name as the Auth form's actual submit button.
+    await page.locator('main').getByRole('button', { name: /inlog|sign.?in|login/i }).click();
 
     // Na login: verwacht redirect naar dashboard of home
     await expect(page).not.toHaveURL(/\/(login|auth|sign-in)/);
@@ -50,7 +52,9 @@ test.describe('Auth / Login', () => {
   test('toont foutmelding bij verkeerde credentials', async ({ page }) => {
     await page.getByRole('textbox', { name: /e-?mail/i }).fill(TEST_EMAIL);
     await page.getByRole('textbox', { name: /wachtwoord|password/i }).fill('fout-wachtwoord-123!');
-    await page.getByRole('button', { name: /inlog|sign.?in|login/i }).click();
+    // Scoped to <main>: the sidebar also has a "Sign In" nav CTA with the
+    // same accessible name as the Auth form's actual submit button.
+    await page.locator('main').getByRole('button', { name: /inlog|sign.?in|login/i }).click();
 
     // Verwacht een foutmelding
     await expect(
@@ -62,7 +66,9 @@ test.describe('Auth / Login', () => {
     // Login
     await page.getByRole('textbox', { name: /e-?mail/i }).fill(TEST_EMAIL);
     await page.getByRole('textbox', { name: /wachtwoord|password/i }).fill(TEST_PASSWORD);
-    await page.getByRole('button', { name: /inlog|sign.?in|login/i }).click();
+    // Scoped to <main>: the sidebar also has a "Sign In" nav CTA with the
+    // same accessible name as the Auth form's actual submit button.
+    await page.locator('main').getByRole('button', { name: /inlog|sign.?in|login/i }).click();
     await expect(page).not.toHaveURL(/\/(login|auth|sign-in)/, { timeout: 10000 });
 
     // Logout — pas selector aan op jouw UI

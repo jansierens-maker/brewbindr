@@ -24,6 +24,15 @@ test.describe('Help & Manuals', () => {
     // expose a "Help & Manuals" button with the same accessible name.
     const topbarHelpBtn = page.locator('header').getByRole('button', { name: /help/i });
 
+    // TEMP DEBUG: this test intermittently can't find the header in CI;
+    // dump page state to the CI log to diagnose, then remove this block.
+    if (!(await topbarHelpBtn.isVisible().catch(() => false))) {
+      console.log('DEBUG url:', page.url());
+      console.log('DEBUG title:', await page.title());
+      console.log('DEBUG headerCount:', await page.locator('header').count());
+      console.log('DEBUG bodyText:', (await page.locator('body').innerText().catch(() => '<no body>')).slice(0, 2000));
+    }
+
     await expect(topbarHelpBtn).toBeVisible({ timeout: 10000 });
     await topbarHelpBtn.click();
   });
