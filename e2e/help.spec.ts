@@ -20,8 +20,9 @@ test.describe('Help & Manuals', () => {
     }
 
     // Navigate to Help view via Topbar help icon
-    // Using title attribute for better reliability
-    const topbarHelpBtn = page.getByRole('button', { name: /help/i });
+    // Scoped to <header> (the Topbar) since the sidebar/bottom nav also
+    // expose a "Help & Manuals" button with the same accessible name.
+    const topbarHelpBtn = page.locator('header').getByRole('button', { name: /help/i });
 
     await expect(topbarHelpBtn).toBeVisible({ timeout: 10000 });
     await topbarHelpBtn.click();

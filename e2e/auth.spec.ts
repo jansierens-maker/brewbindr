@@ -6,6 +6,24 @@ const TEST_PASSWORD = process.env.TEST_USER_PASSWORD!;
 test.describe('Auth / Login', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+
+    // Guest users (no Supabase configured) may see a "Connection Details"
+    // modal on load; dismiss it so it doesn't intercept later clicks.
+    const closeBtn = page.getByRole('button', { name: /close/i }).last();
+    try {
+      await expect(closeBtn).toBeVisible({ timeout: 5000 });
+      await closeBtn.click();
+      await expect(closeBtn).not.toBeVisible();
+    } catch (e) {
+      // Modal didn't show up, which is fine
+    }
+
+    // This SPA has no separate /login route: guest users land on the Public
+    // Library view and the Auth form only mounts after clicking "Sign In".
+    const signInBtn = page.getByRole('button', { name: /sign.?in|aanmelden/i }).first();
+    if (await signInBtn.isVisible().catch(() => false)) {
+      await signInBtn.click();
+    }
   });
 
   test('toont de loginpagina voor niet-ingelogde gebruikers', async ({ page }) => {
