@@ -1,20 +1,29 @@
 name: E2E Tests
 
 on:
-  push:
-    branches: [main, feature/design-v4]
-  pull_request:
-    branches: [main]
+  # Vercel's GitHub App fires a deployment_status event once a preview (or
+  # production) build for a commit is actually ready, with the correct URL
+  # for THAT deployment. This avoids testing against a stale/unrelated URL.
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Base URL to test against (defaults to the PLAYWRIGHT_BASE_URL secret)'
+        required: false
+        type: string
 
 jobs:
   e2e:
     name: Playwright E2E
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -32,8 +41,9 @@ jobs:
         run: npx playwright test
         env:
           CI: true
-          # De live Vercel URL (of preview URL) waartegen getest wordt
-          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
+          # Deployment-trigger: URL van déze specifieke Vercel deployment.
+          # Handmatige trigger: input override, anders de vaste secret als fallback.
+          PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.target_url || inputs.base_url || secrets.PLAYWRIGHT_BASE_URL }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           # Testaccount credentials (aanmaken in Supabase Dashboard)
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
