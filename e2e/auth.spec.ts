@@ -72,23 +72,19 @@ test.describe('Auth / Login', () => {
     await page.locator('main').getByRole('button', { name: /inlog|sign.?in|login/i }).click();
     await expect(page).not.toHaveURL(/\/(login|auth|sign-in)/, { timeout: 10000 });
 
-    // TEMP DEBUG: the sign-out button isn't found afterwards; dump whether
-    // the login actually established a session (vs. e.g. silently failing
-    // due to auth rate-limiting from repeated logins in this same suite).
-    await page.waitForTimeout(1000);
-    const stillOnAuthForm = await page.getByRole('textbox', { name: /e-?mail/i }).isVisible().catch(() => false);
-    const visibleError = await page.getByText(/ongeldig|invalid|incorrect|fout|onjuist|rate|too many|limiet|wacht/i).first().innerText().catch(() => null);
-    console.log('DEBUG stillOnAuthForm:', stillOnAuthForm, 'visibleError:', visibleError);
-
     // Logout: the sign-out button lives in the Settings view, not on the
-    // dashboard, so navigate there first via the sidebar nav item.
-    await page.getByRole('button', { name: /settings|instellingen|paramètres/i }).first().click();
+    // dashboard, so navigate there first via the sidebar nav item. The
+    // Vercel preview can be slow to settle right after a fresh login
+    // (cold serverless functions), so wait explicitly for the nav button
+    // to be actionable instead of a bare .click() with no diagnosable
+    // call-log if it hangs.
+    const settingsNavBtn = page.getByRole('button', { name: /settings|instellingen|paramètres/i }).first();
+    await expect(settingsNavBtn).toBeVisible({ timeout: 20000 });
+    await settingsNavBtn.click();
 
-    // TEMP DEBUG: dump the Settings view's account card to see whether it
-    // thinks we're signed in (t('signed_in_as')) or still a guest.
-    console.log('DEBUG settingsMainText:', (await page.locator('main').innerText().catch(() => '<no main>')).slice(0, 500));
-
-    await page.getByRole('button', { name: /uitlog|sign.?out|logout|déconnexion/i }).click();
+    const signOutBtn = page.getByRole('button', { name: /uitlog|sign.?out|logout|déconnexion/i });
+    await expect(signOutBtn).toBeVisible({ timeout: 20000 });
+    await signOutBtn.click();
 
     // This SPA has no dedicated /login route, so verify the guest state
     // (the Sign In CTA) is back instead of asserting on a URL change.

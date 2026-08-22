@@ -24,7 +24,10 @@ test.describe('Help & Manuals', () => {
     // expose a "Help & Manuals" button with the same accessible name.
     const topbarHelpBtn = page.locator('header').getByRole('button', { name: /help/i });
 
-    await expect(topbarHelpBtn).toBeVisible({ timeout: 10000 });
+    // Generous timeout: this Vercel preview can be slow to hydrate the
+    // topbar on a cold start, and networkidle above doesn't guarantee
+    // Supabase's realtime connection (which never goes idle) is done.
+    await expect(topbarHelpBtn).toBeVisible({ timeout: 20000 });
     await topbarHelpBtn.click();
   });
 
