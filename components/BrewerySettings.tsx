@@ -3,6 +3,7 @@ import { useUser } from '../services/userContext';
 import { useTranslation } from '../App';
 import { breweryService } from '../services/breweryService';
 import { Brewery, Invitation, BreweryRole, UserProfile } from '../types';
+import { supabase } from '../services/supabaseClient';
 
 const BrewerySettings: React.FC = () => {
   const { profile, user, breweryRole } = useUser();
@@ -68,10 +69,16 @@ const BrewerySettings: React.FC = () => {
     try {
       const invite = await breweryService.generateInvitation(profile.brewery_id, inviteRole, inviteEmail.trim());
       if (invite) {
+        const { data: { session } } = await supabase!.auth.getSession();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         // Send email via API
         const res = await fetch('/api/send-invite', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             email: inviteEmail.trim(),
             code: invite.code,
