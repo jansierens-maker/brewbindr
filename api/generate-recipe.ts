@@ -1,6 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
+import { consumeAiQuota } from './_lib/aiQuota.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -40,6 +41,9 @@ export default async function handler(req: any, res: any) {
   if (typeof prompt !== 'string' || prompt.length > 2000) {
     return res.status(400).json({ error: 'Invalid prompt: Prompt must be a string and less than 2000 characters.' });
   }
+
+  // Daily limit per user (counted only for valid requests)
+  if (!(await consumeAiQuota(res, token))) return;
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;
