@@ -67,10 +67,12 @@ export const formatBrewNumber = (
 
   switch (type) {
     case 'g':
+      // grams whole; ounces to 2 decimals
       options = { minimumFractionDigits: 0, maximumFractionDigits: prefs?.units === 'imperial' ? 2 : 0 };
       break;
     case 'kg':
-      options = { minimumFractionDigits: 0, maximumFractionDigits: 3 };
+      // kg to the gram (3 decimals); lb to 2 decimals
+      options = { minimumFractionDigits: 0, maximumFractionDigits: prefs?.units === 'imperial' ? 2 : 3 };
       break;
     case 'abv':
       options = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
@@ -79,10 +81,14 @@ export const formatBrewNumber = (
       options = { minimumFractionDigits: 3, maximumFractionDigits: 3 };
       break;
     case 'temp':
-      options = { minimumFractionDigits: 0, maximumFractionDigits: 1 };
+      // °C to 1 decimal; °F whole degrees
+      options = { minimumFractionDigits: 0, maximumFractionDigits: prefs?.units === 'imperial' ? 0 : 1 };
       break;
     case 'vol':
-      options = { minimumFractionDigits: 1, maximumFractionDigits: 2 };
+      // liters to 1 decimal; gallons to 2 decimals
+      options = prefs?.units === 'imperial'
+        ? { minimumFractionDigits: 1, maximumFractionDigits: 2 }
+        : { minimumFractionDigits: 1, maximumFractionDigits: 1 };
       break;
     case 'color':
       options = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
@@ -106,6 +112,79 @@ const normalizeUnit = (unit: string | undefined): string => {
   if (u.startsWith('gal')) return 'gallons';
   if (u.startsWith('min')) return 'minutes';
   return u;
+};
+
+/**
+ * Decimal places for stored amounts, per unit (see also formatBrewNumber).
+ * Metric: kg 3, g 0, L 1. Imperial: lb 2, oz 2, gal 2. Times: whole minutes/days.
+ */
+const DECIMALS_BY_UNIT: Record<string, number> = {
+  kilograms: 3,
+  grams: 0,
+  liters: 1,
+  pounds: 2,
+  ounces: 2,
+  gallons: 2,
+  minutes: 0,
+  days: 0,
+};
+
+export const roundTo = (value: number, decimals: number): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return value;
+  const factor = 10 ** decimals;
+  return Math.round((value + Number.EPSILON) * factor) / factor;
+};
+
+/** Rounds a value by its unit; unknown units (e.g. ml, items) keep 2 decimals. */
+export const roundByUnit = (value: number, unit: string | undefined): number =>
+  roundTo(value, DECIMALS_BY_UNIT[normalizeUnit(unit)] ?? 2);
+
+const roundAmount = <T extends { value: number; unit?: string } | undefined>(amount: T): T =>
+  amount && typeof amount.value === 'number'
+    ? ({ ...amount, value: roundByUnit(amount.value, amount.unit) } as T)
+    : amount;
+
+const roundValue = <T extends { value?: number } | undefined>(field: T, decimals: number): T =>
+  field && typeof field.value === 'number'
+    ? ({ ...field, value: roundTo(field.value, decimals) } as T)
+    : field;
+
+/**
+ * Removes floating-point noise and unit-conversion leftovers (e.g. 2.041164 kg,
+ * 1.0531356220799766 OG) from a recipe. Applied when recipes are loaded, saved
+ * and imported, so stored and displayed values stay clean.
+ */
+export const normalizeRecipe = (recipe: Recipe): Recipe => {
+  if (!recipe) return recipe;
+  const ing = recipe.ingredients;
+  const specs = recipe.specifications;
+  return {
+    ...recipe,
+    batch_size: roundAmount(recipe.batch_size),
+    boil_time: roundAmount(recipe.boil_time),
+    ingredients: ing && {
+      ...ing,
+      fermentables: (ing.fermentables || []).map(f => ({ ...f, amount: roundAmount(f.amount), color: roundValue(f.color, 1) })),
+      hops: (ing.hops || []).map(h => ({ ...h, amount: roundAmount(h.amount), alpha_acid: roundValue(h.alpha_acid, 1), time: roundAmount(h.time) })),
+      cultures: (ing.cultures || []).map(c => ({ ...c, amount: roundAmount(c.amount) })),
+      miscellaneous: ing.miscellaneous?.map(m => ({ ...m, amount: roundAmount(m.amount), time: roundAmount(m.time) })),
+      water: ing.water?.map(w => ({ ...w, amount: roundAmount(w.amount) })),
+    },
+    specifications: specs && {
+      ...specs,
+      og: roundValue(specs.og, 3),
+      fg: roundValue(specs.fg, 3),
+      abv: roundValue(specs.abv, 1),
+      ibu: roundValue(specs.ibu, 0),
+      color: roundValue(specs.color, 1),
+    },
+  };
+};
+
+/** Formats a stock amount in its own unit (no unit conversion). */
+export const formatStockAmount = (amount: number | undefined, unit: string | undefined, lang: string): string => {
+  const u = normalizeUnit(unit);
+  return formatBrewNumber(amount, u === 'kilograms' ? 'kg' : u === 'grams' ? 'g' : 'default', lang);
 };
 
 export const calculateABV = (og: number | undefined, fg: number | undefined, isBottled: boolean, sugarG: number = 0, volumeL: number = 1): number => {

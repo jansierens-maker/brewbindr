@@ -4,6 +4,7 @@ import { LibraryIngredient, MashStep } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { supabaseService } from '../services/supabaseService';
+import { formatStockAmount } from '../services/calculations';
 
 const TABLE_MAP: Record<string, string> = {
   'fermentable': 'fermentables',
@@ -27,7 +28,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   libraryView,
   onUpdate
 }) => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { user, preferences, profile, breweryRole } = useUser();
 
   const canEdit = breweryRole === 'admin' || breweryRole === 'brewmaster' || !breweryRole;
@@ -466,7 +467,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     <div className="mt-4 p-3 bg-[var(--color-bg-subtle)] rounded-[var(--radius-sm)] border border-[var(--color-border)] flex justify-between items-center">
                       <span className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('stock_label')}</span>
                       <span className={`text-xs font-black ${item.stock.amount > 0 ? 'text-[var(--color-text)]' : 'text-red-500'}`}>
-                        {item.stock.amount} {item.stock.unit}
+                        {formatStockAmount(item.stock.amount, item.stock.unit, lang)} {item.stock.unit}
                       </span>
                     </div>
                   )}
