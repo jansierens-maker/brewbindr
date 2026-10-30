@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { LibraryIngredient, MashStep } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -157,6 +157,20 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     setEditForm({ ...editForm, steps });
   };
 
+
+  // ⚡ Bolt: filter and sort once per data/filter change instead of three times
+  // on every render (renders happen on each keystroke while editing an item)
+  const visibleIngredients = useMemo(() => ingredients
+    .filter(i => i.type === filter && (
+      libraryView === 'public'
+        ? i.status === 'approved'
+        : (
+            (i.status === 'private' || i.status === 'submitted') &&
+            ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
+          )
+    ))
+    .sort((a, b) => a.name.localeCompare(b.name)),
+  [ingredients, filter, libraryView, user?.id, profile?.brewery_id]);
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {itemToDelete && (
@@ -210,14 +224,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             {filter === 'fermentable' ? t('malt') : filter === 'hop' ? t('hops') : filter === 'culture' ? t('yeast_lib') : filter === 'mash_profile' ? t('mash_profile') : filter === 'misc' ? t('miscs_label') : t('style_label')}
           </h3>
           <p className="text-[var(--color-text-xmuted)] text-xs font-bold">
-            {ingredients.filter(i => i.type === filter && (
-              libraryView === 'public'
-                ? i.status === 'approved'
-                : (
-                   (i.status === 'private' || i.status === 'submitted') &&
-                   ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
-                  )
-            )).length} {t('items_in_collection')}
+            {visibleIngredients.length} {t('items_in_collection')}
           </p>
         </div>
 
@@ -254,28 +261,12 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ingredients.filter(i => i.type === filter && (
-          libraryView === 'public'
-            ? i.status === 'approved'
-            : (
-                (i.status === 'private' || i.status === 'submitted') &&
-                ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
-              )
-        )).length === 0 ? (
+        {visibleIngredients.length === 0 ? (
           <div className="col-span-full py-20 text-center text-[var(--color-text-xmuted)] font-medium bg-[var(--color-bg)] rounded-[var(--radius)] border-2 border-dashed border-[var(--color-border)] shadow-[var(--shadow-sm)]">
             {t('no_items_found')}
           </div>
         ) : (
-          ingredients
-            .filter(i => i.type === filter && (
-              libraryView === 'public'
-                ? i.status === 'approved'
-                : (
-                    (i.status === 'private' || i.status === 'submitted') &&
-                    ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
-                  )
-            ))
-            .sort((a, b) => a.name.localeCompare(b.name))
+          visibleIngredients
             .map(item => (
             <div key={item.id} className={`bg-[var(--color-bg)] p-8 rounded-[var(--radius)] border shadow-[var(--shadow-sm)] relative transition-all ${editingId === item.id ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent-light)]' : selectedIds.includes(item.id) ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent-light)]' : 'border-[var(--color-border)]'}`}>
 
