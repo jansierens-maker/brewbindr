@@ -1,20 +1,30 @@
 name: E2E Tests
 
+# Runs after Vercel finishes a deployment, against THAT deployment's URL:
+# - every PR push → Vercel preview → tests run against the preview
+# - every merge to main → Vercel production → tests run against production
+# The result is reported on the commit, so it shows up as a check on the PR.
 on:
-  push:
-    branches: [main, feature/design-v4]
-  pull_request:
-    branches: [main]
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'URL to test (e.g. a Vercel preview URL)'
+        required: true
 
 jobs:
   e2e:
     name: Playwright E2E
+    # Only run once a deployment has succeeded (Vercel also sends pending/failure events)
+    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout
+      - name: Checkout deployed commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -32,17 +42,18 @@ jobs:
         run: npx playwright test
         env:
           CI: true
-          # De live Vercel URL (of preview URL) waartegen getest wordt
-          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
+          # URL of the deployment Vercel just finished (preview or production)
+          PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url || inputs.base_url }}
+          # Lets Playwright past Vercel Deployment Protection on preview URLs
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-          # Testaccount credentials (aanmaken in Supabase Dashboard)
+          # Test account (create in Supabase Dashboard)
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
 
-      - name: Upload test rapport
+      - name: Upload test report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-${{ github.event.deployment.environment || 'manual' }}
           path: playwright-report/
           retention-days: 14
