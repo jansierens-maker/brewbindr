@@ -21,7 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAuth
 }) => {
   const { t } = useTranslation();
-  const { user, profile, preferences, breweryRole } = useUser();
+  const { user, profile, preferences, breweryRole, isAdmin } = useUser();
   const [brewery, setBrewery] = useState<Brewery | null>(null);
 
   useEffect(() => {
@@ -47,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { section: 'Systeem', items: [
       { id: 'settings', label: t('settings_nav_label'), icon: 'fa-gear', view: 'settings' },
       { id: 'help', label: t('help_nav_label'), icon: 'fa-question-circle', view: 'help' },
+      { id: 'admin', label: t('admin_nav_label' as any), icon: 'fa-user-shield', view: 'admin', hideIf: !isAdmin },
     ]}
   ];
 

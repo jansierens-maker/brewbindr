@@ -992,6 +992,27 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Global admins: clean up the public recipe library
+  const handleAdminUnpublishRecipe = async (recipe: Recipe) => {
+    if (!isAdmin || !recipe.id || !confirm(t('confirm_unpublish' as any))) return;
+    const result = await supabaseService.updateItemStatus(recipe.id, 'recipe', 'private', 'recipes');
+    if (result?.error) {
+      alert(`${t('admin_action_failed' as any)}: ${result.error.message}`);
+      return;
+    }
+    setRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, status: 'private' } : r));
+  };
+
+  const handleAdminDeleteRecipe = async (recipe: Recipe) => {
+    if (!isAdmin || !recipe.id || !confirm(t('confirm_admin_delete' as any))) return;
+    const result = await supabaseService.deleteRecipe(recipe.id);
+    if (result?.error) {
+      alert(`${t('admin_action_failed' as any)}: ${result.error.message}`);
+      return;
+    }
+    setRecipes(prev => prev.filter(r => r.id !== recipe.id));
+  };
+
   const handleApprove = async (id: string, type: string, table?: string) => {
     await supabaseService.updateItemStatus(id, type, 'approved', table);
     const pending = await supabaseService.fetchPendingSubmissions();
@@ -1980,6 +2001,25 @@ GRANT EXECUTE ON FUNCTION public.remove_brewery_member(UUID) TO authenticated;
                                 >
                                   <i className="fas fa-plus-circle mr-2"></i> {t('add_to_collection')}
                                 </button>
+                              )}
+
+                              {libraryView === 'public' && isAdmin && (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleAdminUnpublishRecipe(r)}
+                                    className="flex-1 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-black uppercase py-2.5 rounded-xl hover:bg-amber-100 transition-all tracking-widest"
+                                  >
+                                    <i className="fas fa-eye-slash mr-2" aria-hidden="true"></i> {t('admin_unpublish' as any)}
+                                  </button>
+                                  <button
+                                    onClick={() => handleAdminDeleteRecipe(r)}
+                                    className="flex-none bg-red-50 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl hover:bg-red-100 transition-all"
+                                    aria-label={t('admin_delete' as any)}
+                                    title={t('admin_delete' as any)}
+                                  >
+                                    <i className="fas fa-trash-alt text-xs" aria-hidden="true"></i>
+                                  </button>
+                                </div>
                               )}
 
                               {user && libraryView === 'personal' && r.status !== 'submitted' && (
