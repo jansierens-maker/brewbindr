@@ -14,6 +14,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{"units
 CREATE TABLE IF NOT EXISTS invitations (id UUID PRIMARY KEY DEFAULT gen_random_uuid());
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS brewery_id UUID NOT NULL REFERENCES breweries(id) ON DELETE CASCADE;
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS role TEXT NOT NULL CHECK (role IN ('admin', 'brewmaster', 'brewer', 'taster'));
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS code TEXT NOT NULL;
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
 ALTER TABLE invitations ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT (now() + interval '7 days');
@@ -43,6 +44,11 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Enable RLS
+ALTER TABLE breweries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
+
 -- Helper Functions for RLS
 CREATE OR REPLACE FUNCTION get_user_brewery_id() RETURNS UUID AS $$
   SELECT brewery_id FROM profiles WHERE id = auth.uid();
@@ -51,11 +57,6 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 CREATE OR REPLACE FUNCTION get_user_brewery_role() RETURNS TEXT AS $$
   SELECT brewery_role FROM profiles WHERE id = auth.uid();
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
-
--- Enable RLS
-ALTER TABLE breweries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
 
 -- Policies for breweries
 DROP POLICY IF EXISTS "Members can view their brewery" ON breweries;
@@ -85,6 +86,7 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (auth.uid() != id AND is_admin());
 
+-- Trigger to create profile on signup
 -- Trigger to create profile and brewery on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
@@ -112,8 +114,10 @@ BEGIN
         brewery_id = EXCLUDED.brewery_id,
         brewery_role = EXCLUDED.brewery_role;
 
-      -- Cleanup used invitation
-      DELETE FROM invitations WHERE code = invite_code;
+      -- Cleanup used invitation (Match by code and/or email for safety)
+      DELETE FROM invitations
+      WHERE code = invite_code
+      OR (email = new.email AND brewery_id = invite_brewery_id);
 
       RETURN new;
     END IF;
@@ -143,9 +147,13 @@ CREATE OR REPLACE FUNCTION delete_used_invitation()
 RETURNS trigger AS $$
 BEGIN
   IF NEW.brewery_id IS NOT NULL AND OLD.brewery_id IS NULL THEN
+    -- If we don't have the code anymore, we might have matched via metadata in handle_new_user.
+    -- This trigger handles cases where brewery_id is set later.
+    -- To be precise, we'd need the code on the profile, but deleting by brewery+role is a good fallback
+    -- if we assume codes are unique per role in a brewery (which they usually are).
     DELETE FROM invitations
-    WHERE brewery_id = NEW.brewery_id
-    AND role = NEW.brewery_role;
+    WHERE (brewery_id = NEW.brewery_id AND role = NEW.brewery_role)
+    OR (email = NEW.email AND brewery_id = NEW.brewery_id);
   END IF;
   RETURN NEW;
 END;
@@ -155,6 +163,10 @@ DROP TRIGGER IF EXISTS on_brewery_linked ON profiles;
 CREATE TRIGGER on_brewery_linked
   AFTER UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION delete_used_invitation();
+
+-- Policies for invitations
+DROP POLICY IF EXISTS "Admins can manage invitations" ON invitations;
+CREATE POLICY "Admins can manage invitations" ON invitations FOR ALL USING (brewery_id = get_user_brewery_id() AND get_user_brewery_role() = 'admin');
 
 -- Set brewery_id automatically based on owner's profile if missing
 CREATE OR REPLACE FUNCTION set_brewery_id()
@@ -167,7 +179,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Policies and Triggers for Data Tables
+-- RLS Policies and Triggers for Data Tables
 DO $$
 DECLARE
   t text;
@@ -295,3 +307,102 @@ BEGIN
     UPDATE waters SET brewery_id = new_brewery_id WHERE user_id = u_record.id AND brewery_id IS NULL;
   END LOOP;
 END $$;
+
+-- Security hardening (2026-10-30)
+-- Idempotent: safe to run more than once, and also included in the full setup script.
+--
+-- 1. Users could change their own brewery_id / brewery_role through the API and so
+--    join any brewery as admin. Brewery membership can now only change through the
+--    signup trigger, the join_brewery / remove_brewery_member functions, or an app admin.
+-- 2. Trigger functions were callable through the REST API (/rest/v1/rpc/...).
+
+-- Guard profile changes made directly by app users (roles anon/authenticated).
+-- Must be SECURITY INVOKER: current_user is then the caller's role. Updates made by
+-- SECURITY DEFINER functions (signup trigger, RPCs below) run as the function owner,
+-- so they pass this check.
+CREATE OR REPLACE FUNCTION public.protect_profile_role()
+RETURNS trigger AS $$
+BEGIN
+  IF current_user IN ('anon', 'authenticated') AND NOT is_admin() THEN
+    IF TG_OP = 'INSERT' THEN
+      NEW.role := 'user';
+      NEW.brewery_id := NULL;
+      NEW.brewery_role := NULL;
+    ELSE
+      IF NEW.role IS DISTINCT FROM OLD.role THEN
+        RAISE EXCEPTION 'Only admins can change user roles';
+      END IF;
+      IF NEW.brewery_id IS DISTINCT FROM OLD.brewery_id
+         OR NEW.brewery_role IS DISTINCT FROM OLD.brewery_role THEN
+        RAISE EXCEPTION 'Brewery membership cannot be changed directly';
+      END IF;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_profile_update ON profiles;
+CREATE TRIGGER on_profile_update
+  BEFORE INSERT OR UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION protect_profile_role();
+
+-- Join a brewery with an invite code (for users without a brewery).
+CREATE OR REPLACE FUNCTION public.join_brewery(invite_code TEXT)
+RETURNS UUID AS $$
+DECLARE
+  inv RECORD;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  SELECT brewery_id, role INTO inv
+  FROM invitations
+  WHERE code = upper(trim(invite_code)) AND expires_at > now()
+  LIMIT 1;
+
+  IF inv.brewery_id IS NULL THEN
+    RAISE EXCEPTION 'Invalid or expired invitation code';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND brewery_id IS NOT NULL) THEN
+    RAISE EXCEPTION 'You are already part of a brewery';
+  END IF;
+
+  UPDATE profiles SET brewery_id = inv.brewery_id, brewery_role = inv.role WHERE id = auth.uid();
+  DELETE FROM invitations WHERE code = upper(trim(invite_code));
+  RETURN inv.brewery_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Brewery admins remove a member from their brewery.
+CREATE OR REPLACE FUNCTION public.remove_brewery_member(member_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  IF get_user_brewery_role() IS DISTINCT FROM 'admin' THEN
+    RAISE EXCEPTION 'Only brewery admins can remove members';
+  END IF;
+  IF member_id = auth.uid() THEN
+    RAISE EXCEPTION 'You cannot remove yourself';
+  END IF;
+
+  UPDATE profiles SET brewery_id = NULL, brewery_role = NULL
+  WHERE id = member_id AND brewery_id = get_user_brewery_id();
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Member not found in your brewery';
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Function permissions: trigger functions are not callable through the API;
+-- the two membership functions only by signed-in users.
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.delete_used_invitation() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.protect_profile_role() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.set_brewery_id() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.join_brewery(TEXT) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.remove_brewery_member(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.join_brewery(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.remove_brewery_member(UUID) TO authenticated;

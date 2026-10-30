@@ -68,22 +68,8 @@ const BrewerySettings: React.FC = () => {
     try {
       const invite = await breweryService.generateInvitation(profile.brewery_id, inviteRole, inviteEmail.trim());
       if (invite) {
-        // Send email via API
-        const res = await fetch('/api/send-invite', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: inviteEmail.trim(),
-            code: invite.code,
-            breweryName: brewery?.name || 'a brewery',
-            role: inviteRole
-          })
-        });
-
-        if (!res.ok) {
-           const errData = await res.json();
-           throw new Error(errData.error || 'Failed to send email');
-        }
+        // Send email via API (server checks you are admin of this brewery)
+        await breweryService.sendInviteEmail(invite.id);
 
         setInvitations([...invitations, invite]);
         setShowInviteModal(false);

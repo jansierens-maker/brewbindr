@@ -49,13 +49,8 @@ export const breweryService = {
 
   async removeMember(userId: string) {
     if (!supabase) return;
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        brewery_id: null,
-        brewery_role: null
-      })
-      .eq('id', userId);
+    // Server-side function checks that the caller is admin of the same brewery
+    const { error } = await supabase.rpc('remove_brewery_member', { member_id: userId });
     if (error) throw error;
   },
 
@@ -77,6 +72,23 @@ export const breweryService = {
     return data;
   },
 
+  async sendInviteEmail(invitationId: string) {
+    if (!supabase) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch('/api/send-invite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ invitationId }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to send email');
+    }
+  },
+
   async getInvitations(breweryId: string): Promise<Invitation[]> {
     if (!supabase) return [];
     const { data, error } = await supabase
@@ -96,36 +108,11 @@ export const breweryService = {
     if (error) throw error;
   },
 
-  async joinBrewery(code: string, userId: string) {
+  async joinBrewery(code: string, _userId?: string) {
     if (!supabase) return;
-
-    // 1. Validate invitation
-    const { data: invite, error: inviteError } = await supabase
-      .from('invitations')
-      .select('*')
-      .eq('code', code)
-      .single();
-
-    if (inviteError || !invite) throw new Error('Invalid or expired invitation code');
-
-    const now = new Date();
-    if (new Date(invite.expires_at) < now) {
-      throw new Error('Invitation code has expired');
-    }
-
-    // 2. Join brewery (Update profile)
-    // Note: This requires the profile update policy to allow setting brewery_id if it's currently null
-    // or we might need a RPC function for this if RLS is too strict.
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        brewery_id: invite.brewery_id,
-        brewery_role: invite.role
-      })
-      .eq('id', userId);
-
-    if (profileError) throw profileError;
-
-    return invite.brewery_id;
+    // Server-side function validates the code and updates the caller's own profile
+    const { data, error } = await supabase.rpc('join_brewery', { invite_code: code });
+    if (error) throw new Error(error.message || 'Invalid or expired invitation code');
+    return data as string;
   }
 };
