@@ -7,8 +7,6 @@ const TEST_PASSWORD = process.env.TEST_USER_PASSWORD!;
 const SIGN_IN = /^(sign in|aanmelden|se connecter)$/i;
 const EMAIL = /e-?mail/i;
 const PASSWORD = /password|wachtwoord|mot de passe/i;
-const SETTINGS = /^(settings|instellingen|paramètres)$/i;
-const SIGN_OUT = /sign out|uitloggen|déconnexion/i;
 
 // Guests land on the public recipe library; the login form opens via the
 // "Sign in" button in the top bar (the sidebar has one too, hence .first()).
@@ -62,9 +60,10 @@ test.describe('Auth / Login', () => {
     await submitLogin(page, TEST_EMAIL, TEST_PASSWORD);
     await expectLoggedIn(page);
 
-    // Sign out lives on the Settings page
-    await page.getByRole('button', { name: SETTINGS }).first().click();
-    await page.getByRole('button', { name: SIGN_OUT }).click();
+    // Sign out lives on the Settings page. Locate both buttons by their icon,
+    // so the test works whatever language the test user has selected.
+    await page.locator('aside button:has(i.fa-gear)').click();
+    await page.locator('button:has(i.fa-sign-out-alt)').click();
 
     // Back to guest mode: the "Sign in" button is shown again
     await expect(page.getByRole('button', { name: SIGN_IN }).first()).toBeVisible({ timeout: 15000 });
