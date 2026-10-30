@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { normalizeRecipe } from './calculations';
 
 /**
  * Supabase Service for Brewbindr
@@ -163,7 +164,7 @@ export const supabaseService = {
       });
 
       return {
-        recipes: data['recipes'] as Recipe[],
+        recipes: (data['recipes'] as Recipe[]).map(normalizeRecipe),
         brewLogs: data['brew_logs'] as BrewLogEntry[],
         tastingNotes: data['tasting_notes'] as TastingNote[],
         library
@@ -179,7 +180,7 @@ export const supabaseService = {
     if (!client || !recipe.id) return;
     return client.from('recipes').upsert({
       id: recipe.id,
-      data: recipe,
+      data: normalizeRecipe(recipe),
       user_id: userId || recipe.user_id,
       brewery_id: breweryId || recipe.brewery_id,
       status: recipe.status || 'private'

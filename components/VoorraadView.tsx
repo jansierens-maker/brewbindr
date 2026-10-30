@@ -3,6 +3,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { LibraryIngredient } from '../types';
 import { GlassIndicator, MiniGlassBar } from './GlassIndicator';
+import { formatStockAmount } from '../services/calculations';
 
 interface VoorraadViewProps {
   ingredients: LibraryIngredient[];
@@ -13,7 +14,7 @@ type ViewMode = 'grid' | 'list';
 type SortOption = 'type' | 'name' | 'stock_low' | 'stock_high';
 
 export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdate }) => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTypes, setActiveTypes] = useState<string[]>(['fermentable', 'hop', 'culture', 'misc']);
   const [sortOption, setSortOption] = useState<SortOption>('type');
@@ -229,7 +230,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                 <div className="text-center mt-1">
                   <div className="text-xs font-black text-[var(--color-text)] line-clamp-2 leading-tight min-h-[2em]">{ing.name}</div>
                   <div className="text-[10px] font-bold text-[var(--color-text-xmuted)] mt-1">
-                    {ing.stock ? `${ing.stock.amount} ${ing.stock.unit}` : '0 -'}
+                    {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)} ${ing.stock.unit}` : '0 -'}
                   </div>
                 </div>
               </button>
@@ -267,7 +268,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-sm font-bold text-[var(--color-text)]">
-                        {ing.stock ? `${ing.stock.amount} ${ing.stock.unit}` : '0 -'}
+                        {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)} ${ing.stock.unit}` : '0 -'}
                         {ing.stock?.stock_target && <span className="text-[var(--color-text-xmuted)] font-medium ml-1">/ {ing.stock.stock_target} {ing.stock.unit}</span>}
                       </div>
                     </td>

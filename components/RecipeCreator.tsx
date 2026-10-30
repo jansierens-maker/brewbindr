@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, getSRMColor, formatBrewNumber, srmToEbc } from '../services/calculations';
+import { calculateRecipeStats, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 
@@ -426,7 +426,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                 {preferences.enableStockManagement && f.libraryId && libraryMap.get(f.libraryId)?.status === 'private' && libraryMap.get(f.libraryId)?.stock && (
                   <div className="text-[10px] font-black text-stone-400 uppercase">
                     {t('stock_label')}: <span className={libraryMap.get(f.libraryId)!.stock!.amount < f.amount.value ? 'text-red-500' : 'text-green-600'}>
-                      {libraryMap.get(f.libraryId)!.stock!.amount} {libraryMap.get(f.libraryId)!.stock!.unit}
+                      {formatStockAmount(libraryMap.get(f.libraryId)!.stock!.amount, libraryMap.get(f.libraryId)!.stock!.unit, lang)} {libraryMap.get(f.libraryId)!.stock!.unit}
                     </span>
                   </div>
                 )}
@@ -469,7 +469,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                 {preferences.enableStockManagement && h.libraryId && libraryMap.get(h.libraryId)?.status === 'private' && libraryMap.get(h.libraryId)?.stock && (
                   <div className="text-[10px] font-black text-stone-400 uppercase">
                     {t('stock_label')}: <span className={libraryMap.get(h.libraryId)!.stock!.amount < h.amount.value ? 'text-red-500' : 'text-green-600'}>
-                      {libraryMap.get(h.libraryId)!.stock!.amount} {libraryMap.get(h.libraryId)!.stock!.unit}
+                      {formatStockAmount(libraryMap.get(h.libraryId)!.stock!.amount, libraryMap.get(h.libraryId)!.stock!.unit, lang)} {libraryMap.get(h.libraryId)!.stock!.unit}
                     </span>
                   </div>
                 )}
@@ -504,7 +504,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                 {preferences.enableStockManagement && c.libraryId && libraryMap.get(c.libraryId)?.status === 'private' && libraryMap.get(c.libraryId)?.stock && (
                   <div className="text-[10px] font-black text-stone-400 uppercase">
                     {t('stock_label')}: <span className={libraryMap.get(c.libraryId)!.stock!.amount < 1 ? 'text-red-500' : 'text-green-600'}>
-                      {libraryMap.get(c.libraryId)!.stock!.amount} {libraryMap.get(c.libraryId)!.stock!.unit}
+                      {formatStockAmount(libraryMap.get(c.libraryId)!.stock!.amount, libraryMap.get(c.libraryId)!.stock!.unit, lang)} {libraryMap.get(c.libraryId)!.stock!.unit}
                     </span>
                   </div>
                 )}

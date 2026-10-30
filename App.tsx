@@ -20,7 +20,7 @@ import { BottomNav } from './components/BottomNav';
 import { InfoBanner } from './components/InfoBanner';
 import BrewerySettings from './components/BrewerySettings';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
-import { getSRMColor, formatBrewNumber, checkRecipeStock } from './services/calculations';
+import { getSRMColor, formatBrewNumber, checkRecipeStock, normalizeRecipe } from './services/calculations';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
@@ -328,7 +328,7 @@ const AppContent: React.FC = () => {
           if (!newRecord) return prev;
 
           // Safely merge column data into JSONB data
-          const mergedData = { ...newRecord.data };
+          const mergedData = table === 'recipes' ? normalizeRecipe({ ...newRecord.data }) : { ...newRecord.data };
           if (newRecord.id) mergedData.id = newRecord.id;
           if (newRecord.user_id) mergedData.user_id = newRecord.user_id;
           if (newRecord.brewery_id) mergedData.brewery_id = newRecord.brewery_id;
@@ -477,9 +477,9 @@ const AppContent: React.FC = () => {
       }
     }
 
-    const targetRecipe = selectedRecipe && selectedRecipe.id
+    const targetRecipe = normalizeRecipe(selectedRecipe && selectedRecipe.id
       ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id, brewery_id: profile?.brewery_id }
-      : { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id };
+      : { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id });
 
     setRecipes(prev => {
       const exists = prev.find(r => r.id === targetRecipe.id);

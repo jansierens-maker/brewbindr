@@ -1,3 +1,4 @@
+import { normalizeRecipe } from './calculations';
 import { Recipe, Fermentable, Hop, Culture, MashProfile, MashStep, LibraryIngredient } from "../types";
 
 export interface BeerXmlImportResult {
@@ -303,5 +304,6 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
     });
   }
 
+  result.recipes = result.recipes.map(normalizeRecipe);
   return result;
 };
