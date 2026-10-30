@@ -1,8 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
-import dotenv from 'dotenv';
 
-// Laad .env.test lokaal; in CI komen vars via GitHub Secrets
-// dotenv.config({ path: '.env.test' });
+// In CI komen vars via GitHub Secrets; lokaal via je shell of `node --env-file`
+const remoteBaseURL = process.env.PLAYWRIGHT_BASE_URL;
 
 export default defineConfig({
   testDir: './e2e',
@@ -15,7 +14,7 @@ export default defineConfig({
   use: {
     // Gebruik PLAYWRIGHT_BASE_URL in CI (Vercel preview/prod URL),
     // lokaal valt het terug op de dev server
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173',
+    baseURL: remoteBaseURL || 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     extraHTTPHeaders: process.env.VERCEL_AUTOMATION_BYPASS_SECRET
@@ -32,11 +31,13 @@ export default defineConfig({
     },
   ],
 
-  // Start de Vite dev server automatisch
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
-    timeout: 30000,
-  },
+  // Start de Vite dev server alleen lokaal; in CI testen we de Vercel deployment
+  webServer: remoteBaseURL
+    ? undefined
+    : {
+        command: 'npm run dev',
+        url: 'http://localhost:5173',
+        reuseExistingServer: true,
+        timeout: 30000,
+      },
 });

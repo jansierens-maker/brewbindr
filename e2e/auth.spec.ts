@@ -1,56 +1,71 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const TEST_EMAIL = process.env.TEST_USER_EMAIL!;
 const TEST_PASSWORD = process.env.TEST_USER_PASSWORD!;
 
+// Labels in en / nl / fr (see services/i18n.ts)
+const SIGN_IN = /^(sign in|aanmelden|se connecter)$/i;
+const EMAIL = /e-?mail/i;
+const PASSWORD = /password|wachtwoord|mot de passe/i;
+
+// Guests land on the public recipe library; the login form opens via the
+// "Sign in" button in the top bar (the sidebar has one too, hence .first()).
+async function openLoginForm(page: Page) {
+  await page.getByRole('button', { name: SIGN_IN }).first().click();
+  await expect(page.locator('form').getByRole('textbox', { name: EMAIL })).toBeVisible({ timeout: 15000 });
+}
+
+async function submitLogin(page: Page, email: string, password: string) {
+  const form = page.locator('form');
+  await form.getByRole('textbox', { name: EMAIL }).fill(email);
+  await form.getByLabel(PASSWORD).fill(password);
+  await form.getByRole('button', { name: SIGN_IN }).click();
+}
+
+async function expectLoggedIn(page: Page) {
+  // Once signed in, the guest "Sign in" buttons disappear
+  await expect(page.getByRole('button', { name: SIGN_IN })).toHaveCount(0, { timeout: 15000 });
+}
+
 test.describe('Auth / Login', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // The app runs a Supabase health check on load and then resets the view to
+    // the recipe list; wait for it so it can't close the login form mid-test.
+    await page.waitForLoadState('networkidle');
   });
 
   test('toont de loginpagina voor niet-ingelogde gebruikers', async ({ page }) => {
-    // Verwacht dat de login/auth pagina zichtbaar is
-    // Note: Vercel deployment protection can intercept this, however by passing the automation bypass secret we ensure we hit our app.
-    // Either it redirects to /login (or /auth or /sign-in) or it stays on root if not logged in.
-    await expect(page).toHaveURL(/(\/(login|auth|sign-in)|\/$)/);
-
-    await expect(page.getByRole('textbox', { name: /e-?mail/i })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole('textbox', { name: /wachtwoord|password/i })).toBeVisible({ timeout: 15000 });
+    await openLoginForm(page);
+    await expect(page.locator('form').getByLabel(PASSWORD)).toBeVisible();
   });
 
   test('kan inloggen met geldige credentials', async ({ page }) => {
-    await page.getByRole('textbox', { name: /e-?mail/i }).fill(TEST_EMAIL);
-    await page.getByRole('textbox', { name: /wachtwoord|password/i }).fill(TEST_PASSWORD);
-    await page.getByRole('button', { name: /inlog|sign.?in|login/i }).click();
-
-    // Na login: verwacht redirect naar dashboard of home
-    await expect(page).not.toHaveURL(/\/(login|auth|sign-in)/);
-    // Controleer dat er iets van de app zichtbaar is (pas selector aan indien nodig)
-    await expect(page.getByRole('navigation')).toBeVisible({ timeout: 10000 });
+    await openLoginForm(page);
+    await submitLogin(page, TEST_EMAIL, TEST_PASSWORD);
+    await expectLoggedIn(page);
   });
 
   test('toont foutmelding bij verkeerde credentials', async ({ page }) => {
-    await page.getByRole('textbox', { name: /e-?mail/i }).fill(TEST_EMAIL);
-    await page.getByRole('textbox', { name: /wachtwoord|password/i }).fill('fout-wachtwoord-123!');
-    await page.getByRole('button', { name: /inlog|sign.?in|login/i }).click();
+    await openLoginForm(page);
+    await submitLogin(page, TEST_EMAIL, 'fout-wachtwoord-123!');
 
-    // Verwacht een foutmelding
-    await expect(
-      page.getByText(/ongeldig|invalid|incorrect|fout|onjuist/i)
-    ).toBeVisible({ timeout: 5000 });
+    // Supabase returns "Invalid login credentials"
+    await expect(page.getByText(/ongeldig|invalid|incorrect|onjuist/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('form').getByRole('textbox', { name: EMAIL })).toBeVisible();
   });
 
   test('kan uitloggen na inloggen', async ({ page }) => {
-    // Login
-    await page.getByRole('textbox', { name: /e-?mail/i }).fill(TEST_EMAIL);
-    await page.getByRole('textbox', { name: /wachtwoord|password/i }).fill(TEST_PASSWORD);
-    await page.getByRole('button', { name: /inlog|sign.?in|login/i }).click();
-    await expect(page).not.toHaveURL(/\/(login|auth|sign-in)/, { timeout: 10000 });
+    await openLoginForm(page);
+    await submitLogin(page, TEST_EMAIL, TEST_PASSWORD);
+    await expectLoggedIn(page);
 
-    // Logout — pas selector aan op jouw UI
-    await page.getByRole('button', { name: /uitlog|sign.?out|logout/i }).click();
+    // Sign out lives on the Settings page. Locate both buttons by their icon,
+    // so the test works whatever language the test user has selected.
+    await page.locator('aside button:has(i.fa-gear)').click();
+    await page.locator('button:has(i.fa-sign-out-alt)').click();
 
-    // Verwacht terug op loginpagina
-    await expect(page).toHaveURL(/(login|auth|sign-in)/);
+    // Back to guest mode: the "Sign in" button is shown again
+    await expect(page.getByRole('button', { name: SIGN_IN }).first()).toBeVisible({ timeout: 15000 });
   });
 });
