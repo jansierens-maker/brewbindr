@@ -18,7 +18,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onAuth
 }) => {
   const { t } = useTranslation();
-  const { user, preferences } = useUser();
+  const { user, preferences, isAdmin } = useUser();
   const [showMore, setShowMore] = useState(false);
 
   const tabs = [
@@ -36,6 +36,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
     { id: 'settings', label: t('settings_nav_label'), icon: 'fa-gear', view: 'settings' },
     { id: 'help', label: t('help_nav_label'), icon: 'fa-question-circle', view: 'help' },
+    { id: 'admin', label: t('admin_nav_label' as any), icon: 'fa-user-shield', view: 'admin', hideIf: !isAdmin },
   ];
 
   const isActive = (tab: any) => {
