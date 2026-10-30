@@ -16,6 +16,8 @@ const BrewerySettings: React.FC = () => {
   const [inviteRole, setInviteRole] = useState<BreweryRole>('brewmaster');
   const [inviteEmail, setInviteEmail] = useState('');
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joining, setJoining] = useState(false);
 
   const isAdmin = breweryRole === 'admin';
 
@@ -99,6 +101,20 @@ const BrewerySettings: React.FC = () => {
       setMembers(members.filter(m => m.id !== id));
     } catch (err) {
       alert('Failed to remove member');
+    }
+  };
+
+  const handleJoinBrewery = async () => {
+    const code = joinCode.trim();
+    if (!code || !confirm(t('join_brewery_confirm' as any))) return;
+    setJoining(true);
+    try {
+      await breweryService.joinBrewery(code);
+      // Brewery, realtime channels and data all change: reload the app
+      window.location.reload();
+    } catch (err: any) {
+      alert(`${t('join_brewery_failed' as any)}: ${err.message}`);
+      setJoining(false);
     }
   };
 
@@ -224,6 +240,34 @@ const BrewerySettings: React.FC = () => {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-4">
+        <div>
+          <h4 className="text-sm font-black text-stone-900 uppercase tracking-widest">{t('join_brewery_title' as any)}</h4>
+          <p className="text-xs text-stone-500 font-medium mt-1">{t('join_brewery_desc' as any)}</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <label htmlFor="join-brewery-code" className="sr-only">{t('auth_invite_code_label' as any)}</label>
+          <input
+            id="join-brewery-code"
+            name="join-brewery-code"
+            type="text"
+            maxLength={20}
+            value={joinCode}
+            onChange={e => setJoinCode(e.target.value.toUpperCase())}
+            placeholder="ABCD2345"
+            className="flex-1 px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-amber-500/20"
+          />
+          <button
+            onClick={handleJoinBrewery}
+            disabled={joining || !joinCode.trim()}
+            className="px-6 py-3 bg-stone-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50"
+          >
+            {joining ? <i className="fas fa-spinner fa-spin mr-2" aria-hidden="true"></i> : null}
+            {t('join_brewery_btn' as any)}
+          </button>
+        </div>
       </div>
 
       {showInviteModal && (

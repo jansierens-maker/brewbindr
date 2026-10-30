@@ -1377,11 +1377,15 @@ CREATE TRIGGER on_profile_update
   BEFORE INSERT OR UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION protect_profile_role();
 
--- Join a brewery with an invite code (for users without a brewery).
+-- Join a brewery with an invite code. A user who is the only member of their
+-- current brewery takes their data along; the empty old brewery is removed.
 CREATE OR REPLACE FUNCTION public.join_brewery(invite_code TEXT)
 RETURNS UUID AS \$\$
 DECLARE
   inv RECORD;
+  old_brewery UUID;
+  t TEXT;
+  data_tables TEXT[] := ARRAY['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
 BEGIN
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
@@ -1396,12 +1400,34 @@ BEGIN
     RAISE EXCEPTION 'Invalid or expired invitation code';
   END IF;
 
-  IF EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND brewery_id IS NOT NULL) THEN
-    RAISE EXCEPTION 'You are already part of a brewery';
+  SELECT brewery_id INTO old_brewery FROM profiles WHERE id = auth.uid();
+
+  IF old_brewery = inv.brewery_id THEN
+    RAISE EXCEPTION 'You are already a member of this brewery';
+  END IF;
+
+  IF old_brewery IS NOT NULL AND EXISTS (
+    SELECT 1 FROM profiles WHERE brewery_id = old_brewery AND id <> auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'Your current brewery has other members. Ask its admin to remove you first.';
+  END IF;
+
+  -- Move the user's data from their (single-member) brewery to the new one
+  IF old_brewery IS NOT NULL THEN
+    FOREACH t IN ARRAY data_tables LOOP
+      EXECUTE format('UPDATE %I SET brewery_id = \$1 WHERE brewery_id = \$2', t)
+        USING inv.brewery_id, old_brewery;
+    END LOOP;
   END IF;
 
   UPDATE profiles SET brewery_id = inv.brewery_id, brewery_role = inv.role WHERE id = auth.uid();
   DELETE FROM invitations WHERE code = upper(trim(invite_code));
+
+  -- Remove the now empty old brewery (its pending invitations cascade)
+  IF old_brewery IS NOT NULL THEN
+    DELETE FROM breweries WHERE id = old_brewery;
+  END IF;
+
   RETURN inv.brewery_id;
 END;
 \$\$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
