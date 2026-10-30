@@ -7,8 +7,9 @@
 -- 2. Trigger functions were callable through the REST API (/rest/v1/rpc/...).
 
 -- Guard profile changes made directly by app users (roles anon/authenticated).
+-- Must be SECURITY INVOKER: current_user is then the caller's role. Updates made by
 -- SECURITY DEFINER functions (signup trigger, RPCs below) run as the function owner,
--- so their own updates pass this check.
+-- so they pass this check.
 CREATE OR REPLACE FUNCTION public.protect_profile_role()
 RETURNS trigger AS $$
 BEGIN
@@ -29,7 +30,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_profile_update ON profiles;
 CREATE TRIGGER on_profile_update
