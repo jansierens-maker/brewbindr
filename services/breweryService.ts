@@ -56,7 +56,10 @@ export const breweryService = {
 
   async generateInvitation(breweryId: string, role: BreweryRole, email?: string): Promise<Invitation | null> {
     if (!supabase) return null;
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    // 8 characters from an unambiguous alphabet (no 0/O, 1/I/L), cryptographically random
+    const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const bytes = crypto.getRandomValues(new Uint8Array(8));
+    const code = Array.from(bytes, b => alphabet[b % alphabet.length]).join('');
     const { data, error } = await supabase
       .from('invitations')
       .insert({

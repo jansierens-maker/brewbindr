@@ -118,17 +118,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Handle pending invite for existing user who just logged in
       if (p && pendingInviteCode) {
-         if (p.brewery_id) {
-            alert("You are already part of a brewery. Please export your data, delete your account, and re-join if you want to switch.");
-         } else {
-            try {
-               await breweryService.joinBrewery(pendingInviteCode, userId);
-               p = await authService.getProfile(userId);
-            } catch (err: any) {
-               alert(`Join failed: ${err.message}`);
-            }
-         }
          localStorage.removeItem('pending_invite_code');
+         try {
+            // Server-side: allowed when you're the only member of your current
+            // brewery; your own data moves along to the new brewery.
+            await breweryService.joinBrewery(pendingInviteCode, userId);
+            p = await authService.getProfile(userId);
+         } catch (err: any) {
+            alert(`Join failed: ${err.message}`);
+         }
       }
 
       setProfile(p);
