@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from '../App';
 
 import { useUser } from '../services/userContext';
+import { submissionKey } from '../services/duplicates';
 
 interface AdminViewProps {
   onExport: () => void;
@@ -9,6 +10,8 @@ interface AdminViewProps {
   onUrlImport: () => void;
   importStatus: string;
   pendingSubmissions: any[];
+  /** Keys of items already in the public library (see services/duplicates) */
+  publicKeys?: Set<string>;
   onApprove: (id: string, type: string, table?: string) => void;
   onReject: (id: string, type: string, table?: string) => void;
 }
@@ -19,6 +22,7 @@ const AdminView: React.FC<AdminViewProps> = ({
   onUrlImport, 
   importStatus,
   pendingSubmissions,
+  publicKeys,
   onApprove,
   onReject
 }) => {
@@ -53,7 +57,14 @@ const AdminView: React.FC<AdminViewProps> = ({
                         <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-stone-200 text-stone-600 rounded-full">{item.type || item._table}</span>
                         <span className="text-[10px] font-bold text-stone-400 italic">{t('submitted_by')} {item.author || item.user_id?.split('-')[0] || t('unknown_user')}</span>
                       </div>
-                      <h4 className="font-black text-stone-900">{item.name}</h4>
+                      <h4 className="font-black text-stone-900">
+                        {item.name}
+                        {publicKeys?.has(submissionKey(item)) && (
+                          <span className="ml-2 align-middle text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
+                            <i className="fas fa-clone mr-1" aria-hidden="true"></i>{t('already_public')}
+                          </span>
+                        )}
+                      </h4>
                     </div>
                     <div className="flex gap-2">
                       <button
