@@ -18,7 +18,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onAuth
 }) => {
   const { t } = useTranslation();
-  const { user, preferences, isAdmin } = useUser();
+  const { user, preferences, isAdmin, signOut } = useUser();
   const [showMore, setShowMore] = useState(false);
 
   const tabs = [
@@ -105,6 +105,17 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   </button>
                 );
               })}
+              {user && (
+                <button
+                  onClick={async () => { setShowMore(false); await signOut(); }}
+                  className="w-full flex items-center gap-4 p-4 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors border-t border-[var(--color-border)] mt-2"
+                >
+                  <span className="w-6 text-center text-lg">
+                    <i className="fas fa-right-from-bracket" aria-hidden="true"></i>
+                  </span>
+                  <span className="flex-1 text-left">{t('sign_out_btn')}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

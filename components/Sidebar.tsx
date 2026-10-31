@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Logo } from './Logo';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -21,7 +21,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAuth
 }) => {
   const { t } = useTranslation();
-  const { user, profile, preferences, breweryRole, isAdmin } = useUser();
+  const { user, profile, preferences, breweryRole, isAdmin, signOut } = useUser();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close the user menu on outside click or Escape
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onPointer = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setUserMenuOpen(false); };
+    document.addEventListener('mousedown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [userMenuOpen]);
+
+  const handleUserMenuItem = (view: string) => {
+    setUserMenuOpen(false);
+    onViewChange(view);
+  };
+
+  const handleSignOut = async () => {
+    setUserMenuOpen(false);
+    await signOut();
+  };
   const [brewery, setBrewery] = useState<Brewery | null>(null);
 
   useEffect(() => {
@@ -128,8 +155,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="mt-auto border-t border-[var(--color-border)] p-3 flex-shrink-0">
         {user ? (
+          <div className="relative" ref={userMenuRef}>
+          {userMenuOpen && (
+            <div
+              role="menu"
+              aria-label={profile?.email || ''}
+              className="absolute bottom-full left-0 right-0 mb-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] shadow-lg py-1 z-[120]"
+            >
+              <button role="menuitem" onClick={() => handleUserMenuItem('settings')} className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] text-left">
+                <i className="fas fa-sliders w-4 text-center text-xs text-[var(--color-text-xmuted)]" aria-hidden="true"></i> {t('settings_nav_label')}
+              </button>
+              <button role="menuitem" onClick={() => handleUserMenuItem('team')} className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] text-left">
+                <i className="fas fa-users w-4 text-center text-xs text-[var(--color-text-xmuted)]" aria-hidden="true"></i> {t('team_label')}
+              </button>
+              <div className="my-1 border-t border-[var(--color-border)]"></div>
+              <button role="menuitem" onClick={handleSignOut} className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-red-600 hover:bg-red-50 text-left">
+                <i className="fas fa-right-from-bracket w-4 text-center text-xs" aria-hidden="true"></i> {t('sign_out_btn')}
+              </button>
+            </div>
+          )}
           <button
-            onClick={() => onViewChange('settings')}
+            onClick={() => setUserMenuOpen(open => !open)}
+            aria-haspopup="menu"
+            aria-expanded={userMenuOpen}
             className="w-full flex items-center gap-2.5 p-2 rounded-[var(--radius-sm)] hover:bg-[var(--color-bg-hover)] transition-colors cursor-pointer group text-left"
           >
             <div className="w-[30px] h-[30px] rounded-full bg-[var(--color-accent-light)] flex items-center justify-center text-xs font-bold text-[var(--color-accent-dark)] flex-shrink-0 uppercase">
@@ -143,8 +191,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {breweryRole || 'Taster'} · {brewery?.name || 'Mijn Brouwerij'}
               </div>
             </div>
-            <i className="fas fa-ellipsis-v text-[var(--color-text-xmuted)] text-xs group-hover:text-[var(--color-text)]"></i>
+            <i className="fas fa-ellipsis-v text-[var(--color-text-xmuted)] text-xs group-hover:text-[var(--color-text)]" aria-hidden="true"></i>
           </button>
+          </div>
         ) : (
           <div className="space-y-2 p-1">
             <button
