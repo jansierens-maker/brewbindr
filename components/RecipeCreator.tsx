@@ -245,7 +245,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               </div>
               <div>
                 <h2 className="text-2xl font-black text-white tracking-tight uppercase">brewbindr <span className="text-amber-500">AI</span></h2>
-                <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Recipe Innovation Bot</p>
+                <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">{t('recipe_bot_title')}</p>
               </div>
             </div>
             {recipe.id && (
@@ -262,9 +262,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
 
           <div className="flex flex-col md:flex-row gap-4">
             <input 
-              aria-label="AI Recipe Prompt"
+              aria-label={t('ai_prompt_label')}
               className="flex-1 bg-white/10 border border-white/20 rounded-2xl px-6 py-4 text-white font-medium placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
-              placeholder="e.g., A Hazy IPA with mango and Citra hops, 20L batch"
+              placeholder={t('ai_prompt_placeholder')}
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAiGenerate()}
@@ -275,7 +275,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               disabled={isGenerating || !prompt.trim()}
               className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:hover:bg-amber-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-amber-900/40 flex items-center justify-center gap-3 min-w-[200px]"
             >
-              {isGenerating ? <><i className="fas fa-circle-notch fa-spin"></i> Brewing Idea...</> : <><i className="fas fa-magic"></i> Generate Recipe</>}
+              {isGenerating ? <><i className="fas fa-circle-notch fa-spin" aria-hidden="true"></i> {t('generating_recipe')}</> : <><i className="fas fa-magic" aria-hidden="true"></i> {t('generate_recipe')}</>}
             </button>
           </div>
 
@@ -358,7 +358,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <input id="batch_size" name="batch_size" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.batch_size.value} onChange={e => setRecipe({...recipe, batch_size: {...recipe.batch_size, value: parseFloat(e.target.value) || 0}})} />
               <select
                 id="batch_size_unit"
-                aria-label="Batch Size Unit"
+                aria-label={t('batch_size_unit')}
                 className="bg-transparent text-xs font-bold text-stone-400 outline-none"
                 value={recipe.batch_size.unit}
                 onChange={e => setRecipe({...recipe, batch_size: {...recipe.batch_size, unit: e.target.value as any}})}
@@ -372,9 +372,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             <div className="flex items-center gap-1.5 mb-1">
               <label htmlFor="efficiency" className="text-xs font-bold text-stone-400 uppercase">{t('efficiency')}</label>
               <div className="group relative">
-                <i className="fas fa-info-circle text-[10px] text-stone-300" title="Efficiency Info"></i>
+                <i className="fas fa-info-circle text-[10px] text-stone-300" title={t('efficiency_info')}></i>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-stone-800 text-white text-[9px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
-                  Adjust based on your equipment's performance to improve OG predictions.
+                  {t('efficiency_help')}
                 </div>
               </div>
             </div>
@@ -399,16 +399,16 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             {recipe.ingredients.fermentables.map((f, i) => (
               <div key={i} className="flex gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
                 <div className="flex-1">
-                  <label htmlFor={`ferm-select-${i}`} className="sr-only">Select Fermentable</label>
+                  <label htmlFor={`ferm-select-${i}`} className="sr-only">{t('select_fermentable')}</label>
                   <select id={`ferm-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={f.libraryId || ""} onChange={e => handleLibrarySelect('fermentable', i, e.target.value)}>
                     <option value="">{f.name || '-- Select Malt --'}</option>
                     {libraryByType.fermentable.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label htmlFor={`ferm-amount-${i}`} className="sr-only">Amount</label>
+                  <label htmlFor={`ferm-amount-${i}`} className="sr-only">{t('amount_label')}</label>
                   <input id={`ferm-amount-${i}`} className="w-20 p-2 bg-white border rounded-xl text-right font-black" type="number" step="0.001" value={f.amount?.value ?? 0} onChange={e => updateField('fermentable', i, 'amount', parseFloat(e.target.value) || 0)} />
-                  <label htmlFor={`ferm-unit-${i}`} className="sr-only">Unit</label>
+                  <label htmlFor={`ferm-unit-${i}`} className="sr-only">{t('unit_label')}</label>
                   <select
                     id={`ferm-unit-${i}`}
                     className="bg-transparent text-[10px] font-black text-stone-400 uppercase outline-none"
@@ -430,7 +430,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     </span>
                   </div>
                 )}
-                <button onClick={() => removeIngredient('fermentable', i)} aria-label="Remove Fermentable"><i className="fas fa-trash-alt text-stone-300"></i></button>
+                <button onClick={() => removeIngredient('fermentable', i)} aria-label={t('remove_fermentable')}><i className="fas fa-trash-alt text-stone-300" aria-hidden="true"></i></button>
               </div>
             ))}
           </div>
@@ -442,16 +442,16 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             {recipe.ingredients.hops.map((h, i) => (
               <div key={i} className="flex gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
                 <div className="flex-1">
-                  <label htmlFor={`hop-select-${i}`} className="sr-only">Select Hop</label>
+                  <label htmlFor={`hop-select-${i}`} className="sr-only">{t('select_hop')}</label>
                   <select id={`hop-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={h.libraryId || ""} onChange={e => handleLibrarySelect('hop', i, e.target.value)}>
                     <option value="">{h.name || '-- Select Hop --'}</option>
                     {libraryByType.hop.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label htmlFor={`hop-amount-${i}`} className="sr-only">Amount</label>
+                  <label htmlFor={`hop-amount-${i}`} className="sr-only">{t('amount_label')}</label>
                   <input id={`hop-amount-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.amount?.value ?? 0} onChange={e => updateField('hop', i, 'amount', parseFloat(e.target.value) || 0)} />
-                  <label htmlFor={`hop-unit-${i}`} className="sr-only">Unit</label>
+                  <label htmlFor={`hop-unit-${i}`} className="sr-only">{t('unit_label')}</label>
                   <select
                     id={`hop-unit-${i}`}
                     className="bg-transparent text-[10px] font-black text-stone-400 uppercase outline-none"
@@ -474,11 +474,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <label htmlFor={`hop-time-${i}`} className="sr-only">Time (min)</label>
+                  <label htmlFor={`hop-time-${i}`} className="sr-only">{t('step_time')}</label>
                   <input id={`hop-time-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">min</span>
                 </div>
-                <button onClick={() => removeIngredient('hop', i)} aria-label="Remove Hop"><i className="fas fa-trash-alt text-stone-300"></i></button>
+                <button onClick={() => removeIngredient('hop', i)} aria-label={t('remove_hop')}><i className="fas fa-trash-alt text-stone-300" aria-hidden="true"></i></button>
               </div>
             ))}
           </div>
@@ -490,14 +490,14 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             {recipe.ingredients.cultures.map((c, i) => (
               <div key={i} className="flex gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
                 <div className="flex-1">
-                  <label htmlFor={`culture-select-${i}`} className="sr-only">Select Yeast</label>
+                  <label htmlFor={`culture-select-${i}`} className="sr-only">{t('select_yeast')}</label>
                   <select id={`culture-select-${i}`} className="flex-1 p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={c.libraryId || ""} onChange={e => handleLibrarySelect('culture', i, e.target.value)}>
                     <option value="">{c.name || '-- Select Yeast --'}</option>
                     {libraryByType.culture.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label htmlFor={`culture-att-${i}`} className="sr-only">Attenuation (%)</label>
+                  <label htmlFor={`culture-att-${i}`} className="sr-only">{t('attenuation_pct')}</label>
                   <input id={`culture-att-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={c.attenuation ?? 75} onChange={e => updateField('culture', i, 'attenuation', parseFloat(e.target.value) || 0)} />
                   <span className="text-[10px] font-black text-stone-400 uppercase">%</span>
                 </div>
@@ -508,7 +508,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                     </span>
                   </div>
                 )}
-                <button onClick={() => removeIngredient('culture', i)} aria-label="Remove Culture"><i className="fas fa-trash-alt text-stone-300"></i></button>
+                <button onClick={() => removeIngredient('culture', i)} aria-label={t('remove_yeast')}><i className="fas fa-trash-alt text-stone-300" aria-hidden="true"></i></button>
               </div>
             ))}
           </div>
@@ -519,9 +519,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h4 className="font-bold uppercase text-stone-900 flex items-center gap-2"><i className="fas fa-thermometer-half text-red-600"></i> {t('mash_profile')}</h4>
             <div className="flex flex-wrap gap-3">
-              <label htmlFor="load_mash_profile" className="sr-only">Load Mash Profile</label>
+              <label htmlFor="load_mash_profile" className="sr-only">{t('load_mash_profile')}</label>
               <select id="load_mash_profile" className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-stone-600" value="" onChange={e => handleLibrarySelect('mash_profile', 0, e.target.value)}>
-                <option value="">Load From Library</option>
+                <option value="">{t('load_from_library')}</option>
                 {libraryByType.mash_profile.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
               <button onClick={addMashStep} className="bg-stone-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-black transition-all">+ {t('add_mash_step')}</button>
@@ -529,8 +529,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           </div>
           <div className="space-y-4 bg-stone-50 p-6 rounded-3xl border border-stone-100">
             <div className="mb-4">
-               <label htmlFor="mash_profile_name" className="text-[10px] font-black text-stone-400 uppercase mb-1 block">Profile Name</label>
-               <input id="mash_profile_name" name="mash_name" className="w-full p-3 bg-white border border-stone-200 rounded-xl text-sm font-bold shadow-sm" value={recipe.mash?.name || ""} onChange={e => setRecipe({...recipe, mash: { ...(recipe.mash || { steps: [] }), name: e.target.value}})} placeholder="e.g., Single Infusion" maxLength={100} />
+               <label htmlFor="mash_profile_name" className="text-[10px] font-black text-stone-400 uppercase mb-1 block">{t('profile_name')}</label>
+               <input id="mash_profile_name" name="mash_name" className="w-full p-3 bg-white border border-stone-200 rounded-xl text-sm font-bold shadow-sm" value={recipe.mash?.name || ""} onChange={e => setRecipe({...recipe, mash: { ...(recipe.mash || { steps: [] }), name: e.target.value}})} placeholder={t('profile_name_placeholder')} maxLength={100} />
             </div>
             <div className="space-y-3">
               {(recipe.mash?.steps || []).map((s, idx) => (
@@ -566,12 +566,12 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                       </div>
                     </div>
                     <div className="flex items-center justify-between pb-1">
-                      <select id={`step_type_${idx}`} aria-label="Mash Step Type" className="p-2 bg-stone-100 border border-stone-200 rounded-lg text-[10px] font-black uppercase tracking-tight text-stone-500" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
-                        <option value="infusion">Infusion</option>
-                        <option value="temperature">Temp</option>
-                        <option value="decoction">Decoc</option>
+                      <select id={`step_type_${idx}`} aria-label={t('mash_step_type')} className="p-2 bg-stone-100 border border-stone-200 rounded-lg text-[10px] font-black uppercase tracking-tight text-stone-500" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
+                        <option value="infusion">{t('step_infusion')}</option>
+                        <option value="temperature">{t('step_temperature')}</option>
+                        <option value="decoction">{t('step_decoction')}</option>
                       </select>
-                      <button onClick={() => removeMashStep(idx)} className="text-stone-300 hover:text-red-500 transition-colors p-2" aria-label="Remove Mash Step"><i className="fas fa-trash-alt"></i></button>
+                      <button onClick={() => removeMashStep(idx)} className="text-stone-300 hover:text-red-500 transition-colors p-2" aria-label={t('remove_mash_step')}><i className="fas fa-trash-alt" aria-hidden="true"></i></button>
                     </div>
                   </div>
                 </div>
@@ -587,7 +587,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             id="recipe_notes"
             name="notes"
             className="w-full p-4 bg-stone-50 border border-stone-100 rounded-2xl min-h-[120px] text-sm font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
-            placeholder="Brewing tips, profile notes, or general thoughts..."
+            placeholder={t('recipe_notes_placeholder')}
             value={recipe.notes || ""}
             onChange={e => setRecipe({...recipe, notes: e.target.value})}
             maxLength={2000}
@@ -600,7 +600,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <button
                 onClick={() => { if(confirm(t('confirm_delete'))) onDelete(recipe.id!); }}
                 className="flex-none bg-stone-100 text-red-600 px-8 py-5 rounded-3xl font-black shadow-sm hover:bg-red-50 transition-all uppercase tracking-widest text-lg"
-                aria-label="Delete Recipe"
+                aria-label={t('delete_recipe')}
               >
                 <i className="fas fa-trash-alt"></i>
               </button>
@@ -620,14 +620,14 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-amber-600 transition-all uppercase tracking-widest text-sm"
             >
               <i className="fas fa-cloud-upload-alt mr-2"></i>
-              Submit to Public Library
+              {t('submit_to_public')}
             </button>
           )}
 
           {recipe.status === 'approved' && (
              <div className="p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-3 justify-center">
                 <i className="fas fa-check-circle text-green-500"></i>
-                <span className="text-xs font-bold text-green-800 uppercase tracking-widest">This recipe is in the public library</span>
+                <span className="text-xs font-bold text-green-800 uppercase tracking-widest">{t('recipe_is_public')}</span>
              </div>
           )}
         </div>

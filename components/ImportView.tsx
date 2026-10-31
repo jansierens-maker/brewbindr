@@ -63,7 +63,7 @@ const ImportView: React.FC<ImportViewProps> = ({
                   accept=".xml,.beerxml"
                   onChange={onFileImport}
                   disabled={!user}
-                  aria-label="Upload BeerXML File"
+                  aria-label={t('upload_beerxml')}
                 />
               </label>
 
@@ -79,7 +79,7 @@ const ImportView: React.FC<ImportViewProps> = ({
                     value={xmlUrl}
                     onChange={(e) => onXmlUrlChange(e.target.value)}
                     disabled={!user}
-                    aria-label="Recipe XML URL"
+                    aria-label={t('recipe_xml_url')}
                   />
                   <button
                     onClick={onUrlImport}
@@ -113,7 +113,7 @@ const ImportView: React.FC<ImportViewProps> = ({
           </div>
 
           <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
-            Exporteer je volledige ingrediëntenbibliotheek naar een BeerXML bestand. Dit bestand kan worden geïmporteerd in de meeste brouwsoftware.
+            {t('export_library_desc')}
           </p>
 
           <button
