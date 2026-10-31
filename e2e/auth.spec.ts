@@ -62,8 +62,14 @@ test.describe('Auth / Login', () => {
 
     // Sign out lives on the Settings page. Locate both buttons by their icon,
     // so the test works whatever language the test user has selected.
+    // Wait until profile and data have loaded: the page re-renders meanwhile,
+    // which made the sign-out button move while it was being clicked.
+    await page.waitForLoadState('networkidle');
     await page.locator('aside button:has(i.fa-gear)').click();
-    await page.locator('button:has(i.fa-sign-out-alt)').click();
+    await page.waitForLoadState('networkidle');
+    const signOut = page.locator('button:has(i.fa-sign-out-alt)');
+    await expect(signOut).toBeVisible();
+    await signOut.click();
 
     // Back to guest mode: the "Sign in" button is shown again
     await expect(page.getByRole('button', { name: SIGN_IN }).first()).toBeVisible({ timeout: 15000 });
