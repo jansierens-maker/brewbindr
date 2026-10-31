@@ -59,7 +59,7 @@ export class GeminiService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to generate recipe');
+      throw Object.assign(new Error(errorData.error || 'Failed to generate recipe'), { code: errorData.code });
     }
 
     const data = await response.json();
@@ -86,7 +86,7 @@ export class GeminiService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to analyze tasting');
+      throw Object.assign(new Error(errorData.error || 'Failed to analyze tasting'), { code: errorData.code });
     }
 
     const data = await response.json();
@@ -114,7 +114,7 @@ export class GeminiService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to analyze recipe');
+      throw Object.assign(new Error(errorData.error || 'Failed to analyze recipe'), { code: errorData.code });
     }
 
     const data = await response.json();

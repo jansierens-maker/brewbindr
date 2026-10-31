@@ -1,6 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
+import { consumeAiQuota } from './_lib/aiQuota.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -50,6 +51,9 @@ export default async function handler(req: any, res: any) {
   if (recipeStr.length > 10000) {
     return res.status(400).json({ error: 'Invalid recipe: Recipe data is too large.' });
   }
+
+  // Daily limit per user (counted only for valid requests)
+  if (!(await consumeAiQuota(res, token))) return;
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;

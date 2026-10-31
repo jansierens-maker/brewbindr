@@ -59,7 +59,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
       }
     } catch (error: any) {
       console.error("AI Generation failed:", error);
-      alert(error?.message || "Failed to generate recipe. Please try again later.");
+      alert(error?.code === 'AI_DAILY_LIMIT' ? t('ai_daily_limit' as any) : (error?.message || "Failed to generate recipe. Please try again later."));
     } finally {
       setIsGenerating(false);
     }
@@ -75,7 +75,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
       setAiAnalysis(feedback);
     } catch (error: any) {
       console.error("AI Analysis failed:", error);
-      alert(error?.message || "Failed to analyze recipe. Please try again later.");
+      alert(error?.code === 'AI_DAILY_LIMIT' ? t('ai_daily_limit' as any) : (error?.message || "Failed to analyze recipe. Please try again later."));
     } finally {
       setIsAnalyzing(false);
     }
