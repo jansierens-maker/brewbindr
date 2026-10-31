@@ -69,3 +69,33 @@ test.describe('Auth / Login', () => {
     await expect(page.getByRole('button', { name: SIGN_IN }).first()).toBeVisible({ timeout: 15000 });
   });
 });
+
+test.describe('Navigatie blijft staan', () => {
+  test('loginformulier blijft open als je meteen op Aanmelden klikt', async ({ page }) => {
+    // Beantwoord de databaseaanvragen traag en leeg (zoals bij een trage
+    // verbinding), zodat de opstartcontrole pas slaagt NADAT er op Aanmelden
+    // geklikt is. Vroeger zette die controle het scherm dan terug naar de
+    // receptenlijst. Dit test enkel navigatie, niet de data.
+    await page.route('**/rest/v1/**', async route => {
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+    await page.goto('/');
+    await openLoginForm(page);
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('form').getByRole('textbox', { name: EMAIL })).toBeVisible();
+  });
+
+  test('kan uitloggen via het gebruikersmenu in de zijbalk', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await openLoginForm(page);
+    await submitLogin(page, TEST_EMAIL, TEST_PASSWORD);
+    await expectLoggedIn(page);
+
+    await page.locator('aside button[aria-haspopup="menu"]').click();
+    await page.getByRole('menuitem', { name: /sign out|uitloggen|déconnexion/i }).click();
+
+    await expect(page.getByRole('button', { name: SIGN_IN }).first()).toBeVisible({ timeout: 15000 });
+  });
+});

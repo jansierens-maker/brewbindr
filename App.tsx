@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, useMemo } from 'react';
+import React, { useState, useEffect, createContext, useContext, useMemo, useRef } from 'react';
 import RecipeCreator from './components/RecipeCreator';
 import Bubbles from './components/Bubbles';
 import BrewLog from './components/BrewLog';
@@ -291,7 +291,13 @@ const AppContent: React.FC = () => {
     if (!authLoading) {
       setLibraryView(user ? 'personal' : 'public');
     }
-  }, [user, authLoading]);
+    // user?.id (not user): the user object is replaced on every token refresh
+  }, [user?.id, authLoading]);
+
+  // Who the start screen was last chosen for ('guest' or a user id). The start
+  // screen is only set when this changes (app start, login, logout), so loading
+  // the profile, brewery or admin rights never throws the user back.
+  const startScreenFor = useRef<string | null>(null);
 
   // Handle redirect if stock management is disabled while on Voorraad view
   useEffect(() => {
@@ -357,22 +363,31 @@ const AppContent: React.FC = () => {
       try {
         setSyncError(false);
 
+        const identity = user?.id ?? 'guest';
+        const previousIdentity = startScreenFor.current;
+        startScreenFor.current = identity;
+
+        if (previousIdentity !== identity) {
+          if (user) {
+            // App start while logged in, or just logged in: personal recipes
+            setView('recipes');
+            setLibraryView('personal');
+          } else if (previousIdentity !== null) {
+            // Just logged out: public recipes. (On a fresh start, guests already
+            // begin there, and may have clicked elsewhere while this loads.)
+            setView('recipes');
+            setLibraryView('public');
+          }
+        }
+
         if (!user) {
           const health = await supabaseService.checkTableHealth();
           if (cancelled) return;
           const allOk = Object.values(health).every(v => v === true);
-          if (allOk) {
-            // Tables exist, default to public recipes for guests
-            setView('recipes');
-            setLibraryView('public');
-          } else {
+          if (!allOk) {
             // Tables missing or error, show connection details
             setShowSyncDetails(true);
           }
-        } else {
-          // Logged in: default to personal recipes
-          setView('recipes');
-          setLibraryView('personal');
         }
 
         const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
