@@ -58,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [profile?.brewery_id]);
 
   const navItems = [
-    { section: 'Brouwerij', items: [
+    { section: t('nav_section_brewery'), items: [
       { id: 'recipes-personal', label: t('nav_brewery'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
       { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
       { id: 'proefnotities', label: t('proefnotities_label'), icon: 'fa-star-half-stroke', view: 'proefnotities' },
@@ -67,11 +67,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
       { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
     ]},
-    { section: 'Bibliotheek', items: [
+    { section: t('nav_section_library'), items: [
       { id: 'recipes-public', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'public' },
       { id: 'library', label: t('ingredients_header'), icon: 'fa-seedling', view: 'library' },
     ]},
-    { section: 'Systeem', items: [
+    { section: t('nav_section_system'), items: [
       { id: 'settings', label: t('settings_nav_label'), icon: 'fa-gear', view: 'settings' },
       { id: 'help', label: t('help_nav_label'), icon: 'fa-question-circle', view: 'help' },
       { id: 'admin', label: t('admin_nav_label' as any), icon: 'fa-user-shield', view: 'admin', hideIf: !isAdmin },
@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </button>
                     {gated && (
                       <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-stone-800 text-white text-[10px] font-bold rounded shadow-lg whitespace-nowrap pointer-events-none opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-[110]">
-                        Aanmelden voor toegang
+                        {t('sign_in_for_access')}
                         <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-stone-800"></div>
                       </div>
                     )}
@@ -185,10 +185,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-[var(--color-text)] truncate">
-                {profile?.email?.split('@')[0] || 'Laden...'}
+                {profile?.email?.split('@')[0] || t('loading_short')}
               </div>
               <div className="text-[11px] text-[var(--color-text-xmuted)] truncate capitalize">
-                {breweryRole || 'Taster'} · {brewery?.name || 'Mijn Brouwerij'}
+                {t(`role_${breweryRole || 'taster'}` as any)} · {brewery?.name || t('my_brewery')}
               </div>
             </div>
             <i className="fas fa-ellipsis-v text-[var(--color-text-xmuted)] text-xs group-hover:text-[var(--color-text)]" aria-hidden="true"></i>

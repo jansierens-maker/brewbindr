@@ -31,13 +31,13 @@ const Settings: React.FC = () => {
               onClick={() => setSettingsTab('preferences')}
               className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${settingsTab === 'preferences' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
             >
-              Preferences
+              {t('settings_tab_preferences')}
             </button>
             <button
               onClick={() => setSettingsTab('brewery')}
               className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${settingsTab === 'brewery' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
             >
-              Brewery
+              {t('settings_tab_brewery')}
             </button>
           </div>
         )}

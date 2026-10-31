@@ -7,6 +7,7 @@ import { Brewery, Invitation, BreweryRole, UserProfile } from '../types';
 const BrewerySettings: React.FC = () => {
   const { profile, user, breweryRole } = useUser();
   const { t } = useTranslation();
+  const roleLabel = (role?: string | null) => (role ? t(`role_${role}` as any) : '');
   const [brewery, setBrewery] = useState<Brewery | null>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -54,15 +55,15 @@ const BrewerySettings: React.FC = () => {
     try {
       await breweryService.updateBrewery(brewery.id, newName);
       setBrewery({ ...brewery, name: newName });
-      alert('Brewery name updated!');
+      alert(t('brewery_name_updated'));
     } catch (err) {
-      alert('Failed to update brewery name');
+      alert(t('brewery_name_update_failed'));
     }
   };
 
   const handleCreateInvite = async () => {
     if (!profile?.brewery_id || !inviteEmail.trim()) {
-      alert('Please enter an email address');
+      alert(t('invite_email_required'));
       return;
     }
 
@@ -76,10 +77,10 @@ const BrewerySettings: React.FC = () => {
         setInvitations([...invitations, invite]);
         setShowInviteModal(false);
         setInviteEmail('');
-        alert('Invitation sent successfully!');
+        alert(t('invite_sent'));
       }
     } catch (err: any) {
-      alert(`Error: ${err.message}`);
+      alert(`${t('error_prefix')}: ${err.message}`);
     } finally {
       setSendingInvite(false);
     }
@@ -90,17 +91,17 @@ const BrewerySettings: React.FC = () => {
       await breweryService.deleteInvitation(id);
       setInvitations(invitations.filter(i => i.id !== id));
     } catch (err) {
-      alert('Failed to delete invitation');
+      alert(t('delete_invite_failed'));
     }
   };
 
   const handleRemoveMember = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this member?')) return;
+    if (!confirm(t('confirm_remove_member'))) return;
     try {
       await breweryService.removeMember(id);
       setMembers(members.filter(m => m.id !== id));
     } catch (err) {
-      alert('Failed to remove member');
+      alert(t('remove_member_failed'));
     }
   };
 
@@ -118,7 +119,7 @@ const BrewerySettings: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="py-12 text-center text-stone-400 font-bold uppercase tracking-widest text-xs animate-pulse">Loading Brewery...</div>;
+  if (loading) return <div className="py-12 text-center text-stone-400 font-bold uppercase tracking-widest text-xs animate-pulse">{t('team_loading')}</div>;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -129,9 +130,9 @@ const BrewerySettings: React.FC = () => {
               <i className="fas fa-beer-mug-empty text-2xl"></i>
             </div>
             <div>
-              <h3 className="text-2xl font-black text-stone-900">{brewery?.name || 'Brewery'}</h3>
+              <h3 className="text-2xl font-black text-stone-900">{brewery?.name || t('my_brewery')}</h3>
               <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                Role: <span className="text-amber-600">{breweryRole}</span>
+                {t('role_label')}: <span className="text-amber-600">{roleLabel(breweryRole)}</span>
               </p>
             </div>
           </div>
@@ -139,7 +140,7 @@ const BrewerySettings: React.FC = () => {
 
         {isAdmin && (
           <div className="space-y-4 pt-4 border-t border-stone-100">
-            <label htmlFor="brewery-name-input" className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Brewery Name</label>
+            <label htmlFor="brewery-name-input" className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('brewery_name_label')}</label>
             <div className="flex gap-2">
               <input
                 id="brewery-name-input"
@@ -154,7 +155,7 @@ const BrewerySettings: React.FC = () => {
                 onClick={handleUpdateName}
                 className="px-6 py-3 bg-stone-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all"
               >
-                Save
+                {t('save_btn')}
               </button>
             </div>
           </div>
@@ -168,7 +169,7 @@ const BrewerySettings: React.FC = () => {
             <div className="bg-blue-100 p-2 rounded-xl text-blue-600">
               <i className="fas fa-users"></i>
             </div>
-            <h4 className="text-lg font-black text-stone-900">Team Members</h4>
+            <h4 className="text-lg font-black text-stone-900">{t('team_members')}</h4>
           </div>
           <div className="space-y-3">
             {members.map(member => (
@@ -179,14 +180,14 @@ const BrewerySettings: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-stone-900 truncate max-w-[150px]">
-                      {member.id === profile?.id ? 'You' : member.email || member.id.substring(0, 8) + '...'}
+                      {member.id === profile?.id ? t('team_you') : member.email || member.id.substring(0, 8) + '...'}
                     </p>
-                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{member.brewery_role}</p>
+                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{roleLabel(member.brewery_role)}</p>
                   </div>
                 </div>
                 {isAdmin && member.id !== profile?.id && (
-                  <button onClick={() => handleRemoveMember(member.id)} className="text-stone-300 hover:text-red-500 transition-colors">
-                    <i className="fas fa-user-minus"></i>
+                  <button onClick={() => handleRemoveMember(member.id)} className="text-stone-300 hover:text-red-500 transition-colors" aria-label={t('remove_member')} title={t('remove_member')}>
+                    <i className="fas fa-user-minus" aria-hidden="true"></i>
                   </button>
                 )}
               </div>
@@ -202,37 +203,39 @@ const BrewerySettings: React.FC = () => {
                 <div className="bg-green-100 p-2 rounded-xl text-green-600">
                   <i className="fas fa-envelope-open-text"></i>
                 </div>
-                <h4 className="text-lg font-black text-stone-900">Active Invites</h4>
+                <h4 className="text-lg font-black text-stone-900">{t('active_invites')}</h4>
               </div>
               <button
                 onClick={() => setShowInviteModal(true)}
                 className="w-8 h-8 bg-stone-900 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all"
+                aria-label={t('new_invite')}
+                title={t('new_invite')}
               >
-                <i className="fas fa-plus"></i>
+                <i className="fas fa-plus" aria-hidden="true"></i>
               </button>
             </div>
             <div className="space-y-3">
               {invitations.length === 0 && (
-                <p className="text-center py-8 text-xs text-stone-400 font-bold italic">No active invitations</p>
+                <p className="text-center py-8 text-xs text-stone-400 font-bold italic">{t('no_active_invites')}</p>
               )}
               {invitations.map(invite => (
                 <div key={invite.id} className="p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block">Role: {invite.role}</span>
+                        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block">{t('role_label')}: {roleLabel(invite.role)}</span>
                         {invite.email && <span className="text-[10px] font-bold text-amber-600 block">{invite.email}</span>}
                     </div>
-                    <button onClick={() => handleDeleteInvite(invite.id)} className="text-stone-300 hover:text-red-500 transition-colors text-xs">
-                      <i className="fas fa-trash-alt"></i>
+                    <button onClick={() => handleDeleteInvite(invite.id)} className="text-stone-300 hover:text-red-500 transition-colors text-xs" aria-label={t('delete_invite')} title={t('delete_invite')}>
+                      <i className="fas fa-trash-alt" aria-hidden="true"></i>
                     </button>
                   </div>
                   <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-stone-200">
                     <code className="text-sm font-black text-amber-600">{invite.code}</code>
                     <button
-                      onClick={() => { navigator.clipboard.writeText(invite.code); alert('Code copied!'); }}
+                      onClick={() => { navigator.clipboard.writeText(invite.code); alert(t('code_copied')); }}
                       className="text-[10px] font-black uppercase text-stone-400 hover:text-stone-900"
                     >
-                      Copy
+                      {t('copy_btn')}
                     </button>
                   </div>
                 </div>
@@ -273,10 +276,10 @@ const BrewerySettings: React.FC = () => {
       {showInviteModal && (
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95">
-            <h3 className="text-2xl font-black text-stone-900 mb-6">Create Invitation</h3>
+            <h3 className="text-2xl font-black text-stone-900 mb-6">{t('create_invite_title')}</h3>
             <div className="space-y-4">
               <div>
-              <label htmlFor="invite-email" className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">Email Address</label>
+              <label htmlFor="invite-email" className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">{t('auth_email_label')}</label>
                 <input
                 id="invite-email"
                 name="email"
@@ -288,7 +291,7 @@ const BrewerySettings: React.FC = () => {
                 maxLength={255}
                 />
 
-              <label id="invite-role-label" className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">Assign Role</label>
+              <label id="invite-role-label" className="block text-[10px] font-black text-stone-400 uppercase mb-2 ml-1">{t('assign_role')}</label>
                 <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-labelledby="invite-role-label">
                   {(['brewmaster', 'brewer', 'taster'] as BreweryRole[]).map(role => (
                     <button
@@ -299,7 +302,7 @@ const BrewerySettings: React.FC = () => {
                       onClick={() => setInviteRole(role)}
                       className={`p-3 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all ${inviteRole === role ? 'bg-amber-50 border-amber-500 text-amber-600' : 'bg-white border-stone-100 text-stone-400'}`}
                     >
-                      {role}
+                      {roleLabel(role)}
                     </button>
                   ))}
                 </div>
@@ -309,7 +312,7 @@ const BrewerySettings: React.FC = () => {
                   onClick={() => setShowInviteModal(false)}
                   className="flex-1 py-3 bg-stone-100 text-stone-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-stone-200 transition-all"
                 >
-                  Cancel
+                  {t('cancel_btn')}
                 </button>
                 <button
                   onClick={handleCreateInvite}
@@ -317,7 +320,7 @@ const BrewerySettings: React.FC = () => {
                   className="flex-1 py-3 bg-stone-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-200 disabled:opacity-50"
                 >
                   {sendingInvite ? <i className="fas fa-spinner fa-spin mr-2"></i> : null}
-                  Send Invite
+                  {t('send_invite')}
                 </button>
               </div>
             </div>
