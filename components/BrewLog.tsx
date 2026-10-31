@@ -148,7 +148,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
       {/* Dynamic Header */}
       <div className="bg-stone-900 text-white p-8 rounded-3xl grid grid-cols-1 md:grid-cols-4 gap-8 shadow-xl border border-stone-800">
         <div className="md:border-r border-stone-800">
-          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">Status</p>
+          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('status_label')}</p>
           <p className="text-2xl font-black text-amber-500 uppercase">{t(`status_${entry.status}` as any)}</p>
         </div>
         <div className="md:border-r border-stone-800">
@@ -383,18 +383,18 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
               <div className="space-y-1">
                 <label htmlFor="target_co2" className="text-xs font-bold text-stone-400 uppercase">{t('co2_volume')}</label>
                 <select id="target_co2" name="target_co2" disabled={!canEdit} className="w-full p-4 bg-white border border-stone-200 rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.target_co2} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, target_co2: parseFloat(e.target.value)}})}>
-                  <option value="2.0">Standard Ale (2.0)</option>
-                  <option value="2.3">Pale Ale / IPA (2.3)</option>
-                  <option value="2.6">Blond / Tripel (2.6)</option>
-                  <option value="3.2">Wheat / Weizen (3.2)</option>
+                  <option value="2.0">{t('carb_standard_ale')}</option>
+                  <option value="2.3">{t('carb_pale_ale')}</option>
+                  <option value="2.6">{t('carb_blond')}</option>
+                  <option value="3.2">{t('carb_wheat')}</option>
                 </select>
               </div>
               <div className="space-y-1">
                 <label htmlFor="sugar_type" className="text-xs font-bold text-stone-400 uppercase">{t('sugar_type')}</label>
                 <select id="sugar_type" name="sugar_type" disabled={!canEdit} className="w-full p-4 bg-white border border-stone-200 rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.sugar_type} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, sugar_type: e.target.value as any}})}>
-                  <option value="table_sugar">Table Sugar (Sucrose)</option>
-                  <option value="glucose">Glucose / Dextrose</option>
-                  <option value="dme">Dry Malt Extract</option>
+                  <option value="table_sugar">{t('sugar_sucrose')}</option>
+                  <option value="glucose">{t('sugar_dextrose')}</option>
+                  <option value="dme">{t('sugar_dme')}</option>
                 </select>
               </div>
             </div>
@@ -407,7 +407,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
         )}
 
         <div className="pt-8 border-t border-stone-100 flex gap-4">
-          <button disabled={!canEdit} onClick={() => triggerAutoSave(entry)} className="flex-1 bg-stone-100 text-stone-900 py-4 rounded-xl font-bold uppercase text-xs disabled:opacity-50">Handmatig Opslaan</button>
+          <button disabled={!canEdit} onClick={() => triggerAutoSave(entry)} className="flex-1 bg-stone-100 text-stone-900 py-4 rounded-xl font-bold uppercase text-xs disabled:opacity-50">{t('manual_save')}</button>
           <button onClick={() => onSaveAndExit(entry)} className="flex-1 bg-stone-900 text-white py-4 rounded-xl font-bold uppercase text-xs">{t('save_exit')}</button>
         </div>
       </section>

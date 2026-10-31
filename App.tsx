@@ -597,10 +597,10 @@ const AppContent: React.FC = () => {
         if (data.brewLogs) setBrewLogs(data.brewLogs);
         if (data.tastingNotes) setTastingNotes(data.tastingNotes);
         if (data.library) setLibrary(data.library);
-        alert("Backup succesvol hersteld!");
+        alert(t('backup_restored'));
         setView('recipes');
       } catch (err) {
-        alert("Fout bij het laden van backup. Ongeldig JSON bestand.");
+        alert(t('backup_invalid'));
       }
     };
     reader.readAsText(file);
@@ -619,7 +619,7 @@ const AppContent: React.FC = () => {
     result.waters.forEach(w => queue.push({ type: 'library', data: { ...w, type: 'water' } }));
     
     if (queue.length === 0) {
-      alert("No data found in the selected files.");
+      alert(t('import_no_data'));
       setImportStatus('idle');
       return;
     }
@@ -813,7 +813,7 @@ const AppContent: React.FC = () => {
 
     // Security: Validate protocol to prevent URI scheme exploitation
     if (!targetUrl.toLowerCase().startsWith('http://') && !targetUrl.toLowerCase().startsWith('https://')) {
-      alert("Invalid URL. Only http:// and https:// protocols are allowed.");
+      alert(t('invalid_url'));
       return;
     }
 
@@ -885,7 +885,7 @@ const AppContent: React.FC = () => {
         startImportFlow(aggregatedResult);
     } catch (err: any) {
         console.error("Batch import failed", err);
-        alert(`Batch import failed: ${err.message || err.toString()}`);
+        alert(`${t('batch_import_failed')}: ${err.message || err.toString()}`);
         setImportStatus('idle');
     }
     setSelectedDemoIds([]);
@@ -918,7 +918,7 @@ const AppContent: React.FC = () => {
       setRecipes(remoteData.recipes);
       setLibrary(remoteData.library);
     }
-    alert("Recipe and its ingredients submitted for review! The original items remain in your collection.");
+    alert(t('recipe_submitted'));
   };
 
   const handleRecipeAddToPersonal = async (recipe: Recipe) => {
@@ -943,7 +943,7 @@ const AppContent: React.FC = () => {
     }
 
     setLibraryView('personal');
-    alert("Recipe added to your personal collection!");
+    alert(t('recipe_added_personal'));
   };
 
   const handleRefreshAppData = async () => {
@@ -954,10 +954,10 @@ const AppContent: React.FC = () => {
       setBrewLogs(remoteData.brewLogs);
       setTastingNotes(remoteData.tastingNotes);
       setLibrary(remoteData.library);
-      alert('Data successfully re-synchronized!');
+      alert(t('resync_ok'));
     } else {
       setSyncError(true);
-      alert('Re-sync failed. Please check your connection.');
+      alert(t('resync_failed'));
     }
   };
 
@@ -1544,7 +1544,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                 <button
                   onClick={() => setShowSyncDetails(false)}
                   className="text-stone-300 hover:text-stone-900 transition-colors"
-                  aria-label="Close Sync Details"
+                  aria-label={t('close_sync_details')}
                 >
                   <i className="fas fa-times text-xl"></i>
                 </button>
@@ -1560,7 +1560,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Supabase Config</p>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('supabase_config')}</p>
                     <div className="text-[10px] font-bold text-stone-600 space-y-0.5">
                       <p>URL: {getSupabaseConfigInfo().url}</p>
                       <p>API Key: {getSupabaseConfigInfo().hasKey ? 'Present' : 'Missing'}</p>
@@ -1581,13 +1581,13 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                             </span>
                           </div>
                         )) : (
-                          <div className="col-span-full py-4 text-center text-xs text-stone-400 italic">Checking status...</div>
+                          <div className="col-span-full py-4 text-center text-xs text-stone-400 italic">{t('checking_status')}</div>
                         )}
                       </div>
                     </div>
 
                     <div>
-                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">RLS Security Status</p>
+                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('rls_status')}</p>
                       {rlsStatus ? (
                         <div className={`p-4 rounded-2xl border flex items-center gap-3 ${rlsStatus.enabled ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
                           <i className={`fas ${rlsStatus.enabled ? 'fa-shield-check' : 'fa-shield-exclamation'} text-xl`}></i>
@@ -1597,7 +1597,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                           </div>
                         </div>
                       ) : (
-                        <div className="py-4 text-center text-xs text-stone-400 italic">Checking RLS...</div>
+                        <div className="py-4 text-center text-xs text-stone-400 italic">{t('checking_rls')}</div>
                       )}
                     </div>
                   </div>
@@ -1605,7 +1605,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Manual Sync & Repair</p>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('manual_sync')}</p>
                     <button
                       onClick={async () => {
                         const remoteData = await supabaseService.fetchAppData(user?.id);
@@ -1615,21 +1615,21 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                           setTastingNotes(remoteData.tastingNotes);
                           setLibrary(remoteData.library);
                           setSyncError(false);
-                          alert('Data successfully re-synchronized!');
+                          alert(t('resync_ok'));
                         } else {
                           setSyncError(true);
-                          alert('Re-sync failed. Please check your connection or database permissions.');
+                          alert(t('resync_failed_permissions'));
                         }
                       }}
                       className="text-amber-600 font-black text-[10px] uppercase hover:underline"
                     >
-                      Retry Sync
+                      {t('retry_sync')}
                     </button>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('sql_instructions')}</p>
                     <button
-                      onClick={() => { navigator.clipboard.writeText(SQL_SCHEMA); alert('SQL copied to clipboard!'); }}
+                      onClick={() => { navigator.clipboard.writeText(SQL_SCHEMA); alert(t('sql_copied')); }}
                       className="text-amber-600 font-black text-[10px] uppercase hover:underline"
                     >
                       {t('copy_sql')}
@@ -1645,7 +1645,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                 onClick={() => setShowSyncDetails(false)}
                 className="w-full mt-8 py-4 bg-stone-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg"
               >
-                Close
+                {t('close_btn')}
               </button>
             </div>
           </div>
@@ -1706,11 +1706,11 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
           <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
             <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-black text-stone-900">Import Demo Data</h3>
+                <h3 className="text-2xl font-black text-stone-900">{t('demo_import_title')}</h3>
                 <button
                   onClick={() => setShowDemoModal(false)}
                   className="text-stone-300 hover:text-stone-900 transition-colors"
-                  aria-label="Close Demo Import"
+                  aria-label={t('close_demo_import')}
                 >
                   <i className="fas fa-times text-xl"></i>
                 </button>
@@ -1720,7 +1720,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                 <i className="fas fa-info-circle text-amber-600 mt-1"></i>
                 <div>
                     <p className="text-xs text-amber-900 font-bold leading-relaxed">
-                        Select which sample data sets you want to add to your collection. You can find more samples at <a href="https://beerxml.com" target="_blank" rel="noopener noreferrer" className="underline">BeerXML.com</a> or download BrewDog recipes from <a href="https://brewdogrecipes.com" target="_blank" rel="noopener noreferrer" className="underline">brewdogrecipes.com</a>.
+                        {t('demo_import_desc_before')} <a href="https://beerxml.com" target="_blank" rel="noopener noreferrer" className="underline">BeerXML.com</a> {t('demo_import_desc_middle')} <a href="https://brewdogrecipes.com" target="_blank" rel="noopener noreferrer" className="underline">brewdogrecipes.com</a>.
                     </p>
                 </div>
               </div>
@@ -1755,7 +1755,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
               </div>
 
               <div className="mt-8 flex gap-4">
-                  <button onClick={() => setShowDemoModal(false)} className="flex-1 py-4 bg-stone-100 text-stone-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-stone-200 transition-all">Cancel</button>
+                  <button onClick={() => setShowDemoModal(false)} className="flex-1 py-4 bg-stone-100 text-stone-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-stone-200 transition-all">{t('cancel_btn')}</button>
                   <button 
                     onClick={handleConfirmDemoImport} 
                     disabled={selectedDemoIds.length === 0}
@@ -1836,7 +1836,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                           <div className="absolute inset-0 border-4 border-stone-100 rounded-full"></div>
                           <div className="absolute inset-0 border-4 border-amber-500 rounded-full border-t-transparent animate-spin"></div>
                         </div>
-                        <h3 className="text-xl font-bold">Processing...</h3>
+                        <h3 className="text-xl font-bold">{t('processing')}</h3>
                         <p className="text-xs text-stone-400 font-bold uppercase tracking-widest">{importStatus}</p>
                       </div>
                     ) : currentDuplicate ? (
@@ -1844,14 +1844,14 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                         <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-center gap-3">
                           <i className="fas fa-exclamation-triangle text-amber-600 text-xl"></i>
                           <div className="flex-1 overflow-hidden">
-                            <h4 className="font-bold text-amber-900 text-sm">Conflict</h4>
+                            <h4 className="font-bold text-amber-900 text-sm">{t('conflict_label')}</h4>
                             <p className="text-[10px] text-amber-700 font-bold truncate">"{currentDuplicate.data.name}"</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-1 gap-2">
-                          <button onClick={() => resolveConflict('overwrite')} className="w-full py-3 bg-stone-900 text-white rounded-xl font-bold text-sm">Overwrite</button>
-                          <button onClick={() => resolveConflict('copy')} className="w-full py-3 bg-white border border-stone-200 text-stone-900 rounded-xl font-bold text-sm">Copy</button>
-                          <button onClick={() => resolveConflict('skip')} className="w-full py-3 bg-white border border-stone-200 text-stone-400 rounded-xl font-bold text-sm">Skip</button>
+                          <button onClick={() => resolveConflict('overwrite')} className="w-full py-3 bg-stone-900 text-white rounded-xl font-bold text-sm">{t('overwrite_btn')}</button>
+                          <button onClick={() => resolveConflict('copy')} className="w-full py-3 bg-white border border-stone-200 text-stone-900 rounded-xl font-bold text-sm">{t('create_copy_btn')}</button>
+                          <button onClick={() => resolveConflict('skip')} className="w-full py-3 bg-white border border-stone-200 text-stone-400 rounded-xl font-bold text-sm">{t('skip_btn')}</button>
                         </div>
                       </div>
                     ) : null}
@@ -2022,7 +2022,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                             </div>
                             <div className="text-center">
                               <p className="font-black text-stone-900 uppercase tracking-widest text-sm">{t('nav_new')}</p>
-                              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-1">Create Recipe</p>
+                              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-1">{t('create_recipe')}</p>
                             </div>
                           </button>
                         )}
@@ -2031,7 +2031,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                             <div className="absolute top-0 left-0 right-0 h-[5px]" style={{ backgroundColor: getSRMColor(r.specifications?.color?.value || 0) }}></div>
                             <div className="absolute top-4 right-4 flex gap-2">
                               <button onClick={() => handlePrintRecipe(r)} title={t('print_recipe')} className="text-stone-300 hover:text-stone-900 transition-colors"> <i className="fas fa-print text-lg"></i> </button>
-                              <button onClick={() => handleExportRecipeBeerXml(r)} title="Export BeerXML" className="text-stone-300 hover:text-amber-600 transition-colors"> <i className="fas fa-file-export text-lg"></i> </button>
+                              <button onClick={() => handleExportRecipeBeerXml(r)} title={t('export_beerxml')} aria-label={t('export_beerxml')} className="text-stone-300 hover:text-amber-600 transition-colors"> <i className="fas fa-file-export text-lg" aria-hidden="true"></i> </button>
                             </div>
                             <h3 className="text-xl font-bold mb-1 pr-16 truncate group-hover:text-amber-800 transition-colors">{r.name}</h3>
 
@@ -2039,7 +2039,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                               {libraryView === 'personal' && r.status === 'submitted' && (
                                 <div className="flex items-center gap-1.5">
                                   <i className="fas fa-clock text-amber-500 text-[10px]" ></i>
-                                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Pending Review</span>
+                                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{t('pending_review')}</span>
                                 </div>
                               )}
 
@@ -2069,15 +2069,15 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
-                              <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">Batch</p><p className="font-bold text-xs">{formatBrewNumber(r.batch_size.value, 'vol', lang, preferences, r.batch_size.unit)} {preferences.units === 'imperial' ? 'Gal' : 'L'}</p></div>
+                              <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">{t('batch_short')}</p><p className="font-bold text-xs">{formatBrewNumber(r.batch_size.value, 'vol', lang, preferences, r.batch_size.unit)} {preferences.units === 'imperial' ? 'Gal' : 'L'}</p></div>
                               <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">ABV</p><p className="font-bold text-xs">{formatBrewNumber(r.specifications?.abv?.value, 'abv', lang, preferences)}%</p></div>
                               <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">IBU</p><p className="font-bold text-xs">{r.specifications?.ibu?.value}</p></div>
                               <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">OG</p><p className="font-bold text-xs">{formatBrewNumber(r.specifications?.og?.value, 'og', lang, preferences)}</p></div>
                             </div>
                             <div className="flex flex-col gap-2 mt-auto">
                               <div className="flex gap-2">
-                                <button onClick={() => { setSelectedRecipe(r); setSelectedBrewLog(null); setView('log'); }} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">Brew</button>
-                                {libraryView === 'personal' && (!r.user_id || r.user_id === user?.id) && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">Edit</button>}
+                                <button onClick={() => { setSelectedRecipe(r); setSelectedBrewLog(null); setView('log'); }} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">{t('brew_btn')}</button>
+                                {libraryView === 'personal' && (!r.user_id || r.user_id === user?.id) && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">{t('edit_btn')}</button>}
                               </div>
 
                               {libraryView === 'public' && (
@@ -2304,7 +2304,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                 <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
                   <i className={`fas ${view === 'voorraad' ? 'fa-boxes-stacked' : 'fa-temperature-half'} text-6xl mb-6`}></i>
                   <h3 className="text-2xl font-black uppercase tracking-widest">{view}</h3>
-                  <p className="font-bold">Deze module is nog in ontwikkeling.</p>
+                  <p className="font-bold">{t('module_in_development')}</p>
                 </div>
               )}
             </main>

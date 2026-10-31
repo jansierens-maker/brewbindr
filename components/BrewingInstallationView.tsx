@@ -367,7 +367,7 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
                             {(item.vessels || []).map((v, idx) => (
                                 <span key={idx} className="px-2 py-0.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded text-[9px] font-bold text-[var(--color-text-muted)]">{v.name} ({v.volume}L)</span>
                             ))}
-                            {(!item.vessels || item.vessels.length === 0) && <span className="text-[9px] font-bold text-[var(--color-text-xmuted)] italic">Geen vaten gedefinieerd</span>}
+                            {(!item.vessels || item.vessels.length === 0) && <span className="text-[9px] font-bold text-[var(--color-text-xmuted)] italic">{t('no_vessels')}</span>}
                         </div>
                     </div>
                   </div>
@@ -438,7 +438,7 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
                                 <i className="fas fa-tools"></i>
                             </div>
                             <h4 className="font-black text-stone-900 text-sm mb-1">{t('custom')}</h4>
-                            <p className="text-[10px] font-bold text-stone-400 uppercase">Alles handmatig invullen</p>
+                            <p className="text-[10px] font-bold text-stone-400 uppercase">{t('fill_manually')}</p>
                         </button>
                     </div>
                 ) : (
@@ -562,19 +562,19 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
                                         <div className="w-8 h-8 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] flex items-center justify-center text-xs font-black text-[var(--color-text-xmuted)]">{idx + 1}</div>
                                     </div>
                                     <div className="flex-1 w-full md:w-auto">
-                                        <input className="w-full bg-[var(--color-bg)] p-2.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] text-xs font-bold focus:ring-1 focus:ring-[var(--color-accent)] outline-none" placeholder="Naam stap" value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} />
+                                        <input className="w-full bg-[var(--color-bg)] p-2.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] text-xs font-bold focus:ring-1 focus:ring-[var(--color-accent)] outline-none" placeholder={t('step_name')} value={s.name} onChange={e => updateMashStep(idx, 'name', e.target.value)} />
                                     </div>
                                     <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
                                         <div>
-                                            <label className="text-[8px] font-black text-[var(--color-text-xmuted)] uppercase block mb-0.5">Temp (°C)</label>
+                                            <label className="text-[8px] font-black text-[var(--color-text-xmuted)] uppercase block mb-0.5">{t('step_temp')}</label>
                                             <input type="number" className="w-full bg-[var(--color-bg)] p-2.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] text-xs font-bold" value={s.temperature || s.step_temp} onChange={e => updateMashStep(idx, 'temperature', parseFloat(e.target.value) || 0)} />
                                         </div>
                                         <div>
-                                            <label className="text-[8px] font-black text-[var(--color-text-xmuted)] uppercase block mb-0.5">Duur (min)</label>
+                                            <label className="text-[8px] font-black text-[var(--color-text-xmuted)] uppercase block mb-0.5">{t('step_time')}</label>
                                             <input type="number" className="w-full bg-[var(--color-bg)] p-2.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] text-xs font-bold" value={s.duration || s.step_time} onChange={e => updateMashStep(idx, 'duration', parseFloat(e.target.value) || 0)} />
                                         </div>
                                         <div>
-                                            <label className="text-[8px] font-black text-[var(--color-text-xmuted)] uppercase block mb-0.5">Type</label>
+                                            <label className="text-[8px] font-black text-[var(--color-text-xmuted)] uppercase block mb-0.5">{t('mash_type')}</label>
                                             <select className="w-full bg-[var(--color-bg)] p-2.5 rounded-[var(--radius-sm)] border border-[var(--color-border)] text-xs font-bold outline-none" value={s.type} onChange={e => updateMashStep(idx, 'type', e.target.value as any)}>
                                                 <option value="infusion">{t('infusion')}</option>
                                                 <option value="temperature">{t('temperature')}</option>
@@ -592,7 +592,7 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
 
             <div className="flex gap-4 pt-8">
                 {activeTab === 'equipment' && creationStep === 2 && (
-                    <button onClick={() => setCreationStep(1)} className="flex-1 py-4 bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] rounded-[var(--radius-sm)] font-black text-sm uppercase tracking-widest hover:bg-[var(--color-bg-hover)] transition-all">Terug</button>
+                    <button onClick={() => setCreationStep(1)} className="flex-1 py-4 bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] rounded-[var(--radius-sm)] font-black text-sm uppercase tracking-widest hover:bg-[var(--color-bg-hover)] transition-all">{t('back_btn')}</button>
                 )}
                 {(activeTab !== 'equipment' || creationStep === 2) && (
                     <button onClick={saveEditing} className="flex-[2] py-4 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all shadow-lg">{t('save_btn')}</button>
