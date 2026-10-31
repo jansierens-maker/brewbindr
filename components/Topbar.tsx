@@ -51,7 +51,8 @@ export const Topbar: React.FC<TopbarProps> = ({
           <button
             onClick={onRefresh}
             className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors p-0.5"
-            title="Refresh Data"
+            title={t('refresh_data')}
+            aria-label={t('refresh_data')}
           >
             <i className="fas fa-sync-alt text-[10px] md:text-xs"></i>
           </button>
@@ -73,7 +74,7 @@ export const Topbar: React.FC<TopbarProps> = ({
             className="bg-[var(--color-accent)] text-white flex items-center gap-1.5 p-[6px_12px] md:p-[7px_14px] rounded-[var(--radius-sm)] text-[12px] md:text-[13px] font-bold hover:opacity-90 transition-all shadow-sm active:scale-95"
           >
             <i className="fas fa-user text-[10px] md:text-xs"></i>
-            <span>Aanmelden</span>
+            <span>{t('sign_in_nav_label')}</span>
           </button>
         ) : (
           showNewRecipeButton && (

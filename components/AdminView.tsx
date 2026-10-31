@@ -38,12 +38,12 @@ const AdminView: React.FC<AdminViewProps> = ({
             <div className="bg-green-100 p-3 rounded-2xl text-green-600">
               <i className="fas fa-clipboard-check text-2xl"></i>
             </div>
-            <h3 className="text-2xl font-black text-stone-900">Pending Submissions</h3>
+            <h3 className="text-2xl font-black text-stone-900">{t('pending_submissions')}</h3>
           </div>
 
           <div className="space-y-4">
             {pendingSubmissions.length === 0 ? (
-              <p className="text-center py-10 text-stone-400 font-bold italic border-2 border-dashed border-stone-50 rounded-2xl">No pending submissions to review.</p>
+              <p className="text-center py-10 text-stone-400 font-bold italic border-2 border-dashed border-stone-50 rounded-2xl">{t('no_pending_submissions')}</p>
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {pendingSubmissions.map((item, idx) => (
@@ -51,7 +51,7 @@ const AdminView: React.FC<AdminViewProps> = ({
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-stone-200 text-stone-600 rounded-full">{item.type || item._table}</span>
-                        <span className="text-[10px] font-bold text-stone-400 italic">submitted by {item.author || item.user_id?.split('-')[0] || 'Unknown User'}</span>
+                        <span className="text-[10px] font-bold text-stone-400 italic">{t('submitted_by')} {item.author || item.user_id?.split('-')[0] || t('unknown_user')}</span>
                       </div>
                       <h4 className="font-black text-stone-900">{item.name}</h4>
                     </div>
@@ -60,13 +60,13 @@ const AdminView: React.FC<AdminViewProps> = ({
                         onClick={() => onReject(item.id, item.type, item._table)}
                         className="px-4 py-2 bg-white border border-stone-200 text-red-500 rounded-xl font-bold text-xs hover:bg-red-50 hover:border-red-100 transition-all"
                       >
-                        Reject
+                        {t('reject_btn')}
                       </button>
                       <button
                         onClick={() => onApprove(item.id, item.type, item._table)}
                         className="px-6 py-2 bg-green-600 text-white rounded-xl font-bold text-xs shadow-lg hover:bg-green-700 transition-all"
                       >
-                        Approve
+                        {t('approve_btn')}
                       </button>
                     </div>
                   </div>
@@ -84,17 +84,17 @@ const AdminView: React.FC<AdminViewProps> = ({
             <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
               <i className="fas fa-tools text-2xl"></i>
             </div>
-            <h3 className="text-2xl font-black text-stone-900">Beheertools</h3>
+            <h3 className="text-2xl font-black text-stone-900">{t('admin_tools')}</h3>
           </div>
 
           <div className="space-y-6">
             <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4">
               <div className="flex items-center gap-3">
                 <i className="fas fa-download text-amber-600"></i>
-                <h4 className="font-bold text-stone-900 text-sm">Demo Data</h4>
+                <h4 className="font-bold text-stone-900 text-sm">{t('demo_data')}</h4>
               </div>
               <p className="text-xs text-stone-500 leading-relaxed">
-                Importeer voorbeeldrecepten en ingrediënten om de applicatie te testen of te demonstreren aan nieuwe gebruikers.
+                {t('demo_data_desc')}
               </p>
               <button 
                 onClick={onUrlImport} 
@@ -119,10 +119,10 @@ const AdminView: React.FC<AdminViewProps> = ({
             <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-4">
               <div className="flex items-center gap-3">
                 <i className="fas fa-file-download text-stone-400"></i>
-                <h4 className="font-bold text-stone-900 text-sm">{t('export')} Full Data</h4>
+                <h4 className="font-bold text-stone-900 text-sm">{t('export_full_data')}</h4>
               </div>
               <p className="text-xs text-stone-500 leading-relaxed">
-                Creates a comprehensive backup of all recipes, brew logs, tasting notes, and your ingredient library in a single JSON file.
+                {t('export_desc')}
               </p>
               <button 
                 onClick={onExport} 
@@ -135,14 +135,14 @@ const AdminView: React.FC<AdminViewProps> = ({
             <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-4" style={{ opacity: user ? 1 : 0.5, pointerEvents: user ? 'auto' : 'none' }}>
               <div className="flex items-center gap-3">
                 <i className="fas fa-file-upload text-stone-400"></i>
-                <h4 className="font-bold text-stone-900 text-sm">{t('restore')} Data</h4>
+                <h4 className="font-bold text-stone-900 text-sm">{t('restore_data')}</h4>
               </div>
               <p className="text-xs text-stone-500 leading-relaxed">
-                Restores your workspace from a previously exported brewbindr JSON backup. Caution: This may overwrite existing data.
+                {t('restore_desc')}
               </p>
               <label className="block w-full bg-white border border-stone-200 text-stone-900 py-4 rounded-xl font-bold cursor-pointer hover:bg-stone-100 transition-all shadow-sm text-center text-sm">
                 {t('restore')}
-                <input id="json-restore-file" name="json_restore" type="file" className="hidden" accept=".json" onChange={onRestore} disabled={!user} aria-label="Upload JSON Backup File" />
+                <input id="json-restore-file" name="json_restore" type="file" className="hidden" accept=".json" onChange={onRestore} disabled={!user} aria-label={t('upload_backup_file')} />
               </label>
             </div>
           </div>

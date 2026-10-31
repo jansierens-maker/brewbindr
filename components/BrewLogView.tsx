@@ -72,7 +72,7 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
                   <div className="flex flex-wrap gap-3 w-full md:w-auto">
                     <button onClick={() => onEditLog(log.id)} className="flex-1 md:flex-none px-6 py-3 bg-[var(--color-text)] text-white rounded-[var(--radius-sm)] font-bold text-xs hover:opacity-90 transition-opacity uppercase">{log.status === 'bottled' ? 'View' : 'Update'}</button>
                     {onPrintReport && <button onClick={() => onPrintReport(log)} className="flex-1 md:flex-none px-4 py-3 bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] rounded-[var(--radius-sm)] font-bold text-xs hover:bg-[var(--color-bg-hover)] transition-all uppercase" title={t('print_report')}><i className="fas fa-print"></i></button>}
-                    {log.status === 'bottled' && <button onClick={() => onAddTasting(log.id)} className="flex-1 md:flex-none px-6 py-3 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] font-bold text-xs uppercase shadow-sm hover:opacity-90 transition-opacity">Review</button>}
+                    {log.status === 'bottled' && <button onClick={() => onAddTasting(log.id)} className="flex-1 md:flex-none px-6 py-3 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] font-bold text-xs uppercase shadow-sm hover:opacity-90 transition-opacity">{t('review_btn')}</button>}
                   </div>
                 </div>
               </div>
