@@ -21,7 +21,7 @@ import { InfoBanner } from './components/InfoBanner';
 import BrewerySettings from './components/BrewerySettings';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, checkRecipeStock, normalizeRecipe } from './services/calculations';
-import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, isUniqueViolation, nameKey } from './services/duplicates';
+import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
@@ -232,7 +232,7 @@ const AppContent: React.FC = () => {
       // 2. Try to find by name and type with the target status
       if (targetStatus === 'private') {
         return updatedLib.find(l =>
-          l.name.toLowerCase() === name.toLowerCase() &&
+          nameKey(l.name) === nameKey(name) &&
           l.type === type &&
           l.status === 'private' && (
             (!l.user_id || l.user_id === user?.id) ||
@@ -666,8 +666,9 @@ const AppContent: React.FC = () => {
       (profile?.brewery_id && r.brewery_id === profile.brewery_id))
     );
     const personalLib = currentLib.filter(l =>
-      (!l.user_id || l.user_id === user?.id) ||
-      (profile?.brewery_id && l.brewery_id === profile.brewery_id)
+      (!l.status || l.status === 'private') &&
+      ((!l.user_id || l.user_id === user?.id) ||
+      (profile?.brewery_id && l.brewery_id === profile.brewery_id))
     );
 
     let isDuplicate = false;
@@ -678,7 +679,7 @@ const AppContent: React.FC = () => {
       isDuplicate = personalRecipes.some(r => nameKey(r.name) === nameKey(next.data.name));
     } else {
       exactMatches = personalLib.filter(l => l.type === next.data.type && isExactlySame(l, next.data));
-      isDuplicate = personalLib.some(l => l.name.toLowerCase() === next.data.name.toLowerCase() && l.type === next.data.type);
+      isDuplicate = personalLib.some(l => nameKey(l.name) === nameKey(next.data.name) && l.type === next.data.type);
     }
     
     if (exactMatches.length > 0) {
@@ -777,8 +778,9 @@ const AppContent: React.FC = () => {
       } else {
         let targetItem: LibraryIngredient | null = null;
         updatedLib = library.map(l => {
-          const isOwnOrBrewery = (!l.user_id || l.user_id === user?.id) || (profile?.brewery_id && l.brewery_id === profile.brewery_id);
-          if (isOwnOrBrewery && l.name.toLowerCase() === currentDuplicate.data.name.toLowerCase() && l.type === currentDuplicate.data.type) {
+          const isOwnOrBrewery = (!l.status || l.status === 'private') &&
+            ((!l.user_id || l.user_id === user?.id) || (profile?.brewery_id && l.brewery_id === profile.brewery_id));
+          if (isOwnOrBrewery && nameKey(l.name) === nameKey(currentDuplicate.data.name) && l.type === currentDuplicate.data.type) {
              const updated = { ...currentDuplicate.data, id: l.id, user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' } as LibraryIngredient;
              targetItem = updated;
              return updated;
@@ -803,7 +805,8 @@ const AppContent: React.FC = () => {
            supabaseService.saveRecipe(finalRecipe, user.id, profile?.brewery_id);
         }
       } else {
-        const newItem = { ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)`, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' };
+        const freeName = uniqueName(currentDuplicate.data.name, privateLibraryNames(library, currentDuplicate.data.type, profile?.brewery_id, user?.id));
+        const newItem = { ...currentDuplicate.data, name: freeName, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' };
         updatedLib = [...library, newItem];
         nextSummary.inserted += 1;
         if (user?.id) {
@@ -1651,6 +1654,155 @@ CREATE UNIQUE INDEX IF NOT EXISTS recipes_private_name_per_brewery
 CREATE UNIQUE INDEX IF NOT EXISTS recipes_public_name
   ON recipes (name_key(data->>'name'))
   WHERE status = 'approved';
+
+-- Library items: merge duplicates, then unique names (private per brewery, public in total)
+-- 1. Merge -------------------------------------------------------------------
+DO \$merge\$
+DECLARE
+  t TEXT;
+  r RECORD;
+  library_tables TEXT[] := ARRAY['fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+BEGIN
+  CREATE TEMP TABLE IF NOT EXISTS lib_merge_map (
+    tbl TEXT NOT NULL,
+    old_id TEXT PRIMARY KEY,
+    new_id TEXT NOT NULL
+  ) ON COMMIT DROP;
+  TRUNCATE lib_merge_map;
+
+  -- How often each library item is used by a recipe
+  CREATE TEMP TABLE IF NOT EXISTS lib_ref_count ON COMMIT DROP AS
+    SELECT NULL::TEXT AS lib_id, 0::BIGINT AS n WHERE false;
+  TRUNCATE lib_ref_count;
+  INSERT INTO lib_ref_count
+    SELECT lib_id, count(*) FROM (
+      SELECT e->>'libraryId' AS lib_id
+      FROM recipes,
+        jsonb_array_elements(
+          coalesce(data->'ingredients'->'fermentables', '[]'::jsonb) ||
+          coalesce(data->'ingredients'->'hops', '[]'::jsonb) ||
+          coalesce(data->'ingredients'->'cultures', '[]'::jsonb) ||
+          coalesce(data->'ingredients'->'miscellaneous', '[]'::jsonb)
+        ) e
+      UNION ALL
+      SELECT data->'style'->>'libraryId' FROM recipes
+    ) refs
+    WHERE lib_id IS NOT NULL
+    GROUP BY lib_id;
+
+  FOREACH t IN ARRAY library_tables LOOP
+    -- Pick the item to keep per group; map the others to it
+    EXECUTE format(\$q\$
+      WITH ranked AS (
+        SELECT l.id::text AS id,
+               CASE WHEN l.status = 'approved' THEN 'public' ELSE l.brewery_id::text END AS scope,
+               name_key(l.data->>'name') AS nk,
+               row_number() OVER (
+                 PARTITION BY CASE WHEN l.status = 'approved' THEN 'public' ELSE l.brewery_id::text END,
+                              name_key(l.data->>'name')
+                 ORDER BY (l.data ? 'stock' AND jsonb_typeof(l.data->'stock') = 'object') DESC,
+                          coalesce(rc.n, 0) DESC,
+                          (SELECT count(*) FROM jsonb_object_keys(l.data)) DESC,
+                          l.id::text
+               ) AS rn
+        FROM %I l
+        LEFT JOIN lib_ref_count rc ON rc.lib_id = l.id::text
+        WHERE (l.status = 'private' AND l.brewery_id IS NOT NULL) OR l.status = 'approved'
+      )
+      INSERT INTO lib_merge_map (tbl, old_id, new_id)
+      SELECT %L, d.id, k.id
+      FROM ranked d
+      JOIN ranked k ON k.scope = d.scope AND k.nk = d.nk AND k.rn = 1
+      WHERE d.rn > 1
+    \$q\$, t, t);
+
+    -- Fill fields missing on the kept item from its duplicates (kept values win)
+    FOR r IN EXECUTE format(
+      'SELECT m.new_id, o.data FROM lib_merge_map m JOIN %I o ON o.id::text = m.old_id WHERE m.tbl = %L', t, t)
+    LOOP
+      EXECUTE format('UPDATE %I SET data = \$1 || data WHERE id::text = \$2', t)
+        USING (r.data - 'id' - 'stock' - 'user_id' - 'brewery_id' - 'status' - 'amount' - 'time' - 'use' - 'libraryId'), r.new_id;
+    END LOOP;
+  END LOOP;
+
+  -- Point recipes at the kept items
+  UPDATE recipes rcp SET data = (
+    SELECT jsonb_set(
+      CASE WHEN jsonb_typeof(rcp.data->'ingredients') = 'object' THEN
+        jsonb_set(rcp.data, '{ingredients}',
+          (SELECT coalesce(jsonb_object_agg(k, CASE
+             WHEN k IN ('fermentables', 'hops', 'cultures', 'miscellaneous') AND jsonb_typeof(v) = 'array' THEN
+               (SELECT coalesce(jsonb_agg(
+                  CASE WHEN m.new_id IS NOT NULL THEN e || jsonb_build_object('libraryId', m.new_id) ELSE e END
+                  ORDER BY ord), '[]'::jsonb)
+                FROM jsonb_array_elements(v) WITH ORDINALITY x(e, ord)
+                LEFT JOIN lib_merge_map m ON m.old_id = e->>'libraryId')
+             ELSE v END), '{}'::jsonb)
+           FROM jsonb_each(rcp.data->'ingredients') AS i(k, v)))
+      ELSE rcp.data END,
+      '{style}',
+      CASE WHEN rcp.data->'style'->>'libraryId' IN (SELECT old_id FROM lib_merge_map)
+        THEN (rcp.data->'style') || jsonb_build_object('libraryId',
+               (SELECT new_id FROM lib_merge_map WHERE old_id = rcp.data->'style'->>'libraryId'))
+        ELSE coalesce(rcp.data->'style', 'null'::jsonb) END,
+      false)
+  )
+  WHERE EXISTS (SELECT 1 FROM lib_merge_map m WHERE position(m.old_id IN rcp.data::text) > 0);
+
+  -- Remove the merged duplicates
+  FOREACH t IN ARRAY library_tables LOOP
+    EXECUTE format('DELETE FROM %I WHERE id::text IN (SELECT old_id FROM lib_merge_map WHERE tbl = %L)', t, t);
+  END LOOP;
+END \$merge\$;
+
+-- 2. Free name when an item becomes private again or moves brewery ------------
+CREATE OR REPLACE FUNCTION public.library_free_name_on_move()
+RETURNS trigger AS \$\$
+DECLARE
+  base TEXT;
+  candidate TEXT;
+  n INT := 1;
+  taken BOOLEAN;
+BEGIN
+  IF NEW.status = 'private' AND NEW.brewery_id IS NOT NULL
+     AND (OLD.status IS DISTINCT FROM 'private' OR OLD.brewery_id IS DISTINCT FROM NEW.brewery_id) THEN
+    candidate := btrim(coalesce(NEW.data->>'name', ''));
+    base := regexp_replace(candidate, '\\s\\(\\d+\\)\$', '');
+    LOOP
+      EXECUTE format(
+        'SELECT EXISTS (SELECT 1 FROM %I WHERE brewery_id = \$1 AND status = ''private'' AND id::text <> \$2 AND name_key(data->>''name'') = name_key(\$3))',
+        TG_TABLE_NAME)
+        INTO taken USING NEW.brewery_id, NEW.id::text, candidate;
+      EXIT WHEN NOT taken;
+      n := n + 1;
+      candidate := base || ' (' || n || ')';
+    END LOOP;
+    IF candidate IS DISTINCT FROM NEW.data->>'name' THEN
+      NEW.data := jsonb_set(NEW.data, '{name}', to_jsonb(candidate));
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+\$\$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.library_free_name_on_move() FROM PUBLIC, anon, authenticated;
+
+-- 3. Rules + trigger per table ---------------------------------------------------
+DO \$rules\$
+DECLARE
+  t TEXT;
+  library_tables TEXT[] := ARRAY['fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+BEGIN
+  FOREACH t IN ARRAY library_tables LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS %I ON %I', t || '_free_name_on_move', t);
+    EXECUTE format('CREATE TRIGGER %I BEFORE UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION library_free_name_on_move()',
+                   t || '_free_name_on_move', t);
+    EXECUTE format('CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I (brewery_id, name_key(data->>''name'')) WHERE status = ''private''',
+                   t || '_private_name_per_brewery', t);
+    EXECUTE format('CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I (name_key(data->>''name'')) WHERE status = ''approved''',
+                   t || '_public_name', t);
+  END LOOP;
+END \$rules\$;
 `.trim();
 
   const handleDismissFallback = () => {

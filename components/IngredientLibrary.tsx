@@ -5,7 +5,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { supabaseService } from '../services/supabaseService';
 import { formatStockAmount } from '../services/calculations';
-import { findDuplicateIngredients } from '../services/duplicates';
+import { findDuplicateIngredients, uniqueName, privateLibraryNames, findPrivateIngredient, nameKey } from '../services/duplicates';
 
 const TABLE_MAP: Record<string, string> = {
   'fermentable': 'fermentables',
@@ -71,6 +71,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
   const [itemToDelete, setItemToDelete] = useState<LibraryIngredient | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // Item created with 'New' and not saved yet: removed again on Cancel
+  const [unsavedNewId, setUnsavedNewId] = useState<string | null>(null);
 
   const toggleSelection = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -93,16 +95,23 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       await supabaseService.batchSaveLibraryIngredients(submittedClones, user.id, profile?.brewery_id);
       alert(t('items_submitted').replace('{n}', String(selectedIds.length)));
     } else {
-      // Bulk Import to Personal
-      const selectedItems = ingredients.filter(i => selectedIds.includes(i.id));
+      // Bulk Import to Personal (items already in the collection are skipped)
+      const selectedItems = ingredients.filter(i => selectedIds.includes(i.id))
+        .filter(i => !findPrivateIngredient(ingredients, i.name, i.type, profile?.brewery_id, user.id));
+      const skipped = selectedIds.length - selectedItems.length;
       const newItems = selectedItems.map(item => ({
         ...item,
         id: crypto.randomUUID(),
         user_id: user.id,
         status: 'private' as const
       }));
-      await supabaseService.batchSaveLibraryIngredients(newItems, user.id, profile?.brewery_id);
-      alert(t('items_added').replace('{n}', String(selectedIds.length)));
+      if (newItems.length > 0) {
+        await supabaseService.batchSaveLibraryIngredients(newItems, user.id, profile?.brewery_id);
+      }
+      alert([
+        t('items_added').replace('{n}', String(newItems.length)),
+        skipped > 0 ? t('items_skipped_existing').replace('{n}', String(skipped)) : '',
+      ].filter(Boolean).join('\n'));
     }
 
     // Refresh parent data
@@ -132,7 +141,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       user_id: user?.id,
       brewery_id: profile?.brewery_id,
       status: 'private',
-      name: (filter === 'misc' || filter === 'style') ? defaultName : `${t('new_btn')} ${defaultName}`,
+      name: uniqueName(
+        (filter === 'misc' || filter === 'style') ? defaultName : `${t('new_btn')} ${defaultName}`,
+        privateLibraryNames(ingredients, filter, profile?.brewery_id, user?.id)
+      ),
       type: filter as string,
       color: filter === 'fermentable' ? 2 : undefined,
       yield: filter === 'fermentable' ? 75 : undefined,
@@ -144,6 +156,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       misc_use: filter === 'misc' ? 'boil' : undefined
     };
     onUpdate([...ingredients, newItem]);
+    setUnsavedNewId(newId);
     startEditing(newItem);
   };
 
@@ -153,12 +166,25 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   };
 
   const cancelEditing = () => {
+    // A new item that was never saved is removed again (it used to stay as "New Malt")
+    if (unsavedNewId && editingId === unsavedNewId) {
+      onUpdate(ingredients.filter(i => i.id !== unsavedNewId));
+    }
+    setUnsavedNewId(null);
     setEditingId(null);
     setEditForm({});
   };
 
   const saveEditing = () => {
     if (!editForm.name) return;
+    // Names are unique per type within a brewery
+    const current = ingredients.find(i => i.id === editingId);
+    if (current && (current.status === 'private' || !current.status) &&
+        privateLibraryNames(ingredients, current.type, profile?.brewery_id, user?.id, current.id).some(n => nameKey(n) === nameKey(editForm.name!))) {
+      alert(t('ingredient_name_taken').replace('{name}', editForm.name));
+      return;
+    }
+    setUnsavedNewId(null);
     onUpdate(ingredients.map(i => i.id === editingId ? { ...i, ...editForm } as LibraryIngredient : i));
     setEditingId(null);
     setEditForm({});
@@ -535,6 +561,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     {libraryView === 'public' && (
                        <button
                         onClick={async () => {
+                          if (findPrivateIngredient(ingredients, item.name, item.type, profile?.brewery_id, user?.id)) {
+                            alert(t('already_in_collection').replace('{name}', item.name));
+                            return;
+                          }
                           const newItem = { ...item, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' as const };
                           onUpdate([...ingredients, newItem]);
                           if (user?.id) {

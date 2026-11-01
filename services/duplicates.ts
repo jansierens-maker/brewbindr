@@ -53,3 +53,14 @@ export const privateRecipeNames = (recipes: Recipe[], breweryId?: string | null,
 
 /** True for a Postgres unique-violation error returned by Supabase. */
 export const isUniqueViolation = (error: any): boolean => error?.code === '23505';
+
+const isOwnPrivate = (l: LibraryIngredient, breweryId?: string | null, userId?: string) =>
+  (l.status === 'private' || !l.status) && (breweryId ? l.brewery_id === breweryId : l.user_id === userId);
+
+/** Names of the private library items of one type in the user's brewery. */
+export const privateLibraryNames = (library: LibraryIngredient[], type: string, breweryId?: string | null, userId?: string, exceptId?: string): string[] =>
+  library.filter(l => l.id !== exceptId && l.type === type && isOwnPrivate(l, breweryId, userId)).map(l => l.name);
+
+/** The brewery's own private item with this name and type, if any. */
+export const findPrivateIngredient = (library: LibraryIngredient[], name: string, type: string, breweryId?: string | null, userId?: string): LibraryIngredient | undefined =>
+  library.find(l => l.type === type && isOwnPrivate(l, breweryId, userId) && nameKey(l.name) === nameKey(name));
