@@ -193,6 +193,29 @@ export const supabaseService = {
     return client.from('recipes').delete().eq('id', id);
   },
 
+  /** Brews and tasting notes that use a recipe; 'foreign' = those of other breweries. */
+  async recipeDependents(id: string): Promise<{ brews: number; notes: number; foreign: number } | null> {
+    const client = supabase;
+    if (!client) return null;
+    const { data, error } = await client.rpc('recipe_dependents', { p_recipe_id: id });
+    if (error) {
+      console.error('recipe_dependents failed:', error.message);
+      return null;
+    }
+    return data;
+  },
+
+  /** Deletes a recipe in one transaction; with withBrews also its brews and their tasting notes. */
+  async deleteRecipeCascade(id: string, withBrews: boolean) {
+    const client = supabase;
+    if (!client) return;
+    const result = await client.rpc('delete_recipe', { p_recipe_id: id, p_with_brews: withBrews });
+    // Database without this function yet (app deployed before the migration ran):
+    // a recipe without brews can still be deleted the old way
+    if (result.error?.code === 'PGRST202' && !withBrews) return supabaseService.deleteRecipe(id);
+    return result;
+  },
+
   async saveBrewLog(log: BrewLogEntry, userId?: string, breweryId?: string) {
     const client = supabase;
     if (!client || !log.id) return;

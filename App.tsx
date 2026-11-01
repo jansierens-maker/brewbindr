@@ -553,12 +553,52 @@ const AppContent: React.FC = () => {
     setView('recipes');
   };
 
-  const handleDeleteRecipe = (id: string) => {
+  /**
+   * Deletes a recipe after asking. When brews use it, the question offers to delete
+   * those brews and their tasting notes too, or to cancel. Brews of other breweries
+   * are never deleted, so then the recipe stays. Returns true when it was deleted.
+   */
+  const deleteRecipeAndBrews = async (id: string, plainQuestion: string): Promise<boolean> => {
+    const localBrewIds = brewLogs.filter(l => l.recipeId === id).map(l => l.id);
+    const localDeps = {
+      brews: localBrewIds.length,
+      notes: tastingNotes.filter(n => n.recipeId === id || localBrewIds.includes(n.brewLogId)).length,
+      foreign: 0,
+    };
+    const deps = (user?.id ? await supabaseService.recipeDependents(id) : null) ?? localDeps;
+
+    if (deps.foreign > 0) {
+      alert(t('recipe_in_use_elsewhere').replace('{brews}', String(deps.foreign)));
+      return false;
+    }
+    const withBrews = deps.brews > 0;
+    const question = withBrews
+      ? t('confirm_delete_recipe_with_brews').replace('{brews}', String(deps.brews)).replace('{notes}', String(deps.notes))
+      : plainQuestion;
+    if (!confirm(question)) return false;
+
+    if (user?.id) {
+      const result = await supabaseService.deleteRecipeCascade(id, withBrews);
+      if (result?.error) {
+        alert(`${t('delete_failed')}: ${result.error.message}`);
+        return false;
+      }
+    }
+
     deletedRecipeIds.current.add(id);
     setRecipes(prev => prev.filter(r => r.id !== id));
+    if (withBrews) {
+      const brewIds = new Set(brewLogs.filter(l => l.recipeId === id).map(l => l.id));
+      setBrewLogs(prev => prev.filter(l => l.recipeId !== id));
+      setTastingNotes(prev => prev.filter(n => n.recipeId !== id && !brewIds.has(n.brewLogId)));
+    }
+    return true;
+  };
+
+  const handleDeleteRecipe = async (id: string) => {
+    if (!(await deleteRecipeAndBrews(id, t('confirm_delete')))) return;
     setSelectedRecipe(null);
     setView('recipes');
-    supabaseService.deleteRecipe(id);
   };
 
   const handleUpdateBrewLog = async (entry: BrewLogEntry) => {
@@ -1081,13 +1121,8 @@ const AppContent: React.FC = () => {
   };
 
   const handleAdminDeleteRecipe = async (recipe: Recipe) => {
-    if (!isAdmin || !recipe.id || !confirm(t('confirm_admin_delete' as any))) return;
-    const result = await supabaseService.deleteRecipe(recipe.id);
-    if (result?.error) {
-      alert(`${t('admin_action_failed' as any)}: ${result.error.message}`);
-      return;
-    }
-    setRecipes(prev => prev.filter(r => r.id !== recipe.id));
+    if (!isAdmin || !recipe.id) return;
+    await deleteRecipeAndBrews(recipe.id, t('confirm_admin_delete' as any));
   };
 
   const handleApprove = async (id: string, type: string, table?: string) => {
