@@ -21,7 +21,7 @@ import { InfoBanner } from './components/InfoBanner';
 import BrewerySettings from './components/BrewerySettings';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, checkRecipeStock, normalizeRecipe } from './services/calculations';
-import { findDuplicateRecipes, approvedKeys } from './services/duplicates';
+import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, isUniqueViolation, nameKey } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
@@ -487,6 +487,14 @@ const AppContent: React.FC = () => {
   }, [user?.id, profile?.brewery_id, authLoading, isAdmin]);
 
   const handleSaveRecipe = async (recipe: Recipe) => {
+    // Recipe names are unique per brewery (enforced in the database too)
+    const ownId = selectedRecipe?.id;
+    const isPrivate = !recipe.status || recipe.status === 'private';
+    if (isPrivate && privateRecipeNames(recipes, profile?.brewery_id, user?.id, ownId).some(n => nameKey(n) === nameKey(recipe.name))) {
+      alert(t('recipe_name_taken').replace('{name}', recipe.name));
+      return;
+    }
+
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
 
     if (newIngredients.length > 0) {
@@ -507,7 +515,16 @@ const AppContent: React.FC = () => {
     });
 
     if (user?.id) {
-      await supabaseService.saveRecipe(targetRecipe, user.id, profile?.brewery_id);
+      const result = await supabaseService.saveRecipe(targetRecipe, user.id, profile?.brewery_id);
+      if (result?.error) {
+        alert(isUniqueViolation(result.error)
+          ? t('recipe_name_taken').replace('{name}', targetRecipe.name)
+          : `${t('save_failed')}: ${result.error.message}`);
+        // Reload so the list shows what is really stored
+        const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
+        if (remoteData) setRecipes(remoteData.recipes);
+        return;
+      }
     }
 
     setSelectedRecipe(null);
@@ -644,8 +661,9 @@ const AppContent: React.FC = () => {
 
     // Only check for duplicates in personal collection
     const personalRecipes = currentRecipes.filter(r =>
-      (!r.user_id || r.user_id === user?.id) ||
-      (profile?.brewery_id && r.brewery_id === profile.brewery_id)
+      (!r.status || r.status === 'private') &&
+      ((!r.user_id || r.user_id === user?.id) ||
+      (profile?.brewery_id && r.brewery_id === profile.brewery_id))
     );
     const personalLib = currentLib.filter(l =>
       (!l.user_id || l.user_id === user?.id) ||
@@ -657,7 +675,7 @@ const AppContent: React.FC = () => {
 
     if (next.type === 'recipe') {
       exactMatches = personalRecipes.filter(r => isExactlySame(r, next.data));
-      isDuplicate = personalRecipes.some(r => r.name.toLowerCase() === next.data.name.toLowerCase());
+      isDuplicate = personalRecipes.some(r => nameKey(r.name) === nameKey(next.data.name));
     } else {
       exactMatches = personalLib.filter(l => l.type === next.data.type && isExactlySame(l, next.data));
       isDuplicate = personalLib.some(l => l.name.toLowerCase() === next.data.name.toLowerCase() && l.type === next.data.type);
@@ -742,9 +760,10 @@ const AppContent: React.FC = () => {
         const { recipe: linked, addedToLibrary, newIngredients } = linkIngredientsToLibrary(currentDuplicate.data, updatedLib);
         let targetRecipe: Recipe | null = null;
         updatedRecipes = recipes.map(r => {
-          const isOwnOrBrewery = (!r.user_id || r.user_id === user?.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id);
-          if (isOwnOrBrewery && r.name.toLowerCase() === linked.name.toLowerCase()) {
-            targetRecipe = { ...linked, id: r.id, user_id: user?.id, brewery_id: profile?.brewery_id };
+          const isOwnOrBrewery = (!r.status || r.status === 'private') &&
+            ((!r.user_id || r.user_id === user?.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id));
+          if (isOwnOrBrewery && nameKey(r.name) === nameKey(linked.name)) {
+            targetRecipe = { ...linked, id: r.id, user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' };
             return targetRecipe;
           }
           return r;
@@ -773,9 +792,10 @@ const AppContent: React.FC = () => {
       }
     } else if (action === 'copy') {
       if (currentDuplicate.type === 'recipe') {
-        const { recipe: linked, addedToLibrary, newIngredients } = linkIngredientsToLibrary({ ...currentDuplicate.data, name: `${currentDuplicate.data.name} (Copy)` }, updatedLib);
+        const freeName = uniqueName(currentDuplicate.data.name, privateRecipeNames(recipes, profile?.brewery_id, user?.id));
+        const { recipe: linked, addedToLibrary, newIngredients } = linkIngredientsToLibrary({ ...currentDuplicate.data, name: freeName }, updatedLib);
         linked.id = crypto.randomUUID();
-        const finalRecipe = { ...linked, user_id: user?.id, brewery_id: profile?.brewery_id };
+        const finalRecipe = { ...linked, user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' as const };
         updatedRecipes = [...recipes, finalRecipe];
         nextSummary.inserted += 1 + addedToLibrary;
         if (user?.id) {
@@ -937,7 +957,9 @@ const AppContent: React.FC = () => {
     const updatedRecipe: Recipe = {
       ...syncedRecipe,
       id: newRecipeId,
+      name: uniqueName(syncedRecipe.name, privateRecipeNames(recipes, profile?.brewery_id, user?.id)),
       user_id: user?.id,
+      brewery_id: profile?.brewery_id,
       status: 'private'
     };
 
@@ -948,7 +970,12 @@ const AppContent: React.FC = () => {
       if (newIngredients.length > 0) {
         await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
       }
-      await supabaseService.saveRecipe(updatedRecipe, user.id);
+      const result = await supabaseService.saveRecipe(updatedRecipe, user.id, profile?.brewery_id);
+      if (result?.error) {
+        alert(`${t('save_failed')}: ${result.error.message}`);
+        setRecipes(prev => prev.filter(r => r.id !== newRecipeId));
+        return;
+      }
     }
 
     setLibraryView('personal');
@@ -1038,14 +1065,19 @@ const AppContent: React.FC = () => {
   };
 
   const handleApprove = async (id: string, type: string, table?: string) => {
-    await supabaseService.updateItemStatus(id, type, 'approved', table);
+    const result = await supabaseService.updateItemStatus(id, type, 'approved', table);
+    if (result?.error) {
+      alert(isUniqueViolation(result.error) ? t('public_name_taken') : `${t('admin_action_failed' as any)}: ${result.error.message}`);
+    }
     const pending = await supabaseService.fetchPendingSubmissions();
     setPendingSubmissions(pending);
     // State will be updated via Realtime
   };
 
   const handleReject = async (id: string, type: string, table?: string) => {
-    await supabaseService.updateItemStatus(id, type, 'private', table);
+    // Back to private: the database adds " (2)" if the brewery already uses the name
+    const result = await supabaseService.updateItemStatus(id, type, 'private', table);
+    if (result?.error) alert(`${t('admin_action_failed' as any)}: ${result.error.message}`);
     const pending = await supabaseService.fetchPendingSubmissions();
     setPendingSubmissions(pending);
     // State will be updated via Realtime
@@ -1531,6 +1563,94 @@ END;
 
 REVOKE EXECUTE ON FUNCTION public.consume_ai_quota() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
+
+-- Unique recipe names: once per brewery (private) and once in the public library
+-- Comparison key used by the unique indexes
+CREATE OR REPLACE FUNCTION public.name_key(p_name TEXT)
+RETURNS TEXT AS \$\$
+  SELECT lower(regexp_replace(btrim(coalesce(p_name, '')), '\\s+', ' ', 'g'));
+\$\$ LANGUAGE sql IMMUTABLE SET search_path = public;
+
+-- 1. Rename existing duplicates within a brewery. The most complete recipe
+--    (most fermentables) keeps its name; the others get (2), (3), ...
+DO \$\$
+DECLARE
+  r RECORD;
+  base TEXT;
+  candidate TEXT;
+  n INT;
+BEGIN
+  FOR r IN
+    SELECT id, brewery_id, data->>'name' AS name
+    FROM (
+      SELECT id, brewery_id, data,
+             row_number() OVER (
+               PARTITION BY brewery_id, name_key(data->>'name')
+               ORDER BY jsonb_array_length(coalesce(data->'ingredients'->'fermentables', '[]'::jsonb)) DESC, id
+             ) AS rn
+      FROM recipes
+      WHERE status = 'private' AND brewery_id IS NOT NULL
+    ) ranked
+    WHERE rn > 1
+  LOOP
+    base := regexp_replace(btrim(r.name), '\\s\\(\\d+\\)\$', '');
+    n := 2;
+    candidate := base || ' (' || n || ')';
+    WHILE EXISTS (
+      SELECT 1 FROM recipes
+      WHERE brewery_id = r.brewery_id AND status = 'private' AND id <> r.id
+        AND name_key(data->>'name') = name_key(candidate)
+    ) LOOP
+      n := n + 1;
+      candidate := base || ' (' || n || ')';
+    END LOOP;
+    UPDATE recipes SET data = jsonb_set(data, '{name}', to_jsonb(candidate)) WHERE id = r.id;
+  END LOOP;
+END \$\$;
+
+-- 2. Give a recipe a free name when it becomes private again or moves to another brewery
+CREATE OR REPLACE FUNCTION public.recipes_free_name_on_move()
+RETURNS trigger AS \$\$
+DECLARE
+  base TEXT;
+  candidate TEXT;
+  n INT := 1;
+BEGIN
+  IF NEW.status = 'private' AND NEW.brewery_id IS NOT NULL
+     AND (OLD.status IS DISTINCT FROM 'private' OR OLD.brewery_id IS DISTINCT FROM NEW.brewery_id) THEN
+    candidate := btrim(coalesce(NEW.data->>'name', ''));
+    base := regexp_replace(candidate, '\\s\\(\\d+\\)\$', '');
+    WHILE EXISTS (
+      SELECT 1 FROM recipes
+      WHERE brewery_id = NEW.brewery_id AND status = 'private' AND id <> NEW.id
+        AND name_key(data->>'name') = name_key(candidate)
+    ) LOOP
+      n := n + 1;
+      candidate := base || ' (' || n || ')';
+    END LOOP;
+    IF candidate IS DISTINCT FROM NEW.data->>'name' THEN
+      NEW.data := jsonb_set(NEW.data, '{name}', to_jsonb(candidate));
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+\$\$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.recipes_free_name_on_move() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS recipes_free_name_on_move ON recipes;
+CREATE TRIGGER recipes_free_name_on_move
+  BEFORE UPDATE ON recipes
+  FOR EACH ROW EXECUTE FUNCTION recipes_free_name_on_move();
+
+-- 3. The rules themselves
+CREATE UNIQUE INDEX IF NOT EXISTS recipes_private_name_per_brewery
+  ON recipes (brewery_id, name_key(data->>'name'))
+  WHERE status = 'private';
+
+CREATE UNIQUE INDEX IF NOT EXISTS recipes_public_name
+  ON recipes (name_key(data->>'name'))
+  WHERE status = 'approved';
 `.trim();
 
   const handleDismissFallback = () => {

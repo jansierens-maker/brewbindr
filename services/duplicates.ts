@@ -29,3 +29,27 @@ export const approvedKeys = (recipes: Recipe[], library: LibraryIngredient[]): S
 /** Key of a pending submission as returned by fetchPendingSubmissions(). */
 export const submissionKey = (item: { name?: string; type?: string; _table?: string }): string =>
   `${item._table === 'recipes' ? 'recipe' : item.type}:${nameKey(item.name)}`;
+
+/**
+ * Returns `name`, or the first free "name (2)", "name (3)", ... when `name` is taken.
+ * A trailing " (n)" on the input is replaced, so copying "Ale (2)" gives "Ale (3)".
+ */
+export const uniqueName = (name: string, takenNames: string[]): string => {
+  const taken = new Set(takenNames.map(nameKey));
+  const trimmed = (name || '').trim();
+  if (!taken.has(nameKey(trimmed))) return trimmed;
+  const base = trimmed.replace(/\s\(\d+\)$/, '');
+  let n = 2;
+  while (taken.has(nameKey(`${base} (${n})`))) n++;
+  return `${base} (${n})`;
+};
+
+/** Names of the private recipes in the user's brewery (or of the user, without a brewery). */
+export const privateRecipeNames = (recipes: Recipe[], breweryId?: string | null, userId?: string, exceptId?: string): string[] =>
+  recipes
+    .filter(r => r.id !== exceptId && (r.status === 'private' || !r.status) &&
+      (breweryId ? r.brewery_id === breweryId : r.user_id === userId))
+    .map(r => r.name);
+
+/** True for a Postgres unique-violation error returned by Supabase. */
+export const isUniqueViolation = (error: any): boolean => error?.code === '23505';
