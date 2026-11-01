@@ -310,6 +310,12 @@ const AppContent: React.FC = () => {
   // the profile, brewery or admin rights never throws the user back.
   const startScreenFor = useRef<string | null>(null);
 
+  // Recipes deleted in this session. A fetch or realtime event that was already
+  // on its way can still contain them; without this they would reappear.
+  const deletedRecipeIds = useRef(new Set<string>());
+  const withoutDeleted = (list: Recipe[]) =>
+    deletedRecipeIds.current.size ? list.filter(r => !r.id || !deletedRecipeIds.current.has(r.id)) : list;
+
   // Handle redirect if stock management is disabled while on Voorraad view
   useEffect(() => {
     if (!preferences.enableStockManagement && view === 'voorraad') {
@@ -359,7 +365,10 @@ const AppContent: React.FC = () => {
         });
       };
 
-      if (table === 'recipes') updateState(setRecipes);
+      if (table === 'recipes') {
+        if (eventType !== 'DELETE' && newRecord?.id && deletedRecipeIds.current.has(newRecord.id)) return;
+        updateState(setRecipes);
+      }
       else if (table === 'brew_logs') updateState(setBrewLogs);
       else if (table === 'tasting_notes') updateState(setTastingNotes);
       else if (['fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'].includes(table)) {
@@ -404,7 +413,7 @@ const AppContent: React.FC = () => {
         const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
         if (cancelled) return;
         if (remoteData) {
-          setRecipes(remoteData.recipes);
+          setRecipes(withoutDeleted(remoteData.recipes));
           setBrewLogs(remoteData.brewLogs);
           setTastingNotes(remoteData.tastingNotes);
           setLibrary(remoteData.library);
@@ -529,7 +538,7 @@ const AppContent: React.FC = () => {
           : `${t('save_failed')}: ${result.error.message}`);
         // Reload so the list shows what is really stored
         const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
-        if (remoteData) setRecipes(remoteData.recipes);
+        if (remoteData) setRecipes(withoutDeleted(remoteData.recipes));
         return;
       }
     }
@@ -539,6 +548,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleDeleteRecipe = (id: string) => {
+    deletedRecipeIds.current.add(id);
     setRecipes(prev => prev.filter(r => r.id !== id));
     setSelectedRecipe(null);
     setView('recipes');
@@ -954,7 +964,7 @@ const AppContent: React.FC = () => {
     // Refresh data
     const remoteData = await supabaseService.fetchAppData(user.id);
     if (remoteData) {
-      setRecipes(remoteData.recipes);
+      setRecipes(withoutDeleted(remoteData.recipes));
       setLibrary(remoteData.library);
     }
     alert(t('recipe_submitted'));
@@ -996,7 +1006,7 @@ const AppContent: React.FC = () => {
     setSyncError(false);
     const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
     if (remoteData) {
-      setRecipes(remoteData.recipes);
+      setRecipes(withoutDeleted(remoteData.recipes));
       setBrewLogs(remoteData.brewLogs);
       setTastingNotes(remoteData.tastingNotes);
       setLibrary(remoteData.library);
@@ -1187,7 +1197,7 @@ const AppContent: React.FC = () => {
                       onClick={async () => {
                         const remoteData = await supabaseService.fetchAppData(user?.id);
                         if (remoteData) {
-                          setRecipes(remoteData.recipes);
+                          setRecipes(withoutDeleted(remoteData.recipes));
                           setBrewLogs(remoteData.brewLogs);
                           setTastingNotes(remoteData.tastingNotes);
                           setLibrary(remoteData.library);

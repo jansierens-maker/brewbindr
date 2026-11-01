@@ -58,6 +58,12 @@ describe('per-brewery names', () => {
     expect(privateRecipeNames(recipes, 'b1', undefined, 'c')).toEqual(['Burton Ale (2)']);
   });
 
+  it('also counts your own recipe that has no brewery yet', () => {
+    const list: any[] = [...recipes, { id: 'e', name: 'Saison', status: 'private', user_id: 'u1' }];
+    expect(privateRecipeNames(list, 'b1', 'u1')).toEqual(['Burton Ale (2)', 'Wit', 'Saison']);
+    expect(privateRecipeNames(list, 'b2', 'u2')).toEqual(['Wit']);
+  });
+
   it('lists private library names per type', () => {
     expect(privateLibraryNames(library, 'hop', 'b1')).toEqual(['Saaz']);
     expect(findPrivateIngredient(library, ' saaz ', 'fermentable', 'b1')?.id).toBe('f1');

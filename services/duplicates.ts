@@ -48,7 +48,8 @@ export const uniqueName = (name: string, takenNames: string[]): string => {
 export const privateRecipeNames = (recipes: Recipe[], breweryId?: string | null, userId?: string, exceptId?: string): string[] =>
   recipes
     .filter(r => r.id !== exceptId && (r.status === 'private' || !r.status) &&
-      (breweryId ? r.brewery_id === breweryId : r.user_id === userId))
+      // Your own recipes always count: one saved before your brewery was loaded has no brewery_id yet
+      ((breweryId && r.brewery_id === breweryId) || (!!userId && r.user_id === userId)))
     .map(r => r.name);
 
 /** True for a Postgres unique-violation error returned by Supabase. */
