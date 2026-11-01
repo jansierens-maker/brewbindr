@@ -1,0 +1,79 @@
+name: Database
+
+# Database migrations live in supabase/migrations.
+# - Pull request: start a fresh local Supabase database, apply every migration,
+#   run the database tests (supabase/tests) and show what would change on production.
+# - Merge to main: apply new migrations to production (after approval when the
+#   "production" environment requires a reviewer).
+#
+# Required repository secrets:
+#   SUPABASE_ACCESS_TOKEN  personal access token (supabase.com > Account > Access Tokens)
+#   SUPABASE_DB_PASSWORD   database password of the project
+on:
+  pull_request:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/database.yml']
+  push:
+    branches: [main]
+    paths: ['supabase/migrations/**']
+  workflow_dispatch:
+
+env:
+  SUPABASE_PROJECT_ID: tgbeaombwskioefhunxf
+
+jobs:
+  test:
+    name: Migrations & database tests
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start a fresh database and apply all migrations
+        run: supabase db start
+
+      - name: Database tests
+        run: supabase test db
+
+      - name: What would change on production (dry run)
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_ID" -p "$SUPABASE_DB_PASSWORD"
+          supabase db push --dry-run -p "$SUPABASE_DB_PASSWORD"
+
+  deploy:
+    name: Apply migrations to production
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    concurrency: production-database
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" -p "$SUPABASE_DB_PASSWORD"
+
+      - name: Apply new migrations
+        run: supabase db push -p "$SUPABASE_DB_PASSWORD"

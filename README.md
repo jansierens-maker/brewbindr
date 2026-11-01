@@ -49,7 +49,7 @@ GEMINI_API_KEY=your_gemini_api_key
 
 To enable cloud sync and authentication, run [`schema_update.sql`](schema_update.sql) in your Supabase project's SQL Editor. It creates all tables, RLS policies, triggers and functions, and is idempotent, so it is also safe to re-run on an existing database. The same script is shown in the app under **Connection Details**.
 
-Incremental changes for existing databases are kept in [`migrations/`](migrations/).
+Database changes are managed with the Supabase CLI: migrations live in [`supabase/migrations/`](supabase/migrations/) and database tests in [`supabase/tests/`](supabase/tests/). The `Database` GitHub workflow applies every migration to a fresh database and runs the tests on each pull request, and applies new migrations to production when they are merged to `main`. The older hand-applied scripts in [`migrations/`](migrations/) are kept for reference.
 
 ### 4. Security Recommendations
 
