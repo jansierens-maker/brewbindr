@@ -1,4 +1,5 @@
-import { test, expect, type Page, type Dialog } from '@playwright/test';
+import { test, expect } from './fixtures';
+import { type Page, type Dialog } from '@playwright/test';
 
 const TEST_EMAIL = process.env.TEST_USER_EMAIL!;
 const TEST_PASSWORD = process.env.TEST_USER_PASSWORD!;
@@ -44,6 +45,8 @@ async function deleteRecipe(page: Page, name: string) {
 
 test.describe('Recepten', () => {
   test('recept aanmaken, dubbele naam geweigerd, recept verwijderen', async ({ page }) => {
+    // Login, two saves and a delete against the live preview: allow more than the default 30 s
+    test.setTimeout(60000);
     // Unique per run; the recipe is removed again at the end
     const name = `E2E test ${Date.now()}`;
     const dialogs: string[] = [];

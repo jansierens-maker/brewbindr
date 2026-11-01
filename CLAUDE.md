@@ -7,7 +7,7 @@
 - **Preview build:** `npm run preview`
 
 ## Tech Stack
-- **Frontend:** React 19, Vite 6, Tailwind CSS 4
+- **Frontend:** React 19, Vite 8, Tailwind CSS 4
 - **Language:** TypeScript (strict mode)
 - **Backend/DB:** Supabase (Auth, DB, Realtime)
 - **AI:** Google Gemini SDK (`@google/genai`)
@@ -23,7 +23,7 @@
 - Every schema change is a new migration in `supabase/migrations/` named `<YYYYMMDDHHMMSS>_<description>.sql` (`npx supabase migration new <description>`). Never change an existing migration file.
 - Migrations must be idempotent (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP ... IF EXISTS`) and backward compatible with the app version currently in production: the migration is applied on merge, while Vercel deploys the app at the same time.
 - Add or update a pgTAP test in `supabase/tests/database/` for new rules (constraints, RLS, triggers, functions).
-- Also append the same SQL to `schema_update.sql` and to `SQL_SCHEMA` in `App.tsx` (the full setup script for new databases), so both stay identical.
+- Also append the same SQL to `schema_update.sql`: the full, idempotent setup script for new databases. The app loads this file on demand in the Connection Details dialog; there is no second copy.
 - Do not apply migrations to production by hand: the `Database` workflow tests them on a fresh database in the PR and applies them on merge to `main`.
 - Run the unit tests with `npm test` before opening a PR.
 
@@ -40,5 +40,6 @@
   - AI Input: Wrap user-provided data in XML-style tags (e.g., `<PROMPT>`, `<RECIPE>`) to prevent prompt injection.
   - Error Logging: Log only `error.message` in API handlers; never log the full error object to prevent stack trace leaks.
   - Input Hardening: Enforce `maxLength` attributes on all user inputs to prevent oversized payloads.
+- **Performance:** Screens are loaded on demand with `React.lazy` (see the imports at the top of `App.tsx`) and rendered inside `<Suspense>`. Add new screens the same way; keep large, rarely used data (like the setup SQL) out of the main bundle with a dynamic `import()`.
 - **State Management:** Use React hooks (`useState`, `useMemo`, `useCallback`). Memoize expensive calculations or objects (like `GeminiService` instances).
 - **Internationalization:** Use `services/i18n.ts` for all user-facing strings (supports 'en', 'nl', 'fr').
