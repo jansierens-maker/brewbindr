@@ -1,5 +1,14 @@
 
 import { Recipe, LibraryIngredient } from "../types";
+import { normalizeFermentableType } from './calculations';
+
+const FERMENTABLE_TYPE_XML: Record<string, string> = {
+  grain: 'Grain', adjunct: 'Adjunct', sugar: 'Sugar', extract: 'Extract', dry_extract: 'Dry Extract',
+};
+// Whirlpool has no BeerXML equivalent; "Aroma" (after the boil) is the closest
+const HOP_USE_XML: Record<string, string> = {
+  boil: 'Boil', dry_hop: 'Dry Hop', mash: 'Mash', first_wort: 'First Wort', whirlpool: 'Aroma',
+};
 
 const sanitize = (str: string) => str.replace(/[&<>"']/g, (m) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'
@@ -33,7 +42,9 @@ export const exportToBeerXml = (recipe: Recipe): string => {
   recipe.ingredients.fermentables.forEach(f => {
     xmlParts.push('      <FERMENTABLE>');
     xmlParts.push(`        <NAME>${sanitize(f.name)}</NAME>`);
-    xmlParts.push(`        <AMOUNT>${f.amount.value}</AMOUNT>`);
+    xmlParts.push(`        <TYPE>${FERMENTABLE_TYPE_XML[normalizeFermentableType(f.type)]}</TYPE>`);
+    xmlParts.push(`        <AMOUNT>${f.amount.unit === 'pounds' ? f.amount.value * 0.453592 : f.amount.value}</AMOUNT>`);
+    if (f.yield?.potential?.value) xmlParts.push(`        <POTENTIAL>${f.yield.potential.value}</POTENTIAL>`);
     xmlParts.push(`        <COLOR>${f.color?.value || 0}</COLOR>`);
     xmlParts.push('      </FERMENTABLE>');
   });
@@ -44,8 +55,9 @@ export const exportToBeerXml = (recipe: Recipe): string => {
     xmlParts.push('      <HOP>');
     xmlParts.push(`        <NAME>${sanitize(h.name)}</NAME>`);
     xmlParts.push(`        <ALPHA>${h.alpha_acid?.value || 0}</ALPHA>`);
-    xmlParts.push(`        <AMOUNT>${h.amount.value / 1000}</AMOUNT>`);
-    xmlParts.push(`        <USE>${sanitize(h.use)}</USE>`);
+    xmlParts.push(`        <AMOUNT>${(h.amount.unit === 'ounces' ? h.amount.value * 28.3495 : h.amount.value) / 1000}</AMOUNT>`);
+    xmlParts.push(`        <USE>${HOP_USE_XML[h.use] || 'Boil'}</USE>`);
+    xmlParts.push(`        <FORM>${h.form === 'leaf' ? 'Leaf' : h.form === 'plug' ? 'Plug' : 'Pellet'}</FORM>`);
     xmlParts.push(`        <TIME>${h.time.value}</TIME>`);
     xmlParts.push('      </HOP>');
   });

@@ -194,6 +194,8 @@ export interface Hop {
   alpha_acid?: { value: number };
   use: 'boil' | 'dry_hop' | 'mash' | 'first_wort' | 'whirlpool';
   time: { unit: 'minutes' | 'days'; value: number };
+  form?: 'pellet' | 'leaf' | 'plug'; // pellet when not given
+  temperature?: number; // Celsius, whirlpool only (default 80)
   libraryId?: string;
 }
 

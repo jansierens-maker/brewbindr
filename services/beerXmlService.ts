@@ -1,5 +1,18 @@
-import { normalizeRecipe } from './calculations';
+import { normalizeRecipe, normalizeFermentableType } from './calculations';
 import { Recipe, Fermentable, Hop, Culture, MashProfile, MashStep, LibraryIngredient } from "../types";
+
+// BeerXML USE: Boil, Dry Hop, Mash, First Wort, Aroma (aroma = after the boil, i.e. whirlpool)
+const hopUse = (use: string): Hop['use'] => {
+  const u = use.toLowerCase().trim().replace(/\s+/g, '_');
+  if (u === 'aroma') return 'whirlpool';
+  return (['boil', 'dry_hop', 'mash', 'first_wort', 'whirlpool'] as const).find(x => x === u) || 'boil';
+};
+
+// BeerXML FORM: Pellet, Plug, Leaf
+const hopForm = (form: string): Pick<Hop, 'form'> => {
+  const f = form.toLowerCase().trim();
+  return f === 'pellet' || f === 'plug' || f === 'leaf' ? { form: f } : {};
+};
 
 export interface BeerXmlImportResult {
   recipes: Recipe[];
@@ -205,7 +218,7 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
       const f = fNodes[j];
       recipeFermentables.push({
         name: getVal(f, "NAME"),
-        type: getVal(f, "TYPE").toLowerCase(),
+        type: normalizeFermentableType(getVal(f, "TYPE")),
         amount: { unit: "kilograms", value: getNum(f, "AMOUNT") },
         yield: { potential: { value: getNum(f, "POTENTIAL") || 1.037 } },
         color: { value: getNum(f, "COLOR") }
@@ -221,8 +234,9 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
         name: getVal(h, "NAME"),
         amount: { unit: "grams", value: getNum(h, "AMOUNT") * 1000 },
         alpha_acid: { value: getNum(h, "ALPHA") },
-        use: (getVal(h, "USE").toLowerCase().replace(" ", "_") as any) || "boil",
-        time: { unit: "minutes", value: getNum(h, "TIME") }
+        use: hopUse(getVal(h, "USE")),
+        time: { unit: "minutes", value: getNum(h, "TIME") },
+        ...hopForm(getVal(h, "FORM")),
       });
     }
 

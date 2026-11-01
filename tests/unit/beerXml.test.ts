@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { parseBeerXml } from '../../services/beerXmlService';
+import { exportToBeerXml } from '../../services/beerXmlExportService';
 
 // BeerXML stores kg, kg (hops) and litres; typical exports carry conversion noise.
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -17,9 +18,12 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
     <IBU>34.6</IBU>
     <FERMENTABLES>
       <FERMENTABLE><NAME>Pale Malt (2 Row) UK</NAME><TYPE>Grain</TYPE><AMOUNT>4.082328</AMOUNT><YIELD>78</YIELD><COLOR>3</COLOR></FERMENTABLE>
+      <FERMENTABLE><NAME>Light DME</NAME><TYPE>Dry Extract</TYPE><AMOUNT>0.5</AMOUNT><COLOR>4</COLOR></FERMENTABLE>
     </FERMENTABLES>
     <HOPS>
       <HOP><NAME>Goldings, East Kent</NAME><ALPHA>5</ALPHA><AMOUNT>0.063786</AMOUNT><USE>Boil</USE><TIME>60</TIME></HOP>
+      <HOP><NAME>Fuggle</NAME><ALPHA>4.5</ALPHA><AMOUNT>0.02</AMOUNT><USE>Aroma</USE><TIME>15</TIME><FORM>Leaf</FORM></HOP>
+      <HOP><NAME>Northern Brewer</NAME><ALPHA>8</ALPHA><AMOUNT>0.01</AMOUNT><USE>First Wort</USE><TIME>60</TIME><FORM>Pellet</FORM></HOP>
     </HOPS>
     <YEASTS>
       <YEAST><NAME>London Ale</NAME><TYPE>Ale</TYPE><FORM>Liquid</FORM><ATTENUATION>73</ATTENUATION></YEAST>
@@ -47,7 +51,27 @@ describe('parseBeerXml', () => {
     expect(recipe.specifications?.ibu?.value).toBe(35);
   });
 
+  it('reads fermentable types, hop use and hop form', () => {
+    expect(recipe.ingredients.fermentables.map(f => f.type)).toEqual(['grain', 'dry_extract']);
+    expect(recipe.ingredients.hops.map(h => [h.use, h.form])).toEqual([
+      ['boil', undefined], ['whirlpool', 'leaf'], ['first_wort', 'pellet'],
+    ]);
+  });
+
   it('returns an empty result for XML without recipes', () => {
     expect(parseBeerXml('<RECIPES></RECIPES>').recipes).toHaveLength(0);
+  });
+});
+
+describe('exportToBeerXml', () => {
+  it('keeps types, hop use and form, and converts imperial amounts to kg', () => {
+    const original = parseBeerXml(xml).recipes[0];
+    original.ingredients.fermentables[1] = { ...original.ingredients.fermentables[1], amount: { unit: 'pounds', value: 1 } };
+    const again = parseBeerXml(exportToBeerXml(original)).recipes[0];
+    expect(again.ingredients.fermentables.map(f => f.type)).toEqual(['grain', 'dry_extract']);
+    expect(again.ingredients.fermentables[1].amount).toEqual({ unit: 'kilograms', value: 0.454 });
+    expect(again.ingredients.hops.map(h => [h.use, h.form])).toEqual([
+      ['boil', 'pellet'], ['whirlpool', 'leaf'], ['first_wort', 'pellet'],
+    ]);
   });
 });

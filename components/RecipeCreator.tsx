@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc } from '../services/calculations';
+import { calculateRecipeStats, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 
@@ -147,11 +147,12 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
       if (type === 'fermentable') {
         const list = [...prev.ingredients.fermentables];
         const potential = 1 + (item.yield || 75) / 100 * 0.046; 
-        list[idx] = { ...list[idx], name: item.name, libraryId: item.id, color: { value: item.color || 2 }, yield: { potential: { value: potential } } };
+        list[idx] = { ...list[idx], name: item.name, libraryId: item.id, type: guessFermentableType(item.name), color: { value: item.color || 2 }, yield: { potential: { value: potential } } };
         newIngredients.fermentables = list;
       } else if (type === 'hop') {
         const list = [...prev.ingredients.hops];
-        list[idx] = { ...list[idx], name: item.name, libraryId: item.id, alpha_acid: { value: item.alpha || 5 } };
+        const form = item.form === 'leaf' || item.form === 'plug' || item.form === 'pellet' ? item.form : list[idx].form;
+        list[idx] = { ...list[idx], name: item.name, libraryId: item.id, alpha_acid: { value: item.alpha || 5 }, form };
         newIngredients.hops = list;
       } else if (type === 'culture') {
         const list = [...prev.ingredients.cultures];
@@ -178,6 +179,13 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
         const list = [...prev.ingredients.hops];
         if (field === 'amount') list[idx] = { ...list[idx], amount: { ...list[idx].amount, value: val } };
         else if (field === 'time') list[idx] = { ...list[idx], time: { ...list[idx].time, value: val } };
+        else if (field === 'use') {
+          // Dry hops are counted in days, everything else in minutes
+          const wasDry = list[idx].use === 'dry_hop';
+          const isDry = val === 'dry_hop';
+          const time = wasDry === isDry ? list[idx].time : { unit: isDry ? 'days' as const : 'minutes' as const, value: isDry ? 3 : val === 'whirlpool' ? 20 : 60 };
+          list[idx] = { ...list[idx], use: val, time };
+        }
         else list[idx] = { ...list[idx], [field]: val };
         newIngredients.hops = list;
       } else if (type === 'culture') {
@@ -397,12 +405,18 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="flex justify-between items-center mb-4"><h4 className="font-bold uppercase text-stone-900"><i className="fas fa-seedling text-amber-700"></i> {t('grains')}</h4><button onClick={() => addIngredient('fermentable')} className="text-amber-600 font-bold text-xs uppercase">+ {t('add_ingredient')}</button></div>
           <div className="space-y-3">
             {recipe.ingredients.fermentables.map((f, i) => (
-              <div key={i} className="flex gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
-                <div className="flex-1">
+              <div key={i} className="flex flex-wrap gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
+                <div className="flex-1 min-w-[12rem]">
                   <label htmlFor={`ferm-select-${i}`} className="sr-only">{t('select_fermentable')}</label>
                   <select id={`ferm-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={f.libraryId || ""} onChange={e => handleLibrarySelect('fermentable', i, e.target.value)}>
                     <option value="">{f.name || '-- Select Malt --'}</option>
                     {libraryByType.fermentable.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor={`ferm-type-${i}`} className="sr-only">{t('fermentable_type')}</label>
+                  <select id={`ferm-type-${i}`} name={`ferm-type-${i}`} title={t('fermentable_type')} className="p-2 bg-white border border-stone-200 rounded-xl text-[10px] font-black uppercase text-stone-500" value={normalizeFermentableType(f.type)} onChange={e => updateField('fermentable', i, 'type', e.target.value)}>
+                    {FERMENTABLE_TYPES.map(ft => <option key={ft} value={ft}>{t(`ferm_type_${ft}`)}</option>)}
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
@@ -440,12 +454,22 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="flex justify-between items-center mb-4"><h4 className="font-bold uppercase text-stone-900"><i className="fas fa-leaf text-green-700"></i> {t('hops')}</h4><button onClick={() => addIngredient('hop')} className="text-amber-600 font-bold text-xs uppercase">+ {t('add_ingredient')}</button></div>
           <div className="space-y-3">
             {recipe.ingredients.hops.map((h, i) => (
-              <div key={i} className="flex gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
-                <div className="flex-1">
+              <div key={i} className="flex flex-wrap gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
+                <div className="flex-1 min-w-[12rem]">
                   <label htmlFor={`hop-select-${i}`} className="sr-only">{t('select_hop')}</label>
                   <select id={`hop-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={h.libraryId || ""} onChange={e => handleLibrarySelect('hop', i, e.target.value)}>
                     <option value="">{h.name || '-- Select Hop --'}</option>
                     {libraryByType.hop.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor={`hop-use-${i}`} className="sr-only">{t('hop_use')}</label>
+                  <select id={`hop-use-${i}`} name={`hop-use-${i}`} title={t('hop_use')} className="p-2 bg-white border border-stone-200 rounded-xl text-[10px] font-black uppercase text-stone-500" value={(h.use as string) === 'aroma' ? 'whirlpool' : h.use} onChange={e => updateField('hop', i, 'use', e.target.value)}>
+                    {(['boil', 'first_wort', 'mash', 'whirlpool', 'dry_hop'] as const).map(u => <option key={u} value={u}>{t(`hop_use_${u}`)}</option>)}
+                  </select>
+                  <label htmlFor={`hop-form-${i}`} className="sr-only">{t('hop_form')}</label>
+                  <select id={`hop-form-${i}`} name={`hop-form-${i}`} title={t('hop_form')} className="p-2 bg-white border border-stone-200 rounded-xl text-[10px] font-black uppercase text-stone-500" value={h.form || 'pellet'} onChange={e => updateField('hop', i, 'form', e.target.value)}>
+                    {(['pellet', 'leaf', 'plug'] as const).map(f => <option key={f} value={f}>{t(`hop_form_${f}`)}</option>)}
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
@@ -475,9 +499,30 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                 )}
                 <div className="flex items-center gap-2">
                   <label htmlFor={`hop-time-${i}`} className="sr-only">{t('step_time')}</label>
-                  <input id={`hop-time-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
-                  <span className="text-[10px] font-black text-stone-400 uppercase">min</span>
+                  <input id={`hop-time-${i}`} name={`hop-time-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" min="0" max="1000" value={h.time?.value ?? 0} onChange={e => updateField('hop', i, 'time', parseFloat(e.target.value) || 0)} />
+                  <span className="text-[10px] font-black text-stone-400 uppercase">{h.use === 'dry_hop' ? t('days_short') : 'min'}</span>
                 </div>
+                {(h.use === 'whirlpool' || (h.use as string) === 'aroma') && (
+                  <div className="flex items-center gap-2">
+                    <label htmlFor={`hop-temp-${i}`} className="sr-only">{t('whirlpool_temp')}</label>
+                    <input
+                      id={`hop-temp-${i}`}
+                      name={`hop-temp-${i}`}
+                      title={t('whirlpool_temp')}
+                      className="w-16 p-2 bg-white border rounded-xl text-right font-black"
+                      type="number"
+                      min={preferences.units === 'imperial' ? 32 : 0}
+                      max={preferences.units === 'imperial' ? 212 : 100}
+                      value={preferences.units === 'imperial' ? Math.round((h.temperature ?? DEFAULT_WHIRLPOOL_TEMP_C) * 9/5 + 32) : (h.temperature ?? DEFAULT_WHIRLPOOL_TEMP_C)}
+                      onChange={e => {
+                        const val = parseFloat(e.target.value);
+                        if (isNaN(val)) return;
+                        updateField('hop', i, 'temperature', preferences.units === 'imperial' ? Math.round((val - 32) * 5/9 * 10) / 10 : val);
+                      }}
+                    />
+                    <span className="text-[10px] font-black text-stone-400 uppercase">°{preferences.units === 'imperial' ? 'F' : 'C'}</span>
+                  </div>
+                )}
                 <button onClick={() => removeIngredient('hop', i)} aria-label={t('remove_hop')}><i className="fas fa-trash-alt text-stone-300" aria-hidden="true"></i></button>
               </div>
             ))}

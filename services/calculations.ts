@@ -187,12 +187,15 @@ export const formatStockAmount = (amount: number | undefined, unit: string | und
   return formatBrewNumber(amount, u === 'kilograms' ? 'kg' : u === 'grams' ? 'g' : 'default', lang);
 };
 
+/** ABV added per g/L of priming sugar (sucrose): about 0.51 g ethanol per g sugar, 0.789 g/ml. */
+export const PRIMING_ABV_PER_G_PER_L = 0.065;
+
 export const calculateABV = (og: number | undefined, fg: number | undefined, isBottled: boolean, sugarG: number = 0, volumeL: number = 1): number => {
   if (!og || !fg || og <= fg) return 0;
   let abv = (og - fg) * 131.25;
   if (isBottled && sugarG > 0 && volumeL > 0) {
     const sugarPerLiter = sugarG / volumeL;
-    abv += (sugarPerLiter * 0.05);
+    abv += (sugarPerLiter * PRIMING_ABV_PER_G_PER_L);
   }
   return abv;
 };
@@ -207,16 +210,72 @@ export const calculatePrimingSugar = (targetCO2: number, liters: number, tempC: 
   return Math.round(sugarG);
 };
 
+/** Fermentable types: grain and adjunct are mashed; sugar and extract are not. */
+export const FERMENTABLE_TYPES = ['grain', 'adjunct', 'sugar', 'extract', 'dry_extract'] as const;
+
+/** Normalizes a fermentable type, including BeerXML spellings ("Dry Extract"). */
+export const normalizeFermentableType = (type: string | undefined): string => {
+  const t = (type || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
+  if (t === 'liquid_extract') return 'extract';
+  return (FERMENTABLE_TYPES as readonly string[]).includes(t) ? t : 'grain';
+};
+
+/** Guesses the type from a name, for library items that have no type. */
+export const guessFermentableType = (name: string | undefined): string => {
+  const n = (name || '').toLowerCase();
+  if (/\b(dme|lme)\b|extra(c)?t/.test(n)) return /\bdme\b|dry|droog|sec/.test(n) ? 'dry_extract' : 'extract';
+  if (/suiker|sugar|sucre|kandij|candi|dextrose|glucose|honing|honey|miel|lactose|maple|ahorn|siroop|syrup|sirop|melasse|molasses|treacle/.test(n)) return 'sugar';
+  return 'grain';
+};
+
+/** Brewhouse efficiency only applies to what is mashed; sugars and extracts give all their extract. */
+const isMashed = (type: string | undefined) => {
+  const t = normalizeFermentableType(type);
+  return t === 'grain' || t === 'adjunct';
+};
+
+/** How yeast treats a fermentable: sugars ferment completely, lactose not at all, the rest as the yeast allows. */
+const fermentability = (f: { type: string; name: string }): 'full' | 'none' | 'yeast' =>
+  /lactose|melksuiker|lactosa/i.test(f.name || '') ? 'none'
+    : normalizeFermentableType(f.type) === 'sugar' ? 'full' : 'yeast';
+
+/** Hop utilization relative to 100 °C, from the isomerization rate (Malowicki, as used in mIBU). */
+export const hopTemperatureFactor = (tempC: number): number => {
+  const t = Math.min(100, tempC);
+  return Math.exp(9773 / 373.15 - 9773 / (t + 273.15));
+};
+
+/** Default whirlpool temperature when a recipe does not give one. */
+export const DEFAULT_WHIRLPOOL_TEMP_C = 80;
+
+/** Expected attenuation shifts with mash temperature: about 1 percentage point per °C away from 66 °C. */
+const MASH_REFERENCE_TEMP_C = 66;
+const ATTENUATION_PER_DEGREE = 1;
+const MAX_MASH_ADJUSTMENT = 5;
+
+/** Temperature of the main (longest) saccharification rest, if the recipe has a mash. */
+export const mainMashTemperature = (recipe: Recipe): number | undefined => {
+  const steps = (recipe.mash?.steps || [])
+    .map(st => ({ temp: st.temperature ?? st.step_temp, time: st.duration ?? st.step_time ?? 0 }))
+    .filter(st => typeof st.temp === 'number' && st.temp >= 60 && st.temp <= 80);
+  if (steps.length === 0) return undefined;
+  return steps.reduce((best, st) => (st.time > best.time ? st : best)).temp;
+};
+
 export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<string, number>) => {
   const batchUnit = normalizeUnit(recipe.batch_size?.unit);
   const batchSizeL = batchUnit === 'liters' ? (recipe.batch_size?.value || 0) : (recipe.batch_size?.value || 0) * 3.78541;
   const efficiency = (recipe.efficiency?.brewhouse || 75) / 100;
+  const boilTime = recipe.boil_time?.value || 60;
 
   const fermentables = recipe.ingredients?.fermentables ?? [];
   const hops = recipe.ingredients?.hops ?? [];
   const cultures = recipe.ingredients?.cultures ?? [];
 
-  let totalPoints = 0;
+  // Gravity points, split by how far yeast ferments them
+  let maltPoints = 0;          // malt and extract: as far as the yeast attenuates
+  let sugarPoints = 0;         // sugar: completely
+  let unfermentablePoints = 0; // lactose: not at all
   fermentables.forEach(f => {
     if (!f.amount) return;
     const unit = normalizeUnit(f.amount.unit);
@@ -228,15 +287,24 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
     const potential = f.yield?.potential?.value || 1.037;
     const ppg = (potential - 1) * 1000;
     const pkl = ppg * 8.3454;
-    totalPoints += (weightKg * pkl * efficiency) / (batchSizeL || 1);
+    const points = (weightKg * pkl * (isMashed(f.type) ? efficiency : 1)) / (batchSizeL || 1);
+    const kind = fermentability(f);
+    if (kind === 'full') sugarPoints += points;
+    else if (kind === 'none') unfermentablePoints += points;
+    else maltPoints += points;
   });
 
-  const og = 1 + (totalPoints / 1000);
-  const avgAttenuation = cultures.length > 0 
+  const og = 1 + ((maltPoints + sugarPoints + unfermentablePoints) / 1000);
+  const yeastAttenuation = cultures.length > 0
     ? cultures.reduce((acc, c) => acc + (c.attenuation || 75), 0) / cultures.length
     : 75;
-    
-  const fg = 1 + ((og - 1) * (1 - (avgAttenuation / 100)));
+  // A lower mash temperature gives a more fermentable wort, a higher one a fuller beer
+  const mashTemp = recipe.type === 'extract' ? undefined : mainMashTemperature(recipe);
+  const mashAdjustment = mashTemp === undefined ? 0
+    : Math.max(-MAX_MASH_ADJUSTMENT, Math.min(MAX_MASH_ADJUSTMENT, (MASH_REFERENCE_TEMP_C - mashTemp) * ATTENUATION_PER_DEGREE));
+  const attenuation = Math.max(0, Math.min(100, yeastAttenuation + mashAdjustment)) / 100;
+
+  const fg = 1 + ((maltPoints * (1 - attenuation) + unfermentablePoints) / 1000);
   const abv = calculateABV(og, fg, false);
 
   let mcu = 0;
@@ -254,24 +322,31 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
   });
   const colorSRM = mcu > 0 ? 1.4922 * Math.pow(mcu, 0.6859) : 0;
 
+  // Tinseth, with the usual corrections for hop form and use
+  const bignessFactor = 1.65 * Math.pow(0.000125, (og - 1));
+  const boilUtilization = (minutes: number) => bignessFactor * (1 - Math.exp(-0.04 * minutes)) / 4.15;
   let ibu = 0;
   hops.forEach(h => {
-    if (!h.amount || !h.time) return;
-    if (h.use === 'boil' || h.use === 'first_wort' || h.use === 'whirlpool') {
-      const alpha = alphaOverrides?.[h.name] !== undefined ? alphaOverrides[h.name] : (h.alpha_acid?.value || 5);
-      const unit = normalizeUnit(h.amount.unit);
-      let weightG = h.amount.value;
-      if (unit === 'ounces') weightG = h.amount.value * 28.3495;
-      else if (unit === 'kilograms') weightG = h.amount.value * 1000;
-      else if (unit === 'pounds') weightG = h.amount.value * 453.592;
+    if (!h.amount) return;
+    const use = (h.use as string) === 'aroma' ? 'whirlpool' : h.use;
+    const time = h.time?.value || 0;
+    let utilization = 0;
+    if (use === 'boil') utilization = boilUtilization(time);
+    else if (use === 'first_wort') utilization = boilUtilization(time || boilTime) * 1.1; // FWH: about 10 % more
+    else if (use === 'mash') utilization = boilUtilization(boilTime) * 0.2;               // mash hops: about 20 % of a full boil
+    else if (use === 'whirlpool') utilization = boilUtilization(time * hopTemperatureFactor(h.temperature ?? DEFAULT_WHIRLPOOL_TEMP_C));
+    if (utilization <= 0) return;
 
-      const time = h.time.value;
-      const bignessFactor = 1.65 * Math.pow(0.000125, (og - 1));
-      const timeFactor = (1 - Math.exp(-0.04 * time)) / 4.15;
-      let utilization = bignessFactor * timeFactor;
-      if (h.use === 'whirlpool') utilization = bignessFactor * ((1 - Math.exp(-0.04 * 10)) / 4.15) * 0.5;
-      ibu += (alpha * weightG * utilization * 10) / (batchSizeL || 1);
-    }
+    if (h.form === 'leaf' || h.form === 'plug') utilization *= 0.9; // whole hops: about 10 % less than pellets
+
+    const alpha = alphaOverrides?.[h.name] !== undefined ? alphaOverrides[h.name] : (h.alpha_acid?.value || 5);
+    const unit = normalizeUnit(h.amount.unit);
+    let weightG = h.amount.value;
+    if (unit === 'ounces') weightG = h.amount.value * 28.3495;
+    else if (unit === 'kilograms') weightG = h.amount.value * 1000;
+    else if (unit === 'pounds') weightG = h.amount.value * 453.592;
+
+    ibu += (alpha * weightG * utilization * 10) / (batchSizeL || 1);
   });
 
   return {
