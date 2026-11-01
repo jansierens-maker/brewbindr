@@ -29,7 +29,7 @@ describe('calculateRecipeStats', () => {
     const s = calculateRecipeStats(reference());
     expect(s.og).toBeCloseTo(1.0579, 4);
     expect(s.fg).toBeCloseTo(1.0145, 4);
-    expect(s.abv).toBeCloseTo(5.70, 2);
+    expect(s.abv).toBeCloseTo(5.89, 2);
     expect(s.color).toBeCloseTo(5.25, 2);
     expect(s.ibu).toBe(16);
   });
@@ -88,7 +88,7 @@ describe('calculateRecipeStats: sugars and mash', () => {
   it('lets sugar ferment completely', () => {
     const s = calculateRecipeStats(withSugar());
     expect(s.fg).toBeCloseTo(1.0145, 4); // same FG as without the sugar
-    expect(s.abv).toBeCloseTo(8.22, 2);
+    expect(s.abv).toBeCloseTo(8.72, 2);
   });
 
   it('treats lactose as unfermentable', () => {
@@ -159,10 +159,14 @@ describe('fermentable types', () => {
 });
 
 describe('calculateABV', () => {
-  it('uses (OG - FG) x 131.25', () => expect(calculateABV(1.050, 1.010, false)).toBeCloseTo(5.25, 5));
+  it('uses the precise (alternate) formula', () => {
+    expect(calculateABV(1.050, 1.010, false)).toBeCloseTo(5.34, 2);
+    expect(calculateABV(1.080, 1.012, false)).toBeCloseTo(9.49, 2);
+    expect(calculateABV(1.100, 1.020, false)).toBeCloseTo(11.58, 2);
+  });
   it('returns 0 when FG is not below OG', () => expect(calculateABV(1.010, 1.010, false)).toBe(0));
   it('adds priming sugar after bottling (0.065 % per g/L)', () =>
-    expect(calculateABV(1.050, 1.010, true, 120, 20)).toBeCloseTo(5.25 + 6 * 0.065, 5));
+    expect(calculateABV(1.050, 1.010, true, 120, 20)).toBeCloseTo(5.3394 + 6 * 0.065, 3));
 });
 
 describe('calculatePrimingSugar', () => {

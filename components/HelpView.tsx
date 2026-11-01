@@ -99,7 +99,7 @@ const HelpView: React.FC = () => {
               <h4 className="font-bold text-stone-900">{t('calc_abv_title')}</h4>
               <p className="text-sm text-stone-600">
                 {t('calc_abv_desc')}
-                <code className="block mt-2 p-2 bg-stone-50 rounded text-amber-700 font-mono text-xs">ABV = (OG - FG) * 131.25</code>
+                <code className="block mt-2 p-2 bg-stone-50 rounded text-amber-700 font-mono text-xs">ABV = 76.08 × (OG − FG) / (1.775 − OG) × FG / 0.794</code>
                 <span className="text-[10px] block mt-1 italic text-stone-400">{t('calc_abv_bottling')}</span>
               </p>
             </div>

@@ -192,7 +192,9 @@ export const PRIMING_ABV_PER_G_PER_L = 0.065;
 
 export const calculateABV = (og: number | undefined, fg: number | undefined, isBottled: boolean, sugarG: number = 0, volumeL: number = 1): number => {
   if (!og || !fg || og <= fg) return 0;
-  let abv = (og - fg) * 131.25;
+  // "Alternate" formula (Hall): accurate over the whole range. The simple
+  // (OG - FG) x 131.25 underestimates more and more as beers get stronger.
+  let abv = (76.08 * (og - fg) / (1.775 - og)) * (fg / 0.794);
   if (isBottled && sugarG > 0 && volumeL > 0) {
     const sugarPerLiter = sugarG / volumeL;
     abv += (sugarPerLiter * PRIMING_ABV_PER_G_PER_L);
