@@ -4,6 +4,7 @@ import { GeminiService } from '../services/geminiService';
 import { calculateRecipeStats, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
+import { canEditRecipe, canManageRecipes } from '../services/permissions';
 
 interface RecipeCreatorProps {
   onSave: (recipe: Recipe) => void;
@@ -15,9 +16,11 @@ interface RecipeCreatorProps {
 
 const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, initialRecipe, library }) => {
   const { t, lang } = useTranslation();
-  const { preferences, user, breweryRole } = useUser();
+  const { preferences, user, profile, breweryRole, isAdmin } = useUser();
 
-  const canEdit = breweryRole === 'admin' || breweryRole === 'brewmaster' || !breweryRole;
+  // Same rules as the database: brewery admins/brewmasters manage all brewery recipes
+  const editContext = { userId: user?.id, breweryId: profile?.brewery_id, breweryRole, isAdmin };
+  const canEdit = initialRecipe?.id ? canEditRecipe(initialRecipe, editContext) : canManageRecipes(editContext);
   const [recipe, setRecipe] = useState<Recipe>(initialRecipe || {
     name: '',
     type: 'all_grain',
@@ -641,7 +644,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
 
         <div className="flex flex-col gap-4">
           <div className="flex gap-4">
-            {onDelete && recipe.id && (recipe.user_id === user?.id) && canEdit && (
+            {onDelete && recipe.id && canEdit && (
               <button
                 onClick={() => { if(confirm(t('confirm_delete'))) onDelete(recipe.id!); }}
                 className="flex-none bg-stone-100 text-red-600 px-8 py-5 rounded-3xl font-black shadow-sm hover:bg-red-50 transition-all uppercase tracking-widest text-lg"
@@ -652,7 +655,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             )}
             <button 
               disabled={!canEdit}
-              onClick={() => onSave({...recipe, user_id: user?.id, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
+              onClick={() => onSave({...recipe, user_id: recipe.user_id || user?.id, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
               className="flex-1 bg-stone-900 text-white py-5 rounded-3xl font-black shadow-xl hover:bg-black transition-all uppercase tracking-widest text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('save_recipe')}
