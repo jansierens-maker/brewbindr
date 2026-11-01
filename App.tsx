@@ -21,6 +21,7 @@ import { InfoBanner } from './components/InfoBanner';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, checkRecipeStock, normalizeRecipe } from './services/calculations';
+import { canEditRecipe } from './services/permissions';
 import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
@@ -108,6 +109,10 @@ const App: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const { user, profile, preferences, isAdmin, loading: authLoading, updatePreferences } = useUser();
+  const editContext = useMemo(
+    () => ({ userId: user?.id, breweryId: profile?.brewery_id, breweryRole: profile?.brewery_role, isAdmin }),
+    [user?.id, profile?.brewery_id, profile?.brewery_role, isAdmin],
+  );
   const lang = preferences.language;
   const [view, setView] = useState<View>('recipes');
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -521,7 +526,7 @@ const AppContent: React.FC = () => {
     }
 
     const targetRecipe = normalizeRecipe(selectedRecipe && selectedRecipe.id
-      ? { ...syncedRecipe, id: selectedRecipe.id, user_id: user?.id, brewery_id: profile?.brewery_id }
+      ? { ...syncedRecipe, id: selectedRecipe.id, user_id: selectedRecipe.user_id || user?.id, brewery_id: selectedRecipe.brewery_id || profile?.brewery_id }
       : { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id });
 
     setRecipes(prev => {
@@ -531,7 +536,8 @@ const AppContent: React.FC = () => {
     });
 
     if (user?.id) {
-      const result = await supabaseService.saveRecipe(targetRecipe, user.id, profile?.brewery_id);
+      // Keep the original maker when a brewery admin edits a colleague's recipe
+      const result = await supabaseService.saveRecipe(targetRecipe, targetRecipe.user_id || user.id, targetRecipe.brewery_id || profile?.brewery_id);
       if (result?.error) {
         alert(isUniqueViolation(result.error)
           ? t('recipe_name_taken').replace('{name}', targetRecipe.name)
@@ -1667,7 +1673,7 @@ const AppContent: React.FC = () => {
                             <div className="flex flex-col gap-2 mt-auto">
                               <div className="flex gap-2">
                                 <button onClick={() => { setSelectedRecipe(r); setSelectedBrewLog(null); setView('log'); }} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">{t('brew_btn')}</button>
-                                {libraryView === 'personal' && (!r.user_id || r.user_id === user?.id) && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">{t('edit_btn')}</button>}
+                                {libraryView === 'personal' && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">{canEditRecipe(r, editContext) ? t('edit_btn') : t('view_btn')}</button>}
                               </div>
 
                               {libraryView === 'public' && (
