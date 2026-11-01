@@ -5,6 +5,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { supabaseService } from '../services/supabaseService';
 import { formatStockAmount } from '../services/calculations';
+import { findDuplicateIngredients } from '../services/duplicates';
 
 const TABLE_MAP: Record<string, string> = {
   'fermentable': 'fermentables',
@@ -21,15 +22,48 @@ interface LibraryProps {
   ingredients: LibraryIngredient[];
   libraryView: 'personal' | 'public';
   onUpdate: (ingredients: LibraryIngredient[]) => void;
+  /** Replace the local list after a database change, without saving anything */
+  onReplace?: (ingredients: LibraryIngredient[]) => void;
 }
 
 const IngredientLibrary: React.FC<LibraryProps> = ({ 
   ingredients, 
   libraryView,
-  onUpdate
+  onUpdate,
+  onReplace
 }) => {
   const { t, lang } = useTranslation();
-  const { user, preferences, profile, breweryRole } = useUser();
+  const { user, preferences, profile, breweryRole, isAdmin } = useUser();
+  // After a database write, only refresh local state. onUpdate would save every
+  // changed item again under the current user (and take over other people's items).
+  const replaceLocal = onReplace ?? onUpdate;
+
+  // Asks for confirmation when items already exist in the public library or are pending
+  const confirmNoDuplicates = (items: LibraryIngredient[]) => {
+    const dupes = items.filter(item => findDuplicateIngredients(item, ingredients).length > 0);
+    if (dupes.length === 0) return true;
+    return confirm(t('duplicate_items_confirm').replace('{names}', dupes.map(d => d.name).join(', ')));
+  };
+
+  const handleAdminUnpublish = async (item: LibraryIngredient) => {
+    if (!isAdmin || !confirm(t('confirm_unpublish_item'))) return;
+    const result = await supabaseService.updateItemStatus(item.id, item.type, 'private');
+    if (result?.error) {
+      alert(`${t('admin_action_failed' as any)}: ${result.error.message}`);
+      return;
+    }
+    replaceLocal(ingredients.map(i => i.id === item.id ? { ...i, status: 'private' } : i));
+  };
+
+  const handleAdminDelete = async (item: LibraryIngredient) => {
+    if (!isAdmin || !confirm(t('confirm_admin_delete_item'))) return;
+    const result = await supabaseService.deleteLibraryIngredient(item.id, item.type);
+    if (result?.error) {
+      alert(`${t('admin_action_failed' as any)}: ${result.error.message}`);
+      return;
+    }
+    replaceLocal(ingredients.filter(i => i.id !== item.id));
+  };
 
   const canEdit = breweryRole === 'admin' || breweryRole === 'brewmaster' || !breweryRole;
   const [filter, setFilter] = useState<'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style'>('fermentable');
@@ -48,6 +82,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     if (libraryView === 'personal') {
       // Bulk Submit to Public - Clone items to keep originals private
       const selectedItems = ingredients.filter(i => selectedIds.includes(i.id));
+      if (!confirmNoDuplicates(selectedItems)) return;
       const submittedClones = selectedItems.map(item => ({
         ...item,
         id: crypto.randomUUID(),
@@ -73,7 +108,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     // Refresh parent data
     const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
     if (remoteData) {
-      onUpdate(remoteData.library);
+      replaceLocal(remoteData.library);
     }
     setSelectedIds([]);
   };
@@ -476,6 +511,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     {user && libraryView === 'personal' && ((item.user_id === user.id || !item.user_id) || item.brewery_id === profile?.brewery_id) && item.status === 'private' && canEdit && (
                        <button
                         onClick={async () => {
+                          if (!confirmNoDuplicates([item])) return;
                           const clone = {
                             ...item,
                             id: crypto.randomUUID(),
@@ -486,7 +522,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                           };
                           await supabaseService.saveLibraryIngredient(clone, user.id, profile?.brewery_id);
                           const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
-                          if (remoteData) onUpdate(remoteData.library);
+                          if (remoteData) replaceLocal(remoteData.library);
                           alert(t('item_submitted').replace('{name}', item.name));
                         }}
                         className="w-full bg-[var(--color-accent-light)] text-[var(--color-accent-dark)] py-2.5 rounded-[var(--radius-sm)] text-[10px] font-black uppercase hover:opacity-80 transition-all tracking-widest"
@@ -511,6 +547,25 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                          <i className="fas fa-plus-circle mr-2"></i>
                          {t('add_to_collection')}
                        </button>
+                    )}
+
+                    {libraryView === 'public' && isAdmin && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleAdminUnpublish(item)}
+                          className="flex-1 bg-amber-50 text-amber-700 border border-amber-200 py-2 rounded-[var(--radius-sm)] text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-all"
+                        >
+                          <i className="fas fa-eye-slash mr-2" aria-hidden="true"></i>{t('admin_unpublish' as any)}
+                        </button>
+                        <button
+                          onClick={() => handleAdminDelete(item)}
+                          className="flex-none bg-red-50 text-red-600 border border-red-200 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-red-100 transition-all"
+                          aria-label={t('admin_delete' as any)}
+                          title={t('admin_delete' as any)}
+                        >
+                          <i className="fas fa-trash-alt text-xs" aria-hidden="true"></i>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </>

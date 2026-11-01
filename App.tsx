@@ -21,6 +21,7 @@ import { InfoBanner } from './components/InfoBanner';
 import BrewerySettings from './components/BrewerySettings';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, checkRecipeStock, normalizeRecipe } from './services/calculations';
+import { findDuplicateRecipes, approvedKeys } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
@@ -131,6 +132,9 @@ const AppContent: React.FC = () => {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
+
+  // Names already in the public library, to flag duplicate submissions for admins
+  const publicKeys = useMemo(() => approvedKeys(recipes, library), [recipes, library]);
 
   const deduplicatedLibrary = useMemo(() => {
     // Deduplicate library items for RecipeCreator selection, prioritizing 'private' over 'approved'/'submitted'
@@ -897,6 +901,11 @@ const AppContent: React.FC = () => {
 
   const handleRecipeSubmitToPublic = async (recipe: Recipe) => {
     if (!user?.id || !recipe.id) return;
+
+    if (findDuplicateRecipes(recipe.name, recipes, recipe.id).length > 0 &&
+        !confirm(t('duplicate_recipe_confirm').replace('{name}', recipe.name))) {
+      return;
+    }
 
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'submitted', library);
 
@@ -2219,6 +2228,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                 <IngredientLibrary
                   ingredients={library}
                   libraryView={libraryView}
+                  onReplace={setLibrary}
                   onUpdate={async (newLib) => {
                     // Track and handle deletions for Supabase sync
                     const deleted = library.filter(l => !newLib.find(nl => nl.id === l.id));
@@ -2248,6 +2258,7 @@ GRANT EXECUTE ON FUNCTION public.consume_ai_quota() TO authenticated;
                   onUrlImport={handleImportDemoData}
                   importStatus={importStatus}
                   pendingSubmissions={pendingSubmissions}
+                  publicKeys={publicKeys}
                   onApprove={handleApprove}
                   onReject={handleReject}
                 />
