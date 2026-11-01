@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from './fixtures';
+import { type Page } from '@playwright/test';
 
 const TEST_EMAIL = process.env.TEST_USER_EMAIL!;
 const TEST_PASSWORD = process.env.TEST_USER_PASSWORD!;
