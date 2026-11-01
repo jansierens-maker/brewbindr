@@ -66,10 +66,13 @@ test.describe('Auth / Login', () => {
     // Wait until profile and data have loaded: the page re-renders meanwhile,
     // which made the sign-out button move while it was being clicked.
     await page.waitForLoadState('networkidle');
-    await page.locator('aside button:has(i.fa-gear)').click();
-    await page.waitForLoadState('networkidle');
+    // Right after login the app may still switch back to the start screen once,
+    // so open Settings again until the sign-out button is there.
     const signOut = page.locator('button:has(i.fa-sign-out-alt)');
-    await expect(signOut).toBeVisible();
+    await expect(async () => {
+      await page.locator('aside button:has(i.fa-gear)').click();
+      await expect(signOut).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 20000 });
     await signOut.click();
 
     // Back to guest mode: the "Sign in" button is shown again
