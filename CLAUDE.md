@@ -19,6 +19,14 @@
 - Once changes are complete, ALWAYS use the `/pr` command or `gh pr create` to open a Pull Request.
 - Do NOT attempt to merge your own Pull Request; leave it open for human review.
 
+## Database Changes
+- Every schema change is a new migration in `supabase/migrations/` named `<YYYYMMDDHHMMSS>_<description>.sql` (`npx supabase migration new <description>`). Never change an existing migration file.
+- Migrations must be idempotent (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP ... IF EXISTS`) and backward compatible with the app version currently in production: the migration is applied on merge, while Vercel deploys the app at the same time.
+- Add or update a pgTAP test in `supabase/tests/database/` for new rules (constraints, RLS, triggers, functions).
+- Also append the same SQL to `schema_update.sql` and to `SQL_SCHEMA` in `App.tsx` (the full setup script for new databases), so both stay identical.
+- Do not apply migrations to production by hand: the `Database` workflow tests them on a fresh database in the PR and applies them on merge to `main`.
+- Run the unit tests with `npm test` before opening a PR.
+
 ## Coding Style & Standards
 - **Naming Conventions:**
   - Pull Requests: Use `🎨 Palette: [UX improvement]` for UI/UX changes and `⚡ Bolt: [performance improvement]` for performance optimizations.
