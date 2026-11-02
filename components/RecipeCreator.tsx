@@ -646,7 +646,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="flex gap-4">
             {onDelete && recipe.id && canEdit && (
               <button
-                onClick={() => { if(confirm(t('confirm_delete'))) onDelete(recipe.id!); }}
+                onClick={() => onDelete(recipe.id!)}
                 className="flex-none bg-stone-100 text-red-600 px-8 py-5 rounded-3xl font-black shadow-sm hover:bg-red-50 transition-all uppercase tracking-widest text-lg"
                 aria-label={t('delete_recipe')}
               >
