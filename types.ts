@@ -14,6 +14,7 @@ export interface UserPreferences {
   language: Language;
   enableStockManagement: boolean;
   bottled_period: 'week' | 'month' | 'year' | 'all';
+  gravityUnit?: 'sg' | 'plato' | 'both'; // how densities are shown and entered (default SG)
 }
 
 export type BreweryRole = 'admin' | 'brewmaster' | 'brewer' | 'taster';

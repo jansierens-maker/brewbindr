@@ -2,7 +2,7 @@
 import React from 'react';
 import { Recipe, BrewLogEntry, TastingNote } from '../types';
 import { useTranslation } from '../App';
-import { calculateABV, formatBrewNumber } from '../services/calculations';
+import { calculateABV, formatBrewNumber, formatGravity } from '../services/calculations';
 import { useUser } from '../services/userContext';
 
 interface PrintViewProps {
@@ -39,11 +39,11 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
       <div className="grid grid-cols-4 gap-4 mb-10">
         <div className="border-2 border-stone-900 p-3 rounded-lg">
           <p className="text-[9px] font-black uppercase text-stone-400 mb-1">{t('og_label')}</p>
-          <p className="text-xl font-black">{formatBrewNumber(log?.measurements.actual_og || recipe.specifications?.og?.value, 'og', lang, preferences)}</p>
+          <p className="text-xl font-black">{formatGravity(log?.measurements.actual_og || recipe.specifications?.og?.value, lang, preferences.gravityUnit)}</p>
         </div>
         <div className="border-2 border-stone-900 p-3 rounded-lg">
           <p className="text-[9px] font-black uppercase text-stone-400 mb-1">{t('fg_label')}</p>
-          <p className="text-xl font-black">{formatBrewNumber(log?.measurements.actual_fg || recipe.specifications?.fg?.value, 'og', lang, preferences)}</p>
+          <p className="text-xl font-black">{formatGravity(log?.measurements.actual_fg || recipe.specifications?.fg?.value, lang, preferences.gravityUnit)}</p>
         </div>
         <div className="border-2 border-stone-900 p-3 rounded-lg">
           <p className="text-[9px] font-black uppercase text-stone-400 mb-1">{t('abv_label')}</p>

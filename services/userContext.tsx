@@ -28,7 +28,8 @@ const defaultPreferences: UserPreferences = {
   colorScale: 'srm',
   language: 'en',
   enableStockManagement: false,
-  bottled_period: 'month'
+  bottled_period: 'month',
+  gravityUnit: 'sg'
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);

@@ -108,6 +108,42 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('gravity_unit_label')}</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => updatePreferences({ gravityUnit: 'sg' })}
+                    className={`py-4 rounded-2xl font-black text-xs uppercase tracking-widest border-2 transition-all ${
+                      (preferences.gravityUnit ?? 'sg') === 'sg'
+                        ? 'bg-amber-50 border-amber-500 text-amber-600 shadow-sm'
+                        : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
+                    }`}
+                  >
+                    SG
+                  </button>
+                  <button
+                    onClick={() => updatePreferences({ gravityUnit: 'plato' })}
+                    className={`py-4 rounded-2xl font-black text-xs uppercase tracking-widest border-2 transition-all ${
+                      (preferences.gravityUnit ?? 'sg') === 'plato'
+                        ? 'bg-amber-50 border-amber-500 text-amber-600 shadow-sm'
+                        : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
+                    }`}
+                  >
+                    °P
+                  </button>
+                  <button
+                    onClick={() => updatePreferences({ gravityUnit: 'both' })}
+                    className={`py-4 rounded-2xl font-black text-xs uppercase tracking-widest border-2 transition-all ${
+                      (preferences.gravityUnit ?? 'sg') === 'both'
+                        ? 'bg-amber-50 border-amber-500 text-amber-600 shadow-sm'
+                        : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
+                    }`}
+                  >
+                    {t('gravity_both')}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

@@ -4,6 +4,7 @@ import { Recipe, BrewLogEntry } from '../types';
 import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
+import GravityInput from './GravityInput';
 
 interface BrewLogProps {
   recipe: Recipe;
@@ -184,10 +185,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 <label htmlFor="brew_date" className="text-xs font-bold text-stone-400 uppercase">{t('brew_date')}</label>
                 <input id="brew_date" name="brew_date" type="date" className="w-full p-4 bg-stone-50 border rounded-xl font-bold" value={entry.brewDate || ''} onChange={e => setEntry({...entry, brewDate: e.target.value})} />
               </div>
-              <div className="space-y-1">
-                <label htmlFor="actual_og" className="text-xs font-bold text-stone-400 uppercase">{t('actual_og')}</label>
-                <input id="actual_og" name="actual_og" type="number" step="0.001" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg" value={entry.measurements.actual_og || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, actual_og: parseFloat(e.target.value)}})} />
-              </div>
+              <GravityInput id="actual_og" name="actual_og" label={t('actual_og')} value={entry.measurements.actual_og} onChange={sg => setEntry(prev => ({...prev, measurements: {...prev.measurements, actual_og: sg}}))} />
               <div className="space-y-1">
                 <label htmlFor="volume_fermenter" className="text-xs font-bold text-stone-400 uppercase">{t('volume_fermenter')} ({preferences.units === 'imperial' ? 'Gal' : 'L'})</label>
                 <input
@@ -305,10 +303,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
           <div className="space-y-6">
             <h3 className="text-xl font-black">{t('fermentation')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label htmlFor="actual_fg" className="text-xs font-bold text-stone-400 uppercase">{t('actual_fg')}</label>
-                <input id="actual_fg" name="actual_fg" disabled={!canEdit} type="number" step="0.001" className="w-full p-4 bg-stone-50 border rounded-xl font-bold text-lg disabled:opacity-50" value={entry.measurements.actual_fg || ''} onChange={e => setEntry({...entry, measurements: {...entry.measurements, actual_fg: parseFloat(e.target.value)}})} />
-              </div>
+              <GravityInput id="actual_fg" name="actual_fg" label={t('actual_fg')} disabled={!canEdit} value={entry.measurements.actual_fg} onChange={sg => setEntry(prev => ({...prev, measurements: {...prev.measurements, actual_fg: sg}}))} />
               <div className="space-y-1">
                 <label htmlFor="fermentation_temp" className="text-xs font-bold text-stone-400 uppercase">Max Fermentation Temp (°{preferences.units === 'imperial' ? 'F' : 'C'})</label>
                 <input
