@@ -5,6 +5,7 @@ import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNu
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import GravityInput from './GravityInput';
+import YeastPitch from './YeastPitch';
 
 interface BrewLogProps {
   recipe: Recipe;
@@ -293,6 +294,17 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 ))}
               </div>
             </div>
+
+            {recipe.ingredients.cultures.length > 0 && (
+              <YeastPitch
+                cultures={recipe.ingredients.cultures}
+                og={entry.measurements.actual_og || recipe.specifications?.og?.value || currentStats.og}
+                volumeL={entry.measurements.actual_volume || (recipe.batch_size.unit === 'gallons' ? recipe.batch_size.value * 3.78541 : recipe.batch_size.value)}
+                value={entry.yeast_pitch}
+                onChange={yeast_pitch => setEntry(prev => ({ ...prev, yeast_pitch }))}
+                disabled={!canEdit}
+              />
+            )}
 
             <label htmlFor="brew_notes" className="sr-only">{t('brew_notes')}</label>
             <textarea id="brew_notes" name="notes" className="w-full p-4 bg-stone-50 border rounded-xl min-h-[120px]" placeholder={t('brew_notes')} value={entry.notes} onChange={e => setEntry({...entry, notes: e.target.value})} maxLength={2000} />
