@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, BrewLogEntry } from '../types';
-import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber } from '../services/calculations';
+import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import GravityInput from './GravityInput';
@@ -52,7 +52,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
   const currentAbvDisplay = useMemo(() => {
     const isActuallyBottled = entry.status === 'bottled';
     const isInBottlingStep = activeTab === 'bottle';
-    const includePriming = isActuallyBottled || isInBottlingStep;
+    // A force-carbonated keg gets no priming sugar, so no extra alcohol
+    const includePriming = (isActuallyBottled || isInBottlingStep) && entry.bottling?.method !== 'keg';
     
     return calculateABV(
       entry.measurements.actual_og, 
@@ -303,7 +304,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
           <div className="space-y-6">
             <h3 className="text-xl font-black">{t('fermentation')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <GravityInput id="actual_fg" name="actual_fg" label={t('actual_fg')} disabled={!canEdit} value={entry.measurements.actual_fg} onChange={sg => setEntry(prev => ({...prev, measurements: {...prev.measurements, actual_fg: sg}}))} />
+              <GravityInput id="actual_fg" name="actual_fg" label={t('actual_fg')} kind="fg" originalGravity={entry.measurements.actual_og} disabled={!canEdit} value={entry.measurements.actual_fg} onChange={sg => setEntry(prev => ({...prev, measurements: {...prev.measurements, actual_fg: sg}}))} />
               <div className="space-y-1">
                 <label htmlFor="fermentation_temp" className="text-xs font-bold text-stone-400 uppercase">Max Fermentation Temp (°{preferences.units === 'imperial' ? 'F' : 'C'})</label>
                 <input
@@ -341,11 +342,42 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
         {activeTab === 'bottle' && (
           <div className="space-y-6">
             <h3 className="text-xl font-black">{t('bottling')}</h3>
+            <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('packaging_method')}>
+              {(['bottle', 'keg'] as const).map(m => (
+                <button
+                  key={m}
+                  type="button"
+                  role="radio"
+                  aria-checked={(entry.bottling?.method ?? 'bottle') === m}
+                  disabled={!canEdit}
+                  onClick={() => setEntry(prev => ({ ...prev, bottling: { ...prev.bottling!, method: m } }))}
+                  className={`py-3 rounded-2xl font-black text-xs uppercase tracking-widest border-2 transition-all disabled:opacity-50 ${(entry.bottling?.method ?? 'bottle') === m ? 'bg-amber-50 border-amber-500 text-amber-700' : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'}`}
+                >
+                  <i className={`fas ${m === 'keg' ? 'fa-database' : 'fa-wine-bottle'} mr-2`} aria-hidden="true"></i>{t(m === 'keg' ? 'method_keg' : 'method_bottle')}
+                </button>
+              ))}
+            </div>
             <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100 flex justify-between items-center">
+              {entry.bottling?.method === 'keg' ? (() => {
+                const kegTemp = entry.bottling?.keg_temp ?? 4;
+                const p = kegPressure(entry.bottling?.target_co2 || 2.4, kegTemp);
+                return (
+                  <div>
+                    <p className="text-xs font-black text-amber-800 uppercase tracking-widest">{t('keg_pressure')}</p>
+                    <p className="text-4xl font-black text-amber-900">
+                      {preferences.units === 'imperial' ? `${formatBrewNumber(p.psi, 'abv', lang)} psi` : `${formatBrewNumber(p.bar, 'default', lang)} bar`}
+                    </p>
+                    <p className="text-[10px] font-bold text-amber-800">
+                      {preferences.units === 'imperial' ? `${formatBrewNumber(p.bar, 'default', lang)} bar` : `${formatBrewNumber(p.psi, 'abv', lang)} psi`} · {t('keg_pressure_hint')}
+                    </p>
+                  </div>
+                );
+              })() : (
               <div>
                 <p className="text-xs font-black text-amber-800 uppercase tracking-widest">{t('calculate_sugar')}</p>
                 <p className="text-4xl font-black text-amber-900">{entry.bottling?.sugar_amount} g</p>
               </div>
+              )}
               <div className="text-right">
                 <p className="text-xs font-black text-amber-800 uppercase tracking-widest">{t('projected_abv')}</p>
                 <p className="text-2xl font-black text-amber-900">{currentAbvDisplay.toFixed(1)}%</p>
@@ -378,12 +410,38 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
               <div className="space-y-1">
                 <label htmlFor="target_co2" className="text-xs font-bold text-stone-400 uppercase">{t('co2_volume')}</label>
                 <select id="target_co2" name="target_co2" disabled={!canEdit} className="w-full p-4 bg-white border border-stone-200 rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.target_co2} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, target_co2: parseFloat(e.target.value)}})}>
+                  {/* A stored value outside the presets (default 2.4) would otherwise show as the first option */}
+                  {entry.bottling?.target_co2 !== undefined && ![2.0, 2.3, 2.6, 3.2].includes(entry.bottling.target_co2) && (
+                    <option value={entry.bottling.target_co2}>{formatBrewNumber(entry.bottling.target_co2, 'default', lang)} vol</option>
+                  )}
                   <option value="2.0">{t('carb_standard_ale')}</option>
                   <option value="2.3">{t('carb_pale_ale')}</option>
                   <option value="2.6">{t('carb_blond')}</option>
                   <option value="3.2">{t('carb_wheat')}</option>
                 </select>
               </div>
+              {entry.bottling?.method === 'keg' ? (
+              <div className="space-y-1">
+                <label htmlFor="keg_temp" className="text-xs font-bold text-stone-400 uppercase">{t('keg_temp')} (°{preferences.units === 'imperial' ? 'F' : 'C'})</label>
+                <input
+                  id="keg_temp"
+                  name="keg_temp"
+                  disabled={!canEdit}
+                  type="number"
+                  step="0.5"
+                  min={preferences.units === 'imperial' ? 28 : -2}
+                  max={preferences.units === 'imperial' ? 77 : 25}
+                  className="w-full p-4 bg-stone-50 border rounded-xl font-bold disabled:opacity-50"
+                  value={preferences.units === 'imperial' ? Math.round((entry.bottling?.keg_temp ?? 4) * 9 / 5 + 32) : (entry.bottling?.keg_temp ?? 4)}
+                  onChange={e => {
+                    const val = parseFloat(e.target.value);
+                    if (isNaN(val)) return;
+                    const celsius = preferences.units === 'imperial' ? Math.round((val - 32) * 5 / 9 * 10) / 10 : val;
+                    setEntry(prev => ({ ...prev, bottling: { ...prev.bottling!, keg_temp: celsius } }));
+                  }}
+                />
+              </div>
+              ) : (
               <div className="space-y-1">
                 <label htmlFor="sugar_type" className="text-xs font-bold text-stone-400 uppercase">{t('sugar_type')}</label>
                 <select id="sugar_type" name="sugar_type" disabled={!canEdit} className="w-full p-4 bg-white border border-stone-200 rounded-xl font-bold disabled:opacity-50" value={entry.bottling?.sugar_type} onChange={e => setEntry({...entry, bottling: {...entry.bottling!, sugar_type: e.target.value as any}})}>
@@ -392,6 +450,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                   <option value="dme">{t('sugar_dme')}</option>
                 </select>
               </div>
+              )}
             </div>
             {entry.status !== 'bottled' && canEdit && (
               <button onClick={() => handleStatusChange('bottled')} disabled={!entry.measurements.actual_fg} className="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-xl disabled:opacity-50">

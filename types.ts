@@ -15,6 +15,7 @@ export interface UserPreferences {
   enableStockManagement: boolean;
   bottled_period: 'week' | 'month' | 'year' | 'all';
   gravityUnit?: 'sg' | 'plato' | 'both'; // how densities are shown and entered (default SG)
+  refractometerWcf?: number; // wort correction factor of the refractometer (default 1.04)
 }
 
 export type BreweryRole = 'admin' | 'brewmaster' | 'brewer' | 'taster';
@@ -249,6 +250,8 @@ export interface BrewLogEntry {
     sugar_type: 'table_sugar' | 'glucose' | 'dme';
     sugar_amount?: number;
     bottling_volume?: number;
+    method?: 'bottle' | 'keg'; // bottles with priming sugar (default) or force-carbonated keg
+    keg_temp?: number; // Celsius, beer temperature while carbonating the keg
   };
 }
 

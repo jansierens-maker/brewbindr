@@ -3,6 +3,7 @@ import {
   calculateABV, calculatePrimingSugar, calculateRecipeStats,
   hopTemperatureFactor, normalizeFermentableType, guessFermentableType, mainMashTemperature,
   sgToPlato, platoToSg, formatGravity, correctHydrometer, buGuRatio,
+  brixToSg, sgToBrix, refractometerFg, kegPressure,
   roundTo, roundByUnit, normalizeRecipe, formatBrewNumber, formatStockAmount, srmToEbc,
 } from '../../services/calculations';
 import type { Recipe } from '../../types';
@@ -272,4 +273,28 @@ describe('BU:GU', () => {
     expect(buGuRatio(30, 1.060)).toBeCloseTo(0.5, 5);
     expect(buGuRatio(30, 1.000)).toBe(0);
   });
+});
+
+describe('refractometer', () => {
+  it('converts Brix to SG with the wort correction factor', () => {
+    expect(brixToSg(12.39, 1)).toBeCloseTo(1.050, 3);
+    expect(brixToSg(12.89)).toBeCloseTo(1.050, 3); // 12.89 / 1.04 = 12.39 °P
+    expect(sgToBrix(brixToSg(15))).toBeCloseTo(15, 1);
+  });
+
+  it('corrects a fermenting reading for alcohol (Terrill)', () => {
+    expect(refractometerFg(12, 6, 1)).toBeCloseTo(1.0117, 4);
+    expect(refractometerFg(12, 12, 1)).toBeGreaterThan(1.040); // nothing fermented yet
+    expect(refractometerFg(12.48, 6.24)).toBeCloseTo(1.0117, 4); // same reading with WCF 1.04
+  });
+});
+
+describe('keg carbonation', () => {
+  it('matches the usual carbonation chart', () => {
+    expect(kegPressure(2.5, (38 - 32) * 5 / 9).psi).toBeCloseTo(11.2, 1); // chart: 2.5 vol at 38 °F ≈ 11 psi
+    expect(kegPressure(2.5, (40 - 32) * 5 / 9).psi).toBeCloseTo(12.3, 1); // chart: 2.5 vol at 40 °F ≈ 12 psi
+    expect(kegPressure(2.5, 4).bar).toBeCloseTo(0.82, 2);
+    expect(kegPressure(2.5, 10).bar).toBeGreaterThan(kegPressure(2.5, 4).bar); // warmer needs more pressure
+  });
+  it('never returns a negative pressure', () => expect(kegPressure(1, 0).psi).toBe(0));
 });

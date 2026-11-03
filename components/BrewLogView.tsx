@@ -51,7 +51,7 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
             log.measurements.actual_og,
             log.measurements.actual_fg,
             log.status === 'bottled',
-            log.bottling?.sugar_amount,
+            (log.bottling?.method === 'keg' ? 0 : log.bottling?.sugar_amount),
             log.bottling?.bottling_volume || log.measurements.actual_volume
           );
           const abv = abvValue > 0 ? abvValue.toFixed(1) : '?';
