@@ -4,7 +4,7 @@ import {
   hopTemperatureFactor, normalizeFermentableType, guessFermentableType, mainMashTemperature,
   sgToPlato, platoToSg, formatGravity, correctHydrometer, buGuRatio,
   brixToSg, sgToBrix, refractometerFg, kegPressure,
-  roundTo, roundByUnit, normalizeRecipe, formatBrewNumber, formatStockAmount, srmToEbc,
+  roundTo, roundByUnit, normalizeRecipe, normalizeLibraryItem, formatBrewNumber, formatStockAmount, srmToEbc,
 } from '../../services/calculations';
 import type { Recipe } from '../../types';
 
@@ -297,4 +297,28 @@ describe('keg carbonation', () => {
     expect(kegPressure(2.5, 10).bar).toBeGreaterThan(kegPressure(2.5, 4).bar); // warmer needs more pressure
   });
   it('never returns a negative pressure', () => expect(kegPressure(1, 0).psi).toBe(0));
+});
+
+describe('mash rounding', () => {
+  it('rounds BeerXML Fahrenheit leftovers in a recipe mash', () => {
+    const r = normalizeRecipe(reference({
+      mash: { name: 'Single infusion', grain_temp: 22.222222, sparge_temp: 75.555556, steps: [
+        { name: 'Sacch', type: 'infusion', step_temp: 65.555556, step_time: 60.000001, infuse_amount: 14.195294 },
+        { name: 'Out', type: 'temperature', temperature: 75.555556, duration: 9.9999, end_temp: 76.111111 },
+      ] },
+    }));
+    expect(r.mash).toMatchObject({ grain_temp: 22.2, sparge_temp: 75.6, steps: [
+      { step_temp: 65.6, step_time: 60, infuse_amount: 14.2 },
+      { temperature: 75.6, duration: 10, end_temp: 76.1 },
+    ] });
+  });
+
+  it('rounds library mash profiles and leaves other items alone', () => {
+    const profile: any = { id: 'm', name: 'Step', type: 'mash_profile', steps: [{ name: 'a', type: 'infusion', step_temp: 64.444444, step_time: 45 }] };
+    expect(normalizeLibraryItem(profile).steps?.[0].step_temp).toBe(64.4);
+    const hop: any = { id: 'h', name: 'Saaz', type: 'hop', alpha: 3.333333 };
+    expect(normalizeLibraryItem(hop)).toBe(hop);
+  });
+
+  it('leaves a recipe without mash untouched', () => expect(normalizeRecipe(reference()).mash).toBeUndefined());
 });
