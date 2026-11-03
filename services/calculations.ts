@@ -1,5 +1,5 @@
 
-import { Recipe, UserPreferences, LibraryIngredient } from "../types";
+import { Recipe, UserPreferences, LibraryIngredient, MashStep, MashProfile } from "../types";
 
 export const srmToEbc = (srm: number) => srm * 1.97;
 export const ebcToSrm = (ebc: number) => ebc / 1.97;
@@ -149,6 +149,33 @@ const roundValue = <T extends { value?: number } | undefined>(field: T, decimals
     ? ({ ...field, value: roundTo(field.value, decimals) } as T)
     : field;
 
+const roundNum = (v: number | undefined, decimals: number) =>
+  typeof v === 'number' && Number.isFinite(v) ? roundTo(v, decimals) : v;
+
+/** Mash step: temperatures to 0.1 °C, times to whole minutes, water to 0.1 L. */
+export const normalizeMashStep = (step: MashStep): MashStep => ({
+  ...step,
+  step_temp: roundNum(step.step_temp, 1),
+  temperature: roundNum(step.temperature, 1),
+  end_temp: roundNum(step.end_temp, 1),
+  step_time: roundNum(step.step_time, 0),
+  duration: roundNum(step.duration, 0),
+  ramp_time: roundNum(step.ramp_time, 0),
+  infuse_amount: roundNum(step.infuse_amount, 1),
+});
+
+/** Mash profile (in a recipe or the library): BeerXML stores °F converted to °C, e.g. 65.555556. */
+export const normalizeMash = <T extends Partial<Pick<MashProfile, 'steps' | 'grain_temp' | 'sparge_temp'>>>(mash: T): T => ({
+  ...mash,
+  grain_temp: roundNum(mash.grain_temp, 1),
+  sparge_temp: roundNum(mash.sparge_temp, 1),
+  steps: mash.steps?.map(normalizeMashStep),
+});
+
+/** Library items: mash profiles get the same rounding as recipe mashes. */
+export const normalizeLibraryItem = (item: LibraryIngredient): LibraryIngredient =>
+  item && item.type === 'mash_profile' ? normalizeMash(item as any) : item;
+
 /**
  * Removes floating-point noise and unit-conversion leftovers (e.g. 2.041164 kg,
  * 1.0531356220799766 OG) from a recipe. Applied when recipes are loaded, saved
@@ -162,6 +189,7 @@ export const normalizeRecipe = (recipe: Recipe): Recipe => {
     ...recipe,
     batch_size: roundAmount(recipe.batch_size),
     boil_time: roundAmount(recipe.boil_time),
+    mash: recipe.mash && normalizeMash(recipe.mash),
     ingredients: ing && {
       ...ing,
       fermentables: (ing.fermentables || []).map(f => ({ ...f, amount: roundAmount(f.amount), color: roundValue(f.color, 1) })),

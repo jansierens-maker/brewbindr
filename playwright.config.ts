@@ -16,6 +16,9 @@ export default defineConfig({
     // lokaal valt het terug op de dev server
     baseURL: remoteBaseURL || 'http://localhost:5173',
     trace: 'on-first-retry',
+    // A click that cannot happen fails after 15 s with the reason (e.g. which element covers
+    // the button) instead of silently using up the whole test timeout
+    actionTimeout: 15000,
     screenshot: 'only-on-failure',
     extraHTTPHeaders: process.env.VERCEL_AUTOMATION_BYPASS_SECRET
       ? {

@@ -1885,7 +1885,9 @@ const AppContent: React.FC = () => {
                   onReject={handleReject}
                 />
               )}
-              {view === 'auth' && <Auth onSuccess={() => setView('recipes')} initialIsSignUp={authMode === 'signup'} />}
+              {/* signIn resolves only after the profile has loaded; by then the start screen is already
+                  shown and the user may have opened another screen, so only leave the login view */}
+              {view === 'auth' && <Auth onSuccess={() => setView(v => v === 'auth' ? 'recipes' : v)} initialIsSignUp={authMode === 'signup'} />}
               {view === 'settings' && <Settings />}
               {view === 'team' && <BrewerySettings />}
               {view === 'tasting' && selectedRecipe && selectedBrewLog && (

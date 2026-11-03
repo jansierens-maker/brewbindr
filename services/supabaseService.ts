@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { normalizeRecipe } from './calculations';
+import { normalizeRecipe, normalizeLibraryItem } from './calculations';
 
 /**
  * Supabase Service for Brewbindr
@@ -159,7 +159,7 @@ export const supabaseService = {
       const library: LibraryIngredient[] = [];
       Object.entries(TABLE_MAP).forEach(([type, table]) => {
         if (data[table]) {
-          library.push(...data[table]);
+          library.push(...(data[table] as LibraryIngredient[]).map(normalizeLibraryItem));
         }
       });
 
@@ -260,7 +260,7 @@ export const supabaseService = {
 
     const payload: any = {
       id: item.id || uuidv4(),
-      data: item,
+      data: normalizeLibraryItem(item),
       user_id: userId || item.user_id,
       brewery_id: breweryId || item.brewery_id
     };
@@ -368,7 +368,7 @@ export const supabaseService = {
       const { error } = await client.from(table).upsert(items.map(i => {
         const payload: any = {
           id: i.id || uuidv4(),
-          data: i,
+          data: normalizeLibraryItem(i),
           user_id: userId,
           brewery_id: breweryId || i.brewery_id
         };
