@@ -645,7 +645,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <WaterPlanCard
             recipe={recipe}
             equipment={equipment}
-            og={stats.og}
+            og={stats.plannedOg}
             equipmentOptions={equipmentOptions}
             defaultEquipment={defaultEquipment}
             onEquipmentChange={equipmentId => setRecipe(prev => ({ ...prev, equipmentId }))}

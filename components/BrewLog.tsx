@@ -298,7 +298,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
               </div>
             </div>
 
-            <WaterPlanCard recipe={recipe} equipment={equipment} og={recipe.specifications?.og?.value || currentStats.og} />
+            <WaterPlanCard recipe={recipe} equipment={equipment} og={currentStats.plannedOg} />
 
             {recipe.ingredients.cultures.length > 0 && (
               <YeastPitch

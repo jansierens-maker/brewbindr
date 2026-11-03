@@ -474,3 +474,29 @@ describe('water plan: capacity, own values and drain all', () => {
     expect(waterPlan(withGrain(5), { ...brewie, preset: undefined }).maxMashL).toBeUndefined(); // no limit known
   });
 });
+
+describe('recipe stats follow water set by hand', () => {
+  const brewie: any = { id: 'eq1', name: 'Brewie', type: 'equipment', preset: 'Brewie', equipment_type: 'two_vessel', trub_chiller_loss: 2, evap_rate: 2 };
+
+  it('makes stronger, darker and more bitter wort with less water', () => {
+    const planned = calculateRecipeStats(reference(), undefined, brewie);
+    // Calculated: 29 L water, 22 L after the boil. Own: 24 L → 17 L after the boil
+    const less = calculateRecipeStats({ ...reference(), water: { mash_l: 14, sparge_l: 10 } }, undefined, brewie);
+    expect(less.plannedOg).toBeCloseTo(planned.og, 6);
+    expect(less.og - 1).toBeCloseTo((planned.og - 1) * 22 / 17, 4);
+    expect(less.abv).toBeGreaterThan(planned.abv);
+    expect(less.color).toBeGreaterThan(planned.color);
+    expect(less.ibu).toBeGreaterThan(planned.ibu);
+  });
+
+  it('matches the water card', () => {
+    const r = { ...reference(), water: { mash_l: 14, sparge_l: 10 } };
+    const s = calculateRecipeStats(r, undefined, brewie);
+    expect(waterPlan(r, brewie, s.plannedOg).expectedOg).toBeCloseTo(s.og, 6);
+  });
+
+  it('changes nothing without water set by hand or without an installation', () => {
+    expect(calculateRecipeStats(reference(), undefined, brewie).og).toBeCloseTo(calculateRecipeStats(reference()).og, 6);
+    expect(calculateRecipeStats({ ...reference(), water: { mash_l: 14 } }).og).toBeCloseTo(calculateRecipeStats(reference()).og, 6);
+  });
+});

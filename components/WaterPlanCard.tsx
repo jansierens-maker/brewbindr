@@ -71,6 +71,7 @@ const WaterPlanCard: React.FC<WaterPlanCardProps> = ({ recipe, equipment, og, eq
         defaultValue={water[id] !== undefined ? toDisplay(water[id]!) : ''}
         key={`${id}-${water[id] ?? 'auto'}`}
         onBlur={e => setWater({ [id]: parseVolume(e.target.value) })}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
       />
       <p className="text-[10px] font-bold text-stone-500 mt-1">
         {water[id] !== undefined ? `${t('water_suggested')}: ${vol(suggested)}` : t('water_calculated')}

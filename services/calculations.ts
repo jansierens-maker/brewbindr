@@ -477,6 +477,8 @@ export interface WaterPlan {
   suggestedMashL: number;  // what the app would use (shown as placeholder)
   suggestedSpargeL: number;
   manual: boolean;
+  /** planned ÷ actual volume after the boil: >1 when less water than the recipe needs makes stronger wort */
+  volumeFactor: number;
   maxMashL?: number;
   trubLossL: number;
   warnings: WaterWarning[];
@@ -546,6 +548,7 @@ export const waterPlan = (recipe: Recipe, equipment: LibraryIngredient, og?: num
   return {
     grainKg, mashWaterL, spargeWaterL, totalWaterL, preBoilL, postBoilL, intoFermenterL, expectedOg,
     mashTempC, grainTempC, strikeTempC, preBoilSg, suggestedMashL, suggestedSpargeL, manual, maxMashL, trubLossL, warnings,
+    volumeFactor: postBoilL > 0 ? neededPostBoil / postBoilL : 1,
   };
 };
 
@@ -581,6 +584,15 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
     else maltPoints += points;
   });
 
+  // The recipe is designed for its batch volume. With water set by hand, the wort after the boil
+  // has another volume: the same extract, colour and bitterness in more or less wort.
+  const plannedOg = 1 + ((maltPoints + sugarPoints + unfermentablePoints) / 1000);
+  const plan = equipment && recipe.water && (recipe.water.mash_l !== undefined || recipe.water.sparge_l !== undefined)
+    ? waterPlan(recipe, equipment) : undefined;
+  const volumeFactor = plan?.volumeFactor ?? 1;
+  maltPoints *= volumeFactor;
+  sugarPoints *= volumeFactor;
+  unfermentablePoints *= volumeFactor;
   const og = 1 + ((maltPoints + sugarPoints + unfermentablePoints) / 1000);
   const yeastAttenuation = cultures.length > 0
     ? cultures.reduce((acc, c) => acc + (c.attenuation || 75), 0) / cultures.length
@@ -607,11 +619,12 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
     const volumeGal = batchSizeL / 3.78541;
     mcu += (weightLbs * colorSRM) / (volumeGal || 1);
   });
+  mcu *= volumeFactor;
   const colorSRM = mcu > 0 ? 1.4922 * Math.pow(mcu, 0.6859) : 0;
 
   // Tinseth, with the usual corrections for hop form and use. Tinseth's gravity is that of the
   // boiling wort: with an installation (known evaporation) the average of pre-boil and OG.
-  const preBoilSg = equipment ? waterPlan(recipe, equipment, og).preBoilSg : undefined;
+  const preBoilSg = equipment ? waterPlan(recipe, equipment, plannedOg).preBoilSg : undefined;
   const boilGravity = preBoilSg ? (preBoilSg + og) / 2 : og;
   const bignessFactor = 1.65 * Math.pow(0.000125, (boilGravity - 1));
   const boilUtilization = (minutes: number) => bignessFactor * (1 - Math.exp(-0.04 * minutes)) / 4.15;
@@ -636,7 +649,7 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
     else if (unit === 'kilograms') weightG = h.amount.value * 1000;
     else if (unit === 'pounds') weightG = h.amount.value * 453.592;
 
-    ibu += (alpha * weightG * utilization * 10) / (batchSizeL || 1);
+    ibu += (alpha * weightG * utilization * 10) / (batchSizeL || 1) * volumeFactor;
   });
 
   return {
@@ -644,7 +657,9 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
     fg,
     abv,
     color: colorSRM,
-    ibu: Math.round(ibu)
+    ibu: Math.round(ibu),
+    /** OG for the recipe's batch volume, before any water set by hand (input for waterPlan) */
+    plannedOg,
   };
 };
 
