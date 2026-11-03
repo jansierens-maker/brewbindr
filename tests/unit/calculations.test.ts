@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calculateABV, calculatePrimingSugar, calculateRecipeStats,
   hopTemperatureFactor, normalizeFermentableType, guessFermentableType, mainMashTemperature,
+  sgToPlato, platoToSg, formatGravity, correctHydrometer, buGuRatio,
   roundTo, roundByUnit, normalizeRecipe, formatBrewNumber, formatStockAmount, srmToEbc,
 } from '../../services/calculations';
 import type { Recipe } from '../../types';
@@ -234,4 +235,41 @@ describe('formatting', () => {
   });
 
   it('shows a dash for missing values', () => expect(formatBrewNumber(undefined, 'og', 'nl')).toBe('-'));
+});
+
+describe('gravity units', () => {
+  it('converts SG to Plato and back', () => {
+    expect(sgToPlato(1.050)).toBeCloseTo(12.39, 2);
+    expect(sgToPlato(1.000)).toBeCloseTo(0, 1);
+    expect(sgToPlato(1.080)).toBeCloseTo(19.32, 1);
+    for (const sg of [1.010, 1.050, 1.080, 1.110]) expect(platoToSg(sgToPlato(sg))).toBeCloseTo(sg, 3);
+  });
+
+  it('formats in the chosen unit', () => {
+    expect(formatGravity(1.050, 'nl')).toBe('1,050');
+    expect(formatGravity(1.050, 'nl', 'plato')).toBe('12,4 °P');
+    expect(formatGravity(1.050, 'en', 'both')).toBe('1.050 (12.4 °P)');
+    expect(formatGravity(undefined, 'nl', 'plato')).toBe('-');
+  });
+});
+
+describe('hydrometer correction', () => {
+  it('leaves a reading at the calibration temperature unchanged', () =>
+    expect(correctHydrometer(1.050, 20)).toBeCloseTo(1.050, 5));
+  it('corrects warm and cold readings', () => {
+    expect(correctHydrometer(1.050, 30)).toBeCloseTo(1.0526, 4); // warm wort reads low
+    expect(correctHydrometer(1.050, 60)).toBeCloseTo(1.0659, 4);
+    expect(correctHydrometer(1.050, 10)).toBeCloseTo(1.0485, 4); // cold wort reads high
+  });
+  it('matches the common table (1.050 at 100 °F, calibrated at 60 °F: 1.0561)', () =>
+    expect(correctHydrometer(1.050, (100 - 32) * 5 / 9, (60 - 32) * 5 / 9)).toBeCloseTo(1.0561, 4));
+  it('supports another calibration temperature', () =>
+    expect(correctHydrometer(1.050, 15.56, 15.56)).toBeCloseTo(1.050, 5));
+});
+
+describe('BU:GU', () => {
+  it('divides IBU by gravity points', () => {
+    expect(buGuRatio(30, 1.060)).toBeCloseTo(0.5, 5);
+    expect(buGuRatio(30, 1.000)).toBe(0);
+  });
 });

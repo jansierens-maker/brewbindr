@@ -212,6 +212,45 @@ export const calculatePrimingSugar = (targetCO2: number, liters: number, tempC: 
   return Math.round(sugarG);
 };
 
+/** SG to degrees Plato (ASBC polynomial). */
+export const sgToPlato = (sg: number): number =>
+  -616.868 + 1111.14 * sg - 630.272 * sg ** 2 + 135.997 * sg ** 3;
+
+/** Degrees Plato to SG (inverse used by most brewing software). */
+export const platoToSg = (plato: number): number =>
+  1 + plato / (258.6 - (plato / 258.2) * 227.1);
+
+/** Hydrometer calibration temperature most hydrometers use. */
+export const HYDROMETER_CALIBRATION_C = 20;
+
+/**
+ * Corrects a hydrometer reading taken at another temperature than the calibration
+ * temperature (standard correction, as used by BeerSmith and Brewer's Friend).
+ */
+export const correctHydrometer = (sg: number, readingTempC: number, calibrationTempC: number = HYDROMETER_CALIBRATION_C): number => {
+  const density = (c: number) => {
+    const f = c * 9 / 5 + 32;
+    return 1.00130346 - 0.000134722124 * f + 0.00000204052596 * f ** 2 - 0.00000000232820948 * f ** 3;
+  };
+  return sg * (density(readingTempC) / density(calibrationTempC));
+};
+
+/** Bitterness to gravity ratio: IBU per gravity point (0.5 = balanced). */
+export const buGuRatio = (ibu: number, og: number): number =>
+  og > 1 ? ibu / ((og - 1) * 1000) : 0;
+
+export type GravityUnit = 'sg' | 'plato' | 'both';
+
+/** A gravity in the unit the user chose: "1.054", "13,3 °P" or "1.054 (13,3 °P)". */
+export const formatGravity = (sg: number | undefined, lang: string, unit: GravityUnit = 'sg'): string => {
+  if (sg === undefined || sg === null || isNaN(sg)) return '-';
+  const sgText = formatBrewNumber(sg, 'og', lang);
+  const platoText = `${new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(sgToPlato(sg))} °P`;
+  if (unit === 'plato') return platoText;
+  if (unit === 'both') return `${sgText} (${platoText})`;
+  return sgText;
+};
+
 /** Fermentable types: grain and adjunct are mashed; sugar and extract are not. */
 export const FERMENTABLE_TYPES = ['grain', 'adjunct', 'sugar', 'extract', 'dry_extract'] as const;
 

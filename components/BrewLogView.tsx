@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
 import { BrewLogEntry, Recipe, TastingNote } from '../types';
-import { getSRMColor, calculateABV } from '../services/calculations';
+import { getSRMColor, calculateABV, formatGravity } from '../services/calculations';
 import { useTranslation } from '../App';
+import { useUser } from '../services/userContext';
 
 interface BrewLogViewProps {
   logs: BrewLogEntry[];
@@ -14,7 +15,8 @@ interface BrewLogViewProps {
 }
 
 const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, onEditLog, onAddTasting, onPrintReport }) => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const { preferences } = useUser();
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const sortedLogs = [...logs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -63,8 +65,8 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
                     <div className="flex items-center gap-3"><span className="text-xs font-black text-[var(--color-text-xmuted)] uppercase tracking-tighter">{log.brewDate || log.date}</span>{getStatusBadge(log.status)}</div>
                     <h3 className="text-2xl font-black text-[var(--color-text)] leading-tight">{recipe?.name || '...'}</h3>
                     <div className="flex flex-wrap gap-x-6 gap-y-2">
-                      <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">{t('og_label')}: <span className="text-[var(--color-text)]">{log.measurements.actual_og?.toFixed(3) || '-'}</span></span>
-                      <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">{t('fg_label')}: <span className="text-[var(--color-text)]">{log.measurements.actual_fg?.toFixed(3) || '-'}</span></span>
+                      <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">{t('og_label')}: <span className="text-[var(--color-text)]">{formatGravity(log.measurements.actual_og, lang, preferences.gravityUnit)}</span></span>
+                      <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">{t('fg_label')}: <span className="text-[var(--color-text)]">{formatGravity(log.measurements.actual_fg, lang, preferences.gravityUnit)}</span></span>
                       <span className="text-[10px] font-bold text-[var(--color-accent-dark)] uppercase">{t('abv_label')}: {abv}%</span>
                       {log.status === 'bottled' && <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">{t('bottled_label')}: {log.bottling?.date || '-'}</span>}
                     </div>

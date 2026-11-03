@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
+import { calculateRecipeStats, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canEditRecipe, canManageRecipes } from '../services/permissions';
@@ -17,6 +17,7 @@ interface RecipeCreatorProps {
 const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, initialRecipe, library }) => {
   const { t, lang } = useTranslation();
   const { preferences, user, profile, breweryRole, isAdmin } = useUser();
+  const gravityUnit = preferences.gravityUnit ?? 'sg';
 
   // Same rules as the database: brewery admins/brewmasters manage all brewery recipes
   const editContext = { userId: user?.id, breweryId: profile?.brewery_id, breweryRole, isAdmin };
@@ -323,6 +324,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           {selectedStyleGuideline?.ibu_min !== undefined && (
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.ibu_min}-{selectedStyleGuideline.ibu_max}</p>
           )}
+          {stats.og > 1 && (
+            <p className="text-[10px] text-stone-400 font-bold mt-1" title={t('bu_gu_hint')}>
+              BU:GU {formatBrewNumber(buGuRatio(stats.ibu, stats.og), 'default', lang)}
+            </p>
+          )}
         </div>
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('color')} ({preferences.colorScale.toUpperCase()})</p>
@@ -341,10 +347,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('est_og')}</p>
           <p className={`text-4xl font-black ${getStatColor(stats.og, selectedStyleGuideline?.og_min, selectedStyleGuideline?.og_max)}`}>
-            {formatBrewNumber(stats.og, 'og', lang)}
+            {formatGravity(stats.og, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}
           </p>
+          {gravityUnit === 'both' && <p className="text-[10px] text-stone-400 font-bold mt-1">{formatGravity(stats.og, lang, 'plato')}</p>}
           {selectedStyleGuideline?.og_min !== undefined && (
-            <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.og_min}-{selectedStyleGuideline.og_max}</p>
+            <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {formatGravity(selectedStyleGuideline.og_min, lang, gravityUnit === 'plato' ? 'plato' : 'sg')} – {formatGravity(selectedStyleGuideline.og_max, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}</p>
           )}
         </div>
       </section>
