@@ -18,7 +18,7 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
   if (!recipe) return null;
 
   const abv = log 
-    ? calculateABV(log.measurements.actual_og, log.measurements.actual_fg, log.status === 'bottled', log.bottling?.sugar_amount, log.bottling?.bottling_volume || log.measurements.actual_volume)
+    ? calculateABV(log.measurements.actual_og, log.measurements.actual_fg, log.status === 'bottled', (log.bottling?.method === 'keg' ? 0 : log.bottling?.sugar_amount), log.bottling?.bottling_volume || log.measurements.actual_volume)
     : recipe.specifications?.abv?.value;
 
   return (
@@ -179,7 +179,7 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
                     <div className="grid grid-cols-1 gap-2 text-xs">
                       <p className="flex justify-between"><span>{t('date_label')}:</span> <span className="font-bold">{log.bottling?.date || '-'}</span></p>
                       <p className="flex justify-between"><span>{t('volume_label')}:</span> <span className="font-bold">{formatBrewNumber(log.bottling?.bottling_volume, 'vol', lang, preferences)} {preferences.units === 'imperial' ? 'Gal' : 'L'}</span></p>
-                      <p className="flex justify-between"><span>{t('sugar_label')}:</span> <span className="font-bold">{log.bottling?.sugar_amount} g ({log.bottling?.sugar_type})</span></p>
+                      <p className="flex justify-between"><span>{t('sugar_label')}:</span> <span className="font-bold">{(log.bottling?.method === 'keg' ? 0 : log.bottling?.sugar_amount)} g ({log.bottling?.sugar_type})</span></p>
                       <p className="flex justify-between"><span>CO2:</span> <span className="font-bold">{log.bottling?.target_co2} vol</span></p>
                     </div>
                  </div>

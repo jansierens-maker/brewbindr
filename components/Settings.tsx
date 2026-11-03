@@ -144,6 +144,25 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <label htmlFor="refractometer_wcf" className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('refractometer_wcf')}</label>
+                <input
+                  id="refractometer_wcf"
+                  name="refractometer_wcf"
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  max="1.1"
+                  defaultValue={preferences.refractometerWcf ?? 1.04}
+                  onBlur={e => {
+                    const v = parseFloat(e.target.value);
+                    if (!isNaN(v) && v >= 1 && v <= 1.1) updatePreferences({ refractometerWcf: v });
+                  }}
+                  className="w-32 p-3 bg-stone-50 border border-stone-200 rounded-xl font-bold"
+                />
+                <p className="text-[10px] text-stone-400">{t('refractometer_wcf_hint')}</p>
+              </div>
             </div>
           </div>
 

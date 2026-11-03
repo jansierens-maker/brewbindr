@@ -235,6 +235,37 @@ export const correctHydrometer = (sg: number, readingTempC: number, calibrationT
   return sg * (density(readingTempC) / density(calibrationTempC));
 };
 
+/** Default wort correction factor of a refractometer (Brix of wort vs. sugar solution). */
+export const DEFAULT_WCF = 1.04;
+
+/** Refractometer reading (°Brix) of unfermented wort to SG. */
+export const brixToSg = (brix: number, wcf: number = DEFAULT_WCF): number => platoToSg(brix / (wcf || 1));
+
+/**
+ * Gravity during or after fermentation from a refractometer, corrected for alcohol
+ * (Sean Terrill's cubic formula). originalBrix is the wort before fermentation.
+ */
+export const refractometerFg = (originalBrix: number, finalBrix: number, wcf: number = DEFAULT_WCF): number => {
+  const ob = originalBrix / (wcf || 1);
+  const fb = finalBrix / (wcf || 1);
+  return 1 - 0.0044993 * ob + 0.011774 * fb + 0.00027581 * ob ** 2 - 0.0012717 * fb ** 2
+    - 0.0000072800 * ob ** 3 + 0.000063293 * fb ** 3;
+};
+
+/** The Brix a refractometer shows for a wort of this SG (inverse of brixToSg). */
+export const sgToBrix = (sg: number, wcf: number = DEFAULT_WCF): number => sgToPlato(sg) * (wcf || 1);
+
+/**
+ * Regulator pressure for force carbonation in a keg: CO2 volumes at a beer temperature.
+ * Standard carbonation-chart fit; result in bar and psi above atmospheric pressure.
+ */
+export const kegPressure = (volumes: number, tempC: number): { bar: number; psi: number } => {
+  const f = tempC * 9 / 5 + 32;
+  const psi = Math.max(0, -16.6999 - 0.0101059 * f + 0.00116512 * f ** 2 + 0.173354 * f * volumes
+    + 4.24267 * volumes - 0.0684226 * volumes ** 2);
+  return { psi, bar: psi * 0.0689476 };
+};
+
 /** Bitterness to gravity ratio: IBU per gravity point (0.5 = balanced). */
 export const buGuRatio = (ibu: number, og: number): number =>
   og > 1 ? ibu / ((og - 1) * 1000) : 0;

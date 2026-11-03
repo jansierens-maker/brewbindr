@@ -29,7 +29,8 @@ const defaultPreferences: UserPreferences = {
   language: 'en',
   enableStockManagement: false,
   bottled_period: 'month',
-  gravityUnit: 'sg'
+  gravityUnit: 'sg',
+  refractometerWcf: 1.04
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);

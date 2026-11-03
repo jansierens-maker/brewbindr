@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
-import { sgToPlato, platoToSg, correctHydrometer, formatGravity, HYDROMETER_CALIBRATION_C, roundTo } from '../services/calculations';
+import { sgToPlato, platoToSg, correctHydrometer, formatGravity, HYDROMETER_CALIBRATION_C, roundTo, brixToSg, sgToBrix, refractometerFg, DEFAULT_WCF } from '../services/calculations';
 
 interface GravityInputProps {
   id: string;
@@ -10,6 +10,10 @@ interface GravityInputProps {
   value: number | undefined; // always SG
   onChange: (sg: number | undefined) => void;
   disabled?: boolean;
+  /** 'fg' = during/after fermentation: a refractometer reading needs the alcohol correction */
+  kind?: 'og' | 'fg';
+  /** Original gravity (SG), needed to correct a refractometer reading after fermentation */
+  originalGravity?: number;
 }
 
 const toText = (sg: number | undefined, plato: boolean) =>
@@ -19,7 +23,7 @@ const toText = (sg: number | undefined, plato: boolean) =>
  * A measured gravity, entered in SG or °P (user preference) and stored as SG.
  * Optional: the temperature of the sample, to correct a hydrometer reading.
  */
-const GravityInput: React.FC<GravityInputProps> = ({ id, name, label, value, onChange, disabled }) => {
+const GravityInput: React.FC<GravityInputProps> = ({ id, name, label, value, onChange, disabled, kind = 'og', originalGravity }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
   const unit = preferences.gravityUnit ?? 'sg';
@@ -29,6 +33,8 @@ const GravityInput: React.FC<GravityInputProps> = ({ id, name, label, value, onC
   // Keep what the user types (e.g. "13." or "1.05") instead of reformatting on every key
   const [text, setText] = useState(toText(value, plato));
   const [tempText, setTempText] = useState('');
+  const [brixText, setBrixText] = useState('');
+  const wcf = preferences.refractometerWcf || DEFAULT_WCF;
 
   useEffect(() => {
     const typed = parseFloat(text);
@@ -50,6 +56,11 @@ const GravityInput: React.FC<GravityInputProps> = ({ id, name, label, value, onC
   const corrected = value !== undefined && !isNaN(value) && tempC !== undefined && Math.abs(tempC - HYDROMETER_CALIBRATION_C) >= 0.5
     ? correctHydrometer(value, tempC)
     : undefined;
+  const brix = parseFloat(brixText);
+  const hasOg = originalGravity !== undefined && !isNaN(originalGravity) && originalGravity > 1;
+  const fromRefractometer = isNaN(brix) ? undefined
+    : kind === 'og' ? brixToSg(brix, wcf)
+    : hasOg ? refractometerFg(sgToBrix(originalGravity!, wcf), brix, wcf) : undefined;
   const calibrationLabel = imperial ? `${Math.round(HYDROMETER_CALIBRATION_C * 9 / 5 + 32)} °F` : `${HYDROMETER_CALIBRATION_C} °C`;
 
   return (
@@ -72,7 +83,9 @@ const GravityInput: React.FC<GravityInputProps> = ({ id, name, label, value, onC
         <p className="text-[10px] font-bold text-stone-400">= {formatGravity(value, lang, plato ? 'sg' : 'plato')}</p>
       )}
       {!disabled && (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        <details className="pt-1 group">
+          <summary className="text-[10px] font-bold text-stone-400 uppercase cursor-pointer select-none">{t('measurement_tools')}</summary>
+        <div className="flex flex-wrap items-center gap-2 pt-2">
           <label htmlFor={`${id}_temp`} className="text-[10px] font-bold text-stone-400 uppercase">{t('measured_at_temp')}</label>
           <input
             id={`${id}_temp`}
@@ -98,6 +111,36 @@ const GravityInput: React.FC<GravityInputProps> = ({ id, name, label, value, onC
             </button>
           )}
         </div>
+        <div className="flex flex-wrap items-center gap-2 pt-2">
+          <label htmlFor={`${id}_brix`} className="text-[10px] font-bold text-stone-400 uppercase">{t('refractometer')}</label>
+          <input
+            id={`${id}_brix`}
+            name={`${name}_brix`}
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            min={0}
+            max={40}
+            className="w-20 p-2 bg-stone-50 border rounded-lg text-sm font-bold"
+            value={brixText}
+            onChange={e => setBrixText(e.target.value)}
+          />
+          <span className="text-[10px] font-bold text-stone-400">°Bx</span>
+          {fromRefractometer !== undefined && (
+            <button
+              type="button"
+              onClick={() => { onChange(roundTo(fromRefractometer, 4)); setBrixText(''); }}
+              className="text-[10px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 hover:bg-amber-100"
+            >
+              {t('use_value')}: {formatGravity(fromRefractometer, lang, unit)}
+            </button>
+          )}
+          {kind === 'fg' && !isNaN(brix) && !hasOg && (
+            <span className="text-[10px] font-bold text-red-500">{t('refractometer_needs_og')}</span>
+          )}
+        </div>
+        {kind === 'fg' && <p className="text-[10px] text-stone-400 pt-1">{t('refractometer_fg_hint')}</p>}
+        </details>
       )}
     </div>
   );
