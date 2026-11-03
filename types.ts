@@ -235,6 +235,12 @@ export interface BrewLogEntry {
   lageringDate?: string;
   status: 'brewing' | 'fermenting' | 'lagering' | 'bottled';
   notes: string;
+  yeast_pitch?: {
+    form: 'dry' | 'liquid';
+    amount: number;            // grams (dry) or packs (liquid)
+    production_date?: string;  // liquid yeast
+    rate?: number;             // million cells / ml / °P; default from yeast type and OG
+  };
   measurements: {
     actual_og?: number;
     actual_fg?: number;

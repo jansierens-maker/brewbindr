@@ -4,6 +4,7 @@ import {
   hopTemperatureFactor, normalizeFermentableType, guessFermentableType, mainMashTemperature,
   sgToPlato, platoToSg, formatGravity, correctHydrometer, buGuRatio,
   brixToSg, sgToBrix, refractometerFg, kegPressure,
+  pitchRate, cellsNeeded, liquidViability, starterGrowth, starterFor, DRY_CELLS_PER_GRAM,
   roundTo, roundByUnit, normalizeRecipe, formatBrewNumber, formatStockAmount, srmToEbc,
 } from '../../services/calculations';
 import type { Recipe } from '../../types';
@@ -297,4 +298,45 @@ describe('keg carbonation', () => {
     expect(kegPressure(2.5, 10).bar).toBeGreaterThan(kegPressure(2.5, 4).bar); // warmer needs more pressure
   });
   it('never returns a negative pressure', () => expect(kegPressure(1, 0).psi).toBe(0));
+});
+
+describe('yeast pitching', () => {
+  it('uses the usual pitch rates', () => {
+    expect(pitchRate('ale', 1.050)).toBe(0.75);
+    expect(pitchRate('ale', 1.075)).toBe(1.0);
+    expect(pitchRate('lager', 1.048)).toBe(1.5);
+    expect(pitchRate('lager', 1.070)).toBe(2.0);
+  });
+
+  it('computes the cells needed', () => {
+    // 20 L at 12 °P, 0.75 M/ml/°P = 180 billion
+    expect(cellsNeeded(platoToSg(12), 20, 0.75)).toBeCloseTo(180, 0);
+    expect(cellsNeeded(1, 20, 0.75)).toBe(0);
+  });
+
+  it('lowers liquid yeast viability with age', () => {
+    const today = new Date('2026-11-01');
+    expect(liquidViability('2026-11-01', today)).toBe(1);
+    expect(liquidViability('2026-10-02', today)).toBeCloseTo(0.79, 2); // 30 days
+    expect(liquidViability('2026-01-01', today)).toBe(0);
+    expect(liquidViability(undefined, today)).toBe(1);
+  });
+
+  it('grows cells in a stir-plate starter (Troester)', () => {
+    // 100 B in 1 L of 1.036: 93 g extract, 1.07 B/g < 1.4, so +1.4 B per gram
+    expect(starterGrowth(100, 1)).toBeCloseTo(100 + 1.4 * 93.2, 0);
+    // crowded: 300 B in 0.5 L (6.4 B/g) does not grow
+    expect(starterGrowth(300, 0.5)).toBe(300);
+  });
+
+  it('picks the smallest starter that is enough', () => {
+    expect(starterFor(100, 178)).toBe(1);   // one fresh pack for a 20 L ale of 1.048
+    expect(starterFor(100, 90)).toBe(0.5);
+    expect(starterFor(10, 2000)).toBeUndefined(); // needs a step starter
+  });
+});
+
+describe('dry yeast dose', () => {
+  it('one 11.5 g sachet is enough for 20 L of 1.050 ale, as the makers advise', () =>
+    expect(11.5 * DRY_CELLS_PER_GRAM).toBeGreaterThanOrEqual(cellsNeeded(1.050, 20, pitchRate('ale', 1.050))));
 });
