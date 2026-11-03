@@ -40,6 +40,9 @@ jobs:
         with:
           version: latest
 
+      - name: Supabase CLI version
+        run: supabase --version
+
       - name: Start a fresh database and apply all migrations
         run: supabase db start
 
@@ -48,9 +51,7 @@ jobs:
 
       - name: What would change on production (dry run)
         if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
-        run: |
-          supabase link --project-ref "$SUPABASE_PROJECT_ID" -p "$SUPABASE_DB_PASSWORD"
-          supabase db push --dry-run -p "$SUPABASE_DB_PASSWORD"
+        run: supabase db push --dry-run --remote="$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
 
   deploy:
     name: Apply migrations to production
@@ -72,8 +73,8 @@ jobs:
         with:
           version: latest
 
-      - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" -p "$SUPABASE_DB_PASSWORD"
+      - name: Supabase CLI version
+        run: supabase --version
 
       - name: Apply new migrations
-        run: supabase db push -p "$SUPABASE_DB_PASSWORD"
+        run: supabase db push --remote="$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" --yes
