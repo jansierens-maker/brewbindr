@@ -38,7 +38,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.0.0 # pinned: a new major (v3) changed the push flags and broke this workflow
 
       - name: Supabase CLI version
         run: supabase --version
@@ -71,7 +71,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.0.0 # pinned: a new major (v3) changed the push flags and broke this workflow
 
       - name: Supabase CLI version
         run: supabase --version
