@@ -55,23 +55,33 @@ test.describe('Recepten', () => {
       await dialog.accept();
     });
 
+    // Timestamped markers: when the test times out, the log shows the last step reached
+    const t0 = Date.now();
+    const mark = (step: string) => console.log(`[recipes] ${((Date.now() - t0) / 1000).toFixed(1)}s ${step}`);
+
     await login(page);
+    mark('logged in');
     try {
       // 1. Create: the recipe shows up in the list
       await createRecipe(page, name);
       await expect(recipeCard(page, name)).toHaveCount(1, { timeout: 15000 });
+      mark('created');
 
       // 2. Same name again (other case/spaces) is refused and the editor stays open
       await createRecipe(page, `  ${name.toUpperCase()} `);
       await expect.poll(() => dialogs.some(m => NAME_TAKEN.test(m))).toBe(true);
       await expect(page.getByRole('button', { name: SAVE_RECIPE })).toBeVisible();
+      mark('duplicate refused');
 
       // Leave the editor without saving: back to the recipe list
       await page.locator('aside button:has(i.fa-flask)').first().click();
       await expect(recipeCard(page, name)).toHaveCount(1);
+      mark('back on the list');
     } finally {
       // 3. Clean up
+      mark('cleaning up');
       await deleteRecipe(page, name);
+      mark('deleted');
     }
   });
 });
