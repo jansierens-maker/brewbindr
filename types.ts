@@ -165,6 +165,7 @@ export interface Recipe {
     water?: Water[];
   };
   mash?: MashProfile;
+  equipmentId?: string; // brewing installation (library item of type 'equipment')
   efficiency: {
     brewhouse: number;
   };

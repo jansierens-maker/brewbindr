@@ -1,20 +1,23 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Recipe, BrewLogEntry } from '../types';
+import { Recipe, BrewLogEntry, LibraryIngredient } from '../types';
 import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import GravityInput from './GravityInput';
 import YeastPitch from './YeastPitch';
+import WaterPlanCard from './WaterPlanCard';
 
 interface BrewLogProps {
   recipe: Recipe;
   initialLog?: BrewLogEntry;
   onUpdate: (entry: BrewLogEntry) => void;
   onSaveAndExit: (entry: BrewLogEntry) => void;
+  /** Brewing installation of the recipe, for water volumes and boil gravity */
+  equipment?: LibraryIngredient;
 }
 
-const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit }) => {
+const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit, equipment }) => {
   const { t, lang } = useTranslation();
   const { preferences, breweryRole } = useUser();
 
@@ -47,8 +50,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
 
   // Calculate dynamic stats based on current overrides in the log
   const currentStats = useMemo(() => {
-    return calculateRecipeStats(recipe, entry.measurements.measured_alpha);
-  }, [recipe, entry.measurements.measured_alpha]);
+    return calculateRecipeStats(recipe, entry.measurements.measured_alpha, equipment);
+  }, [recipe, entry.measurements.measured_alpha, equipment]);
 
   const currentAbvDisplay = useMemo(() => {
     const isActuallyBottled = entry.status === 'bottled';
@@ -294,6 +297,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
                 ))}
               </div>
             </div>
+
+            <WaterPlanCard recipe={recipe} equipment={equipment} og={recipe.specifications?.og?.value || currentStats.og} />
 
             {recipe.ingredients.cultures.length > 0 && (
               <YeastPitch

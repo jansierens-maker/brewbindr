@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
+import { calculateRecipeStats, resolveEquipment, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canEditRecipe, canManageRecipes } from '../services/permissions';
+import WaterPlanCard from './WaterPlanCard';
 
 interface RecipeCreatorProps {
   onSave: (recipe: Recipe) => void;
@@ -69,7 +70,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
     }
   };
 
-  const stats = useMemo(() => calculateRecipeStats(recipe), [recipe]);
+  // Brewing installation: the one the recipe names, or the brewery's only one
+  const equipmentOptions = useMemo(() => library.filter(l => l.type === 'equipment'), [library]);
+  const equipment = useMemo(() => resolveEquipment(recipe, library), [recipe.equipmentId, library]);
+  const defaultEquipment = useMemo(() => resolveEquipment({}, library), [library]);
+  const stats = useMemo(() => calculateRecipeStats(recipe, undefined, equipment), [recipe, equipment]);
 
   const handleAiAnalyze = async () => {
     setIsAnalyzing(true);
@@ -633,6 +638,18 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Water volumes and strike temperature */}
+        <div className="pt-6 border-t border-stone-100">
+          <WaterPlanCard
+            recipe={recipe}
+            equipment={equipment}
+            og={stats.og}
+            equipmentOptions={equipmentOptions}
+            defaultEquipment={defaultEquipment}
+            onEquipmentChange={equipmentId => setRecipe(prev => ({ ...prev, equipmentId }))}
+          />
         </div>
 
         {/* Recipe Notes */}

@@ -407,7 +407,82 @@ export const mainMashTemperature = (recipe: Recipe): number | undefined => {
   return steps.reduce((best, st) => (st.time > best.time ? st : best)).temp;
 };
 
-export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<string, number>) => {
+/** Water absorbed by spent grain (L per kg); typical for a mash tun, BIAB squeezes out more. */
+export const GRAIN_ABSORPTION_L_PER_KG = 1.0;
+export const BIAB_GRAIN_ABSORPTION_L_PER_KG = 0.7;
+/** Mash thickness used when the recipe gives no infusion volume. */
+export const DEFAULT_MASH_RATIO_L_PER_KG = 3.0;
+export const DEFAULT_GRAIN_TEMP_C = 20;
+
+const fermentableKg = (f: Recipe['ingredients']['fermentables'][number]): number => {
+  const unit = normalizeUnit(f.amount?.unit);
+  const v = f.amount?.value || 0;
+  return unit === 'pounds' ? v * 0.453592 : unit === 'grams' ? v / 1000 : unit === 'ounces' ? v * 0.0283495 : v;
+};
+
+const batchLiters = (recipe: Recipe): number => {
+  const v = recipe.batch_size?.value || 0;
+  return normalizeUnit(recipe.batch_size?.unit) === 'gallons' ? v * 3.78541 : v;
+};
+
+/**
+ * The brewing installation for a recipe: the one it names, otherwise the brewery's only
+ * installation. Undefined when there is none or the choice is ambiguous.
+ */
+export const resolveEquipment = (recipe: Pick<Recipe, 'equipmentId'>, library: LibraryIngredient[]): LibraryIngredient | undefined => {
+  const all = library.filter(l => l.type === 'equipment');
+  if (recipe.equipmentId) return all.find(e => e.id === recipe.equipmentId);
+  return all.length === 1 ? all[0] : undefined;
+};
+
+export interface WaterPlan {
+  grainKg: number;
+  mashWaterL: number;
+  spargeWaterL: number;
+  totalWaterL: number;
+  preBoilL: number;
+  postBoilL: number;
+  mashTempC?: number;
+  grainTempC: number;
+  strikeTempC?: number;
+  preBoilSg?: number;
+}
+
+/**
+ * Water for brew day from the recipe and the installation's losses:
+ * into fermenter (batch) − top-up + trub/chiller loss = after boil; + evaporation = before boil;
+ * + grain absorption + lauter dead space = total. BIAB mashes with all of it; other systems
+ * with the first infusion of the recipe's mash (or 3 L/kg) and sparge the rest.
+ * Strike temperature: T + 0.41 / ratio × (T − grain temperature) (Palmer, metric).
+ */
+export const waterPlan = (recipe: Recipe, equipment: LibraryIngredient, og?: number): WaterPlan => {
+  const mashed = (recipe.ingredients?.fermentables ?? []).filter(f => isMashed(f.type));
+  const grainKg = mashed.reduce((sum, f) => sum + fermentableKg(f), 0);
+  const biab = equipment.equipment_type === 'biab';
+
+  const postBoilL = Math.max(0, batchLiters(recipe) - (equipment.top_up_water || 0)) + (equipment.trub_chiller_loss || 0);
+  const boilMin = recipe.boil_time?.value ?? equipment.boil_time ?? 60;
+  const preBoilL = postBoilL + (equipment.evap_rate || 0) * boilMin / 60;
+  const absorption = grainKg * (biab ? BIAB_GRAIN_ABSORPTION_L_PER_KG : GRAIN_ABSORPTION_L_PER_KG);
+  const totalWaterL = preBoilL + absorption + (equipment.lauter_deadspace || 0);
+
+  const firstStep = recipe.mash?.steps?.[0];
+  const infusion = firstStep?.infuse_amount && firstStep.infuse_amount > 0 ? firstStep.infuse_amount : undefined;
+  const mashWaterL = biab ? totalWaterL : Math.min(totalWaterL, infusion ?? grainKg * DEFAULT_MASH_RATIO_L_PER_KG);
+  const spargeWaterL = Math.max(0, totalWaterL - mashWaterL);
+
+  const mashTempC = firstStep ? (firstStep.temperature ?? firstStep.step_temp) : undefined;
+  const grainTempC = recipe.mash?.grain_temp || equipment.grain_temp || DEFAULT_GRAIN_TEMP_C;
+  const ratio = grainKg > 0 ? mashWaterL / grainKg : 0;
+  const strikeTempC = mashTempC !== undefined && ratio > 0
+    ? mashTempC + (0.41 / ratio) * (mashTempC - grainTempC)
+    : undefined;
+  const preBoilSg = og && og > 1 && preBoilL > 0 ? 1 + (og - 1) * postBoilL / preBoilL : undefined;
+
+  return { grainKg, mashWaterL, spargeWaterL, totalWaterL, preBoilL, postBoilL, mashTempC, grainTempC, strikeTempC, preBoilSg };
+};
+
+export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<string, number>, equipment?: LibraryIngredient) => {
   const batchUnit = normalizeUnit(recipe.batch_size?.unit);
   const batchSizeL = batchUnit === 'liters' ? (recipe.batch_size?.value || 0) : (recipe.batch_size?.value || 0) * 3.78541;
   const efficiency = (recipe.efficiency?.brewhouse || 75) / 100;
@@ -467,8 +542,11 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
   });
   const colorSRM = mcu > 0 ? 1.4922 * Math.pow(mcu, 0.6859) : 0;
 
-  // Tinseth, with the usual corrections for hop form and use
-  const bignessFactor = 1.65 * Math.pow(0.000125, (og - 1));
+  // Tinseth, with the usual corrections for hop form and use. Tinseth's gravity is that of the
+  // boiling wort: with an installation (known evaporation) the average of pre-boil and OG.
+  const preBoilSg = equipment ? waterPlan(recipe, equipment, og).preBoilSg : undefined;
+  const boilGravity = preBoilSg ? (preBoilSg + og) / 2 : og;
+  const bignessFactor = 1.65 * Math.pow(0.000125, (boilGravity - 1));
   const boilUtilization = (minutes: number) => bignessFactor * (1 - Math.exp(-0.04 * minutes)) / 4.15;
   let ibu = 0;
   hops.forEach(h => {
