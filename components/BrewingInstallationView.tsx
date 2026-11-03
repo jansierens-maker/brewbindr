@@ -4,6 +4,7 @@ import { LibraryIngredient, MashStep, Vessel } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { supabaseService } from '../services/supabaseService';
+import { equipmentCapacity } from '../services/calculations';
 
 interface Props {
   library: LibraryIngredient[];
@@ -17,6 +18,9 @@ type EquipmentPreset = {
   efficiency: number;
   vessels: Vessel[];
   trub_loss: number;
+  mash_capacity?: number;
+  grain_displacement?: number;
+  boil_capacity?: number;
 };
 
 const PRESETS: EquipmentPreset[] = [
@@ -26,6 +30,9 @@ const PRESETS: EquipmentPreset[] = [
     batch: 23,
     efficiency: 70,
     trub_loss: 2,
+    mash_capacity: 22,
+    grain_displacement: 1,
+    boil_capacity: 23,
     vessels: [
       { name: "Maischketel", role: 'combined', volume: 27, heating: 'electric', pump: true },
       { name: "Kookketel", role: 'boil', volume: 23, heating: 'electric', pump: true }
@@ -199,6 +206,9 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
             batch_size: preset.batch,
             efficiency: preset.efficiency,
             trub_chiller_loss: preset.trub_loss,
+            mash_capacity: preset.mash_capacity,
+            grain_displacement: preset.grain_displacement,
+            boil_capacity: preset.boil_capacity,
             vessels: preset.vessels
         });
     }
@@ -529,6 +539,22 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
                             <div>
                                 <label className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('top_up_water_label')} (L)</label>
                                 <input type="number" className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.top_up_water || ""} onChange={e => setEditForm({...editForm, top_up_water: parseFloat(e.target.value) || 0})} />
+                            </div>
+                            <div>
+                                <label htmlFor="eq_mash_capacity" className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('mash_capacity_label')} (L)</label>
+                                <input id="eq_mash_capacity" name="mash_capacity" type="number" step="0.1" min="0" max="500" placeholder={String(equipmentCapacity(editForm as LibraryIngredient).mashCapacity ?? t('no_limit'))} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.mash_capacity ?? ""} onChange={e => setEditForm({...editForm, mash_capacity: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
+                            </div>
+                            <div>
+                                <label htmlFor="eq_grain_displacement" className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('grain_displacement_label')} (L/kg)</label>
+                                <input id="eq_grain_displacement" name="grain_displacement" type="number" step="0.1" min="0" max="500" placeholder={String(equipmentCapacity(editForm as LibraryIngredient).grainDisplacement)} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.grain_displacement ?? ""} onChange={e => setEditForm({...editForm, grain_displacement: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
+                            </div>
+                            <div>
+                                <label htmlFor="eq_grain_absorption" className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('grain_absorption_label')} (L/kg)</label>
+                                <input id="eq_grain_absorption" name="grain_absorption" type="number" step="0.1" min="0" max="500" placeholder={editForm.equipment_type === 'biab' ? '0.7' : '1.0'} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.grain_absorption ?? ""} onChange={e => setEditForm({...editForm, grain_absorption: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
+                            </div>
+                            <div>
+                                <label htmlFor="eq_boil_capacity" className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('boil_capacity_label')} (L)</label>
+                                <input id="eq_boil_capacity" name="boil_capacity" type="number" step="0.1" min="0" max="500" placeholder={String(equipmentCapacity(editForm as LibraryIngredient).boilCapacity ?? t('no_limit'))} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.boil_capacity ?? ""} onChange={e => setEditForm({...editForm, boil_capacity: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
                             </div>
                              {showField('tun_specific_heat') && (
                                 <div>

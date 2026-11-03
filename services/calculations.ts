@@ -435,6 +435,32 @@ export const resolveEquipment = (recipe: Pick<Recipe, 'equipmentId'>, library: L
   return all.length === 1 ? all[0] : undefined;
 };
 
+/**
+ * Capacity of installations whose stored settings predate the capacity fields, by preset.
+ * Brewie: 22 L water + grain in the mash tank (27 L), about 1 L per kg for grain and bag,
+ * 23 L boil tank (Brewie's own guidance, as published by Brewie distributors).
+ */
+const PRESET_CAPACITY: Record<string, Pick<LibraryIngredient, 'mash_capacity' | 'grain_displacement' | 'boil_capacity'>> = {
+  Brewie: { mash_capacity: 22, grain_displacement: 1.0, boil_capacity: 23 },
+};
+export const DEFAULT_GRAIN_DISPLACEMENT_L_PER_KG = 0.7;
+/** Below this the mash is too thick to stir or pump. */
+export const MIN_MASH_RATIO_L_PER_KG = 2.0;
+
+/** The installation's capacity settings, falling back to its preset. */
+export const equipmentCapacity = (equipment: LibraryIngredient) => {
+  const preset = (equipment.preset && PRESET_CAPACITY[equipment.preset]) || {};
+  const biab = equipment.equipment_type === 'biab';
+  return {
+    mashCapacity: equipment.mash_capacity ?? preset.mash_capacity,
+    grainDisplacement: equipment.grain_displacement ?? preset.grain_displacement ?? DEFAULT_GRAIN_DISPLACEMENT_L_PER_KG,
+    grainAbsorption: equipment.grain_absorption ?? (biab ? BIAB_GRAIN_ABSORPTION_L_PER_KG : GRAIN_ABSORPTION_L_PER_KG),
+    boilCapacity: equipment.boil_capacity ?? preset.boil_capacity,
+  };
+};
+
+export type WaterWarning = 'mash_capped' | 'too_much_grain' | 'mash_over_capacity' | 'boil_over_capacity';
+
 export interface WaterPlan {
   grainKg: number;
   mashWaterL: number;
@@ -442,34 +468,73 @@ export interface WaterPlan {
   totalWaterL: number;
   preBoilL: number;
   postBoilL: number;
+  intoFermenterL: number;  // differs from the batch when the water is set by hand
+  expectedOg?: number;     // OG for that volume
   mashTempC?: number;
   grainTempC: number;
   strikeTempC?: number;
   preBoilSg?: number;
+  suggestedMashL: number;  // what the app would use (shown as placeholder)
+  suggestedSpargeL: number;
+  manual: boolean;
+  maxMashL?: number;
+  trubLossL: number;
+  warnings: WaterWarning[];
 }
 
 /**
- * Water for brew day from the recipe and the installation's losses:
- * into fermenter (batch) − top-up + trub/chiller loss = after boil; + evaporation = before boil;
- * + grain absorption + lauter dead space = total. BIAB mashes with all of it; other systems
- * with the first infusion of the recipe's mash (or 3 L/kg) and sparge the rest.
+ * Water for brew day from the recipe and the installation.
+ * Needed: into fermenter (batch) − top-up + trub/chiller loss (0 with "drain all") = after boil;
+ * + evaporation = before boil; + grain absorption + lauter dead space = total water.
+ * Mash water: BIAB all of it; otherwise the recipe's first infusion or 3 L/kg, but never more than
+ * fits next to the grain (mash capacity − grain × displacement); the rest is sparge water.
+ * Mash and sparge water can be set by hand per recipe; the volumes and OG then follow from them.
  * Strike temperature: T + 0.41 / ratio × (T − grain temperature) (Palmer, metric).
  */
 export const waterPlan = (recipe: Recipe, equipment: LibraryIngredient, og?: number): WaterPlan => {
   const mashed = (recipe.ingredients?.fermentables ?? []).filter(f => isMashed(f.type));
   const grainKg = mashed.reduce((sum, f) => sum + fermentableKg(f), 0);
   const biab = equipment.equipment_type === 'biab';
+  const cap = equipmentCapacity(equipment);
+  const warnings: WaterWarning[] = [];
 
-  const postBoilL = Math.max(0, batchLiters(recipe) - (equipment.top_up_water || 0)) + (equipment.trub_chiller_loss || 0);
-  const boilMin = recipe.boil_time?.value ?? equipment.boil_time ?? 60;
-  const preBoilL = postBoilL + (equipment.evap_rate || 0) * boilMin / 60;
-  const absorption = grainKg * (biab ? BIAB_GRAIN_ABSORPTION_L_PER_KG : GRAIN_ABSORPTION_L_PER_KG);
-  const totalWaterL = preBoilL + absorption + (equipment.lauter_deadspace || 0);
+  const topUp = equipment.top_up_water || 0;
+  const trubLossL = recipe.water?.drain_all ? 0 : (equipment.trub_chiller_loss || 0);
+  const evapL = (equipment.evap_rate || 0) * (recipe.boil_time?.value ?? equipment.boil_time ?? 60) / 60;
+  const absorptionL = grainKg * cap.grainAbsorption;
+  const deadspaceL = equipment.lauter_deadspace || 0;
 
+  // What the recipe needs
+  const batchL = batchLiters(recipe);
+  const neededPostBoil = Math.max(0, batchL - topUp) + trubLossL;
+  const neededTotal = neededPostBoil + evapL + absorptionL + deadspaceL;
+
+  const maxMashL = cap.mashCapacity !== undefined ? Math.max(0, cap.mashCapacity - grainKg * cap.grainDisplacement) : undefined;
   const firstStep = recipe.mash?.steps?.[0];
   const infusion = firstStep?.infuse_amount && firstStep.infuse_amount > 0 ? firstStep.infuse_amount : undefined;
-  const mashWaterL = biab ? totalWaterL : Math.min(totalWaterL, infusion ?? grainKg * DEFAULT_MASH_RATIO_L_PER_KG);
-  const spargeWaterL = Math.max(0, totalWaterL - mashWaterL);
+  let suggestedMashL = biab ? neededTotal : Math.min(neededTotal, infusion ?? grainKg * DEFAULT_MASH_RATIO_L_PER_KG);
+  if (maxMashL !== undefined && suggestedMashL > maxMashL) {
+    suggestedMashL = maxMashL;
+    warnings.push('mash_capped');
+  }
+  if (grainKg > 0 && maxMashL !== undefined && maxMashL / grainKg < MIN_MASH_RATIO_L_PER_KG) warnings.push('too_much_grain');
+  const suggestedSpargeL = Math.max(0, neededTotal - suggestedMashL);
+
+  // What will be used: own values where given
+  const manual = recipe.water?.mash_l !== undefined || recipe.water?.sparge_l !== undefined;
+  const mashWaterL = recipe.water?.mash_l ?? suggestedMashL;
+  const spargeWaterL = recipe.water?.sparge_l ?? (recipe.water?.mash_l !== undefined ? Math.max(0, neededTotal - mashWaterL) : suggestedSpargeL);
+  const totalWaterL = mashWaterL + spargeWaterL;
+  if (manual && maxMashL !== undefined && mashWaterL > maxMashL + 0.05) warnings.push('mash_over_capacity');
+
+  const preBoilL = Math.max(0, totalWaterL - absorptionL - deadspaceL);
+  const postBoilL = Math.max(0, preBoilL - evapL);
+  const intoFermenterL = Math.max(0, postBoilL - trubLossL + topUp);
+  if (cap.boilCapacity !== undefined && preBoilL > cap.boilCapacity + 0.05) warnings.push('boil_over_capacity');
+
+  // The recipe's OG is for the planned volume; other volumes dilute or concentrate it
+  const expectedOg = og && og > 1 && postBoilL > 0 ? 1 + (og - 1) * neededPostBoil / postBoilL : undefined;
+  const preBoilSg = expectedOg && preBoilL > 0 ? 1 + (expectedOg - 1) * postBoilL / preBoilL : undefined;
 
   const mashTempC = firstStep ? (firstStep.temperature ?? firstStep.step_temp) : undefined;
   const grainTempC = recipe.mash?.grain_temp || equipment.grain_temp || DEFAULT_GRAIN_TEMP_C;
@@ -477,9 +542,11 @@ export const waterPlan = (recipe: Recipe, equipment: LibraryIngredient, og?: num
   const strikeTempC = mashTempC !== undefined && ratio > 0
     ? mashTempC + (0.41 / ratio) * (mashTempC - grainTempC)
     : undefined;
-  const preBoilSg = og && og > 1 && preBoilL > 0 ? 1 + (og - 1) * postBoilL / preBoilL : undefined;
 
-  return { grainKg, mashWaterL, spargeWaterL, totalWaterL, preBoilL, postBoilL, mashTempC, grainTempC, strikeTempC, preBoilSg };
+  return {
+    grainKg, mashWaterL, spargeWaterL, totalWaterL, preBoilL, postBoilL, intoFermenterL, expectedOg,
+    mashTempC, grainTempC, strikeTempC, preBoilSg, suggestedMashL, suggestedSpargeL, manual, maxMashL, trubLossL, warnings,
+  };
 };
 
 export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<string, number>, equipment?: LibraryIngredient) => {

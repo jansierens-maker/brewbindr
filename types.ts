@@ -96,6 +96,10 @@ export interface LibraryIngredient {
   top_up_water?: number;
   lauter_deadspace?: number;
   tun_specific_heat?: number;
+  mash_capacity?: number;      // L: water + grain the mash tun holds
+  grain_displacement?: number; // L per kg: room the grain (and bag) takes in the mash
+  grain_absorption?: number;   // L per kg: water the spent grain keeps
+  boil_capacity?: number;      // L: most wort the boil kettle takes
   grain_temp?: number;
   sparge_temp?: number;
   ph?: number;
@@ -166,6 +170,11 @@ export interface Recipe {
   };
   mash?: MashProfile;
   equipmentId?: string; // brewing installation (library item of type 'equipment')
+  water?: {
+    mash_l?: number;    // own mash water, instead of the calculated one
+    sparge_l?: number;  // own sparge water
+    drain_all?: boolean; // drain everything into the fermenter: no trub/chiller loss
+  };
   efficiency: {
     brewhouse: number;
   };
