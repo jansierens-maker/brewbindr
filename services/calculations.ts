@@ -294,6 +294,51 @@ export const kegPressure = (volumes: number, tempC: number): { bar: number; psi:
   return { psi, bar: psi * 0.0689476 };
 };
 
+/**
+ * Yeast pitching. Cell counts are in billions; pitch rates in million cells per ml per °P.
+ * Ale 0.75, lager 1.5, each a third higher above 1.060 (the usual Mr Malty/Fix rates).
+ */
+export const pitchRate = (yeastType: 'ale' | 'lager', og: number): number =>
+  yeastType === 'lager' ? (og > 1.060 ? 2.0 : 1.5) : (og > 1.060 ? 1.0 : 0.75);
+
+export const cellsNeeded = (og: number, volumeL: number, rate: number): number =>
+  og > 1 && volumeL > 0 ? rate * volumeL * sgToPlato(og) : 0;
+
+/**
+ * Dry yeast: cells per gram. Manufacturers guarantee 6+ billion, measured counts are
+ * usually 15–20; 20 (as Mr Malty uses) matches the dose makers advise (one 11.5 g
+ * sachet for about 20 L of normal-strength ale).
+ */
+export const DRY_CELLS_PER_GRAM = 20;
+/** Liquid yeast: cells per fresh pack or vial. */
+export const LIQUID_CELLS_PER_PACK = 100;
+
+/** Share of living cells in a liquid pack, losing about 0.7 % per day after production. */
+export const liquidViability = (productionDate: string | undefined, today: Date = new Date()): number => {
+  if (!productionDate) return 1;
+  const days = (today.getTime() - new Date(productionDate).getTime()) / 86_400_000;
+  if (isNaN(days)) return 1;
+  return Math.max(0, Math.min(1, 1 - 0.007 * Math.max(0, days)));
+};
+
+/** Starter wort strength and the dry malt extract that gives it (about 100 g per litre). */
+export const STARTER_SG = 1.036;
+export const STARTER_DME_G_PER_L = 100;
+
+/** Cells after a starter on a stir plate (Kai Troester's growth model). */
+export const starterGrowth = (cells: number, starterL: number, sg: number = STARTER_SG): number => {
+  if (starterL <= 0) return cells;
+  const extractG = starterL * 1000 * sg * sgToPlato(sg) / 100;
+  const rate = cells / extractG; // billion cells per gram extract
+  const growthPerGram = rate < 1.4 ? 1.4 : rate <= 3.5 ? 2.33 - 0.67 * rate : 0;
+  return cells + extractG * Math.max(0, growthPerGram);
+};
+
+/** Smallest common starter size that reaches the target, or undefined when one step is not enough. */
+export const STARTER_SIZES_L = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5];
+export const starterFor = (cells: number, needed: number): number | undefined =>
+  STARTER_SIZES_L.find(l => starterGrowth(cells, l) >= needed);
+
 /** Bitterness to gravity ratio: IBU per gravity point (0.5 = balanced). */
 export const buGuRatio = (ibu: number, og: number): number =>
   og > 1 ? ibu / ((og - 1) * 1000) : 0;
