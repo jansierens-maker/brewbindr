@@ -2,10 +2,10 @@ import React, { useMemo } from 'react';
 import { LibraryIngredient, Recipe } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
-import { formatBrewNumber, roundTo, waterPlan } from '../services/calculations';
+import { formatBrewNumber, roundTo, waterPlan, normalizeFermentableType } from '../services/calculations';
 import {
   CaCl2Form, ION_KEYS, Ions, SALTS, SaltId, WATER_PRESETS, ionsOf, ratioCharacter, residualAlkalinity,
-  suggestSalts, sulfateChlorideRatio, treatedWater,
+  suggestSalts, sulfateChlorideRatio, treatedWater, estimateMashPh, lacticAcidFor, DEFAULT_TARGET_MASH_PH, MashMalt,
 } from '../services/waterChemistry';
 
 type WaterChem = NonNullable<Recipe['water_chem']>;
@@ -57,6 +57,24 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
   const start = source ? treatedWater(source.ions, chem.dilution_pct || 0, {}, volumeL) : undefined;
   const result = source ? treatedWater(source.ions, chem.dilution_pct || 0, salts, volumeL) : undefined;
   const ratio = result ? sulfateChlorideRatio(result) : undefined;
+
+  // Mash pH: the mashed malts with the mash water (all salts are in it)
+  const malts: MashMalt[] = (recipe.ingredients?.fermentables ?? [])
+    .filter(f => ['grain', 'adjunct'].includes(normalizeFermentableType(f.type)))
+    .map(f => {
+      const v = f.amount?.value || 0;
+      const kg = f.amount?.unit === 'pounds' ? v * 0.453592 : v;
+      return { name: f.name, kg, colorSrm: f.color?.value || 2 };
+    });
+  const grainKg = malts.reduce((s, m) => s + m.kg, 0);
+  const mashL = plan?.mashWaterL || grainKg * 3;
+  const mashIons = source && mashL > 0 ? treatedWater(source.ions, chem.dilution_pct || 0, salts, mashL) : undefined;
+  const targetPh = chem.target_ph ?? DEFAULT_TARGET_MASH_PH;
+  const phWithout = mashIons ? estimateMashPh(malts, mashIons, mashL) : undefined;
+  const phWith = mashIons && chem.lactic_ml ? estimateMashPh(malts, mashIons, mashL, chem.lactic_ml) : phWithout;
+  const acidNeeded = mashIons ? lacticAcidFor(malts, mashIons, mashL, targetPh) : 0;
+  const phClass = (ph: number | undefined) => ph === undefined ? 'text-stone-900' : ph >= 5.2 && ph <= 5.6 ? 'text-green-700' : 'text-amber-800';
+  const ph = (n: number | undefined) => n === undefined ? '-' : formatBrewNumber(n, 'default', lang);
   const character = ratioCharacter(ratio);
 
   const update = (patch: Partial<WaterChem>) => {
@@ -160,10 +178,11 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
                 </div>
               ))}
             </div>
-          ) : usedSalts.length > 0 || chem.dilution_pct ? (
+          ) : usedSalts.length > 0 || chem.dilution_pct || chem.lactic_ml ? (
             <ul className="text-sm font-bold text-stone-800 space-y-1">
               {chem.dilution_pct ? <li>{t('water_dilution_line').replace('{pct}', fmt(chem.dilution_pct)).replace('{l}', vol(volumeL * chem.dilution_pct / 100))}</li> : null}
               {usedSalts.map(id => <li key={id}>{formatBrewNumber(salts[id]!, 'default', lang)} {SALTS[id].unit} {t(SALT_KEYS[id])}</li>)}
+              {chem.lactic_ml ? <li>{formatBrewNumber(chem.lactic_ml, 'default', lang)} ml {t('lactic_acid_80')}</li> : null}
             </ul>
           ) : (
             <p className="text-xs font-bold text-stone-500">{t('water_no_salts')}</p>
@@ -210,6 +229,46 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
             </b></span>
             {result!.ca < 40 && <span className="text-amber-800 font-bold">{t('water_low_calcium')}</span>}
           </div>
+          {phWithout !== undefined && (
+            <div className="p-4 bg-white rounded-xl border border-teal-100 space-y-3">
+              <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                <p className="text-sm text-stone-600">{t('mash_ph_estimated')}: <b className={`text-xl ${phClass(phWith)}`}>{ph(phWith)}</b>
+                  {chem.lactic_ml ? <span className="text-xs text-stone-500"> ({t('mash_ph_without_acid')} {ph(phWithout)})</span> : null}
+                </p>
+                {editable ? (
+                  <>
+                    <div>
+                      <label htmlFor="chem_target_ph" className="block text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('mash_ph_target')}</label>
+                      <input id="chem_target_ph" name="chem_target_ph" type="number" inputMode="decimal" min={5} max={6} step={0.05}
+                        className="w-24 p-2 bg-white border border-stone-200 rounded-lg text-sm font-bold" placeholder={String(DEFAULT_TARGET_MASH_PH)}
+                        key={`tph-${chem.target_ph ?? ''}`} defaultValue={chem.target_ph ?? ''}
+                        onBlur={e => { const n = parseFloat(e.target.value); update({ target_ph: isNaN(n) || n < 5 || n > 6 ? undefined : n }); }}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }} />
+                    </div>
+                    <div>
+                      <label htmlFor="chem_lactic" className="block text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('lactic_acid_80')} (ml)</label>
+                      <input id="chem_lactic" name="chem_lactic" type="number" inputMode="decimal" min={0} max={100} step={0.1} placeholder="0"
+                        className="w-24 p-2 bg-white border border-stone-200 rounded-lg text-sm font-bold"
+                        key={`lac-${chem.lactic_ml ?? ''}`} defaultValue={chem.lactic_ml ?? ''}
+                        onBlur={e => { const n = parseFloat(e.target.value); update({ lactic_ml: isNaN(n) || n <= 0 ? undefined : roundTo(n, 1) }); }}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }} />
+                    </div>
+                    {acidNeeded > 0 && acidNeeded !== chem.lactic_ml && (
+                      <button type="button" onClick={() => update({ lactic_ml: acidNeeded })}
+                        className="text-xs font-black uppercase text-teal-800 bg-teal-100 border border-teal-200 rounded-lg px-4 py-2 hover:bg-teal-200">
+                        {t('lactic_use').replace('{ml}', formatBrewNumber(acidNeeded, 'default', lang)).replace('{ph}', ph(targetPh))}
+                      </button>
+                    )}
+                  </>
+                ) : null}
+              </div>
+              {editable && acidNeeded === 0 && phWithout < targetPh - 0.05 && (
+                <p className="text-xs font-bold text-amber-800">{t('mash_ph_below_target')}</p>
+              )}
+              <p className="text-[10px] text-stone-500">{t('mash_ph_hint').replace('{volume}', vol(mashL))}</p>
+            </div>
+          )}
+
           <p className="text-[10px] text-stone-500">
             {t('water_chem_hint').replace('{volume}', vol(volumeL))}{!plan && ` ${t('water_chem_no_equipment')}`}
           </p>

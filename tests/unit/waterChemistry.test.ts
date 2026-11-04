@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   treatedWater, residualAlkalinity, alkalinity, sulfateChlorideRatio, ratioCharacter, suggestSalts,
   ionsOf, WATER_PRESETS, ZERO_IONS, SALTS, Ions,
+  estimateMashPh, lacticAcidFor, maltClass, maltDistilledPh,
 } from '../../services/waterChemistry';
 
 const preset = (key: string) => ionsOf(WATER_PRESETS.find(p => p.key === key));
@@ -80,5 +81,52 @@ describe('profiles', () => {
   it('reads library water profiles', () => {
     expect(ionsOf({ calcium: 100, bicarbonate: 250 } as any)).toEqual({ ca: 100, mg: 0, na: 0, cl: 0, so4: 0, hco3: 250 });
     expect(ionsOf(undefined)).toEqual(ZERO_IONS);
+  });
+});
+
+describe('mash pH', () => {
+  const pils = (kg: number) => ({ name: 'Pilsner malt', kg, colorSrm: 2 });
+  const ro = ZERO_IONS;
+
+  it('gives the distilled-water pH of the malt with osmosis water', () =>
+    expect(estimateMashPh([pils(5)], ro, 15)).toBeCloseTo(5.72, 2));
+
+  it('rises with alkaline water and falls with calcium', () => {
+    const munich = preset('munich');
+    expect(estimateMashPh([pils(5)], munich, 15)!).toBeGreaterThan(5.85); // RA 177
+    const calcium = treatedWater(ro, 0, { cacl2: 3 }, 15);
+    expect(estimateMashPh([pils(5)], calcium, 15)!).toBeLessThan(5.72);
+  });
+
+  it('is lower with crystal and roasted malt', () => {
+    const base = estimateMashPh([pils(5)], ro, 15)!;
+    const crystal = estimateMashPh([pils(4.5), { name: 'Caramunich', kg: 0.5, colorSrm: 60 }], ro, 15)!;
+    const roast = estimateMashPh([pils(4.5), { name: 'Carafa III', kg: 0.5, colorSrm: 500 }], ro, 15)!;
+    expect(crystal).toBeLessThan(base);
+    expect(roast).toBeLessThan(crystal);
+    expect(roast).toBeCloseTo(0.9 * 5.72 + 0.1 * 4.71, 2);
+  });
+
+  it('counts acidulated malt as acid: about 0.1 pH per 1 %', () => {
+    const plain = estimateMashPh([pils(5)], ro, 15)!;
+    const acid = estimateMashPh([pils(4.95), { name: 'Sauermalz', kg: 0.05, colorSrm: 2 }], ro, 15)!;
+    expect(plain - acid).toBeCloseTo(0.1, 2);
+  });
+
+  it('computes the lactic acid for the target pH', () => {
+    const water = preset('munich');
+    const ml = lacticAcidFor([pils(5)], water, 15, 5.4);
+    expect(ml).toBeGreaterThan(0);
+    expect(estimateMashPh([pils(5)], water, 15, ml)).toBeCloseTo(5.4, 1);
+    expect(lacticAcidFor([pils(5)], ro, 15, 5.8)).toBe(0); // already below
+  });
+
+  it('classifies malts', () => {
+    expect(maltClass('Chocolate malt', 350)).toBe('roast');
+    expect(maltClass('CaraHell', 10)).toBe('crystal');
+    expect(maltClass('Pale Ale', 3)).toBe('base');
+    expect(maltClass('Mystery', 120)).toBe('crystal');
+    expect(maltClass('Mystery', 400)).toBe('roast');
+    expect(maltDistilledPh('crystal', 60)).toBeCloseTo(4.92, 2);
   });
 });

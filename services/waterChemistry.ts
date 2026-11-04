@@ -144,3 +144,73 @@ export const suggestSalts = (
   });
   return result;
 };
+
+// ---------------------------------------------------------------------------------------------
+// Mash pH
+// ---------------------------------------------------------------------------------------------
+
+export type MaltClass = 'base' | 'crystal' | 'roast' | 'acid';
+
+/** Kind of malt for the pH model, from the name (and colour in SRM for unnamed dark malts). */
+export const maltClass = (name: string | undefined, colorSrm: number): MaltClass => {
+  const n = (name || '').toLowerCase();
+  if (/acid|sauer|zuur|acidul/.test(n)) return 'acid';
+  if (/roast|black|chocolate|choc|carafa|geroost|zwart|torréfié|noir|chocolat|patent/.test(n)) return 'roast';
+  if (/crystal|caramel|cara|kristal|karamel|special b|crystal/.test(n)) return 'crystal';
+  if (colorSrm > 200) return 'roast';
+  if (colorSrm > 15) return 'crystal';
+  return 'base';
+};
+
+/**
+ * pH of a malt mashed in distilled water (Kai Troester's measurements, simplified):
+ * pale base malt 5.72, darker base malts down to about 5.5 (Munich), crystal malts
+ * 5.22 − 0.00504 × colour (°L), roasted malts 4.71.
+ */
+export const maltDistilledPh = (cls: MaltClass, colorSrm: number): number => {
+  switch (cls) {
+    case 'roast': return 4.71;
+    case 'crystal': return 5.22 - 0.00504 * colorSrm;
+    case 'acid': return 5.72; // its acid is counted separately
+    default: return Math.max(5.4, 5.72 - 0.0275 * Math.max(0, colorSrm - 2));
+  }
+};
+
+/** How strongly a kilo of malt resists a pH change (mEq per kg per pH unit). */
+export const MALT_BUFFER_MEQ_PER_KG = 40;
+/** Acidulated malt: about 0.1 pH lower per 1 % of the grist (rule of thumb) → mEq of acid per kg. */
+export const ACID_MALT_MEQ_PER_KG = 400;
+/** Lactic acid 80 % (1.18 g/ml): mEq per ml at mash pH. */
+export const LACTIC_80_MEQ_PER_ML = 10.2;
+export const DEFAULT_TARGET_MASH_PH = 5.4;
+
+export interface MashMalt { name: string; kg: number; colorSrm: number }
+
+/**
+ * Estimated mash pH: the malts' own pH weighted by their buffering, shifted by the
+ * mash water's residual alkalinity and lowered by acid (charge balance):
+ * pH = (Σ kg·B·pH_malt + RA_mEq − acid_mEq) / Σ kg·B.
+ */
+export const estimateMashPh = (malts: MashMalt[], mashIons: Ions, mashWaterL: number, lacticMl = 0): number | undefined => {
+  let buffer = 0;
+  let weighted = 0;
+  let acidMeq = lacticMl * LACTIC_80_MEQ_PER_ML;
+  malts.forEach(m => {
+    if (!(m.kg > 0)) return;
+    const cls = maltClass(m.name, m.colorSrm);
+    buffer += m.kg * MALT_BUFFER_MEQ_PER_KG;
+    weighted += m.kg * MALT_BUFFER_MEQ_PER_KG * maltDistilledPh(cls, m.colorSrm);
+    if (cls === 'acid') acidMeq += m.kg * ACID_MALT_MEQ_PER_KG;
+  });
+  if (buffer === 0) return undefined;
+  const raMeq = (residualAlkalinity(mashIons) / 50) * mashWaterL;
+  return (weighted + raMeq - acidMeq) / buffer;
+};
+
+/** Lactic acid 80 % (ml) that brings the estimated mash pH to the target; 0 when already at or below. */
+export const lacticAcidFor = (malts: MashMalt[], mashIons: Ions, mashWaterL: number, targetPh = DEFAULT_TARGET_MASH_PH): number => {
+  const ph = estimateMashPh(malts, mashIons, mashWaterL);
+  if (ph === undefined || ph <= targetPh) return 0;
+  const buffer = malts.reduce((s, m) => s + (m.kg > 0 ? m.kg * MALT_BUFFER_MEQ_PER_KG : 0), 0);
+  return Math.round(((ph - targetPh) * buffer / LACTIC_80_MEQ_PER_ML) * 10) / 10;
+};

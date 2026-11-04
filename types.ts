@@ -189,6 +189,8 @@ export interface Recipe {
     dilution_pct?: number; // share of osmosis / demineralised water
     cacl2_form?: 'cacl2' | 'cacl2_33' | 'cacl2_36';
     salts?: Partial<Record<'gypsum' | 'cacl2' | 'cacl2_33' | 'cacl2_36' | 'epsom' | 'nacl' | 'nahco3', number>>;
+    target_ph?: number;  // mash pH to aim for (default 5.4)
+    lactic_ml?: number;  // lactic acid 80 % in the mash
   };
   efficiency: {
     brewhouse: number;
