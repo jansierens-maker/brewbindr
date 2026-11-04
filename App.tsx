@@ -1815,7 +1815,7 @@ const AppContent: React.FC = () => {
                 <TastingNotesView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('tasting'); } }} />
               )}
               {view === 'log' && selectedRecipe && (
-                <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} equipment={resolveEquipment(selectedRecipe, deduplicatedLibrary)} />
+                <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} equipment={resolveEquipment(selectedRecipe, deduplicatedLibrary)} library={deduplicatedLibrary} />
               )}
               {view === 'create' && (
                 <RecipeCreator

@@ -6,6 +6,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canEditRecipe, canManageRecipes } from '../services/permissions';
 import WaterPlanCard from './WaterPlanCard';
+import WaterChemistryCard from './WaterChemistryCard';
 
 interface RecipeCreatorProps {
   onSave: (recipe: Recipe) => void;
@@ -651,6 +652,14 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             onEquipmentChange={equipmentId => setRecipe(prev => ({ ...prev, equipmentId }))}
             onWaterChange={water => setRecipe(prev => ({ ...prev, water }))}
           />
+          <div className="mt-4">
+            <WaterChemistryCard
+              recipe={recipe}
+              library={library}
+              equipment={equipment}
+              onChange={water_chem => setRecipe(prev => ({ ...prev, water_chem }))}
+            />
+          </div>
         </div>
 
         {/* Recipe Notes */}

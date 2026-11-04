@@ -7,6 +7,7 @@ import { useUser } from '../services/userContext';
 import GravityInput from './GravityInput';
 import YeastPitch from './YeastPitch';
 import WaterPlanCard from './WaterPlanCard';
+import WaterChemistryCard from './WaterChemistryCard';
 
 interface BrewLogProps {
   recipe: Recipe;
@@ -15,9 +16,11 @@ interface BrewLogProps {
   onSaveAndExit: (entry: BrewLogEntry) => void;
   /** Brewing installation of the recipe, for water volumes and boil gravity */
   equipment?: LibraryIngredient;
+  /** Library, for the recipe's water profiles */
+  library?: LibraryIngredient[];
 }
 
-const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit, equipment }) => {
+const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit, equipment, library = [] }) => {
   const { t, lang } = useTranslation();
   const { preferences, breweryRole } = useUser();
 
@@ -299,6 +302,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
             </div>
 
             <WaterPlanCard recipe={recipe} equipment={equipment} og={currentStats.plannedOg} />
+            <WaterChemistryCard recipe={recipe} library={library} equipment={equipment} />
 
             {recipe.ingredients.cultures.length > 0 && (
               <YeastPitch

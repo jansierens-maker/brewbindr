@@ -201,6 +201,13 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
         name: getVal(w, "NAME"),
         type: 'water',
         amount: getNum(w, "AMOUNT"),
+        calcium: getNum(w, "CALCIUM"),
+        magnesium: getNum(w, "MAGNESIUM"),
+        sodium: getNum(w, "SODIUM"),
+        chloride: getNum(w, "CHLORIDE"),
+        sulfate: getNum(w, "SULFATE"),
+        bicarbonate: getNum(w, "BICARBONATE"),
+        ph: getNum(w, "PH") || undefined,
         notes: getVal(w, "NOTES")
       });
     }

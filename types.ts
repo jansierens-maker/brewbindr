@@ -100,6 +100,14 @@ export interface LibraryIngredient {
   grain_displacement?: number; // L per kg: room the grain (and bag) takes in the mash
   grain_absorption?: number;   // L per kg: water the spent grain keeps
   boil_capacity?: number;      // L: most wort the boil kettle takes
+
+  // Water profile (mg/L)
+  calcium?: number;
+  magnesium?: number;
+  sodium?: number;
+  chloride?: number;
+  sulfate?: number;
+  bicarbonate?: number;
   grain_temp?: number;
   sparge_temp?: number;
   ph?: number;
@@ -174,6 +182,13 @@ export interface Recipe {
     mash_l?: number;    // own mash water, instead of the calculated one
     sparge_l?: number;  // own sparge water
     drain_all?: boolean; // drain everything into the fermenter: no trub/chiller loss
+  };
+  water_chem?: {
+    source?: string;       // library water id or 'preset:<key>'
+    target?: string;       // idem
+    dilution_pct?: number; // share of osmosis / demineralised water
+    cacl2_form?: 'cacl2' | 'cacl2_33' | 'cacl2_36';
+    salts?: Partial<Record<'gypsum' | 'cacl2' | 'cacl2_33' | 'cacl2_36' | 'epsom' | 'nacl' | 'nahco3', number>>;
   };
   efficiency: {
     brewhouse: number;
