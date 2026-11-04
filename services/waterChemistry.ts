@@ -16,7 +16,7 @@ export const ZERO_IONS: Ions = { ca: 0, mg: 0, na: 0, cl: 0, so4: 0, hco3: 0 };
 export interface WaterProfilePreset extends Ions {
   key: string;
   name: string;
-  kind: 'source' | 'target';
+  kind: 'source' | 'target' | 'style';
 }
 
 /**
@@ -38,6 +38,30 @@ export const WATER_PRESETS: WaterProfilePreset[] = [
   { key: 'light_malty', kind: 'target', name: 'Licht – moutig', ca: 50, mg: 7, na: 5, cl: 90, so4: 50, hco3: 0 },
   { key: 'amber_balanced', kind: 'target', name: 'Amber – gebalanceerd', ca: 50, mg: 10, na: 15, cl: 60, so4: 80, hco3: 40 },
   { key: 'dark_balanced', kind: 'target', name: 'Donker – gebalanceerd', ca: 50, mg: 10, na: 15, cl: 65, so4: 70, hco3: 120 },
+
+  // Beer styles: middle of the published ranges (Commercial Water Lab, Brewing Water Chemistry
+  // by style, 2026), tripel per BYO (Ca 50–75, carbonates < 50), NEIPA per Brülosophy
+  // (Ca 111, SO4 100, Cl 150). Dubbel, quadrupel, witbier and blond are derived from the
+  // amber/Belgian and wheat ranges.
+  { key: 'style_west_coast_ipa', kind: 'style', name: 'West Coast IPA / DIPA', ca: 160, mg: 8, na: 20, cl: 60, so4: 300, hco3: 25 },
+  { key: 'style_american_ipa', kind: 'style', name: 'American IPA', ca: 125, mg: 8, na: 25, cl: 75, so4: 225, hco3: 25 },
+  { key: 'style_neipa', kind: 'style', name: 'New England IPA', ca: 110, mg: 5, na: 10, cl: 150, so4: 100, hco3: 0 },
+  { key: 'style_english_ipa', kind: 'style', name: 'English IPA (Burton)', ca: 300, mg: 30, na: 40, cl: 30, so4: 600, hco3: 140 },
+  { key: 'style_pale_ale', kind: 'style', name: 'Pale ale', ca: 100, mg: 8, na: 20, cl: 60, so4: 150, hco3: 25 },
+  { key: 'style_czech_pils', kind: 'style', name: 'Tsjechische pils', ca: 15, mg: 3, na: 5, cl: 10, so4: 10, hco3: 10 },
+  { key: 'style_german_pils', kind: 'style', name: 'Duitse pils / lichte lager', ca: 60, mg: 10, na: 15, cl: 40, so4: 50, hco3: 15 },
+  { key: 'style_belgian_blond', kind: 'style', name: 'Belgisch blond', ca: 75, mg: 10, na: 15, cl: 70, so4: 60, hco3: 40 },
+  { key: 'style_tripel', kind: 'style', name: 'Tripel', ca: 65, mg: 10, na: 10, cl: 60, so4: 60, hco3: 25 },
+  { key: 'style_saison', kind: 'style', name: 'Saison', ca: 100, mg: 10, na: 30, cl: 75, so4: 60, hco3: 75 },
+  { key: 'style_witbier', kind: 'style', name: 'Witbier', ca: 60, mg: 5, na: 15, cl: 60, so4: 40, hco3: 30 },
+  { key: 'style_weizen', kind: 'style', name: 'Weizen', ca: 75, mg: 10, na: 15, cl: 50, so4: 50, hco3: 75 },
+  { key: 'style_dubbel', kind: 'style', name: 'Dubbel', ca: 75, mg: 10, na: 15, cl: 75, so4: 50, hco3: 100 },
+  { key: 'style_quadrupel', kind: 'style', name: 'Quadrupel', ca: 75, mg: 10, na: 15, cl: 80, so4: 50, hco3: 125 },
+  { key: 'style_amber', kind: 'style', name: 'Amber / Weense lager', ca: 100, mg: 12, na: 20, cl: 75, so4: 75, hco3: 75 },
+  { key: 'style_marzen', kind: 'style', name: 'Märzen / Dunkel', ca: 80, mg: 18, na: 20, cl: 15, so4: 20, hco3: 175 },
+  { key: 'style_irish_stout', kind: 'style', name: 'Irish stout', ca: 100, mg: 15, na: 30, cl: 75, so4: 50, hco3: 150 },
+  { key: 'style_stout_porter', kind: 'style', name: 'Stout / porter', ca: 100, mg: 10, na: 20, cl: 110, so4: 75, hco3: 75 },
+  { key: 'style_imperial_stout', kind: 'style', name: 'Imperial stout / Baltic porter', ca: 125, mg: 15, na: 30, cl: 110, so4: 75, hco3: 110 },
 ];
 
 /** Library water profiles store their ions as calcium … bicarbonate (mg/L). */

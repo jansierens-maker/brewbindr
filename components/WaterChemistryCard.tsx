@@ -97,19 +97,25 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
   const vol = (l: number) => preferences.units === 'imperial'
     ? `${formatBrewNumber(l / 3.78541, 'default', lang)} gal` : `${formatBrewNumber(l, 'vol', lang)} L`;
   const field = 'w-full p-2 bg-white border border-stone-200 rounded-lg text-sm font-bold';
-  const profileOptions = (kind: 'source' | 'target') => (
+  // Base water: own profiles first, then classic waters. Target: beer styles first.
+  const group = (label: string, kind: 'source' | 'target' | 'style') => (
+    <optgroup key={kind} label={label}>
+      {WATER_PRESETS.filter(p => p.kind === kind).map(p => <option key={p.key} value={`preset:${p.key}`}>{p.name}</option>)}
+    </optgroup>
+  );
+  const own = waters.length > 0 && (
+    <optgroup label={t('water_own_profiles')}>
+      {waters.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+    </optgroup>
+  );
+  const profileOptions = (use: 'source' | 'target') => use === 'source' ? (
+    <>{own}{group(t('water_city_profiles'), 'source')}</>
+  ) : (
     <>
-      {waters.length > 0 && (
-        <optgroup label={t('water_own_profiles')}>
-          {waters.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-        </optgroup>
-      )}
-      <optgroup label={kind === 'target' ? t('water_target_profiles') : t('water_city_profiles')}>
-        {WATER_PRESETS.filter(p => p.kind === kind).map(p => <option key={p.key} value={`preset:${p.key}`}>{p.name}</option>)}
-      </optgroup>
-      <optgroup label={kind === 'target' ? t('water_city_profiles') : t('water_target_profiles')}>
-        {WATER_PRESETS.filter(p => p.kind !== kind).map(p => <option key={p.key} value={`preset:${p.key}`}>{p.name}</option>)}
-      </optgroup>
+      {group(t('water_style_profiles'), 'style')}
+      {group(t('water_target_profiles'), 'target')}
+      {own}
+      {group(t('water_city_profiles'), 'source')}
     </>
   );
   const saltIds: SaltId[] = ['gypsum', cacl2Form, 'epsom', 'nacl', 'nahco3'];

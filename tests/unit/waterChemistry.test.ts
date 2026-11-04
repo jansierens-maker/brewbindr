@@ -130,3 +130,16 @@ describe('mash pH', () => {
     expect(maltDistilledPh('crystal', 60)).toBeCloseTo(4.92, 2);
   });
 });
+
+describe('beer style profiles', () => {
+  it('have unique keys and the expected balance', () => {
+    const keys = WATER_PRESETS.map(p => p.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    const styles = WATER_PRESETS.filter(p => p.kind === 'style');
+    expect(styles.length).toBeGreaterThanOrEqual(15);
+    expect(ratioCharacter(sulfateChlorideRatio(preset('style_west_coast_ipa')))).toBe('bitter');
+    expect(ratioCharacter(sulfateChlorideRatio(preset('style_neipa')))).toBe('malty');
+    expect(ratioCharacter(sulfateChlorideRatio(preset('style_tripel')))).toBe('balanced');
+    expect(alkalinity(preset('style_tripel'))).toBeLessThan(50); // BYO: carbonates below 50
+  });
+});

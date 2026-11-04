@@ -123,7 +123,7 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit }) =
         ))}
       </div>
       <p className="px-2 text-[10px] text-[var(--color-text-xmuted)]">
-        {t('water_presets_note').replace('{names}', WATER_PRESETS.map(p => p.name).join(', '))}
+        {t('water_presets_note').replace('{names}', WATER_PRESETS.filter(p => p.kind === 'source').map(p => p.name).join(', '))}
       </p>
     </div>
   );
