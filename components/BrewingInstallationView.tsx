@@ -5,6 +5,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { supabaseService } from '../services/supabaseService';
 import { equipmentCapacity } from '../services/calculations';
+import WaterProfilesManager from './WaterProfilesManager';
 
 interface Props {
   library: LibraryIngredient[];
@@ -131,7 +132,7 @@ const PRESETS: EquipmentPreset[] = [
 const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
   const { t } = useTranslation();
   const { user, profile, breweryRole } = useUser();
-  const [activeTab, setActiveTab] = useState<'equipment' | 'mash'>('equipment');
+  const [activeTab, setActiveTab] = useState<'equipment' | 'mash' | 'water'>('equipment');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
   const [itemToDelete, setItemToDelete] = useState<LibraryIngredient | null>(null);
@@ -326,10 +327,18 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
           >
             {t('tab_mash_profiles')}
           </button>
+          <button
+            onClick={() => { setActiveTab('water'); cancelEditing(); }}
+            className={`px-6 py-2 rounded-[var(--radius-sm)] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'water' ? 'bg-[var(--color-bg)] text-[var(--color-text)] shadow-sm' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
+          >
+            {t('tab_water_profiles')}
+          </button>
         </div>
       </div>
 
-      {!editingId ? (
+      {activeTab === 'water' ? (
+        <WaterProfilesManager library={library} onUpdate={onUpdate} canEdit={canEdit} />
+      ) : !editingId ? (
         <>
           <div className="flex justify-between items-center px-2">
             <h3 className="text-2xl font-black text-[var(--color-text)] font-[var(--font-display)]">

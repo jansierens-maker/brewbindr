@@ -1,0 +1,222 @@
+import React, { useMemo } from 'react';
+import { LibraryIngredient, Recipe } from '../types';
+import { useTranslation } from '../App';
+import { useUser } from '../services/userContext';
+import { formatBrewNumber, roundTo, waterPlan } from '../services/calculations';
+import {
+  CaCl2Form, ION_KEYS, Ions, SALTS, SaltId, WATER_PRESETS, ionsOf, ratioCharacter, residualAlkalinity,
+  suggestSalts, sulfateChlorideRatio, treatedWater,
+} from '../services/waterChemistry';
+
+type WaterChem = NonNullable<Recipe['water_chem']>;
+
+interface Props {
+  recipe: Recipe;
+  library: LibraryIngredient[];
+  equipment: LibraryIngredient | undefined;
+  /** Editor only; without it the card shows what to add on brew day */
+  onChange?: (value: WaterChem | undefined) => void;
+}
+
+const ION_LABELS: Record<keyof Ions, string> = { ca: 'Ca', mg: 'Mg', na: 'Na', cl: 'Cl', so4: 'SO₄', hco3: 'HCO₃' };
+const SALT_KEYS = {
+  gypsum: 'salt_gypsum', cacl2: 'salt_cacl2', cacl2_33: 'salt_cacl2_33', cacl2_36: 'salt_cacl2_36',
+  epsom: 'salt_epsom', nacl: 'salt_nacl', nahco3: 'salt_nahco3',
+} as const satisfies Record<SaltId, string>;
+const CHARACTER_KEYS = { bitter: 'water_bitter', balanced: 'water_balanced', malty: 'water_malty' } as const;
+
+/** Water treatment: source water, dilution, salts, the resulting profile against a target. */
+const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onChange }) => {
+  const { t, lang } = useTranslation();
+  const { preferences } = useUser();
+  const chem: WaterChem = recipe.water_chem ?? {};
+  const editable = !!onChange;
+  const waters = useMemo(() => library.filter(l => l.type === 'water'), [library]);
+
+  // Profiles: 'preset:<key>' or a library id. Default source: the brewery's only own profile.
+  const resolve = (ref: string | undefined) => {
+    if (!ref) return undefined;
+    if (ref.startsWith('preset:')) {
+      const p = WATER_PRESETS.find(x => x.key === ref.slice(7));
+      return p && { name: p.name, ions: ionsOf(p) };
+    }
+    const w = waters.find(x => x.id === ref);
+    return w && { name: w.name, ions: ionsOf(w) };
+  };
+  const defaultSource = waters.length === 1 ? waters[0] : undefined;
+  const source = resolve(chem.source) ?? (defaultSource && { name: defaultSource.name, ions: ionsOf(defaultSource) });
+  const target = resolve(chem.target);
+  const cacl2Form: CaCl2Form = chem.cacl2_form ?? 'cacl2_33';
+  const salts = chem.salts ?? {};
+
+  // All salts go into the mash, the profile is for all brewing water together
+  const plan = equipment ? waterPlan(recipe, equipment) : undefined;
+  const batchL = recipe.batch_size?.unit === 'gallons' ? recipe.batch_size.value * 3.78541 : recipe.batch_size?.value || 0;
+  const volumeL = plan?.totalWaterL || batchL;
+
+  const start = source ? treatedWater(source.ions, chem.dilution_pct || 0, {}, volumeL) : undefined;
+  const result = source ? treatedWater(source.ions, chem.dilution_pct || 0, salts, volumeL) : undefined;
+  const ratio = result ? sulfateChlorideRatio(result) : undefined;
+  const character = ratioCharacter(ratio);
+
+  const update = (patch: Partial<WaterChem>) => {
+    const next: WaterChem = { ...chem, ...patch };
+    (Object.keys(next) as (keyof WaterChem)[]).forEach(k => next[k] === undefined && delete next[k]);
+    onChange?.(Object.keys(next).length ? next : undefined);
+  };
+  const setSalt = (id: SaltId, raw: string) => {
+    const n = parseFloat(raw);
+    const nextSalts: WaterChem['salts'] = { ...salts };
+    if (isNaN(n) || n <= 0) delete nextSalts[id]; else nextSalts[id] = roundTo(n, 1);
+    update({ salts: Object.keys(nextSalts).length ? nextSalts : undefined });
+  };
+  const suggest = () => {
+    if (!start || !target) return;
+    update({ salts: suggestSalts(start, target.ions, volumeL, cacl2Form) });
+  };
+
+  const fmt = (n: number) => formatBrewNumber(Math.round(n), 'default', lang);
+  const vol = (l: number) => preferences.units === 'imperial'
+    ? `${formatBrewNumber(l / 3.78541, 'default', lang)} gal` : `${formatBrewNumber(l, 'vol', lang)} L`;
+  const field = 'w-full p-2 bg-white border border-stone-200 rounded-lg text-sm font-bold';
+  const profileOptions = (kind: 'source' | 'target') => (
+    <>
+      {waters.length > 0 && (
+        <optgroup label={t('water_own_profiles')}>
+          {waters.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+        </optgroup>
+      )}
+      <optgroup label={kind === 'target' ? t('water_target_profiles') : t('water_city_profiles')}>
+        {WATER_PRESETS.filter(p => p.kind === kind).map(p => <option key={p.key} value={`preset:${p.key}`}>{p.name}</option>)}
+      </optgroup>
+      <optgroup label={kind === 'target' ? t('water_city_profiles') : t('water_target_profiles')}>
+        {WATER_PRESETS.filter(p => p.kind !== kind).map(p => <option key={p.key} value={`preset:${p.key}`}>{p.name}</option>)}
+      </optgroup>
+    </>
+  );
+  const saltIds: SaltId[] = ['gypsum', cacl2Form, 'epsom', 'nacl', 'nahco3'];
+  const usedSalts = (Object.keys(salts) as SaltId[]).filter(id => (salts[id] || 0) > 0);
+
+  return (
+    <div className="space-y-4 p-5 bg-teal-50/50 rounded-2xl border border-teal-100">
+      <h4 className="font-bold uppercase text-stone-900 flex items-center gap-2">
+        <i className="fas fa-flask text-teal-600" aria-hidden="true"></i> {t('water_treatment')}
+      </h4>
+
+      {editable && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label htmlFor="chem_source" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('water_source')}</label>
+            <select id="chem_source" name="chem_source" className={field} value={chem.source ?? ''} onChange={e => update({ source: e.target.value || undefined })}>
+              <option value="">{defaultSource ? t('equipment_default').replace('{name}', defaultSource.name) : t('water_choose')}</option>
+              {profileOptions('source')}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="chem_dilution" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('water_dilution')}</label>
+            <input id="chem_dilution" name="chem_dilution" type="number" inputMode="decimal" min={0} max={100} step={5} placeholder="0"
+              className={field} key={`dil-${chem.dilution_pct ?? ''}`} defaultValue={chem.dilution_pct ?? ''}
+              onBlur={e => { const n = parseFloat(e.target.value); update({ dilution_pct: isNaN(n) || n <= 0 ? undefined : Math.min(100, n) }); }}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }} />
+          </div>
+          <div>
+            <label htmlFor="chem_target" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('water_target')}</label>
+            <select id="chem_target" name="chem_target" className={field} value={chem.target ?? ''} onChange={e => update({ target: e.target.value || undefined })}>
+              <option value="">{t('water_no_target')}</option>
+              {profileOptions('target')}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="chem_cacl2_form" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('salt_cacl2_form')}</label>
+            <select id="chem_cacl2_form" name="chem_cacl2_form" className={field} value={cacl2Form}
+              onChange={e => {
+                const form = e.target.value as CaCl2Form;
+                // Move an amount already entered to the new form
+                const nextSalts: WaterChem['salts'] = { ...salts };
+                delete nextSalts.cacl2; delete nextSalts.cacl2_33; delete nextSalts.cacl2_36;
+                update({ cacl2_form: form, salts: Object.keys(nextSalts).length ? nextSalts : undefined });
+              }}>
+              <option value="cacl2_33">{t('salt_cacl2_33')}</option>
+              <option value="cacl2_36">{t('salt_cacl2_36')}</option>
+              <option value="cacl2">{t('salt_cacl2')}</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {!source ? (
+        <p className="text-xs font-bold text-stone-500">{t('water_needs_source')}</p>
+      ) : (
+        <>
+          {editable ? (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {saltIds.map(id => (
+                <div key={id} className="flex flex-col justify-between gap-1">
+                  <label htmlFor={`salt_${id}`} className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t(SALT_KEYS[id])} ({SALTS[id].unit})</label>
+                  <input id={`salt_${id}`} name={`salt_${id}`} type="number" inputMode="decimal" min={0} max={100} step={0.1} placeholder="0"
+                    className={field} key={`${id}-${salts[id] ?? ''}`} defaultValue={salts[id] ?? ''}
+                    onBlur={e => setSalt(id, e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }} />
+                </div>
+              ))}
+            </div>
+          ) : usedSalts.length > 0 || chem.dilution_pct ? (
+            <ul className="text-sm font-bold text-stone-800 space-y-1">
+              {chem.dilution_pct ? <li>{t('water_dilution_line').replace('{pct}', fmt(chem.dilution_pct)).replace('{l}', vol(volumeL * chem.dilution_pct / 100))}</li> : null}
+              {usedSalts.map(id => <li key={id}>{formatBrewNumber(salts[id]!, 'default', lang)} {SALTS[id].unit} {t(SALT_KEYS[id])}</li>)}
+            </ul>
+          ) : (
+            <p className="text-xs font-bold text-stone-500">{t('water_no_salts')}</p>
+          )}
+
+          {editable && target && (
+            <button type="button" onClick={suggest} className="text-xs font-black uppercase text-teal-800 bg-teal-100 border border-teal-200 rounded-lg px-4 py-2 hover:bg-teal-200">
+              <i className="fas fa-magic mr-2" aria-hidden="true"></i>{t('water_suggest').replace('{name}', target.name)}
+            </button>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[10px] font-black text-stone-500 uppercase tracking-widest text-right">
+                  <th className="text-left py-1">mg/L</th>
+                  {ION_KEYS.map(k => <th key={k} className="py-1 px-2">{ION_LABELS[k]}</th>)}
+                </tr>
+              </thead>
+              <tbody className="font-bold text-right">
+                <tr className="text-stone-500">
+                  <td className="text-left py-1">{source.name}{chem.dilution_pct ? ` (−${fmt(chem.dilution_pct)} %)` : ''}</td>
+                  {ION_KEYS.map(k => <td key={k} className="px-2">{fmt(start![k])}</td>)}
+                </tr>
+                <tr className="text-stone-900">
+                  <td className="text-left py-1">{t('water_result')}</td>
+                  {ION_KEYS.map(k => <td key={k} className="px-2">{fmt(result![k])}</td>)}
+                </tr>
+                {target && (
+                  <tr className="text-teal-800">
+                    <td className="text-left py-1">{target.name}</td>
+                    {ION_KEYS.map(k => <td key={k} className="px-2">{fmt(target.ions[k])}</td>)}
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+            <span className="text-stone-600">{t('residual_alkalinity')}: <b className="text-stone-900">{fmt(residualAlkalinity(result!))} ppm</b></span>
+            <span className="text-stone-600">SO₄/Cl: <b className="text-stone-900">
+              {ratio === undefined ? '-' : ratio === Infinity ? '∞' : formatBrewNumber(ratio, 'default', lang)}
+              {character && ` (${t(CHARACTER_KEYS[character])})`}
+            </b></span>
+            {result!.ca < 40 && <span className="text-amber-800 font-bold">{t('water_low_calcium')}</span>}
+          </div>
+          <p className="text-[10px] text-stone-500">
+            {t('water_chem_hint').replace('{volume}', vol(volumeL))}{!plan && ` ${t('water_chem_no_equipment')}`}
+          </p>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default WaterChemistryCard;
