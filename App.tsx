@@ -20,7 +20,7 @@ import { BottomNav } from './components/BottomNav';
 import { InfoBanner } from './components/InfoBanner';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
-import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe } from './services/calculations';
+import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment } from './services/calculations';
 import { canEditRecipe } from './services/permissions';
 import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
@@ -1815,7 +1815,7 @@ const AppContent: React.FC = () => {
                 <TastingNotesView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('tasting'); } }} />
               )}
               {view === 'log' && selectedRecipe && (
-                <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} />
+                <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} equipment={resolveEquipment(selectedRecipe, deduplicatedLibrary)} />
               )}
               {view === 'create' && (
                 <RecipeCreator

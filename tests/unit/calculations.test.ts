@@ -5,6 +5,7 @@ import {
   sgToPlato, platoToSg, formatGravity, correctHydrometer, buGuRatio,
   brixToSg, sgToBrix, refractometerFg, kegPressure,
   pitchRate, cellsNeeded, liquidViability, starterGrowth, starterFor, DRY_CELLS_PER_GRAM,
+  waterPlan, resolveEquipment,
   roundTo, roundByUnit, normalizeRecipe, normalizeLibraryItem, formatBrewNumber, formatStockAmount, srmToEbc,
 } from '../../services/calculations';
 import type { Recipe } from '../../types';
@@ -363,4 +364,139 @@ describe('mash rounding', () => {
   });
 
   it('leaves a recipe without mash untouched', () => expect(normalizeRecipe(reference()).mash).toBeUndefined());
+});
+
+describe('water plan', () => {
+  // Like the Brewie in production: two vessels, 2 L trub/chiller loss, 2 L/h evaporation
+  const brewie: any = { id: 'eq1', name: 'Brewie', type: 'equipment', equipment_type: 'two_vessel', trub_chiller_loss: 2, evap_rate: 2, top_up_water: 0 };
+  const withMash = () => reference({ mash: { name: 'Single', steps: [{ name: 'Sacch', type: 'infusion', step_temp: 66, step_time: 60, infuse_amount: 15 }] } });
+
+  it('adds the installation losses to the batch', () => {
+    const w = waterPlan(reference(), brewie, 1.0579);
+    expect(w.postBoilL).toBe(22);           // 20 L + 2 L trub
+    expect(w.preBoilL).toBe(24);            // + 2 L/h × 60 min
+    expect(w.totalWaterL).toBe(29);         // + 5 kg × 1 L/kg absorption
+    expect(w.mashWaterL).toBe(15);          // no mash given: 3 L/kg
+    expect(w.spargeWaterL).toBe(14);
+    expect(w.preBoilSg).toBeCloseTo(1.0531, 4);
+  });
+
+  it('uses the recipe infusion and computes the strike temperature', () => {
+    const w = waterPlan(withMash(), brewie, 1.0579);
+    expect(w.mashWaterL).toBe(15);
+    expect(w.strikeTempC).toBeCloseTo(66 + 0.41 / 3 * (66 - 20), 5); // 72.3 °C
+  });
+
+  it('mashes with all water in a BIAB kettle', () => {
+    const w = waterPlan(withMash(), { ...brewie, equipment_type: 'biab' }, 1.0579);
+    expect(w.totalWaterL).toBeCloseTo(24 + 5 * 0.7, 5);
+    expect(w.mashWaterL).toBe(w.totalWaterL);
+    expect(w.spargeWaterL).toBe(0);
+    expect(w.strikeTempC).toBeLessThan(70); // thin mash needs less overheating
+  });
+
+  it('counts only mashed fermentables as grain', () => {
+    const r = reference();
+    r.ingredients.fermentables.push({ name: 'Sugar', type: 'sugar', amount: { unit: 'kilograms', value: 1 } });
+    expect(waterPlan(r, brewie).grainKg).toBe(5);
+  });
+
+  it('subtracts top-up water and adds lauter dead space', () => {
+    const w = waterPlan(reference(), { ...brewie, top_up_water: 4, lauter_deadspace: 1 });
+    expect(w.postBoilL).toBe(18);
+    expect(w.totalWaterL).toBe(18 + 2 + 5 + 1);
+  });
+
+  it('picks the named installation, or the only one', () => {
+    const lib: any[] = [brewie, { id: 'h', type: 'hop', name: 'Saaz' }];
+    expect(resolveEquipment({}, lib)?.id).toBe('eq1');
+    expect(resolveEquipment({ equipmentId: 'eq1' }, lib)?.id).toBe('eq1');
+    expect(resolveEquipment({}, [...lib, { ...brewie, id: 'eq2' }])).toBeUndefined();
+    expect(resolveEquipment({}, [])).toBeUndefined();
+  });
+
+  it('uses the average boil gravity for IBU when the installation is known', () => {
+    const plain = calculateRecipeStats(reference());
+    const withEquipment = calculateRecipeStats(reference(), undefined, { ...brewie, evap_rate: 6 });
+    expect(withEquipment.og).toBe(plain.og);
+    expect(withEquipment.ibu).toBeGreaterThan(plain.ibu); // thinner wort while boiling: more bitterness
+  });
+});
+
+describe('water plan: capacity, own values and drain all', () => {
+  // Stored before the capacity fields existed: capacity comes from the Brewie preset
+  const brewie: any = { id: 'eq1', name: 'Brewie', type: 'equipment', preset: 'Brewie', equipment_type: 'two_vessel', trub_chiller_loss: 2, evap_rate: 2 };
+  const withGrain = (kg: number) => {
+    const r = reference();
+    r.ingredients.fermentables[0] = { ...r.ingredients.fermentables[0], amount: { unit: 'kilograms', value: kg } };
+    return r;
+  };
+
+  it('limits the mash water to what fits next to the grain and sparges the rest', () => {
+    const w = waterPlan(withGrain(6), brewie, 1.06);
+    expect(w.maxMashL).toBe(16);               // 22 L − 6 kg × 1 L/kg
+    expect(w.mashWaterL).toBe(16);             // 18 L wanted (3 L/kg)
+    expect(w.spargeWaterL).toBe(14);           // 30 L total
+    expect(w.warnings).toContain('mash_capped');
+    expect(w.warnings).toContain('boil_over_capacity'); // 24 L before the boil, the tank takes 23
+  });
+
+  it('warns when the grain leaves too little room for water', () => {
+    expect(waterPlan(withGrain(9), brewie).warnings).toContain('too_much_grain'); // 13 L for 9 kg
+  });
+
+  it('follows water set by hand (as entered in Brewie Studio)', () => {
+    const r = { ...withGrain(4), water: { mash_l: 17.8, sparge_l: 8.2 } };
+    const w = waterPlan(r, brewie, 1.05);
+    expect(w.manual).toBe(true);
+    expect(w.totalWaterL).toBeCloseTo(26, 5);
+    expect(w.preBoilL).toBeCloseTo(22, 5);     // − 4 kg × 1 L/kg absorbed
+    expect(w.postBoilL).toBeCloseTo(20, 5);    // − 2 L evaporation
+    expect(w.intoFermenterL).toBeCloseTo(18, 5); // − 2 L trub
+    expect(w.expectedOg).toBeCloseTo(1 + 0.05 * 22 / 20, 5); // recipe planned 22 L after the boil
+    expect(w.warnings).toEqual([]);
+  });
+
+  it('flags own mash water that does not fit', () => {
+    expect(waterPlan({ ...withGrain(4), water: { mash_l: 20 } }, brewie).warnings).toContain('mash_over_capacity');
+  });
+
+  it('drains everything into the fermenter when asked', () => {
+    const normal = waterPlan(withGrain(4), brewie);
+    const drained = waterPlan({ ...withGrain(4), water: { drain_all: true } }, brewie);
+    expect(drained.trubLossL).toBe(0);
+    expect(drained.totalWaterL).toBeCloseTo(normal.totalWaterL - 2, 5);
+  });
+
+  it('uses the installation fields over the preset, and 0.7 L/kg by default', () => {
+    const own = { ...brewie, preset: undefined, mash_capacity: 30 };
+    expect(waterPlan(withGrain(5), own).maxMashL).toBeCloseTo(30 - 5 * 0.7, 5);
+    expect(waterPlan(withGrain(5), { ...brewie, preset: undefined }).maxMashL).toBeUndefined(); // no limit known
+  });
+});
+
+describe('recipe stats follow water set by hand', () => {
+  const brewie: any = { id: 'eq1', name: 'Brewie', type: 'equipment', preset: 'Brewie', equipment_type: 'two_vessel', trub_chiller_loss: 2, evap_rate: 2 };
+
+  it('makes stronger, darker and more bitter wort with less water', () => {
+    const planned = calculateRecipeStats(reference(), undefined, brewie);
+    // Calculated: 29 L water, 22 L after the boil. Own: 24 L → 17 L after the boil
+    const less = calculateRecipeStats({ ...reference(), water: { mash_l: 14, sparge_l: 10 } }, undefined, brewie);
+    expect(less.plannedOg).toBeCloseTo(planned.og, 6);
+    expect(less.og - 1).toBeCloseTo((planned.og - 1) * 22 / 17, 4);
+    expect(less.abv).toBeGreaterThan(planned.abv);
+    expect(less.color).toBeGreaterThan(planned.color);
+    expect(less.ibu).toBeGreaterThan(planned.ibu);
+  });
+
+  it('matches the water card', () => {
+    const r = { ...reference(), water: { mash_l: 14, sparge_l: 10 } };
+    const s = calculateRecipeStats(r, undefined, brewie);
+    expect(waterPlan(r, brewie, s.plannedOg).expectedOg).toBeCloseTo(s.og, 6);
+  });
+
+  it('changes nothing without water set by hand or without an installation', () => {
+    expect(calculateRecipeStats(reference(), undefined, brewie).og).toBeCloseTo(calculateRecipeStats(reference()).og, 6);
+    expect(calculateRecipeStats({ ...reference(), water: { mash_l: 14 } }).og).toBeCloseTo(calculateRecipeStats(reference()).og, 6);
+  });
 });
