@@ -33,7 +33,7 @@ test.describe('Help & Manuals', () => {
     await expect(viewTitle).toBeVisible();
 
     // Look for the manual link
-    const manualLink = page.locator('a[href="/manual.html"]');
+    const manualLink = page.locator('a[href^="/manual.html"]');
 
     await expect(manualLink).toBeVisible();
     await expect(manualLink).toHaveAttribute('target', '_blank');
@@ -44,20 +44,11 @@ test.describe('Help & Manuals', () => {
     expect(linkText).toMatch(/open full manual|volledige handleiding openen|ouvrir le manuel complet/i);
   });
 
-  test('should show language indicator for non-English active language', async ({ page }) => {
-    const manualLink = page.locator('a[href="/manual.html"]');
-    const linkText = await manualLink.innerText();
-
-    // The language indicator (EN) should be there if not in English
-    if (linkText.toLowerCase().includes('volledige') || linkText.toLowerCase().includes('ouvrir')) {
-      await expect(manualLink.locator('span')).toContainText('(EN)');
-    } else {
-      // If we are in English, the span shouldn't exist or shouldn't have (EN)
-      const span = manualLink.locator('span');
-      if (await span.count() > 0) {
-        const spanText = await span.innerText();
-        expect(spanText).not.toContain('(EN)');
-      }
-    }
+  test('should open the manual in the language of the app', async ({ page }) => {
+    const manualLink = page.locator('a[href^="/manual.html"]');
+    const linkText = (await manualLink.innerText()).toLowerCase();
+    const lang = linkText.includes('volledige') ? 'nl' : linkText.includes('ouvrir') ? 'fr' : 'en';
+    await expect(manualLink).toHaveAttribute('href', `/manual.html?lang=${lang}`);
+    await expect(manualLink).not.toContainText('(EN)');
   });
 });

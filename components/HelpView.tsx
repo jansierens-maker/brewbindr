@@ -2,6 +2,16 @@ import React from 'react';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 
+const TIPS = [
+  'help_tips_library',
+  'help_tips_efficiency',
+  'help_tips_volumes',
+  'help_tips_water',
+  'help_tips_import',
+  'help_tips_ai',
+  'help_tips_stock',
+] as const;
+
 const HelpView: React.FC = () => {
   const { t, lang } = useTranslation();
   const { isAdmin } = useUser();
@@ -25,16 +35,13 @@ const HelpView: React.FC = () => {
 
           <div className="pt-2">
             <a
-              href="/manual.html"
+              href={`/manual.html?lang=${lang}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-amber-500 text-white font-bold px-5 py-3 rounded-2xl hover:bg-amber-600 transition-colors shadow-sm"
             >
               <i className="fas fa-book-open"></i>
               {t('open_full_manual')}
-              {lang !== 'en' && (
-                <span className="text-stone-400 text-xs ml-1">(EN)</span>
-              )}
             </a>
           </div>
 
@@ -63,26 +70,12 @@ const HelpView: React.FC = () => {
           <h3 className="text-2xl font-black text-stone-900">{t('help_tips_title')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">1</div>
-            <p className="text-sm text-stone-600">{t('help_tips_library')}</p>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">2</div>
-            <p className="text-sm text-stone-600">{t('help_tips_efficiency')}</p>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">3</div>
-            <p className="text-sm text-stone-600">{t('help_tips_import')}</p>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">4</div>
-            <p className="text-sm text-stone-600">{t('help_tips_ai')}</p>
-          </div>
-          <div className="flex gap-4 md:col-span-2">
-            <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">5</div>
-            <p className="text-sm text-stone-600">{t('help_tips_stock')}</p>
-          </div>
+          {TIPS.map((key, i) => (
+            <div key={key} className="flex gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">{i + 1}</div>
+              <p className="text-sm text-stone-600">{t(key)}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -123,6 +116,28 @@ const HelpView: React.FC = () => {
               <p className="text-sm text-stone-600">
                 {t('calc_og_desc')}
               </p>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-bold text-stone-900">{t('calc_water_title')}</h4>
+              <p className="text-sm text-stone-600">
+                {t('calc_water_desc')}
+                <code className="block mt-2 p-2 bg-stone-50 rounded text-amber-700 font-mono text-xs">T_strike = T + 0.41 / ratio × (T − T_grain)</code>
+              </p>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-bold text-stone-900">{t('calc_ph_title')}</h4>
+              <p className="text-sm text-stone-600">
+                {t('calc_ph_desc')}
+                <code className="block mt-2 p-2 bg-stone-50 rounded text-amber-700 font-mono text-xs">RA = HCO₃ × 50/61 − Ca/1.4 − Mg/1.7</code>
+              </p>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-bold text-stone-900">{t('calc_yeast_title')}</h4>
+              <p className="text-sm text-stone-600">{t('calc_yeast_desc')}</p>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-bold text-stone-900">{t('calc_gravity_title')}</h4>
+              <p className="text-sm text-stone-600">{t('calc_gravity_desc')}</p>
             </div>
           </div>
         </div>

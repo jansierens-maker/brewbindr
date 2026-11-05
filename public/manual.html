@@ -289,11 +289,22 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
   .topbar { padding: 10px 18px; }
   .card { padding: 22px 20px; }
 }
+.topbar-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lang-switch { display: flex; gap: 2px; background: var(--color-bg-subtle); border: 1px solid var(--color-border); border-radius: 99px; padding: 3px; }
+.lang-switch a { font-size: 12px; font-weight: 700; color: var(--color-text-muted); text-decoration: none; padding: 5px 10px; border-radius: 99px; }
+.lang-switch a.active { background: var(--color-accent); color: #fff; }
+.lang-switch a:focus-visible { outline: 2px solid var(--color-accent); }
+@media (max-width: 600px) {
+  table { display: block; overflow-x: auto; }
+  .content td, .content th { word-break: normal; }
+}
 </style>
 </head>
 <body>
 
-<!-- ============ SIDEBAR ============ -->
+<div id="app"></div>
+
+<template id="lang-en">
 <aside class="sidebar">
   <div class="sidebar-brand">
     <svg class="brand-glass" viewBox="0 0 30 38" aria-hidden="true">
@@ -308,7 +319,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
   </div>
 
   <div class="sidebar-search">
-    <input type="search" id="docSearch" placeholder="Search the manual…" aria-label="Search the manual">
+    <input type="search" id="docSearch" name="docSearch" maxlength="100" placeholder="Search the manual…" aria-label="Search the manual">
   </div>
 
   <nav class="sidebar-nav" id="sidebarNav" aria-label="Manual contents">
@@ -321,6 +332,9 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
     <div class="nav-section">
       <div class="nav-section-label">Brewer's Guide</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recipes &amp; AI</a>
+      <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Calculations</a>
+      <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Water volumes</a>
+      <a class="nav-item" href="#water-treatment"><i class="fas fa-vial"></i>Water treatment &amp; pH</a>
       <a class="nav-item" href="#brewlogs"><i class="fas fa-clipboard-list"></i>Brew logs</a>
       <a class="nav-item" href="#tasting"><i class="fas fa-star-half-stroke"></i>Tasting notes</a>
       <a class="nav-item" href="#stock"><i class="fas fa-boxes-stacked"></i>Stock</a>
@@ -332,7 +346,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Admin Guide</div>
-      <a class="nav-item" href="#admin-submissions"><i class="fas fa-clipboard-check"></i>Submissions<span class="badge-mini admin">Admin</span></a>
+      <a class="nav-item" href="#admin-submissions"><i class="fas fa-clipboard-check"></i>Public library<span class="badge-mini admin">Admin</span></a>
       <a class="nav-item" href="#admin-tools"><i class="fas fa-tools"></i>Demo data &amp; backups<span class="badge-mini admin">Admin</span></a>
       <a class="nav-item" href="#admin-hosting"><i class="fas fa-server"></i>Self-hosting<span class="badge-mini admin">Admin</span></a>
     </div>
@@ -348,14 +362,18 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
   </div>
 </aside>
 
-<!-- ============ MAIN ============ -->
 <div class="main">
   <div class="topbar">
-    <div class="topbar-title">BrewBindr Manual · v4</div>
-    <div class="audience-toggle" role="group" aria-label="Filter sections by audience">
-      <button class="active" data-audience="all">All</button>
-      <button data-audience="brewer">Brewers</button>
-      <button data-audience="admin">Admins</button>
+    <div class="topbar-title">BrewBindr Manual · v5</div>
+    <div class="topbar-controls">
+      <div class="audience-toggle" role="group" aria-label="Filter sections by audience">
+        <button class="active" data-audience="all">All</button>
+        <button data-audience="brewer">Brewers</button>
+        <button data-audience="admin">Admins</button>
+      </div>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="?lang=en" data-lang="en" aria-label="English">EN</a><a href="?lang=nl" data-lang="nl" aria-label="Nederlands">NL</a><a href="?lang=fr" data-lang="fr" aria-label="Français">FR</a>
+      </div>
     </div>
   </div>
 
@@ -370,9 +388,10 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         <span style="left:88%;width:7px;height:7px;animation-delay:0.7s"></span>
       </div>
       <h1>From grain to glass,<br>everything in one binder.</h1>
-      <p>BrewBindr is a brewing companion for creating recipes, logging brew days, tracking fermentation, managing stock, and recording tasting notes — with AI assistance where it counts.</p>
+      <p>BrewBindr is a brewing companion for creating recipes, planning water and yeast, logging brew days, tracking fermentation, managing stock, and recording tasting notes — with AI assistance where it counts.</p>
       <div class="hero-chips">
         <span class="chip"><i class="fas fa-wand-magic-sparkles"></i> AI recipe generation</span>
+        <span class="chip"><i class="fas fa-droplet"></i> Water &amp; mash pH</span>
         <span class="chip"><i class="fas fa-file-code"></i> BeerXML import/export</span>
         <span class="chip"><i class="fas fa-users"></i> Team breweries</span>
         <span class="chip"><i class="fas fa-globe"></i> EN · NL · FR</span>
@@ -386,18 +405,19 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-flask"></i> Getting Started</div>
         <h2>What is BrewBindr? <span class="role-badge all">All users</span></h2>
-        <p>BrewBindr is a web application for home and hobby brewers. It runs in your browser on desktop and mobile — no installation required. Your data is stored in the cloud and syncs in real time across all your devices.</p>
+        <p>BrewBindr is a web application for home and hobby brewers. It runs in your browser on desktop and mobile — no installation required. Your data is stored in the cloud and syncs in real time across all your devices and with your team.</p>
         <h3>Core features</h3>
         <ul class="doc-list">
-          <li><strong>AI recipe generation</strong> — describe a beer in plain language and get a complete recipe in the BeerJSON format.</li>
-          <li><strong>Brew log tracking</strong> — record your brew day from mash temperatures through fermentation gravity to bottling.</li>
-          <li><strong>AI tasting analysis</strong> — get feedback comparing your tasting notes to the recipe's original specifications.</li>
-          <li><strong>Ingredient library</strong> — manage your own fermentables, hops, cultures, and miscellaneous ingredients.</li>
-          <li><strong>Stock management</strong> — optional inventory tracking with visual "glass fill" indicators.</li>
-          <li><strong>BeerXML support</strong> — import and export recipes in the industry-standard format used by most brewing software.</li>
-          <li><strong>Team breweries</strong> — brew together: invite members with roles from taster to brewmaster.</li>
+          <li><strong>Recipes with live calculations</strong> — OG, FG, ABV, IBU, colour and BU:GU update as you type, with the usual corrections for sugars, hop form and use, and mash temperature.</li>
+          <li><strong>AI recipe generation</strong> — describe a beer in plain language and get a complete recipe.</li>
+          <li><strong>Water</strong> — mash and sparge water, strike temperature and boil volumes from your brewing installation; water treatment with salts, residual alkalinity and estimated mash pH.</li>
+          <li><strong>Brew logs</strong> — from brew day through fermentation to bottles or keg, with yeast pitching, hydrometer and refractometer corrections, and keg pressure.</li>
+          <li><strong>AI tasting analysis</strong> — feedback comparing your tasting notes to the recipe.</li>
+          <li><strong>Ingredient library and stock</strong> — your own malts, hops, yeasts and misc ingredients, with optional inventory.</li>
+          <li><strong>BeerXML</strong> — import and export recipes and ingredients.</li>
+          <li><strong>Team breweries</strong> — brew together, with roles from taster to admin.</li>
         </ul>
-        <div class="callout note"><i class="fas fa-globe"></i><div>The interface is available in <b>English, Dutch, and French</b>. Switch languages any time under <b>System → Settings</b>.</div></div>
+        <div class="callout note"><i class="fas fa-globe"></i><div>The app and this manual are available in <b>English, Dutch and French</b>. Switch the app language under <b>System → Settings</b>; switch the manual with the <b>EN · NL · FR</b> buttons at the top.</div></div>
       </div>
     </section>
 
@@ -411,9 +431,11 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         <h3>Creating an account</h3>
         <div class="steps">
           <div class="step"><div><b>Click "Create account"</b> at the bottom of the sidebar.</div></div>
-          <div class="step"><div><b>Enter your e-mail and a password.</b> If you received a brewery <b>invite code</b>, enter it during sign-up — you'll automatically join that brewery with the role attached to the invite.</div></div>
-          <div class="step"><div><b>Confirm your e-mail</b> if prompted, then sign in. Your personal brewery workspace is created automatically.</div></div>
+          <div class="step"><div><b>Enter your e-mail and a password.</b> If you received an <b>invitation</b> by e-mail, enter its code — you join that brewery with the role from the invitation.</div></div>
+          <div class="step"><div><b>Confirm your e-mail</b> if prompted, then sign in. Without an invitation, your own brewery is created automatically.</div></div>
         </div>
+        <h3>Signing out</h3>
+        <p>Click your account card at the bottom of the sidebar and choose <b>Sign out</b>. On mobile you find it under <b>More</b> in the bottom bar, and it is also in <b>Settings</b>.</p>
         <div class="callout tip"><i class="fas fa-lightbulb"></i><div>Signing in on a second device? Your recipes, logs, and stock sync live — changes appear on both screens without refreshing.</div></div>
       </div>
     </section>
@@ -422,17 +444,17 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-table-columns"></i> Getting Started</div>
         <h2>The interface <span class="role-badge all">All users</span></h2>
-        <p>The sidebar on the left is your main navigation. It's organised in three groups — the same grouping this manual follows:</p>
+        <p>The sidebar on the left is your main navigation, in three groups — the same grouping this manual follows:</p>
         <table>
           <thead><tr><th>Group</th><th>Contains</th><th>Purpose</th></tr></thead>
           <tbody>
-            <tr><td><b>Brouwerij</b> (Brewery)</td><td>Brewery recipes, Brews, Tasting Notes, Stock, Team, Import, Brewing Installation</td><td>Your own workspace: everything you and your team brew.</td></tr>
-            <tr><td><b>Bibliotheek</b> (Library)</td><td>Public Recipes, Ingredients</td><td>Shared community content and your ingredient catalogue.</td></tr>
-            <tr><td><b>Systeem</b> (System)</td><td>Settings, Help &amp; Manuals</td><td>Preferences, language, units, and documentation.</td></tr>
+            <tr><td><b>Brewery</b></td><td>Brewery recipes, Brews, Tasting notes, Stock, Team, Import, Brewing installation</td><td>Your own workspace: everything you and your team brew.</td></tr>
+            <tr><td><b>Library</b></td><td>Public recipes, Ingredients</td><td>Shared community content and your ingredient catalogue.</td></tr>
+            <tr><td><b>System</b></td><td>Settings, Help &amp; manuals (and <b>Admin</b> for administrators)</td><td>Preferences, language, units, and documentation.</td></tr>
           </tbody>
         </table>
-        <p>The card at the bottom of the sidebar shows your account: your e-mail, your <b>brewery role</b>, and the name of the brewery you belong to. Click it to jump to Settings.</p>
-        <div class="callout note"><i class="fas fa-mobile-screen"></i><div>On mobile, the sidebar is replaced by a <b>bottom navigation bar</b> with the most-used views.</div></div>
+        <p>The card at the bottom of the sidebar shows your account: your e-mail, your <b>brewery role</b> and your brewery. Click it for Settings and Sign out.</p>
+        <div class="callout note"><i class="fas fa-mobile-screen"></i><div>On mobile, the sidebar is replaced by a <b>bottom navigation bar</b> with the most-used views and a <b>More</b> menu.</div></div>
       </div>
     </section>
 
@@ -441,17 +463,96 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-wand-magic-sparkles"></i> Brewer's Guide</div>
         <h2>Recipes &amp; AI generation <span class="role-badge brewer">Brewer</span></h2>
-        <p>Recipes live in two places: your <b>Brewery</b> (private, yours and your team's) and the public <b>Recipes</b> library (shared with everyone). Recipes are stored internally in the modern <b>BeerJSON</b> format.</p>
+        <p>Recipes live in two places: your <b>Brewery</b> (private, yours and your team's) and the public <b>Recipes</b> library (shared with everyone).</p>
         <h3>Creating a recipe with AI</h3>
         <div class="steps">
           <div class="step"><div><b>Open Brewery → New recipe.</b></div></div>
-          <div class="step"><div><b>Describe the beer you want</b> in the prompt field — style, ABV, bitterness, special ingredients. For example: <code>A sessionable Belgian blond, ~5.5% ABV, spicy yeast character, 20 L batch</code>.</div></div>
-          <div class="step"><div><b>Generate.</b> The AI (Google Gemini) returns a complete recipe: fermentables, hops with additions, yeast culture, mash steps, and target values (OG, FG, IBU, colour).</div></div>
-          <div class="step"><div><b>Review and adjust.</b> Every field is editable — treat the AI output as a strong first draft, not gospel. Then save it to your brewery.</div></div>
+          <div class="step"><div><b>Describe the beer you want</b> — style, ABV, bitterness, special ingredients. For example: <code>A sessionable Belgian blond, ~5.5% ABV, spicy yeast character, 20 L batch</code>.</div></div>
+          <div class="step"><div><b>Generate.</b> The AI (Google Gemini) returns fermentables, hops, yeast, mash steps and target values.</div></div>
+          <div class="step"><div><b>Review and adjust,</b> then save. Treat the AI output as a strong first draft.</div></div>
         </div>
-        <h3>Manual recipes</h3>
-        <p>You can also build a recipe from scratch: add fermentables, hops, cultures, and misc ingredients from your library, define the mash profile, and set batch parameters. Vitals like estimated OG and IBU are calculated as you type.</p>
-        <div class="callout tip"><i class="fas fa-print"></i><div>Every recipe has a <b>print view</b> — a clean brew-day sheet you can print or save as PDF and take to the kettle.</div></div>
+        <div class="callout note"><i class="fas fa-gauge"></i><div>AI requests (recipes and tasting analyses) are limited to <b>10 per day</b> per user, 100 for administrators.</div></div>
+        <h3>Building a recipe yourself</h3>
+        <ul class="doc-list">
+          <li><strong>Fermentables</strong> — pick from your library and set the <b>type</b>: malt, adjunct (unmalted), sugar, liquid or dry extract. The type matters: sugars and extracts give their full extract, and sugar ferments completely. When you pick a library item, the type is guessed from the name (e.g. "candi sugar" → sugar).</li>
+          <li><strong>Hops</strong> — amount, alpha acid, <b>use</b> (boil, first wort, mash, whirlpool, dry hop), <b>form</b> (pellets, whole, plugs) and time. Dry hops are counted in days; whirlpool hops get a temperature (80 °C if you don't change it).</li>
+          <li><strong>Yeast</strong> — attenuation per culture.</li>
+          <li><strong>Mash profile</strong> — load one from your installation or edit the steps. The first rest's infusion volume and the main rest's temperature are used in the water and FG calculations.</li>
+          <li><strong>Water and water treatment</strong> — see <a href="#water">Water volumes</a> and <a href="#water-treatment">Water treatment &amp; pH</a>.</li>
+        </ul>
+        <p>The dark bar at the top shows the targets as you type: ABV, IBU (with BU:GU), colour (SRM or EBC) and OG (SG or °P). With a beer style chosen, values outside the style range are highlighted.</p>
+        <h3>Names, editing and deleting</h3>
+        <ul class="doc-list">
+          <li><strong>Unique names</strong> — a recipe name can be used once per brewery (case and extra spaces ignored); in the public library each name exists once.</li>
+          <li><strong>Edit or View</strong> — brewery admins and brewmasters can edit every recipe of the brewery; brewers and tasters open recipes read-only (button <b>View</b>). Approved public recipes can only be changed by an administrator.</li>
+          <li><strong>Deleting a recipe with brews</strong> — if brews still use the recipe, you are asked whether to delete the recipe <b>together with those brews and their tasting notes</b>, or to cancel. A recipe that brews of another brewery use cannot be deleted.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-print"></i><div>Every recipe has a <b>print view</b> — a clean brew-day sheet you can print or save as PDF.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="calculations" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-calculator"></i> Brewer's Guide</div>
+        <h2>How BrewBindr calculates <span class="role-badge brewer">Brewer</span></h2>
+        <table>
+          <thead><tr><th>Value</th><th>How</th></tr></thead>
+          <tbody>
+            <tr><td><b>OG</b></td><td>Extract of each fermentable over the batch volume. The brewhouse <b>efficiency</b> applies only to what is mashed (malt, adjuncts); sugars and extracts count for 100 %.</td></tr>
+            <tr><td><b>FG</b></td><td>Average attenuation of the yeast, about 1 point lower per °C that the main mash rest is above 66 °C (and higher below), at most 5 points. Sugar ferments completely, lactose not at all.</td></tr>
+            <tr><td><b>ABV</b></td><td>The precise formula <code>76.08 × (OG − FG) / (1.775 − OG) × FG / 0.794</code>, accurate for strong beers too. Bottles: + 0.065 % per g/L of priming sugar (not for a keg).</td></tr>
+            <tr><td><b>IBU</b></td><td>Tinseth. Whole hops about 10 % less than pellets; first wort hops 10 % more; mash hops 20 % of a full boil; whirlpool hops less as the temperature drops. With a brewing installation, the average gravity during the boil is used.</td></tr>
+            <tr><td><b>Colour</b></td><td>Morey, shown in SRM or EBC.</td></tr>
+            <tr><td><b>BU:GU</b></td><td>IBU divided by gravity points: about 0.5 balanced, lower malty, higher bitter.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout note"><i class="fas fa-droplet"></i><div>If you enter your own mash and sparge water in a recipe, OG, FG, ABV, IBU and colour follow the volume that actually comes out of the kettle.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="water" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-droplet"></i> Brewer's Guide</div>
+        <h2>Water volumes &amp; strike temperature <span class="role-badge brewer">Brewer</span></h2>
+        <p>The <b>Water</b> block in the recipe (and on brew day) works out the water from the recipe and your <a href="#installation">brewing installation</a>. A recipe can name its installation; otherwise your brewery's only installation is used ("Default: …").</p>
+        <h3>How the volumes are found</h3>
+        <ul class="doc-list">
+          <li><strong>After the boil</strong> = batch (into the fermenter) − top-up water + trub and chiller loss.</li>
+          <li><strong>Before the boil</strong> = after the boil + evaporation (L per hour × boil time).</li>
+          <li><strong>Total water</strong> = before the boil + water absorbed by the grain (1 L/kg, BIAB 0.7, or the installation's value) + lauter dead space.</li>
+          <li><strong>Mash water</strong> = the first infusion of the mash profile, otherwise 3 L/kg; BIAB mashes with all water. Never more than fits next to the grain (see below). <b>Sparge water</b> is the rest.</li>
+          <li><strong>Strike temperature</strong> = <code>T + 0.41 / ratio × (T − grain temperature)</code> (Palmer), for the first rest T and the water/grain ratio in L/kg.</li>
+          <li><strong>Pre-boil gravity</strong> from the OG and the volumes.</li>
+        </ul>
+        <h3>Machines with limited space (e.g. Brewie)</h3>
+        <p>In some machines the grain sits in bags in the mash tank: the more grain, the less room for water. Set the <b>mash capacity</b> (water + grain), the <b>grain volume</b> per kg and the <b>boil kettle capacity</b> on the installation. The calculated mash water then never exceeds <code>mash capacity − grain × volume per kg</code>; the rest goes to the sparge. Warnings appear when the mash water had to be limited, when there is too much grain (less than 2 L of water per kg fits), when your own mash water doesn't fit, or when there is more wort than the kettle holds.</p>
+        <h3>Your own water</h3>
+        <ul class="doc-list">
+          <li><strong>Mash and sparge water</strong> can be typed in per recipe (e.g. as you enter them in Brewie Studio). Press Enter or click outside the field. The calculated values stay visible; <b>Use calculated water</b> resets them.</li>
+          <li>The block then shows how much goes <b>into the fermenter</b> and the <b>expected OG</b>, and the recipe's stats follow.</li>
+          <li><strong>Drain all into the fermenter</strong> — tick it when you drain everything: no trub/chiller loss for this recipe. Off by default.</li>
+        </ul>
+        <div class="callout note"><i class="fas fa-circle-info"></i><div>Not included: cooling shrinkage (about 4 %). If your volumes are consistently off, adjust the losses or evaporation of your installation.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="water-treatment" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-vial"></i> Brewer's Guide</div>
+        <h2>Water treatment &amp; mash pH <span class="role-badge brewer">Brewer</span></h2>
+        <h3>Water profiles</h3>
+        <p>Add your tap water under <b>Brewing installation → Water profiles</b>: calcium, magnesium, sodium, chloride, sulfate and bicarbonate in mg/L. Your water company publishes these values per address (look for "water quality"). Bicarbonate is sometimes given as alkalinity or temporary hardness: 1 °dH ≈ 21.8 mg/L, 1 °f TAC ≈ 12.2 mg/L bicarbonate.</p>
+        <p>Always available: osmosis water, classic waters (Pilsen, Munich, Vienna, Dortmund, Dublin, Edinburgh, London, Burton), target profiles per colour, and <b>19 beer style profiles</b> (IPA variants, NEIPA, pale ale, pils, Belgian blond, tripel, dubbel, quadrupel, saison, witbier, weizen, amber, Märzen, stouts).</p>
+        <h3>Treating the water of a recipe</h3>
+        <div class="steps">
+          <div class="step"><div><b>Base water</b> — your own profile (your only profile is chosen by default) or a classic water. Optionally a share of <b>osmosis water</b>.</div></div>
+          <div class="step"><div><b>Target profile</b> — a beer style, a colour profile or any other profile.</div></div>
+          <div class="step"><div><b>Salts</b> — gypsum, calcium chloride (33 % or 36 % solution in ml, or flakes in g), Epsom salt, table salt, baking soda. Or click <b>Suggest salts</b>: the app finds the additions closest to the target (salts can only add, never remove).</div></div>
+          <div class="step"><div><b>Check the result</b> — the table shows base water, treated water and target; below it the <b>residual alkalinity</b> and the <b>sulfate/chloride</b> balance (bitter above 2, balanced 0.8–2, malty below 0.8). A warning appears when calcium is below 40 mg/L.</div></div>
+        </div>
+        <h3>Mash pH and acid</h3>
+        <p>The block estimates the <b>mash pH</b> from the malts (pale, crystal, roasted, acidulated — recognised by name or colour) and the mash water with all salts. Set a <b>target pH</b> (5.4 by default) and click <b>Use … ml</b> to fill in the <b>lactic acid 80 %</b> that reaches it. The pH is shown with and without acid; 5.2–5.6 is the usual range.</p>
+        <div class="callout tip"><i class="fas fa-flask-vial"></i><div>Add all salts and acid to the <b>mash</b>. The profile is calculated over all brewing water together. The pH is an estimate (typically within ~0.1): check with a pH meter on a cooled sample. On brew day the block lists what to add.</div></div>
       </div>
     </section>
 
@@ -459,20 +560,32 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-clipboard-list"></i> Brewer's Guide</div>
         <h2>Brew logs <span class="role-badge brewer">Brewer</span></h2>
-        <p>A brew log turns a recipe into an actual batch. Each brew moves through four phases, and the log follows along — the active tab switches automatically as you advance the batch status.</p>
+        <p>A brew log turns a recipe into an actual batch. Each brew moves through four phases; the active tab follows the batch status.</p>
         <div class="pipeline">
-          <div class="phase"><i class="fas fa-fire-burner"></i><div class="phase-name">1. Brew day</div><div class="phase-desc">Mash, boil, actual OG, volume in fermenter</div></div>
-          <div class="phase"><i class="fas fa-flask"></i><div class="phase-name">2. Fermentation</div><div class="phase-desc">Gravity readings, fermentation temperature</div></div>
+          <div class="phase"><i class="fas fa-fire-burner"></i><div class="phase-name">1. Brew day</div><div class="phase-desc">Water, yeast, mash, actual OG, volume</div></div>
+          <div class="phase"><i class="fas fa-flask"></i><div class="phase-name">2. Fermentation</div><div class="phase-desc">FG, fermentation temperature</div></div>
           <div class="phase"><i class="fas fa-snowflake"></i><div class="phase-name">3. Lagering</div><div class="phase-desc">Conditioning period</div></div>
-          <div class="phase"><i class="fas fa-bottle-water"></i><div class="phase-name">4. Bottling</div><div class="phase-desc">Packaging, carbonation, final volume</div></div>
+          <div class="phase"><i class="fas fa-bottle-water"></i><div class="phase-name">4. Bottling</div><div class="phase-desc">Bottles or keg, carbonation</div></div>
         </div>
-        <h3>What to record</h3>
+        <h3>Brew day</h3>
         <ul class="doc-list">
-          <li><strong>Brew day:</strong> actual original gravity (OG) and the volume that went into the fermenter. Your recipe's mash profile is shown alongside as a checklist (step temperature, duration, type).</li>
-          <li><strong>Fermentation:</strong> gravity measurements over time and fermentation temperature. The log estimates attenuation and current ABV from your readings.</li>
-          <li><strong>Dates:</strong> phase-transition dates are filled in automatically when you change status (e.g. moving to "fermenting" stamps the fermentation start date), but remain editable.</li>
+          <li><strong>Water and water treatment</strong> of the recipe: volumes, strike temperature and what to add.</li>
+          <li><strong>Yeast pitching</strong> — cells needed from OG, volume and yeast type (ale 0.75, lager 1.5 million cells/ml/°P, a third more above 1.060), against what you have: dry yeast 20 billion/g, liquid 100 billion per pack minus about 0.7 % per day since the production date. Short on liquid yeast? The app suggests the smallest stir-plate starter and its dry malt extract; short on dry yeast, how many grams to use.</li>
+          <li><strong>Measured alpha acid</strong> per hop, if it differs from the recipe; the IBU follows.</li>
+          <li><strong>Actual OG and volume</strong> into the fermenter.</li>
         </ul>
-        <div class="callout tip"><i class="fas fa-chart-line"></i><div>Consistent gravity readings during fermentation give you an honest picture of attenuation — and better AI tasting feedback later, since the analysis compares actuals against recipe targets.</div></div>
+        <h3>Measuring gravity</h3>
+        <ul class="doc-list">
+          <li>Enter OG and FG in <b>SG or °P</b> (see <a href="#settings">Settings</a>); they are always stored as SG.</li>
+          <li><strong>Hydrometer</strong> — under a gravity field, open <b>Temperature or refractometer correction</b> and enter the sample temperature: a button corrects the reading to 20 °C.</li>
+          <li><strong>Refractometer</strong> — enter °Brix. For the OG it is converted with your correction factor (WCF); for the FG it is also corrected for alcohol (Terrill), using the OG above.</li>
+        </ul>
+        <h3>Bottles or keg</h3>
+        <ul class="doc-list">
+          <li><strong>Bottles</strong> — priming sugar for the chosen CO₂ volumes, sugar type, volume and fermentation temperature; the projected ABV includes the sugar.</li>
+          <li><strong>Keg</strong> — the CO₂ pressure to set (bar and psi above atmospheric pressure) for the chosen volumes at the beer temperature (4 °C by default). No priming sugar, so no extra alcohol.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-chart-line"></i><div>Phase dates are filled in automatically when you change status, and stay editable.</div></div>
       </div>
     </section>
 
@@ -480,14 +593,14 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-star-half-stroke"></i> Brewer's Guide</div>
         <h2>Tasting notes <span class="role-badge brewer">Brewer</span></h2>
-        <p>Once a batch is bottled and conditioned, record how it actually tastes. A tasting note scores the beer on dimensions such as <b>aroma</b> and <b>flavour</b>, plus free-text comments.</p>
+        <p>Once a batch is conditioned, record how it actually tastes: scores for appearance, aroma, flavour and mouthfeel, an overall score, and comments. Every brewery member can add tasting notes.</p>
         <h3>AI tasting analysis</h3>
         <div class="steps">
           <div class="step"><div><b>Write your comments</b> — be specific: "banana esters dominate, bitterness lower than expected, slightly thin body".</div></div>
-          <div class="step"><div><b>Click Analyze</b> <i class="fas fa-brain" style="font-size:11px"></i>. The AI compares your description against the recipe's specifications.</div></div>
-          <div class="step"><div><b>Read the feedback:</b> likely causes for deviations and concrete suggestions for the next brew of this recipe.</div></div>
+          <div class="step"><div><b>Click Analyze</b> <i class="fas fa-brain" style="font-size:11px"></i>. The AI compares your description with the recipe.</div></div>
+          <div class="step"><div><b>Read the feedback:</b> likely causes and suggestions for the next brew.</div></div>
         </div>
-        <div class="callout note"><i class="fas fa-circle-info"></i><div>The analysis button is only active once you've written comments — scores alone aren't enough for the AI to work with.</div></div>
+        <div class="callout note"><i class="fas fa-circle-info"></i><div>The analysis needs written comments, and counts towards your daily AI limit.</div></div>
       </div>
     </section>
 
@@ -495,8 +608,8 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-boxes-stacked"></i> Brewer's Guide</div>
         <h2>Stock management <span class="role-badge brewer">Brewer</span></h2>
-        <p>Stock is an <b>optional feature</b> — enable it under <b>Settings → Stock management</b> and a "Stock" item appears in the Brewery section of the sidebar.</p>
-        <p>The Stock view lists every stockable ingredient in your library (fermentables, hops, cultures, misc) with the amount you have on hand. Each ingredient shows a <b>glass indicator</b>: a beer glass that fills according to your remaining stock. Try it:</p>
+        <p>Stock is an <b>optional feature</b> — enable it under <b>Settings → Stock management</b> and a "Stock" item appears in the Brewery section of the sidebar. Recipes then show whether you can brew them with what you have.</p>
+        <p>The Stock view lists your stockable ingredients with the amount on hand. Each shows a <b>glass</b> that fills according to your remaining stock. Try it:</p>
         <div class="glass-demo">
           <svg class="glass-svg" viewBox="0 0 60 80" aria-hidden="true">
             <defs><clipPath id="demoClip"><path d="M10 6 h40 l-4.5 62 a5 5 0 0 1 -5 4.6 h-21 a5 5 0 0 1 -5 -4.6 Z"/></clipPath></defs>
@@ -506,15 +619,15 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
           </svg>
           <div>
             <div class="demo-label">Drag to simulate stock level</div>
-            <input type="range" id="demoRange" min="0" max="100" value="65" aria-label="Simulated stock percentage">
+            <input type="range" id="demoRange" name="demoRange" min="0" max="100" value="65" aria-label="Simulated stock percentage">
             <div class="demo-pct"><span id="demoPct">65</span>%</div>
           </div>
         </div>
         <h3>Working with the view</h3>
         <ul class="doc-list">
-          <li><strong>Filter</strong> by ingredient type (fermentables, hops, cultures, misc) or search by name.</li>
-          <li><strong>Switch layout</strong> between a card grid (with full glass indicators) and a compact table.</li>
-          <li><strong>Update amounts</strong> directly from the view when you buy or use ingredients.</li>
+          <li><strong>Filter</strong> by ingredient type or search by name.</li>
+          <li><strong>Switch layout</strong> between cards (with glasses) and a compact table.</li>
+          <li><strong>Update amounts</strong> directly when you buy or use ingredients. Amounts are rounded: kg to the gram, g to whole grams.</li>
         </ul>
       </div>
     </section>
@@ -523,18 +636,19 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-seedling"></i> Brewer's Guide</div>
         <h2>Ingredient library <span class="role-badge brewer">Brewer</span></h2>
-        <p>The library is your catalogue of raw materials, organised by type:</p>
+        <p>The library is your catalogue of raw materials:</p>
         <table>
           <thead><tr><th>Type</th><th>Examples</th><th>Key properties</th></tr></thead>
           <tbody>
-            <tr><td><b>Fermentables</b></td><td>Pilsner malt, Munich, candi sugar</td><td>Yield, colour (EBC/SRM)</td></tr>
-            <tr><td><b>Hops</b></td><td>Saaz, Citra, East Kent Goldings</td><td>Alpha acid %, form</td></tr>
-            <tr><td><b>Cultures</b></td><td>Yeast strains, bacteria</td><td>Attenuation, temperature range</td></tr>
+            <tr><td><b>Fermentables</b></td><td>Pilsner malt, Munich, candi sugar</td><td>Yield, colour</td></tr>
+            <tr><td><b>Hops</b></td><td>Saaz, Citra, East Kent Goldings</td><td>Alpha acid %</td></tr>
+            <tr><td><b>Cultures</b></td><td>Yeast strains, bacteria</td><td>Attenuation, form</td></tr>
             <tr><td><b>Misc</b></td><td>Irish moss, coriander, orange peel</td><td>Use, timing</td></tr>
+            <tr><td><b>Mash profiles, styles</b></td><td>Single infusion, BJCP styles</td><td>Steps; style ranges</td></tr>
           </tbody>
         </table>
-        <p>Ingredients you add are private to you and your brewery. When you build recipes, you pick from this library — so a well-maintained library makes recipe creation fast.</p>
-        <div class="callout note"><i class="fas fa-upload"></i><div>You can <b>submit</b> ingredients or recipes to the public library. Submissions are held for review and only appear publicly after an admin approves them (see <a href="#admin-submissions">Submissions</a>).</div></div>
+        <p>Ingredients you add are private to your brewery, and a name exists once per type in your brewery. When you build recipes, you pick from this library — a well-kept library makes recipes fast.</p>
+        <div class="callout note"><i class="fas fa-upload"></i><div>You can <b>submit</b> ingredients or recipes to the public library. If a name is already public or waiting for review, you are warned first. Submissions appear publicly only after an administrator approves them.</div></div>
       </div>
     </section>
 
@@ -542,16 +656,27 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-temperature-half"></i> Brewer's Guide</div>
         <h2>Brewing installation <span class="role-badge brewer">Brewer</span></h2>
-        <p>Describe your physical equipment so recipes and calculations match reality. The view has two tabs: <b>Equipment</b> and <b>Mash profiles</b>.</p>
-        <h3>Equipment profiles</h3>
-        <p>An equipment profile defines your batch size, mash efficiency, trub loss, and the vessels in your setup (with volume, heating type, and pump). Start from a preset and tweak, or build a custom profile:</p>
+        <p>Describe your equipment and water so the calculations match reality. The view has three tabs: <b>Equipment</b>, <b>Mash profiles</b> and <b>Water profiles</b>. Everything here is shared with your brewery.</p>
+        <h3>Equipment</h3>
+        <p>Start from a preset or build your own: batch size, efficiency, boil time, vessels, and the values the water calculation uses:</p>
+        <table>
+          <thead><tr><th>Field</th><th>Used for</th></tr></thead>
+          <tbody>
+            <tr><td>Trub/chiller loss, top-up water</td><td>Volumes after the boil</td></tr>
+            <tr><td>Evaporation (L/h)</td><td>Volume and gravity before the boil</td></tr>
+            <tr><td>Lauter dead space</td><td>Total water</td></tr>
+            <tr><td>Mash capacity (water + grain), grain volume in the mash (L/kg)</td><td>Maximum mash water</td></tr>
+            <tr><td>Grain absorption (L/kg)</td><td>Total water (default 1.0, BIAB 0.7)</td></tr>
+            <tr><td>Boil kettle capacity</td><td>Warning when there is too much wort</td></tr>
+          </tbody>
+        </table>
         <details>
           <summary>Built-in equipment presets</summary>
           <div class="details-body">
             <table>
               <thead><tr><th>Preset</th><th>Type</th><th>Batch</th><th>Efficiency</th></tr></thead>
               <tbody>
-                <tr><td>Brewie</td><td>Two-vessel</td><td>23 L</td><td>70%</td></tr>
+                <tr><td>Brewie</td><td>Two-vessel (22 L mash capacity, 1 L/kg, 23 L kettle)</td><td>23 L</td><td>70%</td></tr>
                 <tr><td>Grainfather G30</td><td>All-in-one</td><td>25 L</td><td>72%</td></tr>
                 <tr><td>Grainfather G40</td><td>All-in-one</td><td>35 L</td><td>72%</td></tr>
                 <tr><td>Robobrew / BrewZilla</td><td>All-in-one</td><td>30 L</td><td>70%</td></tr>
@@ -564,8 +689,9 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
           </div>
         </details>
         <h3>Mash profiles</h3>
-        <p>Define reusable mash schedules (step temperature, duration, type) — single infusion, step mash, decoction. Attach a mash profile to a recipe and it appears as the checklist on your brew-day log.</p>
-        <div class="callout tip"><i class="fas fa-users"></i><div>Equipment and mash profiles are shared with your <b>brewery</b>, so the whole team brews against the same setup.</div></div>
+        <p>Reusable mash schedules (temperature, duration, type, infusion volume). Load one into a recipe; it appears as the checklist on brew day. Temperatures are kept to 0.1 °C.</p>
+        <h3>Water profiles</h3>
+        <p>Your tap water and other waters with their minerals; see <a href="#water-treatment">Water treatment</a>.</p>
       </div>
     </section>
 
@@ -573,15 +699,16 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-arrow-up-from-bracket"></i> Brewer's Guide</div>
         <h2>Import &amp; export <span class="role-badge brewer">Brewer</span></h2>
-        <p>BrewBindr speaks <b>BeerXML</b>, the de-facto exchange format of brewing software (BeerSmith, Brewfather, Brew Target, and others).</p>
+        <p>BrewBindr speaks <b>BeerXML</b>, the exchange format of brewing software (BeerSmith, Brewfather, and others).</p>
         <h3>Importing</h3>
         <div class="steps">
           <div class="step"><div><b>Open Brewery → Import.</b> You must be signed in.</div></div>
-          <div class="step"><div><b>Select a file</b> — <code>.xml</code> or <code>.beerxml</code>, up to <b>10 MB</b>. Files can contain recipes or ingredient collections.</div></div>
-          <div class="step"><div><b>Review the result.</b> Imported recipes land in your brewery; imported ingredients in your library.</div></div>
+          <div class="step"><div><b>Select a file</b> — <code>.xml</code> or <code>.beerxml</code>, up to <b>10 MB</b>, with recipes or ingredients.</div></div>
+          <div class="step"><div><b>Review the result.</b> Recipes land in your brewery, ingredients in your library.</div></div>
         </div>
+        <p>Imported values are cleaned up (e.g. 2.041164 kg → 2.041 kg, 65.555556 °C → 65.6 °C). Fermentable types, hop use and form, and the minerals of water profiles are read too.</p>
         <h3>Exporting</h3>
-        <p>Recipes can be exported back to BeerXML from the recipe view — handy for backups or for sharing with brewers on other software. Brewing installation data (equipment) also travels via BeerXML.</p>
+        <p>Export a recipe to BeerXML from the recipe view, for backups or other software. Types, hop use and form are kept, and imperial amounts are written in kg.</p>
       </div>
     </section>
 
@@ -589,18 +716,22 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-users"></i> Brewer's Guide</div>
         <h2>Team &amp; roles <span class="role-badge brewer">Brewer</span></h2>
-        <p>Every user belongs to a <b>brewery</b> — a shared workspace. Brew alone in your own brewery, or invite others to collaborate. Each member has one of four brewery roles:</p>
+        <p>Every user belongs to a <b>brewery</b> — a shared workspace. Each member has one of four roles:</p>
         <table>
-          <thead><tr><th>Role</th><th>Typical rights</th></tr></thead>
+          <thead><tr><th>Role</th><th>Rights</th></tr></thead>
           <tbody>
-            <tr><td><b>Admin</b></td><td>Full control: manages members, invites, and brewery settings.</td></tr>
-            <tr><td><b>Brewmaster</b></td><td>Manages recipes, equipment, and brews for the whole brewery.</td></tr>
-            <tr><td><b>Brewer</b></td><td>Creates and edits recipes, logs brews, updates stock.</td></tr>
-            <tr><td><b>Taster</b></td><td>Views recipes and brews, adds tasting notes.</td></tr>
+            <tr><td><b>Admin</b></td><td>Everything a brewmaster can, plus members, invitations and the brewery name.</td></tr>
+            <tr><td><b>Brewmaster</b></td><td>Creates, edits and deletes all recipes, ingredients and installation data of the brewery; logs brews.</td></tr>
+            <tr><td><b>Brewer</b></td><td>Logs brews; views recipes (read-only).</td></tr>
+            <tr><td><b>Taster</b></td><td>Views recipes and brews; adds tasting notes.</td></tr>
           </tbody>
         </table>
-        <h3>Inviting members</h3>
-        <p>From the <b>Team</b> view, generate an <b>invite code</b> tied to a role. The invitee enters this code when creating their account and joins your brewery with that role automatically. Invite codes have an expiry date.</p>
+        <h3>Inviting and joining</h3>
+        <ul class="doc-list">
+          <li><strong>Invite</strong> — in the <b>Team</b> view, enter an e-mail address and a role. The invitee receives an e-mail with a code, valid for 7 days.</li>
+          <li><strong>Join</strong> — enter the code when creating an account, or later under <b>Join another brewery</b>. Your own recipes, brews, tasting notes and ingredients move along; this is possible when you are the only member of your current brewery. Names that already exist get "(2)" added.</li>
+          <li><strong>Remove</strong> — an admin can remove members from the Team view.</li>
+        </ul>
       </div>
     </section>
 
@@ -608,13 +739,15 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-gear"></i> Brewer's Guide</div>
         <h2>Settings <span class="role-badge all">All users</span></h2>
-        <p>Under <b>System → Settings</b> you tailor BrewBindr to your habits:</p>
+        <p>Under <b>System → Settings</b> you tailor BrewBindr:</p>
         <ul class="doc-list">
-          <li><strong>Unit system</strong> — metric (litres, kg, °C) or imperial (gallons, lb, °F). Applied everywhere, including brew logs.</li>
-          <li><strong>Colour scale</strong> — SRM or EBC for beer colour values.</li>
-          <li><strong>Stock management</strong> — toggle the Stock feature on or off (see <a href="#stock">Stock</a>).</li>
-          <li><strong>Language</strong> — English, Nederlands, or Français.</li>
-          <li><strong>Account</strong> — see who you're signed in as, and sign out.</li>
+          <li><strong>Unit system</strong> — metric (L, kg, °C) or imperial (gal, lb, °F), everywhere.</li>
+          <li><strong>Colour scale</strong> — SRM or EBC.</li>
+          <li><strong>Gravity</strong> — SG, °P or both, for showing and entering gravities.</li>
+          <li><strong>Refractometer correction factor (WCF)</strong> — usually 1.02–1.06, 1.04 if unknown. Measure a wort with hydrometer and refractometer to find yours.</li>
+          <li><strong>Stock management</strong> — on or off (see <a href="#stock">Stock</a>).</li>
+          <li><strong>Language</strong> — English, Nederlands or Français.</li>
+          <li><strong>Account</strong> — who you're signed in as, and sign out.</li>
         </ul>
         <p class="kbd-note">Preferences are stored with your profile, so they follow you across devices.</p>
       </div>
@@ -624,14 +757,17 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
     <section class="doc" id="admin-submissions" data-audience="admin">
       <div class="card">
         <div class="section-eyebrow admin"><i class="fas fa-clipboard-check"></i> Admin Guide</div>
-        <h2>Reviewing submissions <span class="role-badge admin">Admin</span></h2>
-        <p>Users can submit recipes and ingredients to the public library. Nothing goes live without review: submissions queue up in the <b>Admin</b> view under <b>Pending Submissions</b>.</p>
+        <h2>Public library <span class="role-badge admin">Admin</span></h2>
+        <h3>Reviewing submissions</h3>
+        <p>Users can submit recipes and ingredients to the public library. Nothing goes live without review: submissions wait in the <b>Admin</b> view under <b>Pending submissions</b>.</p>
         <div class="steps">
-          <div class="step"><div><b>Open the Admin view.</b> Each pending item shows its type (recipe / ingredient), name, and who submitted it.</div></div>
-          <div class="step"><div><b>Assess quality:</b> is the data complete and plausible? Are names sensible? No duplicates of existing public entries?</div></div>
-          <div class="step"><div><b>Approve</b> to publish it to the public library, or <b>Reject</b> to discard it. The action is immediate.</div></div>
+          <div class="step"><div><b>Open the Admin view.</b> Each item shows its type, name and who submitted it.</div></div>
+          <div class="step"><div><b>Assess quality:</b> complete and plausible data, a sensible name. Names in the public library are unique: approving an item whose name is already public is refused.</div></div>
+          <div class="step"><div><b>Approve</b> to publish, or <b>Reject</b> to discard.</div></div>
         </div>
-        <div class="callout warn"><i class="fas fa-triangle-exclamation"></i><div>Approved content is visible to <b>every</b> user, including guests. Review carefully — there is no second moderation step.</div></div>
+        <h3>Cleaning up</h3>
+        <p>In the public library, administrators see <b>Remove from public</b> (the item goes back to private) and <b>Delete</b> on recipes and ingredients. A public recipe that other breweries' brews use cannot be deleted.</p>
+        <div class="callout warn"><i class="fas fa-triangle-exclamation"></i><div>Approved content is visible to <b>every</b> user, including guests.</div></div>
       </div>
     </section>
 
@@ -640,13 +776,13 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         <div class="section-eyebrow admin"><i class="fas fa-tools"></i> Admin Guide</div>
         <h2>Demo data &amp; backups <span class="role-badge admin">Admin</span></h2>
         <h3>Demo data</h3>
-        <p>The <b>Import demo data</b> button loads a curated set of sample recipes and ingredients. Use it to populate a fresh instance for testing, or to give new users something to explore before they've built their own library.</p>
+        <p>The <b>Import demo data</b> button loads sample recipes and ingredients, for testing or demos.</p>
         <h3>JSON backup &amp; restore</h3>
         <ul class="doc-list">
-          <li><strong>Export</strong> downloads a full JSON backup of the application data.</li>
-          <li><strong>Restore</strong> uploads a previously exported JSON file and reinstates its contents.</li>
+          <li><strong>Export</strong> downloads a JSON backup of recipes, brew logs, tasting notes and your library.</li>
+          <li><strong>Restore</strong> loads a previously exported JSON file. Caution: this may overwrite data.</li>
         </ul>
-        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Take a JSON export before large operations (bulk imports, demo-data loads) so you can roll back if something goes wrong. Note that Supabase itself is the primary datastore — JSON backups complement, not replace, database-level backups.</div></div>
+        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Supabase is the primary datastore; JSON backups complement, not replace, database backups.</div></div>
       </div>
     </section>
 
@@ -654,7 +790,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow admin"><i class="fas fa-server"></i> Admin Guide</div>
         <h2>Self-hosting &amp; configuration <span class="role-badge admin">Admin</span></h2>
-        <p>BrewBindr is open source. To run your own instance you need <b>Node.js 18+</b>, a <b>Supabase</b> project (auth, database, realtime), and a <b>Google Gemini API key</b> for the AI features.</p>
+        <p>BrewBindr is open source. You need <b>Node.js 22</b>, a <b>Supabase</b> project (auth, database, realtime), a <b>Google Gemini API key</b> for AI, and a <b>Resend</b> key for invitation e-mails. The reference deployment runs on <b>Vercel</b>.</p>
         <div class="steps">
           <div class="step"><div><b>Clone and install:</b></div></div>
         </div>
@@ -662,31 +798,1089 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
 cd brewbindr
 npm install</pre>
         <div class="steps" style="counter-reset: step 1">
-          <div class="step"><div><b>Configure</b> a <code>.env.local</code> file:</div></div>
+          <div class="step"><div><b>Configure</b> a <code>.env.local</code> file (and the same variables in Vercel):</div></div>
         </div>
 <pre>NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-GEMINI_API_KEY=your_gemini_api_key</pre>
+GEMINI_API_KEY=your_gemini_api_key
+RESEND_API_KEY=your_resend_api_key
+NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <div class="steps" style="counter-reset: step 2">
-          <div class="step"><div><b>Set up the database:</b> run the SQL schema from the repository README in the Supabase SQL editor. It creates the tables, the <code>profiles</code> table with roles, and the row-level security (RLS) policies.</div></div>
-          <div class="step"><div><b>Run it:</b> <code>npm run dev</code> for development, <code>npm run build</code> for a production build. The reference deployment runs on <b>Vercel</b>.</div></div>
+          <div class="step"><div><b>Set up the database:</b> run <code>schema_update.sql</code> (the full, idempotent setup script, also shown in the app under <b>Connection details</b>) in the Supabase SQL editor, or link the project and run <code>npx supabase db push</code>.</div></div>
+          <div class="step"><div><b>Run it:</b> <code>npm run dev</code> for development, <code>npm test</code> for the unit tests, <code>npm run build</code> for production.</div></div>
         </div>
+        <h3>Database changes</h3>
+        <ul class="doc-list">
+          <li>Every change is a new migration in <code>supabase/migrations/</code> (idempotent and compatible with the running app), also appended to <code>schema_update.sql</code>, with a pgTAP test in <code>supabase/tests/database/</code> for new rules.</li>
+          <li>GitHub Actions: <b>CI</b> (unit tests and build), <b>Playwright E2E</b> on every Vercel deployment, and <b>Database</b>: on a pull request a fresh database with all migrations, the database tests and a dry run against production; on merge to <code>main</code> the migrations are applied after approval in the <code>production</code> environment (secrets <code>SUPABASE_ACCESS_TOKEN</code> and <code>SUPABASE_DB_PASSWORD</code>).</li>
+        </ul>
         <h3>Application roles</h3>
-        <p>Besides brewery roles, profiles carry an application-level role: <code>user</code> or <code>admin</code>. Only <code>admin</code> profiles see the Admin view. Promote a user by updating their row in the <code>profiles</code> table.</p>
-        <div class="callout note"><i class="fas fa-shield-halved"></i><div>Data isolation is enforced by Supabase <b>RLS policies</b>, not by the frontend. If you modify the schema, verify the policies still restrict each brewery's data to its members.</div></div>
+        <p>Besides brewery roles, profiles have an application role: <code>user</code> or <code>admin</code>. Only <code>admin</code> profiles see the Admin view and get the higher AI limit. Promote a user by updating their row in the <code>profiles</code> table.</p>
+        <div class="callout note"><i class="fas fa-shield-halved"></i><div>Data isolation is enforced by Supabase <b>RLS policies</b> and database functions, not by the frontend. If you change the schema, check that each brewery's data stays with its members.</div></div>
       </div>
     </section>
 
     <div class="doc-footer">
       <div>BrewBindr — brewed with care · <a href="https://github.com/jansierens-maker/brewbindr">github.com/jansierens-maker/brewbindr</a></div>
-      <div>Manual matches design-v4</div>
+      <div>Manual v5 · November 2026</div>
     </div>
 
   </main>
 </div>
+</template>
+
+<template id="lang-nl">
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <svg class="brand-glass" viewBox="0 0 30 38" aria-hidden="true">
+      <path d="M4 2 h22 l-2.5 32 a3 3 0 0 1 -3 2.8 h-11 a3 3 0 0 1 -3 -2.8 Z" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+      <path d="M6.2 12 h17.6 l-1.6 20 a2 2 0 0 1 -2 1.8 h-10.4 a2 2 0 0 1 -2 -1.8 Z" fill="#F59E0B"/>
+      <ellipse cx="15" cy="11" rx="9.2" ry="2.6" fill="#fff"/>
+    </svg>
+    <div>
+      <div class="brand-name">Brew<span>Bindr</span></div>
+      <div class="brand-sub">Handleiding</div>
+    </div>
+  </div>
+
+  <div class="sidebar-search">
+    <input type="search" id="docSearch" name="docSearch" maxlength="100" placeholder="Zoek in de handleiding…" aria-label="Zoek in de handleiding">
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav" aria-label="Inhoud van de handleiding">
+    <div class="nav-section">
+      <div class="nav-section-label">Aan de slag</div>
+      <a class="nav-item" href="#overview"><i class="fas fa-flask"></i>Wat is BrewBindr</a>
+      <a class="nav-item" href="#accounts"><i class="fas fa-user"></i>Account &amp; aanmelden</a>
+      <a class="nav-item" href="#interface"><i class="fas fa-table-columns"></i>De interface</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Voor brouwers</div>
+      <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recepten &amp; AI</a>
+      <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Berekeningen</a>
+      <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Watervolumes</a>
+      <a class="nav-item" href="#water-treatment"><i class="fas fa-vial"></i>Waterbehandeling &amp; pH</a>
+      <a class="nav-item" href="#brewlogs"><i class="fas fa-clipboard-list"></i>Brouwsels</a>
+      <a class="nav-item" href="#tasting"><i class="fas fa-star-half-stroke"></i>Proefnotities</a>
+      <a class="nav-item" href="#stock"><i class="fas fa-boxes-stacked"></i>Voorraad</a>
+      <a class="nav-item" href="#library"><i class="fas fa-seedling"></i>Ingrediëntenbibliotheek</a>
+      <a class="nav-item" href="#installation"><i class="fas fa-temperature-half"></i>Brouwinstallatie</a>
+      <a class="nav-item" href="#import"><i class="fas fa-arrow-up-from-bracket"></i>Importeren &amp; exporteren</a>
+      <a class="nav-item" href="#team"><i class="fas fa-users"></i>Team &amp; rollen</a>
+      <a class="nav-item" href="#settings"><i class="fas fa-gear"></i>Instellingen</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Voor beheerders</div>
+      <a class="nav-item" href="#admin-submissions"><i class="fas fa-clipboard-check"></i>Publieke bibliotheek<span class="badge-mini admin">Beheer</span></a>
+      <a class="nav-item" href="#admin-tools"><i class="fas fa-tools"></i>Demodata &amp; back-ups<span class="badge-mini admin">Beheer</span></a>
+      <a class="nav-item" href="#admin-hosting"><i class="fas fa-server"></i>Zelf hosten<span class="badge-mini admin">Beheer</span></a>
+    </div>
+  </nav>
+
+  <div class="sidebar-progress">
+    <svg class="progress-glass" viewBox="0 0 30 38" aria-hidden="true">
+      <defs><clipPath id="glassClip"><path d="M5 3 h20 l-2.3 30 a2.6 2.6 0 0 1 -2.6 2.4 h-10.2 a2.6 2.6 0 0 1 -2.6 -2.4 Z"/></clipPath></defs>
+      <path d="M4 2 h22 l-2.5 32 a3 3 0 0 1 -3 2.8 h-11 a3 3 0 0 1 -3 -2.8 Z" fill="#F5F7FA" stroke="#CBD5E1" stroke-width="2"/>
+      <rect id="progressFill" x="0" y="38" width="30" height="38" fill="#F59E0B" clip-path="url(#glassClip)"/>
+    </svg>
+    <div class="progress-meta"><strong id="progressPct">0%</strong>Gelezen</div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">BrewBindr handleiding · v5</div>
+    <div class="topbar-controls">
+      <div class="audience-toggle" role="group" aria-label="Toon hoofdstukken voor">
+        <button class="active" data-audience="all">Alles</button>
+        <button data-audience="brewer">Brouwers</button>
+        <button data-audience="admin">Beheerders</button>
+      </div>
+      <div class="lang-switch" role="group" aria-label="Taal">
+        <a href="?lang=en" data-lang="en" aria-label="English">EN</a><a href="?lang=nl" data-lang="nl" aria-label="Nederlands">NL</a><a href="?lang=fr" data-lang="fr" aria-label="Français">FR</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="content">
+
+    <div class="hero">
+      <div class="hero-bubbles" aria-hidden="true">
+        <span style="left:12%;width:8px;height:8px;animation-delay:0s"></span>
+        <span style="left:28%;width:5px;height:5px;animation-delay:2.2s"></span>
+        <span style="left:55%;width:10px;height:10px;animation-delay:1.1s"></span>
+        <span style="left:72%;width:6px;height:6px;animation-delay:3.4s"></span>
+        <span style="left:88%;width:7px;height:7px;animation-delay:0.7s"></span>
+      </div>
+      <h1>Van graan tot glas,<br>alles in één map.</h1>
+      <p>BrewBindr helpt je recepten maken, water en gist plannen, brouwdagen bijhouden, de vergisting opvolgen, je voorraad beheren en proefnotities noteren — met AI waar het helpt.</p>
+      <div class="hero-chips">
+        <span class="chip"><i class="fas fa-wand-magic-sparkles"></i> Recepten met AI</span>
+        <span class="chip"><i class="fas fa-droplet"></i> Water &amp; maisch-pH</span>
+        <span class="chip"><i class="fas fa-file-code"></i> BeerXML-import/export</span>
+        <span class="chip"><i class="fas fa-users"></i> Brouwen in team</span>
+        <span class="chip"><i class="fas fa-globe"></i> EN · NL · FR</span>
+      </div>
+    </div>
+
+    <div class="search-empty" id="searchEmpty">Geen hoofdstukken gevonden. Probeer een ander woord.</div>
+
+    <!-- ================= AAN DE SLAG ================= -->
+    <section class="doc" id="overview" data-audience="all">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-flask"></i> Aan de slag</div>
+        <h2>Wat is BrewBindr? <span class="role-badge all">Iedereen</span></h2>
+        <p>BrewBindr is een webapp voor thuis- en hobbybrouwers. Ze draait in je browser op computer en gsm — je hoeft niets te installeren. Je gegevens staan in de cloud en zijn meteen gelijk op al je toestellen en bij je team.</p>
+        <h3>Wat kan je ermee?</h3>
+        <ul class="doc-list">
+          <li><strong>Recepten met live berekeningen</strong> — OG, FG, ABV, IBU, kleur en BU:GU rekenen mee terwijl je typt, met de gebruikelijke correcties voor suikers, hopvorm en -gebruik en maischtemperatuur.</li>
+          <li><strong>Recepten met AI</strong> — beschrijf een bier in gewone taal en krijg een volledig recept.</li>
+          <li><strong>Water</strong> — maisch- en spoelwater, inmaischtemperatuur en kookvolumes volgens je brouwinstallatie; waterbehandeling met zouten, restalkaliteit en geschatte maisch-pH.</li>
+          <li><strong>Brouwsels</strong> — van brouwdag over vergisting tot flessen of vat, met gistdosering, hydrometer- en refractometercorrectie en de druk voor je vat.</li>
+          <li><strong>Proefanalyse met AI</strong> — feedback die je proefnotities vergelijkt met het recept.</li>
+          <li><strong>Ingrediëntenbibliotheek en voorraad</strong> — je eigen mout, hop, gist en andere ingrediënten, met optioneel voorraadbeheer.</li>
+          <li><strong>BeerXML</strong> — recepten en ingrediënten importeren en exporteren.</li>
+          <li><strong>Brouwen in team</strong> — samen brouwen, met rollen van proever tot beheerder.</li>
+        </ul>
+        <div class="callout note"><i class="fas fa-globe"></i><div>De app en deze handleiding bestaan in het <b>Engels, Nederlands en Frans</b>. De taal van de app kies je onder <b>Systeem → Instellingen</b>; die van de handleiding met de knoppen <b>EN · NL · FR</b> bovenaan.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="accounts" data-audience="all">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-user"></i> Aan de slag</div>
+        <h2>Account &amp; aanmelden <span class="role-badge all">Iedereen</span></h2>
+        <p>Je kan BrewBindr bekijken zonder account, maar voor de meeste functies moet je aangemeld zijn.</p>
+        <h3>Als gast</h3>
+        <p>Zonder account kan je de <b>publieke recepten</b> en <b>ingrediënten</b> bekijken, en <b>Instellingen</b> en <b>Help</b> openen. Onderdelen met een <i class="fas fa-lock" style="font-size:11px"></i> openen het aanmeldvenster.</p>
+        <h3>Een account maken</h3>
+        <div class="steps">
+          <div class="step"><div><b>Klik op "Account aanmaken"</b> onderaan de zijbalk.</div></div>
+          <div class="step"><div><b>Vul je e-mailadres en een wachtwoord in.</b> Kreeg je een <b>uitnodiging</b> per e-mail, vul dan de code in — je komt in die brouwerij terecht met de rol uit de uitnodiging.</div></div>
+          <div class="step"><div><b>Bevestig je e-mailadres</b> als daarom gevraagd wordt en meld je aan. Zonder uitnodiging krijg je automatisch je eigen brouwerij.</div></div>
+        </div>
+        <h3>Afmelden</h3>
+        <p>Klik op je accountkaart onderaan de zijbalk en kies <b>Afmelden</b>. Op je gsm staat het onder <b>Meer</b> in de onderste balk, en ook in <b>Instellingen</b>.</p>
+        <div class="callout tip"><i class="fas fa-lightbulb"></i><div>Aangemeld op een tweede toestel? Recepten, brouwsels en voorraad blijven live gelijk — wijzigingen verschijnen op beide schermen zonder te verversen.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="interface" data-audience="all">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-table-columns"></i> Aan de slag</div>
+        <h2>De interface <span class="role-badge all">Iedereen</span></h2>
+        <p>De zijbalk links is je navigatie, in drie groepen — dezelfde indeling als deze handleiding:</p>
+        <table>
+          <thead><tr><th>Groep</th><th>Bevat</th><th>Waarvoor</th></tr></thead>
+          <tbody>
+            <tr><td><b>Brouwerij</b></td><td>Recepten, Brouwsels, Proefnotities, Voorraad, Team, Importeren, Brouwinstallatie</td><td>Je eigen werkruimte: alles wat jij en je team brouwen.</td></tr>
+            <tr><td><b>Bibliotheek</b></td><td>Publieke recepten, Ingrediënten</td><td>Gedeelde inhoud en je ingrediëntencatalogus.</td></tr>
+            <tr><td><b>Systeem</b></td><td>Instellingen, Help &amp; handleidingen (en <b>Beheer</b> voor beheerders)</td><td>Voorkeuren, taal, eenheden en documentatie.</td></tr>
+          </tbody>
+        </table>
+        <p>De kaart onderaan de zijbalk toont je account: e-mailadres, je <b>rol in de brouwerij</b> en je brouwerij. Klik erop voor Instellingen en Afmelden.</p>
+        <div class="callout note"><i class="fas fa-mobile-screen"></i><div>Op je gsm vervangt een <b>balk onderaan</b> de zijbalk, met de meest gebruikte schermen en een menu <b>Meer</b>.</div></div>
+      </div>
+    </section>
+
+    <!-- ================= VOOR BROUWERS ================= -->
+    <section class="doc" id="recipes" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-wand-magic-sparkles"></i> Voor brouwers</div>
+        <h2>Recepten &amp; AI <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Recepten staan op twee plaatsen: in je <b>Brouwerij</b> (privé, van jou en je team) en in de publieke bibliotheek <b>Recepten</b> (voor iedereen).</p>
+        <h3>Een recept maken met AI</h3>
+        <div class="steps">
+          <div class="step"><div><b>Open Brouwerij → Nieuw recept.</b></div></div>
+          <div class="step"><div><b>Beschrijf het bier</b> — stijl, alcohol, bitterheid, bijzondere ingrediënten. Bijvoorbeeld: <code>Een doordrinkbaar Belgisch blond van ±5,5 %, kruidige gist, batch van 20 L</code>.</div></div>
+          <div class="step"><div><b>Genereer.</b> De AI (Google Gemini) geeft mout, hop, gist, maischstappen en streefwaarden.</div></div>
+          <div class="step"><div><b>Kijk na en pas aan,</b> en bewaar. Zie het resultaat als een sterk eerste ontwerp.</div></div>
+        </div>
+        <div class="callout note"><i class="fas fa-gauge"></i><div>AI-aanvragen (recepten en proefanalyses) zijn beperkt tot <b>10 per dag</b> per gebruiker, 100 voor beheerders.</div></div>
+        <h3>Zelf een recept opbouwen</h3>
+        <ul class="doc-list">
+          <li><strong>Vergistbare suikers</strong> — kies uit je bibliotheek en zet het <b>soort</b>: mout, ongemout, suiker, vloeibaar of droog extract. Dat telt mee: suiker en extract geven hun volledige extract, en suiker vergist volledig. Kies je een ingrediënt uit de bibliotheek, dan raadt de app het soort uit de naam (bv. "kandijsuiker" → suiker).</li>
+          <li><strong>Hop</strong> — hoeveelheid, alfazuur, <b>gebruik</b> (koken, first wort, maischen, whirlpool, droog hoppen), <b>vorm</b> (pellets, bellen, plugs) en tijd. Droge hop telt in dagen; whirlpoolhop krijgt een temperatuur (80 °C als je niets aanpast).</li>
+          <li><strong>Gist</strong> — vergistingsgraad per gist.</li>
+          <li><strong>Maischschema</strong> — laad er een uit je installatie of pas de stappen aan. Het infusievolume van de eerste stap en de temperatuur van de hoofdrust tellen mee voor het water en de FG.</li>
+          <li><strong>Water en waterbehandeling</strong> — zie <a href="#water">Watervolumes</a> en <a href="#water-treatment">Waterbehandeling &amp; pH</a>.</li>
+        </ul>
+        <p>De donkere balk bovenaan toont de streefwaarden terwijl je typt: ABV, IBU (met BU:GU), kleur (SRM of EBC) en OG (SG of °P). Heb je een bierstijl gekozen, dan vallen waarden buiten de stijl op.</p>
+        <h3>Namen, bewerken en verwijderen</h3>
+        <ul class="doc-list">
+          <li><strong>Unieke namen</strong> — een receptnaam bestaat één keer per brouwerij (hoofdletters en extra spaties tellen niet); in de publieke bibliotheek bestaat elke naam één keer.</li>
+          <li><strong>Bewerken of bekijken</strong> — beheerders en brouwmeesters van de brouwerij bewerken alle recepten van de brouwerij; brouwers en proevers openen recepten alleen om te lezen (knop <b>Bekijken</b>). Goedgekeurde publieke recepten kan alleen de beheerder van de app aanpassen.</li>
+          <li><strong>Een recept met brouwsels verwijderen</strong> — steunen er nog brouwsels op het recept, dan vraagt de app of je het recept <b>samen met die brouwsels en hun proefnotities</b> wil verwijderen, of wil annuleren. Een recept dat brouwsels van een andere brouwerij gebruiken, kan je niet verwijderen.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-print"></i><div>Elk recept heeft een <b>afdrukweergave</b> — een overzichtelijk brouwdagblad om af te drukken of als pdf te bewaren.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="calculations" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-calculator"></i> Voor brouwers</div>
+        <h2>Zo rekent BrewBindr <span class="role-badge brewer">Brouwer</span></h2>
+        <table>
+          <thead><tr><th>Waarde</th><th>Hoe</th></tr></thead>
+          <tbody>
+            <tr><td><b>OG</b></td><td>Extract van elke grondstof over het batchvolume. Het <b>brouwrendement</b> geldt alleen voor wat gemaischt wordt (mout, ongemout); suiker en extract tellen voor 100 %.</td></tr>
+            <tr><td><b>FG</b></td><td>Gemiddelde vergistingsgraad van de gist, ongeveer 1 punt lager per °C dat de hoofdrust boven 66 °C ligt (en hoger eronder), maximaal 5 punten. Suiker vergist volledig, lactose niet.</td></tr>
+            <tr><td><b>ABV</b></td><td>De nauwkeurige formule <code>76,08 × (OG − FG) / (1,775 − OG) × FG / 0,794</code>, ook juist voor zware bieren. Flessen: + 0,065 % per g/L bottelsuiker (niet voor een vat).</td></tr>
+            <tr><td><b>IBU</b></td><td>Tinseth. Hopbellen ongeveer 10 % minder dan pellets; first-wort-hop 10 % meer; maischhop 20 % van een volledige kooktijd; whirlpoolhop minder naarmate de temperatuur zakt. Met een brouwinstallatie telt de gemiddelde densiteit tijdens het koken.</td></tr>
+            <tr><td><b>Kleur</b></td><td>Morey, in SRM of EBC.</td></tr>
+            <tr><td><b>BU:GU</b></td><td>IBU gedeeld door de densiteitspunten: rond 0,5 in balans, lager moutig, hoger bitter.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout note"><i class="fas fa-droplet"></i><div>Vul je in een recept zelf het maisch- en spoelwater in, dan volgen OG, FG, ABV, IBU en kleur het volume dat echt uit de ketel komt.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="water" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-droplet"></i> Voor brouwers</div>
+        <h2>Watervolumes &amp; inmaischtemperatuur <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Het blok <b>Water</b> in het recept (en op de brouwdag) berekent het water uit het recept en je <a href="#installation">brouwinstallatie</a>. Een recept kan zijn installatie kiezen; anders gebruikt de app de enige installatie van je brouwerij ("Standaard: …").</p>
+        <h3>Zo worden de volumes bepaald</h3>
+        <ul class="doc-list">
+          <li><strong>Na het koken</strong> = batch (in de gistingskuip) − aanvulwater + trub- en koelverlies.</li>
+          <li><strong>Voor het koken</strong> = na het koken + verdamping (L per uur × kooktijd).</li>
+          <li><strong>Totaal water</strong> = voor het koken + water dat de mout opneemt (1 L/kg, BIAB 0,7, of de waarde van de installatie) + lauterverlies.</li>
+          <li><strong>Maischwater</strong> = de eerste infusie van het maischschema, anders 3 L/kg; bij BIAB al het water. Nooit meer dan naast de mout past (zie hieronder). <b>Spoelwater</b> is de rest.</li>
+          <li><strong>Inmaischtemperatuur</strong> = <code>T + 0,41 / verhouding × (T − temperatuur mout)</code> (Palmer), met T de eerste rust en de verhouding water/mout in L/kg.</li>
+          <li><strong>Densiteit voor het koken</strong> volgt uit de OG en de volumes.</li>
+        </ul>
+        <h3>Toestellen met beperkte ruimte (bv. Brewie)</h3>
+        <p>In sommige toestellen zit de mout in zakken in de maischtank: hoe meer mout, hoe minder plaats voor water. Vul bij de installatie de <b>maischcapaciteit</b> (water + mout), het <b>volume van de mout</b> per kg en de <b>capaciteit van de kookketel</b> in. Het berekende maischwater wordt dan nooit meer dan <code>maischcapaciteit − mout × volume per kg</code>; de rest gaat naar het spoelwater. Je krijgt een waarschuwing als het maischwater beperkt werd, als er te veel mout is (minder dan 2 L water per kg past), als je eigen maischwater niet past, of als er meer wort is dan de kookketel aankan.</p>
+        <h3>Je eigen water</h3>
+        <ul class="doc-list">
+          <li><strong>Maisch- en spoelwater</strong> vul je per recept zelf in (bv. zoals in Brewie Studio). Druk op Enter of klik buiten het veld. De berekende waarden blijven zichtbaar; <b>Berekend water gebruiken</b> zet ze terug.</li>
+          <li>Het blok toont dan hoeveel er <b>in de gistingskuip</b> komt en de <b>verwachte OG</b>, en de cijfers van het recept rekenen mee.</li>
+          <li><strong>Alles aftappen in de gistingskuip</strong> — vink aan als je alles aftapt: geen trub- en koelverlies voor dit recept. Standaard uit.</li>
+        </ul>
+        <div class="callout note"><i class="fas fa-circle-info"></i><div>Niet meegerekend: krimp bij het afkoelen (ongeveer 4 %). Kloppen je volumes telkens niet, pas dan de verliezen of de verdamping van je installatie aan.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="water-treatment" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-vial"></i> Voor brouwers</div>
+        <h2>Waterbehandeling &amp; maisch-pH <span class="role-badge brewer">Brouwer</span></h2>
+        <h3>Waterprofielen</h3>
+        <p>Voeg je leidingwater toe onder <b>Brouwinstallatie → Waterprofielen</b>: calcium, magnesium, natrium, chloride, sulfaat en bicarbonaat in mg/L. Je waterbedrijf publiceert die waarden per adres (zoek naar "waterkwaliteit"). Bicarbonaat staat soms als alkaliteit of tijdelijke hardheid: 1 °dH ≈ 21,8 mg/L, 1 °f TAC ≈ 12,2 mg/L bicarbonaat.</p>
+        <p>Altijd beschikbaar: osmosewater, klassieke waters (Pilsen, München, Wenen, Dortmund, Dublin, Edinburgh, Londen, Burton), doelprofielen per kleur en <b>19 profielen per bierstijl</b> (IPA's, NEIPA, pale ale, pils, Belgisch blond, tripel, dubbel, quadrupel, saison, witbier, weizen, amber, Märzen, stouts).</p>
+        <h3>Het water van een recept behandelen</h3>
+        <div class="steps">
+          <div class="step"><div><b>Basiswater</b> — je eigen profiel (je enige profiel staat standaard gekozen) of een klassiek water. Eventueel een deel <b>osmosewater</b>.</div></div>
+          <div class="step"><div><b>Doelprofiel</b> — een bierstijl, een kleurprofiel of een ander profiel.</div></div>
+          <div class="step"><div><b>Zouten</b> — gips, calciumchloride (vloeibaar 33 % of 36 % in ml, of vlokken in g), Epsom-zout, keukenzout, zuiveringszout. Of klik op <b>Zouten voorstellen</b>: de app zoekt de giften die het dichtst bij het doel komen (zouten kunnen alleen iets toevoegen, niets weghalen).</div></div>
+          <div class="step"><div><b>Bekijk het resultaat</b> — de tabel toont basiswater, behandeld water en doel; daaronder de <b>restalkaliteit</b> en de verhouding <b>sulfaat/chloride</b> (boven 2 bitter, 0,8–2 gebalanceerd, onder 0,8 moutig). Onder 40 mg/L calcium krijg je een waarschuwing.</div></div>
+        </div>
+        <h3>Maisch-pH en zuur</h3>
+        <p>Het blok schat de <b>maisch-pH</b> uit de mout (licht, karamel, geroosterd, zuurmout — herkend aan naam of kleur) en het maischwater met alle zouten. Kies een <b>doel-pH</b> (standaard 5,4) en klik op <b>Gebruik … ml</b> om het <b>melkzuur 80 %</b> in te vullen dat dat doel haalt. Je ziet de pH met en zonder zuur; 5,2–5,6 is het gebruikelijke bereik.</p>
+        <div class="callout tip"><i class="fas fa-flask-vial"></i><div>Doe alle zouten en het zuur bij de <b>maisch</b>. Het profiel wordt berekend over al het brouwwater samen. De pH is een schatting (meestal tot op ±0,1): meet na met een pH-meter op een afgekoeld staal. Op de brouwdag toont het blok wat je moet toevoegen.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="brewlogs" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-clipboard-list"></i> Voor brouwers</div>
+        <h2>Brouwsels <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Een brouwsel maakt van een recept een echte batch. Elk brouwsel doorloopt vier fasen; het actieve tabblad volgt de status.</p>
+        <div class="pipeline">
+          <div class="phase"><i class="fas fa-fire-burner"></i><div class="phase-name">1. Brouwdag</div><div class="phase-desc">Water, gist, maisch, gemeten OG, volume</div></div>
+          <div class="phase"><i class="fas fa-flask"></i><div class="phase-name">2. Vergisting</div><div class="phase-desc">FG, gistingstemperatuur</div></div>
+          <div class="phase"><i class="fas fa-snowflake"></i><div class="phase-name">3. Lageren</div><div class="phase-desc">Narijping</div></div>
+          <div class="phase"><i class="fas fa-bottle-water"></i><div class="phase-name">4. Bottelen</div><div class="phase-desc">Flessen of vat, koolzuur</div></div>
+        </div>
+        <h3>Brouwdag</h3>
+        <ul class="doc-list">
+          <li><strong>Water en waterbehandeling</strong> van het recept: volumes, inmaischtemperatuur en wat je toevoegt.</li>
+          <li><strong>Gistdosering</strong> — de nodige cellen uit OG, volume en gisttype (ale 0,75, lager 1,5 miljoen cellen/ml/°P, een derde meer boven 1,060), tegenover wat je hebt: droge gist 20 miljard/g, vloeibare gist 100 miljard per pakje min ongeveer 0,7 % per dag sinds de productiedatum. Te weinig vloeibare gist? De app stelt de kleinste starter op een roerplaat voor, met het droog moutextract; bij droge gist hoeveel gram je nodig hebt.</li>
+          <li><strong>Gemeten alfazuur</strong> per hop, als het afwijkt van het recept; de IBU rekent mee.</li>
+          <li><strong>Gemeten OG en volume</strong> in de gistingskuip.</li>
+        </ul>
+        <h3>Densiteit meten</h3>
+        <ul class="doc-list">
+          <li>Vul OG en FG in <b>SG of °P</b> in (zie <a href="#settings">Instellingen</a>); ze worden altijd als SG bewaard.</li>
+          <li><strong>Hydrometer</strong> — open onder een densiteitsveld <b>Temperatuur- of refractometercorrectie</b> en vul de temperatuur van het staal in: een knop corrigeert de meting naar 20 °C.</li>
+          <li><strong>Refractometer</strong> — vul °Brix in. Voor de OG wordt dat omgerekend met je correctiefactor (WCF); voor de FG ook gecorrigeerd voor alcohol (Terrill), op basis van de OG erboven.</li>
+        </ul>
+        <h3>Flessen of vat</h3>
+        <ul class="doc-list">
+          <li><strong>Flessen</strong> — bottelsuiker voor het gekozen aantal volumes CO₂, het soort suiker, het volume en de gistingstemperatuur; de verwachte ABV telt de suiker mee.</li>
+          <li><strong>Vat</strong> — de CO₂-druk die je instelt (bar en psi boven de atmosferische druk) voor het gekozen aantal volumes bij de temperatuur van het bier (standaard 4 °C). Geen bottelsuiker, dus geen extra alcohol.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-chart-line"></i><div>De data van de fasen vullen zich in als je de status wijzigt, en blijven aanpasbaar.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="tasting" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-star-half-stroke"></i> Voor brouwers</div>
+        <h2>Proefnotities <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Is een batch klaar, noteer dan hoe hij smaakt: scores voor uitzicht, aroma, smaak en mondgevoel, een totaalscore en commentaar. Elk lid van de brouwerij kan proefnotities toevoegen.</p>
+        <h3>Proefanalyse met AI</h3>
+        <div class="steps">
+          <div class="step"><div><b>Schrijf je commentaar</b> — wees concreet: "banaanesters overheersen, minder bitter dan verwacht, wat dun".</div></div>
+          <div class="step"><div><b>Klik op Analyseren</b> <i class="fas fa-brain" style="font-size:11px"></i>. De AI vergelijkt je beschrijving met het recept.</div></div>
+          <div class="step"><div><b>Lees de feedback:</b> waarschijnlijke oorzaken en tips voor het volgende brouwsel.</div></div>
+        </div>
+        <div class="callout note"><i class="fas fa-circle-info"></i><div>De analyse heeft geschreven commentaar nodig en telt mee voor je daglimiet aan AI-aanvragen.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="stock" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-boxes-stacked"></i> Voor brouwers</div>
+        <h2>Voorraadbeheer <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Voorraad is <b>optioneel</b> — zet het aan onder <b>Instellingen → Voorraadbeheer</b>, dan verschijnt "Voorraad" in de zijbalk onder Brouwerij. Recepten tonen dan of je ze kan brouwen met wat je hebt.</p>
+        <p>Het voorraadscherm toont je ingrediënten met de hoeveelheid die je hebt. Elk krijgt een <b>glas</b> dat zich vult volgens je voorraad. Probeer maar:</p>
+        <div class="glass-demo">
+          <svg class="glass-svg" viewBox="0 0 60 80" aria-hidden="true">
+            <defs><clipPath id="demoClip"><path d="M10 6 h40 l-4.5 62 a5 5 0 0 1 -5 4.6 h-21 a5 5 0 0 1 -5 -4.6 Z"/></clipPath></defs>
+            <path d="M8 4 h44 l-5 66 a6 6 0 0 1 -6 5.5 h-22 a6 6 0 0 1 -6 -5.5 Z" fill="#fff" stroke="#CBD5E1" stroke-width="2.5"/>
+            <rect id="demoFill" x="0" y="28" width="60" height="80" fill="#F59E0B" clip-path="url(#demoClip)"/>
+            <ellipse id="demoFoam" cx="30" cy="28" rx="19" ry="4" fill="#FEF3C7" clip-path="url(#demoClip)"/>
+          </svg>
+          <div>
+            <div class="demo-label">Sleep om de voorraad te simuleren</div>
+            <input type="range" id="demoRange" name="demoRange" min="0" max="100" value="65" aria-label="Gesimuleerd voorraadpercentage">
+            <div class="demo-pct"><span id="demoPct">65</span>%</div>
+          </div>
+        </div>
+        <h3>Werken met het scherm</h3>
+        <ul class="doc-list">
+          <li><strong>Filter</strong> op soort ingrediënt of zoek op naam.</li>
+          <li><strong>Wissel</strong> tussen kaarten (met glazen) en een compacte tabel.</li>
+          <li><strong>Pas hoeveelheden aan</strong> wanneer je iets koopt of gebruikt. Ze worden afgerond: kg tot op de gram, g op hele grammen.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="doc" id="library" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-seedling"></i> Voor brouwers</div>
+        <h2>Ingrediëntenbibliotheek <span class="role-badge brewer">Brouwer</span></h2>
+        <p>De bibliotheek is je catalogus van grondstoffen:</p>
+        <table>
+          <thead><tr><th>Soort</th><th>Voorbeelden</th><th>Belangrijkste eigenschappen</th></tr></thead>
+          <tbody>
+            <tr><td><b>Vergistbaar</b></td><td>Pilsmout, Münchener, kandijsuiker</td><td>Opbrengst, kleur</td></tr>
+            <tr><td><b>Hop</b></td><td>Saaz, Citra, East Kent Goldings</td><td>Alfazuur %</td></tr>
+            <tr><td><b>Gist</b></td><td>Giststammen, bacteriën</td><td>Vergistingsgraad, vorm</td></tr>
+            <tr><td><b>Overige</b></td><td>Iers mos, koriander, sinaasappelschil</td><td>Gebruik, moment</td></tr>
+            <tr><td><b>Maischschema's, stijlen</b></td><td>Enkelvoudige infusie, BJCP-stijlen</td><td>Stappen; bereik per stijl</td></tr>
+          </tbody>
+        </table>
+        <p>Wat je toevoegt is privé voor je brouwerij, en een naam bestaat één keer per soort in je brouwerij. Bij het maken van recepten kies je uit deze bibliotheek — een goed bijgehouden bibliotheek maakt recepten snel.</p>
+        <div class="callout note"><i class="fas fa-upload"></i><div>Je kan ingrediënten of recepten <b>indienen</b> voor de publieke bibliotheek. Staat de naam er al of wacht hij op goedkeuring, dan krijg je eerst een waarschuwing. Ingediende items verschijnen pas publiek na goedkeuring door een beheerder.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="installation" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-temperature-half"></i> Voor brouwers</div>
+        <h2>Brouwinstallatie <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Beschrijf je toestel en je water, zodat de berekeningen kloppen met de werkelijkheid. Het scherm heeft drie tabbladen: <b>Installatie</b>, <b>Maischschema's</b> en <b>Waterprofielen</b>. Alles hier wordt gedeeld met je brouwerij.</p>
+        <h3>Installatie</h3>
+        <p>Vertrek van een voorbeeld of bouw je eigen: batchgrootte, rendement, kooktijd, vaten, en de waarden die de waterberekening gebruikt:</p>
+        <table>
+          <thead><tr><th>Veld</th><th>Gebruikt voor</th></tr></thead>
+          <tbody>
+            <tr><td>Trub- en koelverlies, aanvulwater</td><td>Volumes na het koken</td></tr>
+            <tr><td>Verdamping (L/u)</td><td>Volume en densiteit voor het koken</td></tr>
+            <tr><td>Lauterverlies</td><td>Totaal water</td></tr>
+            <tr><td>Maischcapaciteit (water + mout), volume mout in de maisch (L/kg)</td><td>Maximaal maischwater</td></tr>
+            <tr><td>Opname door mout (L/kg)</td><td>Totaal water (standaard 1,0, BIAB 0,7)</td></tr>
+            <tr><td>Capaciteit kookketel</td><td>Waarschuwing bij te veel wort</td></tr>
+          </tbody>
+        </table>
+        <details>
+          <summary>Ingebouwde voorbeeldinstallaties</summary>
+          <div class="details-body">
+            <table>
+              <thead><tr><th>Voorbeeld</th><th>Type</th><th>Batch</th><th>Rendement</th></tr></thead>
+              <tbody>
+                <tr><td>Brewie</td><td>Twee vaten (maischcapaciteit 22 L, 1 L/kg, kookketel 23 L)</td><td>23 L</td><td>70%</td></tr>
+                <tr><td>Grainfather G30</td><td>Alles-in-één</td><td>25 L</td><td>72%</td></tr>
+                <tr><td>Grainfather G40</td><td>Alles-in-één</td><td>35 L</td><td>72%</td></tr>
+                <tr><td>Robobrew / BrewZilla</td><td>Alles-in-één</td><td>30 L</td><td>70%</td></tr>
+                <tr><td>BIAB 20 L</td><td>Brew-in-a-bag</td><td>20 L</td><td>65%</td></tr>
+                <tr><td>BIAB 30 L</td><td>Brew-in-a-bag</td><td>30 L</td><td>65%</td></tr>
+                <tr><td>Klassiek 3-vaten 20 L</td><td>Heetwater, maisch, kook</td><td>20 L</td><td>75%</td></tr>
+                <tr><td>Klassiek 3-vaten 30 L</td><td>Heetwater, maisch, kook</td><td>30 L</td><td>75%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <h3>Maischschema's</h3>
+        <p>Herbruikbare maischschema's (temperatuur, duur, type, infusievolume). Laad er een in een recept; het verschijnt als checklist op de brouwdag. Temperaturen worden bewaard tot op 0,1 °C.</p>
+        <h3>Waterprofielen</h3>
+        <p>Je leidingwater en andere waters met hun mineralen; zie <a href="#water-treatment">Waterbehandeling</a>.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="import" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-arrow-up-from-bracket"></i> Voor brouwers</div>
+        <h2>Importeren &amp; exporteren <span class="role-badge brewer">Brouwer</span></h2>
+        <p>BrewBindr spreekt <b>BeerXML</b>, het uitwisselformaat van brouwsoftware (BeerSmith, Brewfather en andere).</p>
+        <h3>Importeren</h3>
+        <div class="steps">
+          <div class="step"><div><b>Open Brouwerij → Importeren.</b> Je moet aangemeld zijn.</div></div>
+          <div class="step"><div><b>Kies een bestand</b> — <code>.xml</code> of <code>.beerxml</code>, tot <b>10 MB</b>, met recepten of ingrediënten.</div></div>
+          <div class="step"><div><b>Bekijk het resultaat.</b> Recepten komen in je brouwerij, ingrediënten in je bibliotheek.</div></div>
+        </div>
+        <p>Geïmporteerde waarden worden opgekuist (bv. 2,041164 kg → 2,041 kg, 65,555556 °C → 65,6 °C). Het soort vergistbaar, hopgebruik en -vorm, en de mineralen van waterprofielen worden mee ingelezen.</p>
+        <h3>Exporteren</h3>
+        <p>Exporteer een recept naar BeerXML vanuit het recept, als back-up of voor andere software. Soorten, hopgebruik en -vorm blijven behouden, en imperiale hoeveelheden worden in kg geschreven.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="team" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-users"></i> Voor brouwers</div>
+        <h2>Team &amp; rollen <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Elke gebruiker hoort bij een <b>brouwerij</b> — een gedeelde werkruimte. Elk lid heeft een van vier rollen:</p>
+        <table>
+          <thead><tr><th>Rol</th><th>Rechten</th></tr></thead>
+          <tbody>
+            <tr><td><b>Beheerder</b></td><td>Alles wat een brouwmeester kan, plus leden, uitnodigingen en de naam van de brouwerij.</td></tr>
+            <tr><td><b>Brouwmeester</b></td><td>Maakt, bewerkt en verwijdert alle recepten, ingrediënten en installatiegegevens van de brouwerij; houdt brouwsels bij.</td></tr>
+            <tr><td><b>Brouwer</b></td><td>Houdt brouwsels bij; bekijkt recepten (alleen lezen).</td></tr>
+            <tr><td><b>Proever</b></td><td>Bekijkt recepten en brouwsels; voegt proefnotities toe.</td></tr>
+          </tbody>
+        </table>
+        <h3>Uitnodigen en aansluiten</h3>
+        <ul class="doc-list">
+          <li><strong>Uitnodigen</strong> — vul in het scherm <b>Team</b> een e-mailadres en een rol in. De uitgenodigde krijgt een e-mail met een code, 7 dagen geldig.</li>
+          <li><strong>Aansluiten</strong> — vul de code in bij het aanmaken van je account, of later onder <b>Aansluiten bij een andere brouwerij</b>. Je eigen recepten, brouwsels, proefnotities en ingrediënten verhuizen mee; dat kan als je het enige lid bent van je huidige brouwerij. Namen die al bestaan krijgen "(2)" erbij.</li>
+          <li><strong>Verwijderen</strong> — een beheerder kan leden verwijderen in het scherm Team.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="doc" id="settings" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-gear"></i> Voor brouwers</div>
+        <h2>Instellingen <span class="role-badge all">Iedereen</span></h2>
+        <p>Onder <b>Systeem → Instellingen</b> stel je BrewBindr af op jouw manier:</p>
+        <ul class="doc-list">
+          <li><strong>Eenheden</strong> — metrisch (L, kg, °C) of imperiaal (gal, lb, °F), overal.</li>
+          <li><strong>Kleurschaal</strong> — SRM of EBC.</li>
+          <li><strong>Dichtheid</strong> — SG, °P of beide, om densiteiten te tonen en in te vullen.</li>
+          <li><strong>Correctiefactor refractometer (WCF)</strong> — meestal 1,02–1,06, 1,04 als je het niet weet. Meet een wort met hydrometer én refractometer om je eigen factor te vinden.</li>
+          <li><strong>Voorraadbeheer</strong> — aan of uit (zie <a href="#stock">Voorraad</a>).</li>
+          <li><strong>Taal</strong> — English, Nederlands of Français.</li>
+          <li><strong>Account</strong> — met welk account je aangemeld bent, en afmelden.</li>
+        </ul>
+        <p class="kbd-note">Je voorkeuren worden bij je profiel bewaard en volgen je op al je toestellen.</p>
+      </div>
+    </section>
+
+    <!-- ================= VOOR BEHEERDERS ================= -->
+    <section class="doc" id="admin-submissions" data-audience="admin">
+      <div class="card">
+        <div class="section-eyebrow admin"><i class="fas fa-clipboard-check"></i> Voor beheerders</div>
+        <h2>Publieke bibliotheek <span class="role-badge admin">Beheer</span></h2>
+        <h3>Ingediende items beoordelen</h3>
+        <p>Gebruikers kunnen recepten en ingrediënten indienen voor de publieke bibliotheek. Niets verschijnt zonder controle: ingediende items wachten in het scherm <b>Beheer</b> onder <b>Te beoordelen</b>.</p>
+        <div class="steps">
+          <div class="step"><div><b>Open het scherm Beheer.</b> Elk item toont soort, naam en wie het indiende.</div></div>
+          <div class="step"><div><b>Beoordeel de kwaliteit:</b> volledige en geloofwaardige gegevens, een zinvolle naam. Namen in de publieke bibliotheek zijn uniek: een item goedkeuren waarvan de naam al publiek is, wordt geweigerd.</div></div>
+          <div class="step"><div><b>Goedkeuren</b> om te publiceren, of <b>Weigeren</b>.</div></div>
+        </div>
+        <h3>Opkuisen</h3>
+        <p>In de publieke bibliotheek zien beheerders bij recepten en ingrediënten <b>Uit publiek halen</b> (het item wordt weer privé) en <b>Verwijderen</b>. Een publiek recept dat brouwsels van andere brouwerijen gebruiken, kan je niet verwijderen.</p>
+        <div class="callout warn"><i class="fas fa-triangle-exclamation"></i><div>Goedgekeurde inhoud is zichtbaar voor <b>iedereen</b>, ook voor gasten.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="admin-tools" data-audience="admin">
+      <div class="card">
+        <div class="section-eyebrow admin"><i class="fas fa-tools"></i> Voor beheerders</div>
+        <h2>Demodata &amp; back-ups <span class="role-badge admin">Beheer</span></h2>
+        <h3>Demodata</h3>
+        <p>De knop <b>Demodata importeren</b> laadt voorbeeldrecepten en -ingrediënten, om te testen of te demonstreren.</p>
+        <h3>JSON-back-up &amp; herstel</h3>
+        <ul class="doc-list">
+          <li><strong>Exporteren</strong> downloadt een JSON-back-up van recepten, brouwsels, proefnotities en je bibliotheek.</li>
+          <li><strong>Herstellen</strong> laadt een eerder geëxporteerd JSON-bestand. Opgelet: dit kan gegevens overschrijven.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Supabase is de eigenlijke opslag; JSON-back-ups vullen de databaseback-ups aan, ze vervangen ze niet.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="admin-hosting" data-audience="admin">
+      <div class="card">
+        <div class="section-eyebrow admin"><i class="fas fa-server"></i> Voor beheerders</div>
+        <h2>Zelf hosten &amp; configureren <span class="role-badge admin">Beheer</span></h2>
+        <p>BrewBindr is open source. Je hebt <b>Node.js 22</b> nodig, een <b>Supabase</b>-project (authenticatie, database, realtime), een <b>Google Gemini API-sleutel</b> voor AI en een <b>Resend</b>-sleutel voor de uitnodigingsmails. De referentie-installatie draait op <b>Vercel</b>.</p>
+        <div class="steps">
+          <div class="step"><div><b>Kopiëren en installeren:</b></div></div>
+        </div>
+<pre>git clone https://github.com/jansierens-maker/brewbindr
+cd brewbindr
+npm install</pre>
+        <div class="steps" style="counter-reset: step 1">
+          <div class="step"><div><b>Configureer</b> een bestand <code>.env.local</code> (en dezelfde variabelen in Vercel):</div></div>
+        </div>
+<pre>NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+GEMINI_API_KEY=your_gemini_api_key
+RESEND_API_KEY=your_resend_api_key
+NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
+        <div class="steps" style="counter-reset: step 2">
+          <div class="step"><div><b>Zet de database op:</b> voer <code>schema_update.sql</code> uit (het volledige, herhaalbare opzetscript, ook te zien in de app onder <b>Verbindingsgegevens</b>) in de SQL-editor van Supabase, of koppel het project en voer <code>npx supabase db push</code> uit.</div></div>
+          <div class="step"><div><b>Starten:</b> <code>npm run dev</code> om te ontwikkelen, <code>npm test</code> voor de unit tests, <code>npm run build</code> voor productie.</div></div>
+        </div>
+        <h3>Wijzigingen aan de database</h3>
+        <ul class="doc-list">
+          <li>Elke wijziging is een nieuwe migratie in <code>supabase/migrations/</code> (herhaalbaar en verenigbaar met de draaiende app), ook toegevoegd aan <code>schema_update.sql</code>, met een pgTAP-test in <code>supabase/tests/database/</code> voor nieuwe regels.</li>
+          <li>GitHub Actions: <b>CI</b> (unit tests en build), <b>Playwright E2E</b> bij elke Vercel-deployment, en <b>Database</b>: bij een pull request een verse database met alle migraties, de databasetests en een proefrun tegen productie; bij een merge naar <code>main</code> worden de migraties toegepast na goedkeuring in de omgeving <code>production</code> (secrets <code>SUPABASE_ACCESS_TOKEN</code> en <code>SUPABASE_DB_PASSWORD</code>).</li>
+        </ul>
+        <h3>Rollen in de app</h3>
+        <p>Naast de rollen in de brouwerij heeft elk profiel een rol in de app: <code>user</code> of <code>admin</code>. Alleen <code>admin</code>-profielen zien het scherm Beheer en krijgen de hogere AI-limiet. Maak iemand beheerder door zijn rij in de tabel <code>profiles</code> aan te passen.</p>
+        <div class="callout note"><i class="fas fa-shield-halved"></i><div>De afscherming van gegevens gebeurt door de <b>RLS-regels</b> en databasefuncties van Supabase, niet door de frontend. Pas je het schema aan, controleer dan dat de gegevens van elke brouwerij bij haar leden blijven.</div></div>
+      </div>
+    </section>
+
+    <div class="doc-footer">
+      <div>BrewBindr — met zorg gebrouwen · <a href="https://github.com/jansierens-maker/brewbindr">github.com/jansierens-maker/brewbindr</a></div>
+      <div>Handleiding v5 · november 2026</div>
+    </div>
+
+  </main>
+</div>
+</template>
+
+<template id="lang-fr">
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <svg class="brand-glass" viewBox="0 0 30 38" aria-hidden="true">
+      <path d="M4 2 h22 l-2.5 32 a3 3 0 0 1 -3 2.8 h-11 a3 3 0 0 1 -3 -2.8 Z" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+      <path d="M6.2 12 h17.6 l-1.6 20 a2 2 0 0 1 -2 1.8 h-10.4 a2 2 0 0 1 -2 -1.8 Z" fill="#F59E0B"/>
+      <ellipse cx="15" cy="11" rx="9.2" ry="2.6" fill="#fff"/>
+    </svg>
+    <div>
+      <div class="brand-name">Brew<span>Bindr</span></div>
+      <div class="brand-sub">Manuel</div>
+    </div>
+  </div>
+
+  <div class="sidebar-search">
+    <input type="search" id="docSearch" name="docSearch" maxlength="100" placeholder="Rechercher dans le manuel…" aria-label="Rechercher dans le manuel">
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav" aria-label="Sommaire du manuel">
+    <div class="nav-section">
+      <div class="nav-section-label">Premiers pas</div>
+      <a class="nav-item" href="#overview"><i class="fas fa-flask"></i>Qu'est-ce que BrewBindr</a>
+      <a class="nav-item" href="#accounts"><i class="fas fa-user"></i>Compte &amp; connexion</a>
+      <a class="nav-item" href="#interface"><i class="fas fa-table-columns"></i>L'interface</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Pour les brasseurs</div>
+      <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recettes &amp; IA</a>
+      <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Calculs</a>
+      <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Volumes d'eau</a>
+      <a class="nav-item" href="#water-treatment"><i class="fas fa-vial"></i>Traitement de l'eau &amp; pH</a>
+      <a class="nav-item" href="#brewlogs"><i class="fas fa-clipboard-list"></i>Brassins</a>
+      <a class="nav-item" href="#tasting"><i class="fas fa-star-half-stroke"></i>Notes de dégustation</a>
+      <a class="nav-item" href="#stock"><i class="fas fa-boxes-stacked"></i>Stock</a>
+      <a class="nav-item" href="#library"><i class="fas fa-seedling"></i>Bibliothèque d'ingrédients</a>
+      <a class="nav-item" href="#installation"><i class="fas fa-temperature-half"></i>Installation de brassage</a>
+      <a class="nav-item" href="#import"><i class="fas fa-arrow-up-from-bracket"></i>Importer &amp; exporter</a>
+      <a class="nav-item" href="#team"><i class="fas fa-users"></i>Équipe &amp; rôles</a>
+      <a class="nav-item" href="#settings"><i class="fas fa-gear"></i>Paramètres</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Pour les administrateurs</div>
+      <a class="nav-item" href="#admin-submissions"><i class="fas fa-clipboard-check"></i>Bibliothèque publique<span class="badge-mini admin">Admin</span></a>
+      <a class="nav-item" href="#admin-tools"><i class="fas fa-tools"></i>Démo &amp; sauvegardes<span class="badge-mini admin">Admin</span></a>
+      <a class="nav-item" href="#admin-hosting"><i class="fas fa-server"></i>Auto-hébergement<span class="badge-mini admin">Admin</span></a>
+    </div>
+  </nav>
+
+  <div class="sidebar-progress">
+    <svg class="progress-glass" viewBox="0 0 30 38" aria-hidden="true">
+      <defs><clipPath id="glassClip"><path d="M5 3 h20 l-2.3 30 a2.6 2.6 0 0 1 -2.6 2.4 h-10.2 a2.6 2.6 0 0 1 -2.6 -2.4 Z"/></clipPath></defs>
+      <path d="M4 2 h22 l-2.5 32 a3 3 0 0 1 -3 2.8 h-11 a3 3 0 0 1 -3 -2.8 Z" fill="#F5F7FA" stroke="#CBD5E1" stroke-width="2"/>
+      <rect id="progressFill" x="0" y="38" width="30" height="38" fill="#F59E0B" clip-path="url(#glassClip)"/>
+    </svg>
+    <div class="progress-meta"><strong id="progressPct">0%</strong>Lu</div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Manuel BrewBindr · v5</div>
+    <div class="topbar-controls">
+      <div class="audience-toggle" role="group" aria-label="Afficher les chapitres pour">
+        <button class="active" data-audience="all">Tout</button>
+        <button data-audience="brewer">Brasseurs</button>
+        <button data-audience="admin">Admins</button>
+      </div>
+      <div class="lang-switch" role="group" aria-label="Langue">
+        <a href="?lang=en" data-lang="en" aria-label="English">EN</a><a href="?lang=nl" data-lang="nl" aria-label="Nederlands">NL</a><a href="?lang=fr" data-lang="fr" aria-label="Français">FR</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="content">
+
+    <div class="hero">
+      <div class="hero-bubbles" aria-hidden="true">
+        <span style="left:12%;width:8px;height:8px;animation-delay:0s"></span>
+        <span style="left:28%;width:5px;height:5px;animation-delay:2.2s"></span>
+        <span style="left:55%;width:10px;height:10px;animation-delay:1.1s"></span>
+        <span style="left:72%;width:6px;height:6px;animation-delay:3.4s"></span>
+        <span style="left:88%;width:7px;height:7px;animation-delay:0.7s"></span>
+      </div>
+      <h1>Du grain au verre,<br>tout dans un classeur.</h1>
+      <p>BrewBindr vous aide à créer des recettes, planifier l'eau et la levure, suivre vos jours de brassage et la fermentation, gérer votre stock et noter vos dégustations — avec l'IA là où elle aide.</p>
+      <div class="hero-chips">
+        <span class="chip"><i class="fas fa-wand-magic-sparkles"></i> Recettes avec l'IA</span>
+        <span class="chip"><i class="fas fa-droplet"></i> Eau &amp; pH de maische</span>
+        <span class="chip"><i class="fas fa-file-code"></i> Import/export BeerXML</span>
+        <span class="chip"><i class="fas fa-users"></i> Brasser en équipe</span>
+        <span class="chip"><i class="fas fa-globe"></i> EN · NL · FR</span>
+      </div>
+    </div>
+
+    <div class="search-empty" id="searchEmpty">Aucun chapitre trouvé. Essayez un autre mot.</div>
+
+    <!-- ================= PREMIERS PAS ================= -->
+    <section class="doc" id="overview" data-audience="all">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-flask"></i> Premiers pas</div>
+        <h2>Qu'est-ce que BrewBindr ? <span class="role-badge all">Tous</span></h2>
+        <p>BrewBindr est une application web pour les brasseurs amateurs. Elle fonctionne dans votre navigateur, sur ordinateur et sur téléphone — rien à installer. Vos données sont dans le cloud et restent synchronisées entre vos appareils et votre équipe.</p>
+        <h3>Ce que vous pouvez faire</h3>
+        <ul class="doc-list">
+          <li><strong>Recettes avec calculs en direct</strong> — DI, DF, ABV, IBU, couleur et BU:GU se calculent pendant la saisie, avec les corrections habituelles pour les sucres, la forme et l'usage du houblon et la température d'empâtage.</li>
+          <li><strong>Recettes avec l'IA</strong> — décrivez une bière en langage courant et recevez une recette complète.</li>
+          <li><strong>Eau</strong> — eau d'empâtage et de rinçage, température d'empâtage et volumes d'ébullition selon votre installation ; traitement de l'eau avec sels, alcalinité résiduelle et pH de maische estimé.</li>
+          <li><strong>Brassins</strong> — du jour de brassage à la fermentation, jusqu'aux bouteilles ou au fût, avec dosage de levure, correction du densimètre et du réfractomètre et pression pour votre fût.</li>
+          <li><strong>Analyse de dégustation par l'IA</strong> — des conseils qui comparent vos notes à la recette.</li>
+          <li><strong>Bibliothèque d'ingrédients et stock</strong> — vos malts, houblons, levures et autres ingrédients, avec une gestion de stock facultative.</li>
+          <li><strong>BeerXML</strong> — importer et exporter recettes et ingrédients.</li>
+          <li><strong>Brasser en équipe</strong> — brassez ensemble, avec des rôles de dégustateur à administrateur.</li>
+        </ul>
+        <div class="callout note"><i class="fas fa-globe"></i><div>L'application et ce manuel existent en <b>anglais, néerlandais et français</b>. La langue de l'application se choisit dans <b>Système → Paramètres</b> ; celle du manuel avec les boutons <b>EN · NL · FR</b> en haut.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="accounts" data-audience="all">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-user"></i> Premiers pas</div>
+        <h2>Compte &amp; connexion <span class="role-badge all">Tous</span></h2>
+        <p>Vous pouvez parcourir BrewBindr sans compte, mais la plupart des fonctions demandent d'être connecté.</p>
+        <h3>En tant qu'invité</h3>
+        <p>Sans compte, vous pouvez consulter les <b>recettes publiques</b> et les <b>ingrédients</b>, et ouvrir <b>Paramètres</b> et <b>Aide</b>. Les éléments marqués d'un <i class="fas fa-lock" style="font-size:11px"></i> ouvrent la fenêtre de connexion.</p>
+        <h3>Créer un compte</h3>
+        <div class="steps">
+          <div class="step"><div><b>Cliquez sur « Créer un compte »</b> en bas de la barre latérale.</div></div>
+          <div class="step"><div><b>Saisissez votre e-mail et un mot de passe.</b> Si vous avez reçu une <b>invitation</b> par e-mail, saisissez le code — vous rejoignez cette brasserie avec le rôle de l'invitation.</div></div>
+          <div class="step"><div><b>Confirmez votre adresse e-mail</b> si on vous le demande, puis connectez-vous. Sans invitation, vous recevez automatiquement votre propre brasserie.</div></div>
+        </div>
+        <h3>Se déconnecter</h3>
+        <p>Cliquez sur votre carte de compte en bas de la barre latérale et choisissez <b>Se déconnecter</b>. Sur téléphone, c'est sous <b>Plus</b> dans la barre du bas, et aussi dans <b>Paramètres</b>.</p>
+        <div class="callout tip"><i class="fas fa-lightbulb"></i><div>Connecté sur un deuxième appareil ? Recettes, brassins et stock restent synchronisés en direct — les modifications apparaissent sur les deux écrans sans recharger.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="interface" data-audience="all">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-table-columns"></i> Premiers pas</div>
+        <h2>L'interface <span class="role-badge all">Tous</span></h2>
+        <p>La barre latérale à gauche est votre navigation, en trois groupes — la même structure que ce manuel :</p>
+        <table>
+          <thead><tr><th>Groupe</th><th>Contient</th><th>Pour</th></tr></thead>
+          <tbody>
+            <tr><td><b>Brasserie</b></td><td>Recettes, Brassins, Notes de dégustation, Stock, Équipe, Importer, Installation de brassage</td><td>Votre espace de travail : tout ce que vous et votre équipe brassez.</td></tr>
+            <tr><td><b>Bibliothèque</b></td><td>Recettes publiques, Ingrédients</td><td>Contenu partagé et votre catalogue d'ingrédients.</td></tr>
+            <tr><td><b>Système</b></td><td>Paramètres, Aide &amp; manuels (et <b>Admin</b> pour les administrateurs)</td><td>Préférences, langue, unités et documentation.</td></tr>
+          </tbody>
+        </table>
+        <p>La carte en bas de la barre latérale montre votre compte : e-mail, votre <b>rôle dans la brasserie</b> et votre brasserie. Cliquez dessus pour Paramètres et Se déconnecter.</p>
+        <div class="callout note"><i class="fas fa-mobile-screen"></i><div>Sur téléphone, une <b>barre en bas</b> remplace la barre latérale, avec les écrans les plus utilisés et un menu <b>Plus</b>.</div></div>
+      </div>
+    </section>
+
+    <!-- ================= POUR LES BRASSEURS ================= -->
+    <section class="doc" id="recipes" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-wand-magic-sparkles"></i> Pour les brasseurs</div>
+        <h2>Recettes &amp; IA <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Les recettes se trouvent à deux endroits : dans votre <b>Brasserie</b> (privées, à vous et votre équipe) et dans la bibliothèque publique <b>Recettes</b> (pour tous).</p>
+        <h3>Créer une recette avec l'IA</h3>
+        <div class="steps">
+          <div class="step"><div><b>Ouvrez Brasserie → Nouvelle recette.</b></div></div>
+          <div class="step"><div><b>Décrivez la bière</b> — style, alcool, amertume, ingrédients particuliers. Par exemple : <code>Une blonde belge facile à boire d'environ 5,5 %, levure épicée, brassin de 20 L</code>.</div></div>
+          <div class="step"><div><b>Générez.</b> L'IA (Google Gemini) propose malts, houblons, levure, paliers d'empâtage et valeurs cibles.</div></div>
+          <div class="step"><div><b>Vérifiez et ajustez,</b> puis enregistrez. Voyez le résultat comme une solide première ébauche.</div></div>
+        </div>
+        <div class="callout note"><i class="fas fa-gauge"></i><div>Les demandes à l'IA (recettes et analyses de dégustation) sont limitées à <b>10 par jour</b> par utilisateur, 100 pour les administrateurs.</div></div>
+        <h3>Construire une recette soi-même</h3>
+        <ul class="doc-list">
+          <li><strong>Fermentescibles</strong> — choisissez dans votre bibliothèque et indiquez le <b>type</b> : malt, céréale non maltée, sucre, extrait liquide ou sec. Cela compte : sucres et extraits donnent tout leur extrait, et le sucre fermente complètement. Si vous choisissez un ingrédient de la bibliothèque, l'application devine le type d'après le nom (p. ex. « sucre candi » → sucre).</li>
+          <li><strong>Houblons</strong> — quantité, acides alpha, <b>usage</b> (ébullition, first wort, empâtage, whirlpool, houblonnage à cru), <b>forme</b> (pellets, cônes, plugs) et durée. Le houblonnage à cru compte en jours ; le houblon de whirlpool reçoit une température (80 °C si vous ne la modifiez pas).</li>
+          <li><strong>Levure</strong> — atténuation par levure.</li>
+          <li><strong>Schéma d'empâtage</strong> — chargez-en un depuis votre installation ou modifiez les paliers. Le volume d'infusion du premier palier et la température du palier principal comptent pour l'eau et la DF.</li>
+          <li><strong>Eau et traitement de l'eau</strong> — voir <a href="#water">Volumes d'eau</a> et <a href="#water-treatment">Traitement de l'eau &amp; pH</a>.</li>
+        </ul>
+        <p>La barre sombre en haut affiche les valeurs cibles pendant la saisie : ABV, IBU (avec BU:GU), couleur (SRM ou EBC) et DI (SG ou °P). Si vous avez choisi un style, les valeurs hors style sont signalées.</p>
+        <h3>Noms, modifier et supprimer</h3>
+        <ul class="doc-list">
+          <li><strong>Noms uniques</strong> — un nom de recette n'existe qu'une fois par brasserie (majuscules et espaces en trop ne comptent pas) ; dans la bibliothèque publique, chaque nom n'existe qu'une fois.</li>
+          <li><strong>Modifier ou consulter</strong> — les administrateurs et maîtres brasseurs de la brasserie modifient toutes ses recettes ; brasseurs et dégustateurs ouvrent les recettes en lecture seule (bouton <b>Consulter</b>). Seul l'administrateur de l'application peut modifier les recettes publiques approuvées.</li>
+          <li><strong>Supprimer une recette avec des brassins</strong> — si des brassins dépendent encore de la recette, l'application demande si vous voulez supprimer la recette <b>avec ces brassins et leurs notes de dégustation</b>, ou annuler. Une recette utilisée par les brassins d'une autre brasserie ne peut pas être supprimée.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-print"></i><div>Chaque recette a une <b>vue imprimable</b> — une fiche de brassage claire à imprimer ou à enregistrer en PDF.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="calculations" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-calculator"></i> Pour les brasseurs</div>
+        <h2>Comment BrewBindr calcule <span class="role-badge brewer">Brasseur</span></h2>
+        <table>
+          <thead><tr><th>Valeur</th><th>Comment</th></tr></thead>
+          <tbody>
+            <tr><td><b>DI</b></td><td>Extrait de chaque ingrédient sur le volume du brassin. Le <b>rendement</b> ne s'applique qu'à ce qui est empâté (malts, céréales non maltées) ; sucres et extraits comptent à 100 %.</td></tr>
+            <tr><td><b>DF</b></td><td>Atténuation moyenne de la levure, environ 1 point de moins par °C au-dessus de 66 °C pour le palier principal (et plus en dessous), au maximum 5 points. Le sucre fermente complètement, le lactose pas.</td></tr>
+            <tr><td><b>ABV</b></td><td>La formule précise <code>76,08 × (DI − DF) / (1,775 − DI) × DF / 0,794</code>, juste aussi pour les bières fortes. Bouteilles : + 0,065 % par g/L de sucre de refermentation (pas pour un fût).</td></tr>
+            <tr><td><b>IBU</b></td><td>Tinseth. Cônes environ 10 % de moins que les pellets ; houblon first wort 10 % de plus ; houblon à l'empâtage 20 % d'une ébullition complète ; houblon de whirlpool moins à mesure que la température baisse. Avec une installation, la densité moyenne pendant l'ébullition est prise en compte.</td></tr>
+            <tr><td><b>Couleur</b></td><td>Morey, en SRM ou EBC.</td></tr>
+            <tr><td><b>BU:GU</b></td><td>IBU divisé par les points de densité : autour de 0,5 équilibré, plus bas malté, plus haut amer.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout note"><i class="fas fa-droplet"></i><div>Si vous saisissez vous-même l'eau d'empâtage et de rinçage dans une recette, DI, DF, ABV, IBU et couleur suivent le volume qui sort réellement de la cuve.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="water" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-droplet"></i> Pour les brasseurs</div>
+        <h2>Volumes d'eau &amp; température d'empâtage <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Le bloc <b>Eau</b> de la recette (et du jour de brassage) calcule l'eau à partir de la recette et de votre <a href="#installation">installation de brassage</a>. Une recette peut choisir son installation ; sinon l'application utilise la seule installation de votre brasserie (« Par défaut : … »).</p>
+        <h3>Comment les volumes sont déterminés</h3>
+        <ul class="doc-list">
+          <li><strong>Après ébullition</strong> = brassin (dans le fermenteur) − eau d'appoint + pertes de trub et de refroidissement.</li>
+          <li><strong>Avant ébullition</strong> = après ébullition + évaporation (L par heure × durée d'ébullition).</li>
+          <li><strong>Eau totale</strong> = avant ébullition + eau absorbée par le grain (1 L/kg, BIAB 0,7, ou la valeur de l'installation) + pertes de filtration.</li>
+          <li><strong>Eau d'empâtage</strong> = la première infusion du schéma d'empâtage, sinon 3 L/kg ; en BIAB toute l'eau. Jamais plus que ce qui tient à côté du grain (voir plus bas). L'<b>eau de rinçage</b> est le reste.</li>
+          <li><strong>Température d'empâtage</strong> = <code>T + 0,41 / rapport × (T − température du grain)</code> (Palmer), avec T le premier palier et le rapport eau/grain en L/kg.</li>
+          <li><strong>Densité avant ébullition</strong> déduite de la DI et des volumes.</li>
+        </ul>
+        <h3>Appareils à capacité limitée (p. ex. Brewie)</h3>
+        <p>Dans certains appareils, le grain est dans des sacs dans la cuve d'empâtage : plus il y a de grain, moins il reste de place pour l'eau. Renseignez pour l'installation la <b>capacité d'empâtage</b> (eau + grain), le <b>volume du grain</b> par kg et la <b>capacité de la cuve d'ébullition</b>. L'eau d'empâtage calculée ne dépasse alors jamais <code>capacité d'empâtage − grain × volume par kg</code> ; le reste va à l'eau de rinçage. Un avertissement apparaît si l'eau d'empâtage a été limitée, s'il y a trop de grain (moins de 2 L d'eau par kg), si votre eau d'empâtage saisie ne tient pas, ou s'il y a plus de moût que la cuve d'ébullition ne peut contenir.</p>
+        <h3>Votre propre eau</h3>
+        <ul class="doc-list">
+          <li><strong>Eau d'empâtage et de rinçage</strong> se saisissent par recette (p. ex. comme dans Brewie Studio). Appuyez sur Entrée ou cliquez hors du champ. Les valeurs calculées restent visibles ; <b>Utiliser l'eau calculée</b> les rétablit.</li>
+          <li>Le bloc affiche alors ce qui arrive <b>dans le fermenteur</b> et la <b>DI attendue</b>, et les chiffres de la recette suivent.</li>
+          <li><strong>Tout transvaser dans le fermenteur</strong> — cochez si vous transvasez tout : pas de pertes de trub et de refroidissement pour cette recette. Désactivé par défaut.</li>
+        </ul>
+        <div class="callout note"><i class="fas fa-circle-info"></i><div>Non pris en compte : la contraction au refroidissement (environ 4 %). Si vos volumes ne correspondent jamais, ajustez les pertes ou l'évaporation de votre installation.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="water-treatment" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-vial"></i> Pour les brasseurs</div>
+        <h2>Traitement de l'eau &amp; pH de maische <span class="role-badge brewer">Brasseur</span></h2>
+        <h3>Profils d'eau</h3>
+        <p>Ajoutez votre eau du robinet dans <b>Installation de brassage → Profils d'eau</b> : calcium, magnésium, sodium, chlorure, sulfate et bicarbonate en mg/L. Votre distributeur d'eau publie ces valeurs par adresse (cherchez « qualité de l'eau »). Le bicarbonate est parfois donné comme alcalinité ou TAC : 1 °dH ≈ 21,8 mg/L, 1 °f TAC ≈ 12,2 mg/L de bicarbonate.</p>
+        <p>Toujours disponibles : eau osmosée, eaux classiques (Pilsen, Munich, Vienne, Dortmund, Dublin, Édimbourg, Londres, Burton), profils cibles par couleur et <b>19 profils par style de bière</b> (IPA, NEIPA, pale ale, pils, blonde belge, tripel, dubbel, quadrupel, saison, blanche, weizen, ambrée, Märzen, stouts).</p>
+        <h3>Traiter l'eau d'une recette</h3>
+        <div class="steps">
+          <div class="step"><div><b>Eau de base</b> — votre propre profil (votre seul profil est choisi par défaut) ou une eau classique. Éventuellement une part d'<b>eau osmosée</b>.</div></div>
+          <div class="step"><div><b>Profil cible</b> — un style de bière, un profil de couleur ou un autre profil.</div></div>
+          <div class="step"><div><b>Sels</b> — gypse, chlorure de calcium (liquide 33 % ou 36 % en ml, ou paillettes en g), sel d'Epsom, sel de table, bicarbonate de soude. Ou cliquez sur <b>Proposer des sels</b> : l'application cherche les doses les plus proches de la cible (les sels ne peuvent qu'ajouter, jamais retirer).</div></div>
+          <div class="step"><div><b>Voyez le résultat</b> — le tableau montre eau de base, eau traitée et cible ; en dessous l'<b>alcalinité résiduelle</b> et le rapport <b>sulfate/chlorure</b> (au-dessus de 2 amer, 0,8–2 équilibré, sous 0,8 malté). Sous 40 mg/L de calcium, un avertissement apparaît.</div></div>
+        </div>
+        <h3>pH de maische et acide</h3>
+        <p>Le bloc estime le <b>pH de maische</b> à partir des malts (pâle, caramel, torréfié, acidulé — reconnus au nom ou à la couleur) et de l'eau d'empâtage avec tous les sels. Choisissez un <b>pH cible</b> (5,4 par défaut) et cliquez sur <b>Utiliser … ml</b> pour remplir l'<b>acide lactique 80 %</b> qui atteint cette cible. Vous voyez le pH avec et sans acide ; 5,2–5,6 est la plage habituelle.</p>
+        <div class="callout tip"><i class="fas fa-flask-vial"></i><div>Mettez tous les sels et l'acide dans la <b>maische</b>. Le profil est calculé sur toute l'eau de brassage. Le pH est une estimation (en général à ±0,1 près) : vérifiez avec un pH-mètre sur un échantillon refroidi. Le jour du brassage, le bloc affiche ce qu'il faut ajouter.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="brewlogs" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-clipboard-list"></i> Pour les brasseurs</div>
+        <h2>Brassins <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Un brassin fait d'une recette un vrai lot. Chaque brassin passe par quatre phases ; l'onglet actif suit le statut.</p>
+        <div class="pipeline">
+          <div class="phase"><i class="fas fa-fire-burner"></i><div class="phase-name">1. Brassage</div><div class="phase-desc">Eau, levure, empâtage, DI mesurée, volume</div></div>
+          <div class="phase"><i class="fas fa-flask"></i><div class="phase-name">2. Fermentation</div><div class="phase-desc">DF, température de fermentation</div></div>
+          <div class="phase"><i class="fas fa-snowflake"></i><div class="phase-name">3. Garde</div><div class="phase-desc">Maturation</div></div>
+          <div class="phase"><i class="fas fa-bottle-water"></i><div class="phase-name">4. Embouteillage</div><div class="phase-desc">Bouteilles ou fût, carbonatation</div></div>
+        </div>
+        <h3>Jour de brassage</h3>
+        <ul class="doc-list">
+          <li><strong>Eau et traitement de l'eau</strong> de la recette : volumes, température d'empâtage et ce qu'il faut ajouter.</li>
+          <li><strong>Dosage de levure</strong> — les cellules nécessaires selon DI, volume et type de levure (ale 0,75, lager 1,5 million de cellules/ml/°P, un tiers de plus au-dessus de 1,060), comparées à ce que vous avez : levure sèche 20 milliards/g, levure liquide 100 milliards par sachet moins environ 0,7 % par jour depuis la date de fabrication. Pas assez de levure liquide ? L'application propose le plus petit levain sur agitateur magnétique, avec l'extrait de malt sec ; pour la levure sèche, combien de grammes il vous faut.</li>
+          <li><strong>Acides alpha mesurés</strong> par houblon, s'ils diffèrent de la recette ; l'IBU suit.</li>
+          <li><strong>DI et volume mesurés</strong> dans le fermenteur.</li>
+        </ul>
+        <h3>Mesurer la densité</h3>
+        <ul class="doc-list">
+          <li>Saisissez DI et DF en <b>SG ou °P</b> (voir <a href="#settings">Paramètres</a>) ; elles sont toujours enregistrées en SG.</li>
+          <li><strong>Densimètre</strong> — sous un champ de densité, ouvrez <b>Correction de température ou réfractomètre</b> et saisissez la température de l'échantillon : un bouton corrige la mesure à 20 °C.</li>
+          <li><strong>Réfractomètre</strong> — saisissez les °Brix. Pour la DI, la conversion utilise votre facteur de correction (WCF) ; pour la DF, elle est aussi corrigée pour l'alcool (Terrill), d'après la DI au-dessus.</li>
+        </ul>
+        <h3>Bouteilles ou fût</h3>
+        <ul class="doc-list">
+          <li><strong>Bouteilles</strong> — sucre de refermentation pour le nombre de volumes de CO₂ choisi, le type de sucre, le volume et la température de fermentation ; l'ABV attendu tient compte du sucre.</li>
+          <li><strong>Fût</strong> — la pression de CO₂ à régler (bar et psi au-dessus de la pression atmosphérique) pour le nombre de volumes choisi à la température de la bière (4 °C par défaut). Pas de sucre, donc pas d'alcool en plus.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-chart-line"></i><div>Les dates des phases se remplissent quand vous changez le statut, et restent modifiables.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="tasting" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-star-half-stroke"></i> Pour les brasseurs</div>
+        <h2>Notes de dégustation <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Quand un lot est prêt, notez son goût : scores pour l'aspect, l'arôme, le goût et la sensation en bouche, un score global et un commentaire. Chaque membre de la brasserie peut ajouter des notes.</p>
+        <h3>Analyse de dégustation par l'IA</h3>
+        <div class="steps">
+          <div class="step"><div><b>Rédigez votre commentaire</b> — soyez précis : « esters de banane dominants, moins amer que prévu, un peu mince ».</div></div>
+          <div class="step"><div><b>Cliquez sur Analyser</b> <i class="fas fa-brain" style="font-size:11px"></i>. L'IA compare votre description à la recette.</div></div>
+          <div class="step"><div><b>Lisez les conseils :</b> causes probables et pistes pour le prochain brassin.</div></div>
+        </div>
+        <div class="callout note"><i class="fas fa-circle-info"></i><div>L'analyse demande un commentaire écrit et compte dans votre limite quotidienne de demandes à l'IA.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="stock" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-boxes-stacked"></i> Pour les brasseurs</div>
+        <h2>Gestion du stock <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Le stock est <b>facultatif</b> — activez-le dans <b>Paramètres → Gestion du stock</b>, et « Stock » apparaît dans la barre latérale sous Brasserie. Les recettes indiquent alors si vous pouvez les brasser avec ce que vous avez.</p>
+        <p>L'écran Stock montre vos ingrédients avec la quantité disponible. Chacun reçoit un <b>verre</b> qui se remplit selon votre stock. Essayez :</p>
+        <div class="glass-demo">
+          <svg class="glass-svg" viewBox="0 0 60 80" aria-hidden="true">
+            <defs><clipPath id="demoClip"><path d="M10 6 h40 l-4.5 62 a5 5 0 0 1 -5 4.6 h-21 a5 5 0 0 1 -5 -4.6 Z"/></clipPath></defs>
+            <path d="M8 4 h44 l-5 66 a6 6 0 0 1 -6 5.5 h-22 a6 6 0 0 1 -6 -5.5 Z" fill="#fff" stroke="#CBD5E1" stroke-width="2.5"/>
+            <rect id="demoFill" x="0" y="28" width="60" height="80" fill="#F59E0B" clip-path="url(#demoClip)"/>
+            <ellipse id="demoFoam" cx="30" cy="28" rx="19" ry="4" fill="#FEF3C7" clip-path="url(#demoClip)"/>
+          </svg>
+          <div>
+            <div class="demo-label">Glissez pour simuler le stock</div>
+            <input type="range" id="demoRange" name="demoRange" min="0" max="100" value="65" aria-label="Pourcentage de stock simulé">
+            <div class="demo-pct"><span id="demoPct">65</span>%</div>
+          </div>
+        </div>
+        <h3>Utiliser l'écran</h3>
+        <ul class="doc-list">
+          <li><strong>Filtrez</strong> par type d'ingrédient ou cherchez par nom.</li>
+          <li><strong>Basculez</strong> entre cartes (avec verres) et un tableau compact.</li>
+          <li><strong>Ajustez les quantités</strong> quand vous achetez ou utilisez quelque chose. Elles sont arrondies : kg au gramme près, g en grammes entiers.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="doc" id="library" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-seedling"></i> Pour les brasseurs</div>
+        <h2>Bibliothèque d'ingrédients <span class="role-badge brewer">Brasseur</span></h2>
+        <p>La bibliothèque est votre catalogue de matières premières :</p>
+        <table>
+          <thead><tr><th>Type</th><th>Exemples</th><th>Propriétés principales</th></tr></thead>
+          <tbody>
+            <tr><td><b>Fermentescible</b></td><td>Malt pils, Munich, sucre candi</td><td>Rendement, couleur</td></tr>
+            <tr><td><b>Houblon</b></td><td>Saaz, Citra, East Kent Goldings</td><td>Acides alpha %</td></tr>
+            <tr><td><b>Levure</b></td><td>Souches de levure, bactéries</td><td>Atténuation, forme</td></tr>
+            <tr><td><b>Divers</b></td><td>Mousse d'Irlande, coriandre, écorce d'orange</td><td>Usage, moment</td></tr>
+            <tr><td><b>Schémas d'empâtage, styles</b></td><td>Infusion simple, styles BJCP</td><td>Paliers ; plages par style</td></tr>
+          </tbody>
+        </table>
+        <p>Ce que vous ajoutez est privé pour votre brasserie, et un nom n'existe qu'une fois par type dans votre brasserie. Pour créer des recettes, vous choisissez dans cette bibliothèque — une bibliothèque bien tenue rend les recettes rapides.</p>
+        <div class="callout note"><i class="fas fa-upload"></i><div>Vous pouvez <b>proposer</b> des ingrédients ou recettes pour la bibliothèque publique. Si le nom existe déjà ou attend une validation, un avertissement apparaît d'abord. Les éléments proposés ne deviennent publics qu'après validation par un administrateur.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="installation" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-temperature-half"></i> Pour les brasseurs</div>
+        <h2>Installation de brassage <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Décrivez votre matériel et votre eau, pour que les calculs correspondent à la réalité. L'écran a trois onglets : <b>Installation</b>, <b>Schémas d'empâtage</b> et <b>Profils d'eau</b>. Tout ici est partagé avec votre brasserie.</p>
+        <h3>Installation</h3>
+        <p>Partez d'un modèle ou créez la vôtre : taille du brassin, rendement, durée d'ébullition, cuves, et les valeurs utilisées par le calcul de l'eau :</p>
+        <table>
+          <thead><tr><th>Champ</th><th>Utilisé pour</th></tr></thead>
+          <tbody>
+            <tr><td>Pertes de trub et de refroidissement, eau d'appoint</td><td>Volumes après ébullition</td></tr>
+            <tr><td>Évaporation (L/h)</td><td>Volume et densité avant ébullition</td></tr>
+            <tr><td>Pertes de filtration</td><td>Eau totale</td></tr>
+            <tr><td>Capacité d'empâtage (eau + grain), volume du grain dans la maische (L/kg)</td><td>Eau d'empâtage maximale</td></tr>
+            <tr><td>Absorption du grain (L/kg)</td><td>Eau totale (1,0 par défaut, BIAB 0,7)</td></tr>
+            <tr><td>Capacité de la cuve d'ébullition</td><td>Avertissement en cas de trop de moût</td></tr>
+          </tbody>
+        </table>
+        <details>
+          <summary>Modèles d'installation intégrés</summary>
+          <div class="details-body">
+            <table>
+              <thead><tr><th>Modèle</th><th>Type</th><th>Brassin</th><th>Rendement</th></tr></thead>
+              <tbody>
+                <tr><td>Brewie</td><td>Deux cuves (capacité d'empâtage 22 L, 1 L/kg, cuve d'ébullition 23 L)</td><td>23 L</td><td>70%</td></tr>
+                <tr><td>Grainfather G30</td><td>Tout-en-un</td><td>25 L</td><td>72%</td></tr>
+                <tr><td>Grainfather G40</td><td>Tout-en-un</td><td>35 L</td><td>72%</td></tr>
+                <tr><td>Robobrew / BrewZilla</td><td>Tout-en-un</td><td>30 L</td><td>70%</td></tr>
+                <tr><td>BIAB 20 L</td><td>Brew-in-a-bag</td><td>20 L</td><td>65%</td></tr>
+                <tr><td>BIAB 30 L</td><td>Brew-in-a-bag</td><td>30 L</td><td>65%</td></tr>
+                <tr><td>Classique 3 cuves 20 L</td><td>Eau chaude, empâtage, ébullition</td><td>20 L</td><td>75%</td></tr>
+                <tr><td>Classique 3 cuves 30 L</td><td>Eau chaude, empâtage, ébullition</td><td>30 L</td><td>75%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <h3>Schémas d'empâtage</h3>
+        <p>Schémas d'empâtage réutilisables (température, durée, type, volume d'infusion). Chargez-en un dans une recette ; il apparaît comme liste de contrôle le jour du brassage. Les températures sont enregistrées au 0,1 °C près.</p>
+        <h3>Profils d'eau</h3>
+        <p>Votre eau du robinet et d'autres eaux avec leurs minéraux ; voir <a href="#water-treatment">Traitement de l'eau</a>.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="import" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-arrow-up-from-bracket"></i> Pour les brasseurs</div>
+        <h2>Importer &amp; exporter <span class="role-badge brewer">Brasseur</span></h2>
+        <p>BrewBindr parle <b>BeerXML</b>, le format d'échange des logiciels de brassage (BeerSmith, Brewfather et autres).</p>
+        <h3>Importer</h3>
+        <div class="steps">
+          <div class="step"><div><b>Ouvrez Brasserie → Importer.</b> Vous devez être connecté.</div></div>
+          <div class="step"><div><b>Choisissez un fichier</b> — <code>.xml</code> ou <code>.beerxml</code>, jusqu'à <b>10 Mo</b>, avec recettes ou ingrédients.</div></div>
+          <div class="step"><div><b>Vérifiez le résultat.</b> Les recettes arrivent dans votre brasserie, les ingrédients dans votre bibliothèque.</div></div>
+        </div>
+        <p>Les valeurs importées sont nettoyées (p. ex. 2,041164 kg → 2,041 kg, 65,555556 °C → 65,6 °C). Le type de fermentescible, l'usage et la forme du houblon et les minéraux des profils d'eau sont aussi importés.</p>
+        <h3>Exporter</h3>
+        <p>Exportez une recette en BeerXML depuis la recette, comme sauvegarde ou pour un autre logiciel. Types, usage et forme du houblon sont conservés, et les quantités impériales sont écrites en kg.</p>
+      </div>
+    </section>
+
+    <section class="doc" id="team" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-users"></i> Pour les brasseurs</div>
+        <h2>Équipe &amp; rôles <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Chaque utilisateur appartient à une <b>brasserie</b> — un espace de travail partagé. Chaque membre a l'un des quatre rôles :</p>
+        <table>
+          <thead><tr><th>Rôle</th><th>Droits</th></tr></thead>
+          <tbody>
+            <tr><td><b>Administrateur</b></td><td>Tout ce que peut un maître brasseur, plus les membres, les invitations et le nom de la brasserie.</td></tr>
+            <tr><td><b>Maître brasseur</b></td><td>Crée, modifie et supprime toutes les recettes, ingrédients et données d'installation de la brasserie ; suit les brassins.</td></tr>
+            <tr><td><b>Brasseur</b></td><td>Suit les brassins ; consulte les recettes (lecture seule).</td></tr>
+            <tr><td><b>Dégustateur</b></td><td>Consulte recettes et brassins ; ajoute des notes de dégustation.</td></tr>
+          </tbody>
+        </table>
+        <h3>Inviter et rejoindre</h3>
+        <ul class="doc-list">
+          <li><strong>Inviter</strong> — dans l'écran <b>Équipe</b>, saisissez un e-mail et un rôle. La personne invitée reçoit un e-mail avec un code valable 7 jours.</li>
+          <li><strong>Rejoindre</strong> — saisissez le code en créant votre compte, ou plus tard sous <b>Rejoindre une autre brasserie</b>. Vos recettes, brassins, notes et ingrédients vous suivent ; c'est possible si vous êtes le seul membre de votre brasserie actuelle. Les noms qui existent déjà reçoivent « (2) ».</li>
+          <li><strong>Retirer</strong> — un administrateur peut retirer des membres dans l'écran Équipe.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="doc" id="settings" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-gear"></i> Pour les brasseurs</div>
+        <h2>Paramètres <span class="role-badge all">Tous</span></h2>
+        <p>Dans <b>Système → Paramètres</b>, adaptez BrewBindr à votre façon de travailler :</p>
+        <ul class="doc-list">
+          <li><strong>Unités</strong> — métriques (L, kg, °C) ou impériales (gal, lb, °F), partout.</li>
+          <li><strong>Échelle de couleur</strong> — SRM ou EBC.</li>
+          <li><strong>Densité</strong> — SG, °P ou les deux, pour afficher et saisir les densités.</li>
+          <li><strong>Facteur de correction du réfractomètre (WCF)</strong> — en général 1,02–1,06, 1,04 si vous ne savez pas. Mesurez un moût au densimètre et au réfractomètre pour trouver votre propre facteur.</li>
+          <li><strong>Gestion du stock</strong> — activée ou non (voir <a href="#stock">Stock</a>).</li>
+          <li><strong>Langue</strong> — English, Nederlands ou Français.</li>
+          <li><strong>Compte</strong> — le compte connecté, et se déconnecter.</li>
+        </ul>
+        <p class="kbd-note">Vos préférences sont enregistrées avec votre profil et vous suivent sur tous vos appareils.</p>
+      </div>
+    </section>
+
+    <!-- ================= POUR LES ADMINISTRATEURS ================= -->
+    <section class="doc" id="admin-submissions" data-audience="admin">
+      <div class="card">
+        <div class="section-eyebrow admin"><i class="fas fa-clipboard-check"></i> Pour les administrateurs</div>
+        <h2>Bibliothèque publique <span class="role-badge admin">Admin</span></h2>
+        <h3>Examiner les propositions</h3>
+        <p>Les utilisateurs peuvent proposer recettes et ingrédients pour la bibliothèque publique. Rien n'apparaît sans contrôle : les propositions attendent dans l'écran <b>Admin</b> sous <b>À examiner</b>.</p>
+        <div class="steps">
+          <div class="step"><div><b>Ouvrez l'écran Admin.</b> Chaque élément montre type, nom et auteur de la proposition.</div></div>
+          <div class="step"><div><b>Évaluez la qualité :</b> données complètes et plausibles, nom pertinent. Les noms de la bibliothèque publique sont uniques : approuver un élément dont le nom est déjà public est refusé.</div></div>
+          <div class="step"><div><b>Approuvez</b> pour publier, ou <b>refusez</b>.</div></div>
+        </div>
+        <h3>Faire le ménage</h3>
+        <p>Dans la bibliothèque publique, les administrateurs voient pour recettes et ingrédients <b>Retirer du public</b> (l'élément redevient privé) et <b>Supprimer</b>. Une recette publique utilisée par les brassins d'autres brasseries ne peut pas être supprimée.</p>
+        <div class="callout warn"><i class="fas fa-triangle-exclamation"></i><div>Le contenu approuvé est visible par <b>tout le monde</b>, invités compris.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="admin-tools" data-audience="admin">
+      <div class="card">
+        <div class="section-eyebrow admin"><i class="fas fa-tools"></i> Pour les administrateurs</div>
+        <h2>Données de démo &amp; sauvegardes <span class="role-badge admin">Admin</span></h2>
+        <h3>Données de démo</h3>
+        <p>Le bouton <b>Importer les données de démo</b> charge des recettes et ingrédients d'exemple, pour tester ou faire une démonstration.</p>
+        <h3>Sauvegarde &amp; restauration JSON</h3>
+        <ul class="doc-list">
+          <li><strong>Exporter</strong> télécharge une sauvegarde JSON des recettes, brassins, notes de dégustation et de votre bibliothèque.</li>
+          <li><strong>Restaurer</strong> charge un fichier JSON exporté auparavant. Attention : cela peut écraser des données.</li>
+        </ul>
+        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Supabase est le vrai stockage ; les sauvegardes JSON complètent les sauvegardes de la base de données, elles ne les remplacent pas.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="admin-hosting" data-audience="admin">
+      <div class="card">
+        <div class="section-eyebrow admin"><i class="fas fa-server"></i> Pour les administrateurs</div>
+        <h2>Auto-hébergement &amp; configuration <span class="role-badge admin">Admin</span></h2>
+        <p>BrewBindr est open source. Il vous faut <b>Node.js 22</b>, un projet <b>Supabase</b> (authentification, base de données, temps réel), une <b>clé API Google Gemini</b> pour l'IA et une clé <b>Resend</b> pour les e-mails d'invitation. L'installation de référence tourne sur <b>Vercel</b>.</p>
+        <div class="steps">
+          <div class="step"><div><b>Cloner et installer :</b></div></div>
+        </div>
+<pre>git clone https://github.com/jansierens-maker/brewbindr
+cd brewbindr
+npm install</pre>
+        <div class="steps" style="counter-reset: step 1">
+          <div class="step"><div><b>Configurez</b> un fichier <code>.env.local</code> (et les mêmes variables dans Vercel) :</div></div>
+        </div>
+<pre>NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+GEMINI_API_KEY=your_gemini_api_key
+RESEND_API_KEY=your_resend_api_key
+NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
+        <div class="steps" style="counter-reset: step 2">
+          <div class="step"><div><b>Préparez la base de données :</b> exécutez <code>schema_update.sql</code> (le script d'installation complet et rejouable, aussi visible dans l'application sous <b>Détails de connexion</b>) dans l'éditeur SQL de Supabase, ou liez le projet et lancez <code>npx supabase db push</code>.</div></div>
+          <div class="step"><div><b>Démarrer :</b> <code>npm run dev</code> pour développer, <code>npm test</code> pour les tests unitaires, <code>npm run build</code> pour la production.</div></div>
+        </div>
+        <h3>Modifications de la base de données</h3>
+        <ul class="doc-list">
+          <li>Chaque modification est une nouvelle migration dans <code>supabase/migrations/</code> (rejouable et compatible avec l'application en production), ajoutée aussi à <code>schema_update.sql</code>, avec un test pgTAP dans <code>supabase/tests/database/</code> pour les nouvelles règles.</li>
+          <li>GitHub Actions : <b>CI</b> (tests unitaires et build), <b>Playwright E2E</b> à chaque déploiement Vercel, et <b>Database</b> : pour une pull request, une base neuve avec toutes les migrations, les tests de base de données et un essai à blanc contre la production ; lors d'un merge vers <code>main</code>, les migrations sont appliquées après approbation dans l'environnement <code>production</code> (secrets <code>SUPABASE_ACCESS_TOKEN</code> et <code>SUPABASE_DB_PASSWORD</code>).</li>
+        </ul>
+        <h3>Rôles dans l'application</h3>
+        <p>En plus des rôles dans la brasserie, chaque profil a un rôle dans l'application : <code>user</code> ou <code>admin</code>. Seuls les profils <code>admin</code> voient l'écran Admin et ont la limite d'IA plus élevée. Pour nommer un administrateur, modifiez sa ligne dans la table <code>profiles</code>.</p>
+        <div class="callout note"><i class="fas fa-shield-halved"></i><div>La protection des données repose sur les <b>règles RLS</b> et les fonctions de base de données de Supabase, pas sur l'interface. Si vous modifiez le schéma, vérifiez que les données de chaque brasserie restent réservées à ses membres.</div></div>
+      </div>
+    </section>
+
+    <div class="doc-footer">
+      <div>BrewBindr — brassé avec soin · <a href="https://github.com/jansierens-maker/brewbindr">github.com/jansierens-maker/brewbindr</a></div>
+      <div>Manuel v5 · novembre 2026</div>
+    </div>
+
+  </main>
+</div>
+</template>
 
 <script>
-(function () {
+function initManual() {
   var sections = Array.prototype.slice.call(document.querySelectorAll('section.doc'));
   var navItems = Array.prototype.slice.call(document.querySelectorAll('.nav-item'));
   var searchInput = document.getElementById('docSearch');
@@ -773,6 +1967,39 @@ GEMINI_API_KEY=your_gemini_api_key</pre>
   }
   range.addEventListener('input', updateDemo);
   updateDemo();
+}
+
+(function () {
+  var supported = ['en', 'nl', 'fr'];
+  var lang = null;
+  try { lang = new URLSearchParams(window.location.search).get('lang'); } catch (e) {}
+  if (supported.indexOf(lang) === -1) {
+    try { lang = localStorage.getItem('brewbindr-manual-lang'); } catch (e) { lang = null; }
+  }
+  if (supported.indexOf(lang) === -1) {
+    var nav = (navigator.language || 'en').slice(0, 2).toLowerCase();
+    lang = supported.indexOf(nav) !== -1 ? nav : 'en';
+  }
+  try { localStorage.setItem('brewbindr-manual-lang', lang); } catch (e) {}
+  document.documentElement.lang = lang;
+  var titles = { en: 'BrewBindr — User Manual', nl: 'BrewBindr — Handleiding', fr: 'BrewBindr — Manuel' };
+  document.title = titles[lang];
+  var tpl = document.getElementById('lang-' + lang);
+  document.getElementById('app').appendChild(tpl.content.cloneNode(true));
+  Array.prototype.forEach.call(document.querySelectorAll('.lang-switch a'), function (a) {
+    var active = a.dataset.lang === lang;
+    a.classList.toggle('active', active);
+    if (active) a.setAttribute('aria-current', 'true');
+    a.setAttribute('href', '?lang=' + a.dataset.lang + window.location.hash);
+    a.addEventListener('click', function () {
+      try { localStorage.setItem('brewbindr-manual-lang', a.dataset.lang); } catch (e) {}
+    });
+  });
+  if (window.location.hash) {
+    var target = document.getElementById(window.location.hash.slice(1));
+    if (target) target.scrollIntoView();
+  }
+  initManual();
 })();
 </script>
 </body>
