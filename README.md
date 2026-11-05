@@ -77,7 +77,7 @@ npm run preview   # serve the production build
 
 - Work on a feature branch and open a pull request to `main`; `main` is never pushed to directly.
 - **Database changes** are new migrations in [`supabase/migrations/`](supabase/migrations/) named `<YYYYMMDDHHMMSS>_<description>.sql` (`npx supabase migration new <description>`). They must be idempotent and compatible with the app version in production, and are also appended to `schema_update.sql`. New rules (constraints, RLS, triggers, functions) get a pgTAP test in [`supabase/tests/database/`](supabase/tests/database/). Never change an existing migration. The older hand-applied scripts in [`migrations/`](migrations/) are kept for reference.
-- See [`CLAUDE.md`](CLAUDE.md) for coding standards (types, accessibility, i18n, security).
+- See [`CONTRIBUTING.md`](CONTRIBUTING.md) for how to contribute and the coding standards (types, accessibility, i18n, security).
 
 ### GitHub Actions
 
@@ -113,9 +113,13 @@ Brewery roles (admin, brewmaster, brewer, taster) are managed in the app under *
 
 The app is deployed on [Vercel](https://vercel.com): import the GitHub repository, add the environment variables above, and Vercel builds the frontend and the functions in `api/`. Every pull request gets a preview deployment; merges to `main` go to production.
 
+## Contributing and security
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems privately as described in [SECURITY.md](SECURITY.md), never in a public issue.
+
 ## License
 
-BrewBindr is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE.md).
+BrewBindr is source available under the [PolyForm Noncommercial License 1.0.0](LICENSE.md): free to use, change and share for noncommercial purposes. It is not an OSI-approved open source license.
 
 ---
 © 2026 Jan Sierens — BrewBindr

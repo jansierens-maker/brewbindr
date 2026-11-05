@@ -1,0 +1,58 @@
+name: Bug report
+description: Something in BrewBindr does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Security problems go through [private vulnerability reporting](https://github.com/jansierens-maker/brewbindr/security/advisories/new), not here.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem. Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Recipes and calculations
+        - Water and water treatment
+        - Brew logs
+        - Tasting notes
+        - Stock
+        - Library and import/export
+        - Team and invitations
+        - Settings, help or manual
+        - Other
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Chrome 130 on Windows, Safari on iPhone
+  - type: dropdown
+    id: language
+    attributes:
+      label: App language
+      options:
+        - English
+        - Nederlands
+        - Français
