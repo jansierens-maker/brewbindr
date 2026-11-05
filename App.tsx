@@ -1092,19 +1092,19 @@ const AppContent: React.FC = () => {
     switch (view) {
       case 'recipes': return libraryView === 'personal' ? t('nav_brewery') : t('public_library');
       case 'brouwlogboek': return t('nav_brews');
-      case 'proefnotities': return 'Proefnotities';
+      case 'proefnotities': return t('tasting_notes');
       case 'voorraad': return t('nav_stock');
-      case 'team': return 'Team';
+      case 'team': return t('team_label');
       case 'importeren': return t('nav_import');
       case 'brouwinstallatie': return t('nav_installation');
       case 'library': return t('nav_library');
       case 'brews': return t('nav_brews');
       case 'settings': return t('settings_label');
       case 'admin': return t('nav_admin');
-      case 'help': return 'Help & Handleidingen';
-      case 'create': return selectedRecipe ? 'Recept bewerken' : t('nav_new');
-      case 'log': return 'Brouwsessie';
-      case 'tasting': return 'Proefnotitie';
+      case 'help': return t('help_nav_label');
+      case 'create': return selectedRecipe ? t('page_edit_recipe') : t('nav_new');
+      case 'log': return t('page_brew_session');
+      case 'tasting': return t('page_tasting_note');
       default: return 'BrewBindr';
     }
   };
