@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest an idea or improvement for BrewBindr
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation, e.g. "When I brew on my Grainfather, I can't …"
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like?
+      description: How you imagine it working. Links to sources (formulas, brewing references) are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/jansierens-maker/brewbindr/security/advisories/new
+    about: Report security problems privately, never in a public issue.
+  - name: User manual
+    url: https://brewbindr.vercel.app/manual.html
+    about: How to use BrewBindr and how it calculates (EN · NL · FR).
