@@ -21,7 +21,8 @@ import { InfoBanner } from './components/InfoBanner';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment } from './services/calculations';
-import { canEditRecipe } from './services/permissions';
+import { canEditRecipe, canManageBrews } from './services/permissions';
+import { Taster, batchNumbers, memberName } from './services/tasting';
 import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
@@ -142,6 +143,10 @@ const AppContent: React.FC = () => {
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
   const [recipeTab, setRecipeTab] = useState<'all' | 'brewable' | 'brewing' | 'fermenting' | 'lagering' | 'bottled'>('all');
   const [teamCount, setTeamCount] = useState(1);
+  const [members, setMembers] = useState<Taster[]>([]);
+  // Tasting note being edited, and the batch the tasting notes screen opens on
+  const [selectedNote, setSelectedNote] = useState<TastingNote | null>(null);
+  const [notesBatch, setNotesBatch] = useState<string | undefined>(undefined);
   const [syncError, setSyncError] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
@@ -333,13 +338,78 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     if (profile?.brewery_id) {
-      breweryService.getMembers(profile.brewery_id).then(members => {
-        setTeamCount(members.length);
+      breweryService.getMembers(profile.brewery_id).then(list => {
+        setTeamCount(list.length);
+        setMembers(list);
       });
     } else {
       setTeamCount(1);
+      setMembers([]);
     }
   }, [profile?.brewery_id]);
+
+  // The team as tasters, with my own display name as I just typed it
+  const tasters = useMemo<Taster[]>(() => {
+    if (!user?.id) return members;
+    const me: Taster = { id: user.id, email: user.email, display_name: profile?.display_name ?? null };
+    return members.some(m => m.id === user.id) ? members.map(m => (m.id === user.id ? { ...m, display_name: me.display_name } : m)) : [...members, me];
+  }, [members, user?.id, user?.email, profile?.display_name]);
+  const myTasterName = memberName(tasters.find(m => m.id === user?.id)) || user?.email || '';
+  const brewManager = canManageBrews({ isAdmin, breweryRole: profile?.brewery_role ?? null });
+
+  useEffect(() => {
+    if (view !== 'proefnotities') setNotesBatch(undefined);
+  }, [view]);
+
+  const openTasting = (logId: string, returnTo: 'brouwlogboek' | 'proefnotities', note: TastingNote | null = null) => {
+    const log = brewLogs.find(l => l.id === logId);
+    const recipe = recipes.find(r => r.id === log?.recipeId);
+    if (!log || !recipe) return;
+    setSelectedBrewLog(log);
+    setSelectedRecipe(recipe);
+    setSelectedNote(note);
+    setTastingReturnView(returnTo);
+    setView('tasting');
+  };
+
+  const handleSaveTastingNote = async (note: TastingNote) => {
+    const existing = tastingNotes.find(n => n.id === note.id);
+    // A new note is always in my name; an edited note keeps its taster
+    const target: TastingNote = existing
+      ? { ...note, user_id: existing.user_id, brewery_id: existing.brewery_id }
+      : { ...note, user_id: user?.id, brewery_id: profile?.brewery_id };
+    setTastingNotes(prev => (existing ? prev.map(n => (n.id === target.id ? target : n)) : [target, ...prev]));
+    setSelectedNote(null);
+    setView(tastingReturnView);
+    if (!user?.id) return;
+    const result = existing
+      ? await supabaseService.updateTastingNote(target)
+      : await supabaseService.saveTastingNote(target, user.id, profile?.brewery_id);
+    if (result?.error) {
+      alert(`${t('save_failed')}: ${result.error.message}`);
+      const remote = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
+      if (remote) setTastingNotes(remote.tastingNotes);
+    }
+  };
+
+  const handleToggleFinished = (logId: string) => {
+    const log = brewLogs.find(l => l.id === logId);
+    if (!log) return;
+    const finished = !log.finished;
+    handleUpdateBrewLog({ ...log, finished, finishedDate: finished ? new Date().toISOString().slice(0, 10) : undefined });
+  };
+
+  const handleDeleteTastingNote = async (id: string) => {
+    if (!confirm(t('confirm_delete_note'))) return;
+    const before = tastingNotes;
+    setTastingNotes(prev => prev.filter(n => n.id !== id));
+    if (!user?.id) return;
+    const result = await supabaseService.deleteTastingNote(id);
+    if (result?.error) {
+      alert(`${t('delete_failed')}: ${result.error.message}`);
+      setTastingNotes(before);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -604,14 +674,15 @@ const AppContent: React.FC = () => {
   };
 
   const handleUpdateBrewLog = async (entry: BrewLogEntry) => {
-    const targetLog = { ...entry, user_id: user?.id, brewery_id: profile?.brewery_id };
+    // Keep the original brewer when someone else updates the brew
+    const targetLog = { ...entry, user_id: entry.user_id || user?.id, brewery_id: entry.brewery_id || profile?.brewery_id };
     setBrewLogs(prev => {
       const exists = prev.find(l => l.id === entry.id);
       if (exists) return prev.map(l => l.id === entry.id ? targetLog : l);
       return [targetLog, ...prev];
     });
     if (user?.id) {
-      await supabaseService.saveBrewLog(targetLog, user.id, profile?.brewery_id);
+      await supabaseService.saveBrewLog(targetLog, targetLog.user_id || user.id, targetLog.brewery_id || profile?.brewery_id);
     }
   };
 
@@ -1405,7 +1476,7 @@ const AppContent: React.FC = () => {
             <Sidebar
               currentView={view}
               libraryView={libraryView}
-              onViewChange={setView}
+              onViewChange={(v: View) => { setNotesBatch(undefined); setView(v); }}
               onLibraryViewChange={setLibraryView}
               onAuth={handleAuthRedirect}
             />
@@ -1810,10 +1881,22 @@ const AppContent: React.FC = () => {
                 </div>
               )}
               {view === 'brouwlogboek' && (
-                <BrewLogView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setTastingReturnView('brouwlogboek'); setView('tasting'); } }} onPrintReport={handlePrintBrewReport} />
+                <BrewLogView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} canManageBrews={brewManager} canAddNotes={!!user} onToggleFinished={handleToggleFinished} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => openTasting(logId, 'brouwlogboek')} onViewNotes={(logId) => { setView('proefnotities'); setNotesBatch(logId); }} onPrintReport={handlePrintBrewReport} />
               )}
               {view === 'proefnotities' && (
-                <TastingNotesView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setTastingReturnView('proefnotities'); setView('tasting'); } }} />
+                <TastingNotesView
+                  key={notesBatch || 'all'}
+                  logs={brewLogs}
+                  recipes={recipes}
+                  tastingNotes={tastingNotes}
+                  members={tasters}
+                  editContext={{ userId: user?.id, breweryId: profile?.brewery_id, breweryRole: profile?.brewery_role ?? null, isAdmin }}
+                  initialBatch={notesBatch}
+                  canAdd={!!user}
+                  onAddTasting={(logId) => openTasting(logId, 'proefnotities')}
+                  onEditNote={(noteId) => { const note = tastingNotes.find(n => n.id === noteId); if (note) openTasting(note.brewLogId, 'proefnotities', note); }}
+                  onDeleteNote={handleDeleteTastingNote}
+                />
               )}
               {view === 'log' && selectedRecipe && (
                 <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} equipment={resolveEquipment(selectedRecipe, deduplicatedLibrary)} library={deduplicatedLibrary} />
@@ -1893,16 +1976,14 @@ const AppContent: React.FC = () => {
               {view === 'team' && <BrewerySettings />}
               {view === 'tasting' && selectedRecipe && selectedBrewLog && (
                 <TastingNotes
+                  key={selectedNote?.id || selectedBrewLog.id}
                   recipe={selectedRecipe}
-                  brewLogId={selectedBrewLog.id}
-                  onSave={async (note) => {
-                    const targetNote = { ...note, user_id: user?.id, brewery_id: profile?.brewery_id };
-                    setTastingNotes([targetNote, ...tastingNotes]);
-                    if (user?.id) {
-                      await supabaseService.saveTastingNote(targetNote, user.id, profile?.brewery_id);
-                    }
-                    setView(tastingReturnView);
-                  }}
+                  brewLog={selectedBrewLog}
+                  batchNumber={batchNumbers(brewLogs).get(selectedBrewLog.id)}
+                  myName={myTasterName}
+                  initialNote={selectedNote || undefined}
+                  onSave={handleSaveTastingNote}
+                  onCancel={() => { setSelectedNote(null); setView(tastingReturnView); }}
                 />
               )}
               {view === 'help' && <HelpView />}
@@ -1950,7 +2031,7 @@ const AppContent: React.FC = () => {
             <BottomNav
               currentView={view}
               libraryView={libraryView}
-              onViewChange={setView}
+              onViewChange={(v: View) => { setNotesBatch(undefined); setView(v); }}
               onLibraryViewChange={setLibraryView}
               onAuth={handleAuthRedirect}
             />

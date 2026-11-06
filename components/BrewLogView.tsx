@@ -4,6 +4,7 @@ import { BrewLogEntry, Recipe, TastingNote } from '../types';
 import { getSRMColor, calculateABV, formatGravity } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
+import { averageOverall, batchNumbers, formatDate } from '../services/tasting';
 
 interface BrewLogViewProps {
   logs: BrewLogEntry[];
@@ -11,14 +12,22 @@ interface BrewLogViewProps {
   tastingNotes: TastingNote[];
   onEditLog: (logId: string) => void;
   onAddTasting: (logId: string) => void;
+  onViewNotes: (logId: string) => void;
+  /** Mark a bottled batch as finished, or not finished again */
+  onToggleFinished: (logId: string) => void;
+  /** Every signed-in member can taste a bottled batch */
+  canAddNotes: boolean;
+  /** Brewery admins, brewmasters and brewers open and update brews; tasters do not */
+  canManageBrews: boolean;
   onPrintReport?: (log: BrewLogEntry) => void;
 }
 
-const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, onEditLog, onAddTasting, onPrintReport }) => {
+const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, onEditLog, onAddTasting, onViewNotes, onToggleFinished, canAddNotes, canManageBrews, onPrintReport }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const sortedLogs = [...logs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const numbers = batchNumbers(logs);
 
   if (logs.length === 0) {
     return (
@@ -62,19 +71,29 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
                 <div className="w-full md:w-3 h-3 md:h-auto transition-all" style={{ backgroundColor: getSRMColor(recipe?.specifications?.color?.value || 0) }}></div>
                 <div className="flex-1 p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3"><span className="text-xs font-black text-[var(--color-text-xmuted)] uppercase tracking-tighter">{log.brewDate || log.date}</span>{getStatusBadge(log.status)}</div>
-                    <h3 className="text-2xl font-black text-[var(--color-text)] leading-tight">{recipe?.name || '...'}</h3>
+                    <div className="flex items-center gap-3"><span className="text-xs font-black text-[var(--color-text-xmuted)] uppercase tracking-tighter">{formatDate(log.brewDate || log.date, lang)}</span>{getStatusBadge(log.status)}{log.finished && <span className="bg-stone-200 text-stone-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" title={log.finishedDate ? t('finished_on').replace('{date}', formatDate(log.finishedDate, lang)) : undefined}>{t('finished_badge')}</span>}</div>
+                    <h3 className="text-2xl font-black text-[var(--color-text)] leading-tight">{recipe?.name || '...'}{numbers.get(log.id) ? <span className="text-[var(--color-text-muted)] font-bold text-lg"> – {t('batch_label').replace('{n}', String(numbers.get(log.id)))}</span> : null}</h3>
                     <div className="flex flex-wrap gap-x-6 gap-y-2">
                       <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">{t('og_label')}: <span className="text-[var(--color-text)]">{formatGravity(log.measurements.actual_og, lang, preferences.gravityUnit)}</span></span>
                       <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">{t('fg_label')}: <span className="text-[var(--color-text)]">{formatGravity(log.measurements.actual_fg, lang, preferences.gravityUnit)}</span></span>
                       <span className="text-[10px] font-bold text-[var(--color-accent-dark)] uppercase">{t('abv_label')}: {abv}%</span>
-                      {log.status === 'bottled' && <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">{t('bottled_label')}: {log.bottling?.date || '-'}</span>}
+                      {log.status === 'bottled' && <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase">{t('bottled_label')}: {log.bottling?.date ? formatDate(log.bottling.date, lang) : '-'}</span>}
                     </div>
+                    {notes.length > 0 && (
+                      <button type="button" onClick={() => onViewNotes(log.id)} className="text-xs font-bold text-[var(--color-accent-dark)] hover:underline text-left">
+                        <i className="fas fa-star mr-1" aria-hidden="true"></i>
+                        {t('notes_on_brew')
+                          .replace('{count}', notes.length === 1 ? t('tastings_one') : t('tastings_count').replace('{n}', String(notes.length)))
+                          .replace('{score}', (averageOverall(notes) ?? 0).toLocaleString(lang))}
+                        {' · '}{t('view_tasting_notes')}
+                      </button>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-3 w-full md:w-auto">
-                    <button onClick={() => onEditLog(log.id)} className="flex-1 md:flex-none px-6 py-3 bg-[var(--color-text)] text-white rounded-[var(--radius-sm)] font-bold text-xs hover:opacity-90 transition-opacity uppercase">{log.status === 'bottled' ? 'View' : 'Update'}</button>
+                    {canManageBrews && <button onClick={() => onEditLog(log.id)} className="flex-1 md:flex-none px-6 py-3 bg-[var(--color-text)] text-white rounded-[var(--radius-sm)] font-bold text-xs hover:opacity-90 transition-opacity uppercase">{log.status === 'bottled' ? t('brew_view_btn') : t('brew_update_btn')}</button>}
                     {onPrintReport && <button onClick={() => onPrintReport(log)} className="flex-1 md:flex-none px-4 py-3 bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] rounded-[var(--radius-sm)] font-bold text-xs hover:bg-[var(--color-bg-hover)] transition-all uppercase" title={t('print_report')}><i className="fas fa-print"></i></button>}
-                    {log.status === 'bottled' && <button onClick={() => onAddTasting(log.id)} className="flex-1 md:flex-none px-6 py-3 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] font-bold text-xs uppercase shadow-sm hover:opacity-90 transition-opacity">{t('review_btn')}</button>}
+                    {log.status === 'bottled' && canManageBrews && <button type="button" onClick={() => onToggleFinished(log.id)} title={t('mark_finished_title')} className="flex-1 md:flex-none px-4 py-3 bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] rounded-[var(--radius-sm)] font-bold text-xs hover:bg-[var(--color-bg-hover)] transition-all uppercase"><i className={`fas ${log.finished ? 'fa-rotate-left' : 'fa-wine-bottle'} mr-1`} aria-hidden="true"></i>{log.finished ? t('mark_not_finished') : t('mark_finished')}</button>}
+                    {log.status === 'bottled' && !log.finished && canAddNotes && <button onClick={() => onAddTasting(log.id)} className="flex-1 md:flex-none px-6 py-3 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] font-bold text-xs uppercase shadow-sm hover:opacity-90 transition-opacity">{t('review_btn')}</button>}
                   </div>
                 </div>
               </div>

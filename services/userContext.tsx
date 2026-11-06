@@ -12,6 +12,7 @@ interface UserContextType {
   loading: boolean;
   preferences: UserPreferences;
   updatePreferences: (prefs: Partial<UserPreferences>) => Promise<void>;
+  updateDisplayName: (name: string) => void;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   breweryRole: string | null;
@@ -175,6 +176,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  /** Saved with the debounced profile sync, like the preferences */
+  const updateDisplayName = (name: string) => {
+    setProfile(prev => (prev ? { ...prev, display_name: name.slice(0, 40) } : prev));
+  };
+
   const signOut = async () => {
     try {
       // Add a safety timeout of 3 seconds for the signout call to prevent UI hanging
@@ -201,6 +207,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...profile?.preferences
     },
     updatePreferences,
+    updateDisplayName,
     signOut,
     isAdmin: profile?.role === 'admin',
     breweryRole: profile?.brewery_role ?? null

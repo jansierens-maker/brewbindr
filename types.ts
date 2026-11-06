@@ -27,6 +27,8 @@ export interface UserProfile {
   preferences: UserPreferences;
   brewery_id?: string;
   brewery_role?: BreweryRole;
+  /** Name shown to the team, e.g. as taster of tasting notes (max 40 characters) */
+  display_name?: string | null;
 }
 
 export interface Brewery {
@@ -261,6 +263,9 @@ export interface BrewLogEntry {
   fermentationDate?: string;
   lageringDate?: string;
   status: 'brewing' | 'fermenting' | 'lagering' | 'bottled';
+  /** All bottles or the keg are finished: no longer offered for new tasting notes */
+  finished?: boolean;
+  finishedDate?: string;
   notes: string;
   yeast_pitch?: {
     form: 'dry' | 'liquid';
@@ -301,4 +306,8 @@ export interface TastingNote {
   mouthfeel: number;
   overall: number;
   comments: string;
+  /** Set when a member entered the note for someone without an account */
+  guest_name?: string;
+  /** The AI analysis of this note, kept with it */
+  ai_feedback?: string;
 }

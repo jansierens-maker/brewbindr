@@ -244,6 +244,13 @@ export const supabaseService = {
     });
   },
 
+  /** Changes an existing note and keeps its taster (an admin may edit a member's note). */
+  async updateTastingNote(note: TastingNote) {
+    const client = supabase;
+    if (!client || !note.id) return;
+    return client.from('tasting_notes').update({ data: note }).eq('id', note.id);
+  },
+
   async deleteTastingNote(id: string) {
     const client = supabase;
     if (!client) return;

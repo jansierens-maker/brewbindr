@@ -5,7 +5,7 @@ import { Language } from '../services/i18n';
 import BrewerySettings from './BrewerySettings';
 
 const Settings: React.FC = () => {
-  const { preferences, updatePreferences, signOut, user } = useUser();
+  const { preferences, updatePreferences, updateDisplayName, signOut, user, profile } = useUser();
   const { t } = useTranslation();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -275,6 +275,23 @@ const Settings: React.FC = () => {
                 <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">{user ? t('signed_in_as') : t('guest_mode')}</p>
                 <p className="font-bold text-stone-900">{user?.email || t('guest_user')}</p>
               </div>
+              {user && profile && (
+                <div className="space-y-1">
+                  <label htmlFor="display_name" className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('display_name_label')}</label>
+                  <input
+                    id="display_name"
+                    name="display_name"
+                    type="text"
+                    maxLength={40}
+                    autoComplete="nickname"
+                    value={profile.display_name ?? ''}
+                    placeholder={t('display_name_placeholder')}
+                    onChange={(e) => updateDisplayName(e.target.value)}
+                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-900"
+                  />
+                  <p className="text-xs text-stone-500">{t('display_name_desc')}</p>
+                </div>
+              )}
             </div>
 
             {user && (
