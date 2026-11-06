@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { LibraryIngredient, MashStep } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
-import { canManageLibrary } from '../services/permissions';
+import { canManageLibrary, canPublish } from '../services/permissions';
 import { supabaseService } from '../services/supabaseService';
 import { formatStockAmount } from '../services/calculations';
 import { findDuplicateIngredients, uniqueName, privateLibraryNames, findPrivateIngredient, nameKey } from '../services/duplicates';
@@ -67,6 +67,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   };
 
   const canEdit = canManageLibrary({ breweryRole, isAdmin });
+  // Submitting to the public library: brewery admin only
+  const canSubmit = canPublish({ breweryRole, isAdmin });
   const [filter, setFilter] = useState<'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style'>('fermentable');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
@@ -93,7 +95,11 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         status: 'submitted' as const,
         stock: undefined // Remove stock for public submission
       }));
-      await supabaseService.batchSaveLibraryIngredients(submittedClones, user.id, profile?.brewery_id);
+      const result = await supabaseService.batchSaveLibraryIngredients(submittedClones, user.id, profile?.brewery_id);
+      if (result?.error) {
+        alert(`${t('save_failed')}: ${result.error.message}`);
+        return;
+      }
       alert(t('items_submitted').replace('{n}', String(selectedIds.length)));
     } else {
       // Bulk Import to Personal (items already in the collection are skipped)
@@ -292,7 +298,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {selectedIds.length > 0 && user && canEdit && (
+          {selectedIds.length > 0 && user && canEdit && (libraryView !== 'personal' || canSubmit) && (
             <div className="flex items-center gap-3 bg-amber-50 px-4 py-2 rounded-xl border border-amber-100 animate-in slide-in-from-right-4 duration-300 mr-auto md:mr-0">
                <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">{selectedIds.length} {t('selected')}</span>
                <button
@@ -335,12 +341,17 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
 
               {editingId !== item.id && (
                 <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
+                   {user && canEdit && (libraryView !== 'personal' || canSubmit) && (
                    <button
                     onClick={() => toggleSelection(item.id)}
+                    aria-pressed={selectedIds.includes(item.id)}
+                    aria-label={item.name}
+                    title={item.name}
                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-200 text-transparent'}`}
                    >
                      <i className="fas fa-check text-[10px]"></i>
                    </button>
+                   )}
                    {((!item.user_id || item.user_id === user?.id) || (item.brewery_id === profile?.brewery_id)) && canEdit && (
                       <button onClick={() => startEditing(item)} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors">
                         <i className="fas fa-edit text-xs"></i>
@@ -535,7 +546,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                   )}
 
                   <div className="mt-6 pt-6 border-t border-[var(--color-border)] flex flex-col gap-2">
-                    {user && libraryView === 'personal' && ((item.user_id === user.id || !item.user_id) || item.brewery_id === profile?.brewery_id) && item.status === 'private' && canEdit && (
+                    {user && libraryView === 'personal' && ((item.user_id === user.id || !item.user_id) || item.brewery_id === profile?.brewery_id) && item.status === 'private' && canSubmit && (
                        <button
                         onClick={async () => {
                           if (!confirmNoDuplicates([item])) return;
@@ -547,7 +558,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                             status: 'submitted' as const,
                             stock: undefined
                           };
-                          await supabaseService.saveLibraryIngredient(clone, user.id, profile?.brewery_id);
+                          const result = await supabaseService.saveLibraryIngredient(clone, user.id, profile?.brewery_id);
+                          if (result?.error) { alert(`${t('save_failed')}: ${result.error.message}`); return; }
                           const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
                           if (remoteData) replaceLocal(remoteData.library);
                           alert(t('item_submitted').replace('{name}', item.name));
