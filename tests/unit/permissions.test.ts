@@ -72,3 +72,12 @@ describe('stock visibility', () => {
     expect(canViewStock({})).toBe(true);
   });
 });
+
+import { canPublish } from '../../services/permissions';
+describe('submitting to the public library', () => {
+  it('is for the brewery admin and the app admin only', () => {
+    expect(['admin', 'brewmaster', 'brewer', 'taster'].map(r => canPublish({ breweryRole: r }))).toEqual([true, false, false, false]);
+    expect(canPublish({ breweryRole: 'brewmaster', isAdmin: true })).toBe(true);
+    expect(canPublish({})).toBe(false);
+  });
+});

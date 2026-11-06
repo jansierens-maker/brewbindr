@@ -696,7 +696,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             </button>
           </div>
 
-          {recipe.id && recipe.user_id === user?.id && recipe.status === 'private' && onSubmitToPublic && (
+          {recipe.id && recipe.status === 'private' && onSubmitToPublic && (
             <button
               onClick={() => onSubmitToPublic({...recipe, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
               className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-amber-600 transition-all uppercase tracking-widest text-sm"

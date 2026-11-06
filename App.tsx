@@ -21,7 +21,7 @@ import { InfoBanner } from './components/InfoBanner';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment } from './services/calculations';
-import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes } from './services/permissions';
+import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes, canPublish } from './services/permissions';
 import { Taster, batchNumbers, memberName } from './services/tasting';
 import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
@@ -359,6 +359,7 @@ const AppContent: React.FC = () => {
   // Recipes, library, stock and imports: brewery admins and brewmasters (see the RLS policies)
   const recipeManager = canManageRecipes({ isAdmin, breweryRole: profile?.brewery_role ?? null });
   const libraryManager = canManageLibrary({ isAdmin, breweryRole: profile?.brewery_role ?? null });
+  const publisher = canPublish({ isAdmin, breweryRole: profile?.brewery_role ?? null });
 
   /** Shows a failed save or delete; returns true when it failed. */
   const reportFailure = (result: { error?: { message?: string } | null } | null | undefined, kind: 'save' | 'delete' = 'save'): boolean => {
@@ -1098,9 +1099,11 @@ const AppContent: React.FC = () => {
     };
 
     if (newIngredients.length > 0) {
-      await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
+      const libResult = await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id);
+      if (reportFailure(libResult)) return;
     }
-    await supabaseService.saveRecipe(clonedRecipe, user.id);
+    const result = await supabaseService.saveRecipe(clonedRecipe, user.id);
+    if (reportFailure(result)) return;
 
     // Refresh data
     const remoteData = await supabaseService.fetchAppData(user.id);
@@ -1833,7 +1836,7 @@ const AppContent: React.FC = () => {
                                 </div>
                               )}
 
-                              {user && libraryView === 'personal' && r.status !== 'submitted' && (
+                              {user && publisher && libraryView === 'personal' && r.status !== 'submitted' && (
                                 <button
                                   onClick={() => handleRecipeSubmitToPublic(r)}
                                   className="w-full bg-amber-100 text-amber-700 text-[10px] font-black uppercase py-3 rounded-xl hover:bg-amber-200 transition-all tracking-widest"
@@ -1927,7 +1930,7 @@ const AppContent: React.FC = () => {
                 <RecipeCreator
                   initialRecipe={selectedRecipe || undefined}
                   onSave={handleSaveRecipe}
-                  onSubmitToPublic={handleRecipeSubmitToPublic}
+                  onSubmitToPublic={publisher ? handleRecipeSubmitToPublic : undefined}
                   onDelete={handleDeleteRecipe}
                   library={deduplicatedLibrary}
                 />

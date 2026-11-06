@@ -390,6 +390,8 @@ export const supabaseService = {
       return { error };
     });
 
-    return Promise.all(tasks);
+    // One result for all tables: the first error, if any
+    const results = await Promise.all(tasks);
+    return { error: results.find(r => r.error)?.error ?? null };
   }
 };

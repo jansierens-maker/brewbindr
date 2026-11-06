@@ -33,3 +33,6 @@ export const canManageLibrary = canManageRecipes;
 
 /** Tasters do not see the stock (nor what it says about recipes, like "brewable"). */
 export const canViewStock = (ctx: EditContext): boolean => !!ctx.isAdmin || ctx.breweryRole !== 'taster';
+
+/** Submitting recipes and ingredients to the public library: the brewery admin (and the app admin). */
+export const canPublish = (ctx: EditContext): boolean => !!ctx.isAdmin || ctx.breweryRole === 'admin';
