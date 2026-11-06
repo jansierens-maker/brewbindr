@@ -37,14 +37,17 @@ export const breweryService = {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, brewery_role')
+      .select('*')
       .eq('brewery_id', breweryId);
     if (error) return [];
 
-    // We can't join with auth.users easily from client,
-    // so we just return the profiles we found.
-    // In a real app we might have a public 'users' table with names/emails.
-    return data;
+    // Only what the team screens need (display_name may not exist on older databases)
+    return (data || []).map((m: any) => ({
+      id: m.id as string,
+      email: m.email as string | undefined,
+      brewery_role: m.brewery_role as string | undefined,
+      display_name: (m.display_name ?? null) as string | null,
+    }));
   },
 
   async removeMember(userId: string) {

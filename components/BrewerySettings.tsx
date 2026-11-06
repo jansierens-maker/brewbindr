@@ -180,8 +180,10 @@ const BrewerySettings: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-stone-900 truncate max-w-[150px]">
-                      {member.id === profile?.id ? t('team_you') : member.email || member.id.substring(0, 8) + '...'}
+                      {member.display_name || member.email || member.id.substring(0, 8) + '...'}
+                      {member.id === profile?.id && <span className="text-stone-400 font-medium"> ({t('team_you')})</span>}
                     </p>
+                    {member.display_name && member.email && <p className="text-[10px] text-stone-400 truncate max-w-[150px]">{member.email}</p>}
                     <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{roleLabel(member.brewery_role)}</p>
                   </div>
                 </div>

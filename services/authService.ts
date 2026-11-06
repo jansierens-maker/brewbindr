@@ -53,6 +53,8 @@ export const authService = {
     const profileData: any = {};
     if (profile.preferences) profileData.preferences = profile.preferences;
     if (profile.email) profileData.email = profile.email;
+    // Only sent once the user set it, so this also works before the column exists
+    if ('display_name' in profile) profileData.display_name = profile.display_name?.trim() || null;
 
     if (Object.keys(profileData).length === 0) return;
 

@@ -593,14 +593,27 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-star-half-stroke"></i> Brewer's Guide</div>
         <h2>Tasting notes <span class="role-badge brewer">Brewer</span></h2>
-        <p>Once a batch is conditioned, record how it actually tastes: scores for appearance, aroma, flavour and mouthfeel, an overall score, and comments. Every brewery member can add tasting notes.</p>
+        <p>Once a batch is bottled, record how it actually tastes: scores for appearance, aroma, flavour and mouthfeel, an overall score, and comments. Every brewery member can add tasting notes.</p>
+        <h3>Adding a note</h3>
+        <ul class="doc-list">
+          <li><strong>Start</strong> from <b>Tasting notes → New tasting note</b> and choose the bottled batch, or with <b>Review</b> on a bottled brew. Tasters start from Tasting notes; they do not open brews.</li>
+          <li><strong>Tasting date</strong> — today by default; change it to enter a tasting afterwards. The note shows the age of the beer, e.g. "3 weeks after bottling".</li>
+          <li><strong>Taster</strong> — you, or <b>a guest without an account</b>: type their name. Guest notes carry a <b>Guest</b> label and "entered by" with your name. You always need to be signed in to add notes.</li>
+        </ul>
+        <h3>The overview</h3>
+        <ul class="doc-list">
+          <li><strong>Per batch</strong> — notes of the same brew are grouped under the recipe and its batch number (batch 1, 2, … in order of brew date), with brew and bottling date, how many times it was tasted, the average score and a small chart of the overall score against age.</li>
+          <li><strong>Filters</strong> — by taster (members and guests), recipe and batch; sort by newest, oldest or highest score. A bottled brew shows its notes too; click it to open them.</li>
+          <li><strong>Edit and delete</strong> — your own notes; brewery admins and brewmasters can change or delete all notes of the brewery.</li>
+          <li><strong>Taster names</strong> — your display name from <a href="#settings">Settings</a>, else the part of your e-mail before the @.</li>
+        </ul>
         <h3>AI tasting analysis</h3>
         <div class="steps">
           <div class="step"><div><b>Write your comments</b> — be specific: "banana esters dominate, bitterness lower than expected, slightly thin body".</div></div>
           <div class="step"><div><b>Click Analyze</b> <i class="fas fa-brain" style="font-size:11px"></i>. The AI compares your description with the recipe.</div></div>
-          <div class="step"><div><b>Read the feedback:</b> likely causes and suggestions for the next brew.</div></div>
+          <div class="step"><div><b>Read the feedback:</b> likely causes and suggestions for the next brew. It is saved with the note; open it later with <b>Show AI analysis</b>.</div></div>
         </div>
-        <div class="callout note"><i class="fas fa-circle-info"></i><div>The analysis needs written comments, and counts towards your daily AI limit.</div></div>
+<div class="callout note"><i class="fas fa-circle-info"></i><div>The analysis needs written comments, and counts towards your daily AI limit.</div></div>
       </div>
     </section>
 
@@ -723,7 +736,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
             <tr><td><b>Admin</b></td><td>Everything a brewmaster can, plus members, invitations and the brewery name.</td></tr>
             <tr><td><b>Brewmaster</b></td><td>Creates, edits and deletes all recipes, ingredients and installation data of the brewery; logs brews.</td></tr>
             <tr><td><b>Brewer</b></td><td>Logs brews; views recipes (read-only).</td></tr>
-            <tr><td><b>Taster</b></td><td>Views recipes and brews; adds tasting notes.</td></tr>
+            <tr><td><b>Taster</b></td><td>Views recipes and the list of brews; adds tasting notes from the Tasting notes screen.</td></tr>
           </tbody>
         </table>
         <h3>Inviting and joining</h3>
@@ -747,6 +760,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
           <li><strong>Refractometer correction factor (WCF)</strong> — usually 1.02–1.06, 1.04 if unknown. Measure a wort with hydrometer and refractometer to find yours.</li>
           <li><strong>Stock management</strong> — on or off (see <a href="#stock">Stock</a>).</li>
           <li><strong>Language</strong> — English, Nederlands or Français.</li>
+          <li><strong>Display name</strong> — under Account: the name your team sees, e.g. as taster of your tasting notes (max. 40 characters).</li>
           <li><strong>Account</strong> — who you're signed in as, and sign out.</li>
         </ul>
         <p class="kbd-note">Preferences are stored with your profile, so they follow you across devices.</p>
@@ -1118,14 +1132,27 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-star-half-stroke"></i> Voor brouwers</div>
         <h2>Proefnotities <span class="role-badge brewer">Brouwer</span></h2>
-        <p>Is een batch klaar, noteer dan hoe hij smaakt: scores voor uitzicht, aroma, smaak en mondgevoel, een totaalscore en commentaar. Elk lid van de brouwerij kan proefnotities toevoegen.</p>
+        <p>Is een batch gebotteld, noteer dan hoe hij smaakt: scores voor uitzicht, aroma, smaak en mondgevoel, een totaalscore en commentaar. Elk lid van de brouwerij kan proefnotities toevoegen.</p>
+        <h3>Een notitie toevoegen</h3>
+        <ul class="doc-list">
+          <li><strong>Start</strong> via <b>Proefnotities → Nieuwe proefnotitie</b> en kies de gebottelde batch, of met <b>Beoordelen</b> bij een gebotteld brouwsel. Proevers starten vanuit Proefnotities; zij openen geen brouwsels.</li>
+          <li><strong>Proefdatum</strong> — standaard vandaag; pas ze aan om een proeverij achteraf in te voeren. De notitie toont de leeftijd van het bier, bv. "3 weken na bottelen".</li>
+          <li><strong>Proever</strong> — jij, of <b>een gast zonder account</b>: typ zijn naam. Gastnotities krijgen het label <b>Gast</b> en "ingevoerd door" met jouw naam. Om notities toe te voegen moet je altijd aangemeld zijn.</li>
+        </ul>
+        <h3>Het overzicht</h3>
+        <ul class="doc-list">
+          <li><strong>Per batch</strong> — notities van hetzelfde brouwsel staan samen onder het recept en zijn batchnummer (batch 1, 2, … op volgorde van brouwdatum), met brouw- en botteldatum, hoeveel keer geproefd, de gemiddelde score en een grafiekje van de totaalscore naar leeftijd.</li>
+          <li><strong>Filters</strong> — op proever (leden en gasten), recept en batch; sorteren op nieuwste, oudste of hoogste score. Ook een gebotteld brouwsel toont zijn notities; klik erop om ze te openen.</li>
+          <li><strong>Bewerken en verwijderen</strong> — je eigen notities; beheerders en brouwmeesters van de brouwerij kunnen alle notities aanpassen of verwijderen.</li>
+          <li><strong>Namen van proevers</strong> — je weergavenaam uit <a href="#settings">Instellingen</a>, anders het deel van je e-mailadres vóór de @.</li>
+        </ul>
         <h3>Proefanalyse met AI</h3>
         <div class="steps">
           <div class="step"><div><b>Schrijf je commentaar</b> — wees concreet: "banaanesters overheersen, minder bitter dan verwacht, wat dun".</div></div>
           <div class="step"><div><b>Klik op Analyseren</b> <i class="fas fa-brain" style="font-size:11px"></i>. De AI vergelijkt je beschrijving met het recept.</div></div>
-          <div class="step"><div><b>Lees de feedback:</b> waarschijnlijke oorzaken en tips voor het volgende brouwsel.</div></div>
+          <div class="step"><div><b>Lees de feedback:</b> waarschijnlijke oorzaken en tips voor het volgende brouwsel. Ze wordt bij de notitie bewaard; open ze later met <b>AI-analyse tonen</b>.</div></div>
         </div>
-        <div class="callout note"><i class="fas fa-circle-info"></i><div>De analyse heeft geschreven commentaar nodig en telt mee voor je daglimiet aan AI-aanvragen.</div></div>
+<div class="callout note"><i class="fas fa-circle-info"></i><div>De analyse heeft geschreven commentaar nodig en telt mee voor je daglimiet aan AI-aanvragen.</div></div>
       </div>
     </section>
 
@@ -1248,7 +1275,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
             <tr><td><b>Beheerder</b></td><td>Alles wat een brouwmeester kan, plus leden, uitnodigingen en de naam van de brouwerij.</td></tr>
             <tr><td><b>Brouwmeester</b></td><td>Maakt, bewerkt en verwijdert alle recepten, ingrediënten en installatiegegevens van de brouwerij; houdt brouwsels bij.</td></tr>
             <tr><td><b>Brouwer</b></td><td>Houdt brouwsels bij; bekijkt recepten (alleen lezen).</td></tr>
-            <tr><td><b>Proever</b></td><td>Bekijkt recepten en brouwsels; voegt proefnotities toe.</td></tr>
+            <tr><td><b>Proever</b></td><td>Bekijkt recepten en de lijst met brouwsels; voegt proefnotities toe vanuit het scherm Proefnotities.</td></tr>
           </tbody>
         </table>
         <h3>Uitnodigen en aansluiten</h3>
@@ -1272,6 +1299,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
           <li><strong>Correctiefactor refractometer (WCF)</strong> — meestal 1,02–1,06, 1,04 als je het niet weet. Meet een wort met hydrometer én refractometer om je eigen factor te vinden.</li>
           <li><strong>Voorraadbeheer</strong> — aan of uit (zie <a href="#stock">Voorraad</a>).</li>
           <li><strong>Taal</strong> — English, Nederlands of Français.</li>
+          <li><strong>Weergavenaam</strong> — onder Account: de naam die je team ziet, bv. als proever bij je proefnotities (max. 40 tekens).</li>
           <li><strong>Account</strong> — met welk account je aangemeld bent, en afmelden.</li>
         </ul>
         <p class="kbd-note">Je voorkeuren worden bij je profiel bewaard en volgen je op al je toestellen.</p>
@@ -1643,14 +1671,27 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-star-half-stroke"></i> Pour les brasseurs</div>
         <h2>Notes de dégustation <span class="role-badge brewer">Brasseur</span></h2>
-        <p>Quand un lot est prêt, notez son goût : scores pour l'aspect, l'arôme, le goût et la sensation en bouche, un score global et un commentaire. Chaque membre de la brasserie peut ajouter des notes.</p>
+        <p>Quand un lot est embouteillé, notez son goût : scores pour l'aspect, l'arôme, le goût et la sensation en bouche, un score global et un commentaire. Chaque membre de la brasserie peut ajouter des notes.</p>
+        <h3>Ajouter une note</h3>
+        <ul class="doc-list">
+          <li><strong>Commencez</strong> par <b>Notes de dégustation → Nouvelle note de dégustation</b> et choisissez le lot embouteillé, ou avec <b>Évaluer</b> sur un brassin embouteillé. Les dégustateurs commencent depuis Notes de dégustation ; ils n'ouvrent pas les brassins.</li>
+          <li><strong>Date de dégustation</strong> — aujourd'hui par défaut ; modifiez-la pour saisir une dégustation après coup. La note indique l'âge de la bière, p. ex. « 3 semaines après l'embouteillage ».</li>
+          <li><strong>Dégustateur</strong> — vous, ou <b>un invité sans compte</b> : tapez son nom. Les notes d'invités portent l'étiquette <b>Invité</b> et « saisi par » avec votre nom. Il faut toujours être connecté pour ajouter des notes.</li>
+        </ul>
+        <h3>L'aperçu</h3>
+        <ul class="doc-list">
+          <li><strong>Par lot</strong> — les notes d'un même brassin sont regroupées sous la recette et son numéro de lot (lot 1, 2, … dans l'ordre des dates de brassage), avec dates de brassage et d'embouteillage, le nombre de dégustations, la note moyenne et un petit graphique de la note globale selon l'âge.</li>
+          <li><strong>Filtres</strong> — par dégustateur (membres et invités), recette et lot ; tri par plus récentes, plus anciennes ou meilleure note. Un brassin embouteillé affiche aussi ses notes ; cliquez pour les ouvrir.</li>
+          <li><strong>Modifier et supprimer</strong> — vos propres notes ; les administrateurs et maîtres brasseurs de la brasserie peuvent modifier ou supprimer toutes les notes.</li>
+          <li><strong>Noms des dégustateurs</strong> — votre nom affiché dans <a href="#settings">Paramètres</a>, sinon la partie de votre e-mail avant le @.</li>
+        </ul>
         <h3>Analyse de dégustation par l'IA</h3>
         <div class="steps">
           <div class="step"><div><b>Rédigez votre commentaire</b> — soyez précis : « esters de banane dominants, moins amer que prévu, un peu mince ».</div></div>
           <div class="step"><div><b>Cliquez sur Analyser</b> <i class="fas fa-brain" style="font-size:11px"></i>. L'IA compare votre description à la recette.</div></div>
-          <div class="step"><div><b>Lisez les conseils :</b> causes probables et pistes pour le prochain brassin.</div></div>
+          <div class="step"><div><b>Lisez les conseils :</b> causes probables et pistes pour le prochain brassin. Ils sont enregistrés avec la note ; rouvrez-les avec <b>Afficher l'analyse IA</b>.</div></div>
         </div>
-        <div class="callout note"><i class="fas fa-circle-info"></i><div>L'analyse demande un commentaire écrit et compte dans votre limite quotidienne de demandes à l'IA.</div></div>
+<div class="callout note"><i class="fas fa-circle-info"></i><div>L'analyse demande un commentaire écrit et compte dans votre limite quotidienne de demandes à l'IA.</div></div>
       </div>
     </section>
 
@@ -1773,7 +1814,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
             <tr><td><b>Administrateur</b></td><td>Tout ce que peut un maître brasseur, plus les membres, les invitations et le nom de la brasserie.</td></tr>
             <tr><td><b>Maître brasseur</b></td><td>Crée, modifie et supprime toutes les recettes, ingrédients et données d'installation de la brasserie ; suit les brassins.</td></tr>
             <tr><td><b>Brasseur</b></td><td>Suit les brassins ; consulte les recettes (lecture seule).</td></tr>
-            <tr><td><b>Dégustateur</b></td><td>Consulte recettes et brassins ; ajoute des notes de dégustation.</td></tr>
+            <tr><td><b>Dégustateur</b></td><td>Consulte les recettes et la liste des brassins ; ajoute des notes depuis l'écran Notes de dégustation.</td></tr>
           </tbody>
         </table>
         <h3>Inviter et rejoindre</h3>
@@ -1797,6 +1838,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
           <li><strong>Facteur de correction du réfractomètre (WCF)</strong> — en général 1,02–1,06, 1,04 si vous ne savez pas. Mesurez un moût au densimètre et au réfractomètre pour trouver votre propre facteur.</li>
           <li><strong>Gestion du stock</strong> — activée ou non (voir <a href="#stock">Stock</a>).</li>
           <li><strong>Langue</strong> — English, Nederlands ou Français.</li>
+          <li><strong>Nom affiché</strong> — sous Compte : le nom que voit votre équipe, p. ex. comme dégustateur de vos notes (40 caractères max.).</li>
           <li><strong>Compte</strong> — le compte connecté, et se déconnecter.</li>
         </ul>
         <p class="kbd-note">Vos préférences sont enregistrées avec votre profil et vous suivent sur tous vos appareils.</p>

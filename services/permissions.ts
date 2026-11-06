@@ -23,3 +23,7 @@ export const canEditRecipe = (recipe: Pick<Recipe, 'user_id' | 'brewery_id' | 's
   if (ctx.breweryId) return recipe.brewery_id === ctx.breweryId && canManageRecipes(ctx);
   return !!ctx.userId && recipe.user_id === ctx.userId;
 };
+
+/** Brewery roles that open and update brews (see the RLS policies on brew_logs); tasters only taste. */
+export const canManageBrews = (ctx: EditContext): boolean =>
+  !!ctx.isAdmin || !ctx.breweryRole || ['admin', 'brewmaster', 'brewer'].includes(ctx.breweryRole);
