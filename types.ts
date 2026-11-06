@@ -45,6 +45,9 @@ export interface Invitation {
   code: string;
   created_at: string;
   expires_at: string;
+  /** How often the e-mail was sent (max. 3) */
+  sent_count?: number;
+  last_sent_at?: string | null;
 }
 
 export interface LibraryIngredient {

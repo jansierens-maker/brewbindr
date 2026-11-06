@@ -11,6 +11,7 @@ const BrewerySettings: React.FC = () => {
   const [brewery, setBrewery] = useState<Brewery | null>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -71,18 +72,42 @@ const BrewerySettings: React.FC = () => {
     try {
       const invite = await breweryService.generateInvitation(profile.brewery_id, inviteRole, inviteEmail.trim());
       if (invite) {
-        // Send email via API (server checks you are admin of this brewery)
-        await breweryService.sendInviteEmail(invite.id);
-
-        setInvitations([...invitations, invite]);
+        // The invitation exists from here on: show it even when the e-mail fails,
+        // so its code can be passed on by hand
+        setInvitations(prev => [...prev, invite]);
         setShowInviteModal(false);
         setInviteEmail('');
-        alert(t('invite_sent'));
+        try {
+          // Send email via API (server checks you are admin of this brewery and the limits)
+          await breweryService.sendInviteEmail(invite.id);
+          setInvitations(prev => prev.map(i => (i.id === invite.id ? { ...i, sent_count: 1 } : i)));
+          alert(t('invite_sent'));
+        } catch (err: any) {
+          alert(t('invite_created_not_sent').replace('{reason}', sendErrorText(err)).replace('{code}', invite.code));
+        }
       }
     } catch (err: any) {
       alert(`${t('error_prefix')}: ${err.message}`);
     } finally {
       setSendingInvite(false);
+    }
+  };
+
+  const sendErrorText = (err: any): string =>
+    err?.code === 'invite_resend_limit' ? t('invite_resend_limit')
+      : err?.code === 'invite_daily_limit' ? t('invite_daily_limit')
+      : err?.message || '';
+
+  const handleResendInvite = async (invite: Invitation) => {
+    setResendingId(invite.id);
+    try {
+      await breweryService.sendInviteEmail(invite.id);
+      setInvitations(prev => prev.map(i => (i.id === invite.id ? { ...i, sent_count: (i.sent_count || 0) + 1 } : i)));
+      alert(t('invite_sent'));
+    } catch (err: any) {
+      alert(`${t('error_prefix')}: ${sendErrorText(err)}`);
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -149,7 +174,7 @@ const BrewerySettings: React.FC = () => {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 className="flex-1 px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold focus:ring-2 focus:ring-amber-500/20 outline-none"
-                maxLength={100}
+                maxLength={60}
               />
               <button
                 onClick={handleUpdateName}
@@ -231,6 +256,23 @@ const BrewerySettings: React.FC = () => {
                       <i className="fas fa-trash-alt" aria-hidden="true"></i>
                     </button>
                   </div>
+                  {invite.email && (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold text-stone-500">
+                        {(invite.sent_count || 0) > 0 ? t('invite_sent_times').replace('{n}', String(invite.sent_count)) : t('invite_not_sent')}
+                      </span>
+                      {(invite.sent_count || 0) < 3 && (
+                        <button
+                          type="button"
+                          onClick={() => handleResendInvite(invite)}
+                          disabled={resendingId === invite.id}
+                          className="text-[10px] font-black uppercase text-stone-500 hover:text-stone-900 disabled:opacity-50"
+                        >
+                          <i className="fas fa-paper-plane mr-1" aria-hidden="true"></i>{(invite.sent_count || 0) > 0 ? t('invite_resend') : t('invite_send')}
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-stone-200">
                     <code className="text-sm font-black text-amber-600">{invite.code}</code>
                     <button

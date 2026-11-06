@@ -61,6 +61,20 @@ export default async function handler(req: any, res: any) {
     .eq('id', invite.brewery_id)
     .maybeSingle();
 
+  // Limits (3 sends per invitation, 10 per brewery per day) are checked and counted in
+  // the database, as the signed-in user, right before sending
+  const { data: claim, error: claimError } = await supabase.rpc('claim_invite_send', { p_invitation_id: invitationId });
+  if (claimError) {
+    console.error('Invite send check failed:', claimError.message);
+    return res.status(503).json({ error: 'Could not send the invitation right now' });
+  }
+  if (!claim?.allowed) {
+    if (claim?.reason === 'invite_resend_limit' || claim?.reason === 'invite_daily_limit') {
+      return res.status(429).json({ error: 'Invitation limit reached', code: claim.reason });
+    }
+    return res.status(404).json({ error: 'Invitation not found' });
+  }
+
   const breweryName = escapeHtml(brewery?.name || 'a brewery');
   const role = ROLES.includes(invite.role) ? invite.role : 'member';
   const code = escapeHtml(invite.code);
@@ -70,7 +84,8 @@ export default async function handler(req: any, res: any) {
     const { data, error } = await resend.emails.send({
       from: 'Brewbindr <noreply@sierens.com>',
       to: [invite.email],
-      subject: `You're invited to join ${brewery?.name || 'a brewery'} on Brewbindr`.slice(0, 150),
+      // No user-chosen text in the subject: brewery names are only shown, escaped, in the body
+      subject: "You're invited to join a brewery on BrewBindr",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #d97706; text-transform: uppercase;">Brewbindr</h2>
