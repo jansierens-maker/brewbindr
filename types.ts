@@ -263,6 +263,9 @@ export interface BrewLogEntry {
   fermentationDate?: string;
   lageringDate?: string;
   status: 'brewing' | 'fermenting' | 'lagering' | 'bottled';
+  /** All bottles or the keg are finished: no longer offered for new tasting notes */
+  finished?: boolean;
+  finishedDate?: string;
   notes: string;
   yeast_pitch?: {
     form: 'dry' | 'liquid';

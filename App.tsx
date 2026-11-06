@@ -392,6 +392,13 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleToggleFinished = (logId: string) => {
+    const log = brewLogs.find(l => l.id === logId);
+    if (!log) return;
+    const finished = !log.finished;
+    handleUpdateBrewLog({ ...log, finished, finishedDate: finished ? new Date().toISOString().slice(0, 10) : undefined });
+  };
+
   const handleDeleteTastingNote = async (id: string) => {
     if (!confirm(t('confirm_delete_note'))) return;
     const before = tastingNotes;
@@ -667,14 +674,15 @@ const AppContent: React.FC = () => {
   };
 
   const handleUpdateBrewLog = async (entry: BrewLogEntry) => {
-    const targetLog = { ...entry, user_id: user?.id, brewery_id: profile?.brewery_id };
+    // Keep the original brewer when someone else updates the brew
+    const targetLog = { ...entry, user_id: entry.user_id || user?.id, brewery_id: entry.brewery_id || profile?.brewery_id };
     setBrewLogs(prev => {
       const exists = prev.find(l => l.id === entry.id);
       if (exists) return prev.map(l => l.id === entry.id ? targetLog : l);
       return [targetLog, ...prev];
     });
     if (user?.id) {
-      await supabaseService.saveBrewLog(targetLog, user.id, profile?.brewery_id);
+      await supabaseService.saveBrewLog(targetLog, targetLog.user_id || user.id, targetLog.brewery_id || profile?.brewery_id);
     }
   };
 
@@ -1873,7 +1881,7 @@ const AppContent: React.FC = () => {
                 </div>
               )}
               {view === 'brouwlogboek' && (
-                <BrewLogView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} canManageBrews={brewManager} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => openTasting(logId, 'brouwlogboek')} onViewNotes={(logId) => { setView('proefnotities'); setNotesBatch(logId); }} onPrintReport={handlePrintBrewReport} />
+                <BrewLogView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} canManageBrews={brewManager} canAddNotes={!!user} onToggleFinished={handleToggleFinished} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => openTasting(logId, 'brouwlogboek')} onViewNotes={(logId) => { setView('proefnotities'); setNotesBatch(logId); }} onPrintReport={handlePrintBrewReport} />
               )}
               {view === 'proefnotities' && (
                 <TastingNotesView

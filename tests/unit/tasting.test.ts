@@ -75,3 +75,32 @@ describe('formatDate', () => {
     expect(formatDate(undefined, 'en')).toBe('');
   });
 });
+
+import { findBatches, lastActivity } from '../../services/tasting';
+describe('finding a batch to taste', () => {
+  const logs = [
+    log('t1', 'trip', '2026-01-01', '2026-02-01'),
+    log('t2', 'trip', '2026-05-01', '2026-06-01'),
+    { ...log('s1', 'saison', '2026-03-01', '2026-04-01'), finished: true },
+    { ...log('w1', 'wit', '2026-09-01'), status: 'fermenting' } as BrewLogEntry,
+  ];
+  const names: Record<string, string> = { t1: 'Tripel – Batch 1', t2: 'Tripel – Batch 2', s1: 'Saison – Batch 1', w1: 'Wit – Batch 1' };
+  const label = (l: BrewLogEntry) => names[l.id];
+  const notes = [note({ brewLogId: 't1', date: '2026-08-15' })];
+
+  it('takes the latest of bottling and tasting dates', () => {
+    expect(lastActivity(logs[0], notes)).toBe('2026-08-15');
+    expect(lastActivity(logs[1], notes)).toBe('2026-06-01');
+  });
+  it('offers bottled, unfinished batches, most recent first', () => {
+    expect(findBatches(logs, notes, label, '', false).map(l => l.id)).toEqual(['t1', 't2']);
+  });
+  it('includes finished batches on request', () => {
+    expect(findBatches(logs, notes, label, '', true).map(l => l.id)).toEqual(['t1', 't2', 's1']);
+  });
+  it('matches every word of the search', () => {
+    expect(findBatches(logs, notes, label, 'trip 2', false).map(l => l.id)).toEqual(['t2']);
+    expect(findBatches(logs, notes, label, 'SAISON', false)).toEqual([]);
+    expect(findBatches(logs, notes, label, 'saison', true).map(l => l.id)).toEqual(['s1']);
+  });
+});

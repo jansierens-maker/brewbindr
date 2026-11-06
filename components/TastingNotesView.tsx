@@ -3,8 +3,12 @@ import { BrewLogEntry, Recipe, TastingNote } from '../types';
 import { getSRMColor } from '../services/calculations';
 import { useTranslation } from '../App';
 import {
-  Taster, batchNumbers, ageAtTasting, ageLabel, averageOverall, canEditNote, formatDate, tasterOf,
+  Taster, batchNumbers, ageAtTasting, ageLabel, averageOverall, canEditNote, daysBetween, findBatches, formatDate, tasterOf,
 } from '../services/tasting';
+
+const RECENT_BATCHES = 5;
+const MAX_RESULTS = 20;
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
 interface TastingNotesViewProps {
   logs: BrewLogEntry[];
@@ -60,7 +64,8 @@ const TastingNotesView: React.FC<TastingNotesViewProps> = ({
   const [batchFilter, setBatchFilter] = useState(initialBatch || '');
   const [sort, setSort] = useState<SortKey>('newest');
   const [choosing, setChoosing] = useState(false);
-  const [chosenLog, setChosenLog] = useState('');
+  const [search, setSearch] = useState('');
+  const [includeFinished, setIncludeFinished] = useState(false);
   const [openAi, setOpenAi] = useState<Record<string, boolean>>({});
 
   const numbers = useMemo(() => batchNumbers(logs), [logs]);
@@ -95,10 +100,13 @@ const TastingNotesView: React.FC<TastingNotesViewProps> = ({
       .sort((a, b) => a[1].localeCompare(b[1]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tastingNotes, logById, recipeFilter, numbers, recipeById]);
-  const bottledLogs = useMemo(
-    () => logs.filter(l => l.status === 'bottled').sort((a, b) => (b.bottling?.date || b.date).localeCompare(a.bottling?.date || a.date)),
-    [logs],
+  const anyBottled = logs.some(l => l.status === 'bottled');
+  const found = useMemo(
+    () => findBatches(logs, tastingNotes, l => batchName(l), search, includeFinished),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [logs, tastingNotes, search, includeFinished, numbers, recipeById],
   );
+  const shown = found.slice(0, search.trim() ? MAX_RESULTS : RECENT_BATCHES);
 
   const filtered = tastingNotes.filter(n => {
     if (taster && tasterOf(n, members).key !== taster) return false;
@@ -133,25 +141,74 @@ const TastingNotesView: React.FC<TastingNotesViewProps> = ({
         <button type="button" onClick={() => setChoosing(true)} className="px-6 py-3 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] font-bold text-xs uppercase shadow-sm hover:opacity-90">
           <i className="fas fa-plus mr-2" aria-hidden="true"></i>{t('new_tasting')}
         </button>
-      ) : bottledLogs.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)]">{t('no_bottled_brews')}</p>
+      ) : !anyBottled ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-[var(--color-text-muted)]">{t('no_bottled_brews')}</p>
+          <button type="button" onClick={() => setChoosing(false)} className="px-5 py-3 rounded-[var(--radius-sm)] font-bold text-xs uppercase bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]">{t('cancel_btn')}</button>
+        </div>
       ) : (
-        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-          <div className="flex-1 space-y-1">
-            <label htmlFor="new-tasting-batch" className={labelClass}>{t('choose_batch')}</label>
-            <select id="new-tasting-batch" name="new_tasting_batch" value={chosenLog} onChange={(e) => setChosenLog(e.target.value)} className={selectClass}>
-              <option value="">{t('choose_batch_placeholder')}</option>
-              {bottledLogs.map(l => (
-                <option key={l.id} value={l.id}>
-                  {batchName(l)}{l.bottling?.date ? ` · ${t('bottled_on').replace('{date}', formatDate(l.bottling.date, lang))}` : ''}
-                </option>
-              ))}
-            </select>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1 space-y-1">
+              <label htmlFor="new-tasting-search" className={labelClass}>{t('choose_batch')}</label>
+              <input
+                id="new-tasting-search"
+                name="new_tasting_search"
+                type="search"
+                maxLength={60}
+                autoFocus
+                autoComplete="off"
+                value={search}
+                placeholder={t('search_batch_placeholder')}
+                aria-label={t('search_batch_label')}
+                onChange={(e) => setSearch(e.target.value)}
+                className={selectClass}
+              />
+            </div>
+            <button type="button" onClick={() => { setChoosing(false); setSearch(''); }} className="px-5 py-3 rounded-[var(--radius-sm)] font-bold text-xs uppercase bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]">{t('cancel_btn')}</button>
           </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => { setChoosing(false); setChosenLog(''); }} className="px-5 py-3 rounded-[var(--radius-sm)] font-bold text-xs uppercase bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]">{t('cancel_btn')}</button>
-            <button type="button" disabled={!chosenLog} onClick={() => onAddTasting(chosenLog)} className="px-6 py-3 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] font-bold text-xs uppercase disabled:opacity-50">{t('start_tasting')}</button>
-          </div>
+          <label htmlFor="include-finished" className="flex items-center gap-2 text-xs font-semibold text-[var(--color-text-muted)]">
+            <input id="include-finished" name="include_finished" type="checkbox" checked={includeFinished} onChange={(e) => setIncludeFinished(e.target.checked)} />
+            {t('include_finished')}
+          </label>
+          {!search.trim() && shown.length > 0 && <p className={labelClass}>{t('recent_batches')}</p>}
+          {shown.length === 0 ? (
+            <p className="text-sm text-[var(--color-text-muted)]">{t('no_batches_found')}</p>
+          ) : (
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {shown.map(l => {
+                const own = tastingNotes.filter(n => n.brewLogId === l.id);
+                const avg = averageOverall(own);
+                const age = ageLabel(daysBetween(l.bottling?.date, todayIso()), t);
+                return (
+                  <li key={l.id}>
+                    <button
+                      type="button"
+                      onClick={() => onAddTasting(l.id)}
+                      className="w-full text-left p-4 rounded-[var(--radius-sm)] border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[var(--color-bg-subtle)] transition-colors"
+                    >
+                      <span className="flex items-center gap-2 text-sm font-black text-[var(--color-text)]">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getSRMColor(recipeById.get(l.recipeId)?.specifications?.color?.value || 0) }} aria-hidden="true"></span>
+                        {batchName(l)}
+                        {l.finished && <span className="px-2 py-0.5 rounded-full bg-stone-200 text-stone-600 text-[9px] font-black uppercase tracking-wider">{t('finished_badge')}</span>}
+                      </span>
+                      <span className="block text-xs text-[var(--color-text-muted)] mt-1">
+                        {l.bottling?.date ? t('bottled_on').replace('{date}', formatDate(l.bottling.date, lang)) : t('not_bottled_yet')}
+                        {age ? ` · ${age}` : ''}
+                      </span>
+                      <span className="block text-xs font-bold text-[var(--color-accent-dark)] mt-1">
+                        {own.length === 0 ? t('not_tasted_yet')
+                          : `${own.length === 1 ? t('tastings_one') : t('tastings_count').replace('{n}', String(own.length))}${avg !== null ? ` · ${t('average_score').replace('{score}', avg.toLocaleString(lang))}` : ''}`}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {found.length > shown.length && search.trim() && (
+            <p className="text-xs text-[var(--color-text-muted)]">{t('more_batches').replace('{n}', String(found.length - shown.length))}</p>
+          )}
         </div>
       )}
     </div>
@@ -239,7 +296,16 @@ const TastingNotesView: React.FC<TastingNotesViewProps> = ({
                         {avg !== null && <> · <span className="text-[var(--color-accent-dark)]">{t('average_score').replace('{score}', avg.toLocaleString(lang))}</span></>}
                       </p>
                     </div>
-                    <Trend points={trend} label={t('score_trend')} />
+                    <div className="flex items-center gap-4">
+                      <Trend points={trend} label={t('score_trend')} />
+                      {log?.finished ? (
+                        <span className="px-3 py-1 rounded-full bg-stone-200 text-stone-600 text-[10px] font-black uppercase tracking-wider" title={log.finishedDate ? t('finished_on').replace('{date}', formatDate(log.finishedDate, lang)) : undefined}>{t('finished_badge')}</span>
+                      ) : canAdd && log?.status === 'bottled' ? (
+                        <button type="button" onClick={() => onAddTasting(log.id)} className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] font-bold text-xs uppercase shadow-sm hover:opacity-90 whitespace-nowrap">
+                          <i className="fas fa-plus mr-1" aria-hidden="true"></i>{t('add_tasting_btn')}
+                        </button>
+                      ) : null}
+                    </div>
                   </header>
                   <ul className="divide-y divide-[var(--color-border)]">
                     {notes.map(note => {

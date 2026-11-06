@@ -113,3 +113,34 @@ export const ageLabel = (days: number | null, t: (key: any) => string): string =
   const key = unit === 'days' ? 'age_days' : unit === 'weeks' ? 'age_weeks' : 'age_months';
   return t(key).replace('{n}', String(value));
 };
+
+/** Latest of bottling date and tasting dates of a batch: what was on the table most recently. */
+export const lastActivity = (log: BrewLogEntry, notes: TastingNote[]): string =>
+  notes.filter(n => n.brewLogId === log.id).reduce(
+    (latest, n) => (n.date > latest ? n.date : latest),
+    log.bottling?.date || log.brewDate || log.date || '',
+  );
+
+/**
+ * Bottled batches to start a tasting note for, most recent activity first.
+ * `label(log)` is the text to search in (e.g. "Tripel – Batch 2"); every word of the
+ * query must occur in it. Finished batches only with `includeFinished`.
+ */
+export const findBatches = (
+  logs: BrewLogEntry[],
+  notes: TastingNote[],
+  label: (log: BrewLogEntry) => string,
+  query: string,
+  includeFinished: boolean,
+): BrewLogEntry[] => {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  return logs
+    .filter(l => l.status === 'bottled' && (includeFinished || !l.finished))
+    .filter(l => {
+      const text = label(l).toLowerCase();
+      return words.every(w => text.includes(w));
+    })
+    .map(l => ({ l, last: lastActivity(l, notes) }))
+    .sort((a, b) => b.last.localeCompare(a.last) || a.l.id.localeCompare(b.l.id))
+    .map(x => x.l);
+};

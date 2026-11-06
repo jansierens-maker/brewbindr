@@ -596,7 +596,8 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         <p>Once a batch is bottled, record how it actually tastes: scores for appearance, aroma, flavour and mouthfeel, an overall score, and comments. Every brewery member can add tasting notes.</p>
         <h3>Adding a note</h3>
         <ul class="doc-list">
-          <li><strong>Start</strong> from <b>Tasting notes → New tasting note</b> and choose the bottled batch, or with <b>Review</b> on a bottled brew. Tasters start from Tasting notes; they do not open brews.</li>
+          <li><strong>Start</strong> in one of three ways: <b>Tasting notes → New tasting note</b> — the five most recently bottled or tasted batches are shown, or type part of the recipe name or the batch number to search; <b>+ Tasting note</b> on a batch in the overview; or <b>Review</b> on a bottled brew. Tasters see the list of brews but do not open them; they can use Review.</li>
+          <li><strong>Finished</strong> — when the bottles of a batch are gone, mark it with <b>Finished</b> under Brews. It is no longer offered for new notes (tick "Also finished batches" to see it anyway); its notes stay.</li>
           <li><strong>Tasting date</strong> — today by default; change it to enter a tasting afterwards. The note shows the age of the beer, e.g. "3 weeks after bottling".</li>
           <li><strong>Taster</strong> — you, or <b>a guest without an account</b>: type their name. Guest notes carry a <b>Guest</b> label and "entered by" with your name. You always need to be signed in to add notes.</li>
         </ul>
@@ -736,7 +737,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
             <tr><td><b>Admin</b></td><td>Everything a brewmaster can, plus members, invitations and the brewery name.</td></tr>
             <tr><td><b>Brewmaster</b></td><td>Creates, edits and deletes all recipes, ingredients and installation data of the brewery; logs brews.</td></tr>
             <tr><td><b>Brewer</b></td><td>Logs brews; views recipes (read-only).</td></tr>
-            <tr><td><b>Taster</b></td><td>Views recipes and the list of brews; adds tasting notes from the Tasting notes screen.</td></tr>
+            <tr><td><b>Taster</b></td><td>Views recipes and the list of brews (without opening them); adds tasting notes.</td></tr>
           </tbody>
         </table>
         <h3>Inviting and joining</h3>
@@ -1135,7 +1136,8 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <p>Is een batch gebotteld, noteer dan hoe hij smaakt: scores voor uitzicht, aroma, smaak en mondgevoel, een totaalscore en commentaar. Elk lid van de brouwerij kan proefnotities toevoegen.</p>
         <h3>Een notitie toevoegen</h3>
         <ul class="doc-list">
-          <li><strong>Start</strong> via <b>Proefnotities → Nieuwe proefnotitie</b> en kies de gebottelde batch, of met <b>Beoordelen</b> bij een gebotteld brouwsel. Proevers starten vanuit Proefnotities; zij openen geen brouwsels.</li>
+          <li><strong>Start</strong> op drie manieren: <b>Proefnotities → Nieuwe proefnotitie</b> — je ziet de vijf laatst gebottelde of geproefde batches, of typ een deel van de receptnaam of het batchnummer om te zoeken; <b>+ Proefnotitie</b> bij een batch in het overzicht; of <b>Beoordelen</b> bij een gebotteld brouwsel. Proevers zien de lijst met brouwsels maar openen ze niet; Beoordelen kunnen ze wel gebruiken.</li>
+          <li><strong>Op</strong> — zijn de flessen van een batch op, markeer hem dan met <b>Op</b> in Brouwsels. Hij wordt niet meer aangeboden voor nieuwe notities (vink "Ook opgedronken batches" aan om hem toch te zien); zijn notities blijven.</li>
           <li><strong>Proefdatum</strong> — standaard vandaag; pas ze aan om een proeverij achteraf in te voeren. De notitie toont de leeftijd van het bier, bv. "3 weken na bottelen".</li>
           <li><strong>Proever</strong> — jij, of <b>een gast zonder account</b>: typ zijn naam. Gastnotities krijgen het label <b>Gast</b> en "ingevoerd door" met jouw naam. Om notities toe te voegen moet je altijd aangemeld zijn.</li>
         </ul>
@@ -1275,7 +1277,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
             <tr><td><b>Beheerder</b></td><td>Alles wat een brouwmeester kan, plus leden, uitnodigingen en de naam van de brouwerij.</td></tr>
             <tr><td><b>Brouwmeester</b></td><td>Maakt, bewerkt en verwijdert alle recepten, ingrediënten en installatiegegevens van de brouwerij; houdt brouwsels bij.</td></tr>
             <tr><td><b>Brouwer</b></td><td>Houdt brouwsels bij; bekijkt recepten (alleen lezen).</td></tr>
-            <tr><td><b>Proever</b></td><td>Bekijkt recepten en de lijst met brouwsels; voegt proefnotities toe vanuit het scherm Proefnotities.</td></tr>
+            <tr><td><b>Proever</b></td><td>Bekijkt recepten en de lijst met brouwsels (zonder ze te openen); voegt proefnotities toe.</td></tr>
           </tbody>
         </table>
         <h3>Uitnodigen en aansluiten</h3>
@@ -1674,7 +1676,8 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <p>Quand un lot est embouteillé, notez son goût : scores pour l'aspect, l'arôme, le goût et la sensation en bouche, un score global et un commentaire. Chaque membre de la brasserie peut ajouter des notes.</p>
         <h3>Ajouter une note</h3>
         <ul class="doc-list">
-          <li><strong>Commencez</strong> par <b>Notes de dégustation → Nouvelle note de dégustation</b> et choisissez le lot embouteillé, ou avec <b>Évaluer</b> sur un brassin embouteillé. Les dégustateurs commencent depuis Notes de dégustation ; ils n'ouvrent pas les brassins.</li>
+          <li><strong>Commencez</strong> de trois façons : <b>Notes de dégustation → Nouvelle note de dégustation</b> — les cinq lots embouteillés ou dégustés le plus récemment s'affichent, ou tapez une partie du nom de la recette ou le numéro de lot pour chercher ; <b>+ Note de dégustation</b> sur un lot de l'aperçu ; ou <b>Évaluer</b> sur un brassin embouteillé. Les dégustateurs voient la liste des brassins sans les ouvrir ; ils peuvent utiliser Évaluer.</li>
+          <li><strong>Épuisé</strong> — quand les bouteilles d'un lot sont bues, marquez-le <b>Épuisé</b> dans Brassins. Il n'est plus proposé pour de nouvelles notes (cochez « Aussi les lots épuisés » pour le voir quand même) ; ses notes restent.</li>
           <li><strong>Date de dégustation</strong> — aujourd'hui par défaut ; modifiez-la pour saisir une dégustation après coup. La note indique l'âge de la bière, p. ex. « 3 semaines après l'embouteillage ».</li>
           <li><strong>Dégustateur</strong> — vous, ou <b>un invité sans compte</b> : tapez son nom. Les notes d'invités portent l'étiquette <b>Invité</b> et « saisi par » avec votre nom. Il faut toujours être connecté pour ajouter des notes.</li>
         </ul>
@@ -1814,7 +1817,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
             <tr><td><b>Administrateur</b></td><td>Tout ce que peut un maître brasseur, plus les membres, les invitations et le nom de la brasserie.</td></tr>
             <tr><td><b>Maître brasseur</b></td><td>Crée, modifie et supprime toutes les recettes, ingrédients et données d'installation de la brasserie ; suit les brassins.</td></tr>
             <tr><td><b>Brasseur</b></td><td>Suit les brassins ; consulte les recettes (lecture seule).</td></tr>
-            <tr><td><b>Dégustateur</b></td><td>Consulte les recettes et la liste des brassins ; ajoute des notes depuis l'écran Notes de dégustation.</td></tr>
+            <tr><td><b>Dégustateur</b></td><td>Consulte les recettes et la liste des brassins (sans les ouvrir) ; ajoute des notes de dégustation.</td></tr>
           </tbody>
         </table>
         <h3>Inviter et rejoindre</h3>
