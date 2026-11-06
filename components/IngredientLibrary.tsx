@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { LibraryIngredient, MashStep } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
+import { canManageLibrary } from '../services/permissions';
 import { supabaseService } from '../services/supabaseService';
 import { formatStockAmount } from '../services/calculations';
 import { findDuplicateIngredients, uniqueName, privateLibraryNames, findPrivateIngredient, nameKey } from '../services/duplicates';
@@ -65,7 +66,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     replaceLocal(ingredients.filter(i => i.id !== item.id));
   };
 
-  const canEdit = breweryRole === 'admin' || breweryRole === 'brewmaster' || !breweryRole;
+  const canEdit = canManageLibrary({ breweryRole, isAdmin });
   const [filter, setFilter] = useState<'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style'>('fermentable');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});

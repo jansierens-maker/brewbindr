@@ -5,6 +5,7 @@ import { Language } from './i18n';
 import { supabase } from './supabaseClient';
 import { authService } from './authService';
 import { breweryService } from './breweryService';
+import { canViewStock } from './permissions';
 
 interface UserContextType {
   user: User | null;
@@ -204,7 +205,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     preferences: {
       ...defaultPreferences,
       ...(user ? {} : { language: getDefaultLanguage() }),
-      ...profile?.preferences
+      ...profile?.preferences,
+      // Tasters do not see the stock, whatever their own setting says
+      ...(canViewStock({ breweryRole: profile?.brewery_role, isAdmin: profile?.role === 'admin' }) ? {} : { enableStockManagement: false })
     },
     updatePreferences,
     updateDisplayName,

@@ -35,10 +35,10 @@ SELECT lives_ok(
   $$INSERT INTO tasting_notes (id, data, user_id, brewery_id)
     SELECT 'n2', '{"brewLogId":"b1","guest_name":"Jef"}', auth.uid(), brewery_a FROM t$$,
   'a taster adds a note in their own name, also for a guest');
-SELECT throws_ok(
-  $$INSERT INTO tasting_notes (id, data, user_id, brewery_id)
-    SELECT 'nx', '{}', '00000000-0000-0000-0000-0000000000a3', brewery_a FROM t$$,
-  '42501', NULL, 'a note cannot be added in someone else''s name');
+INSERT INTO tasting_notes (id, data, user_id, brewery_id)
+  SELECT 'nx', '{}', '00000000-0000-0000-0000-0000000000a3', brewery_a FROM t;
+SELECT is((SELECT user_id FROM tasting_notes WHERE id = 'nx'), '00000000-0000-0000-0000-0000000000a2'::uuid,
+  'a note in someone else''s name is stored in the caller''s name');
 SELECT lives_ok($$UPDATE tasting_notes SET data = data || '{"overall":4}' WHERE id = 'n2'$$,
   'a taster changes their own note');
 UPDATE tasting_notes SET data = data || '{"overall":1}' WHERE id = 'n3';

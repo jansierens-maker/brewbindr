@@ -49,8 +49,13 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit }) =
 
   const remove = async (item: LibraryIngredient) => {
     if (!confirm(t('confirm_delete'))) return;
+    const before = library;
     onUpdate(library.filter(i => i.id !== item.id));
-    await supabaseService.deleteLibraryIngredient(item.id, 'water');
+    const result = await supabaseService.deleteLibraryIngredient(item.id, 'water');
+    if (result?.error) {
+      alert(`${t('delete_failed')}: ${result.error.message}`);
+      onUpdate(before);
+    }
   };
 
   const summary = (w: Partial<LibraryIngredient>) => {

@@ -27,3 +27,9 @@ export const canEditRecipe = (recipe: Pick<Recipe, 'user_id' | 'brewery_id' | 's
 /** Brewery roles that open and update brews (see the RLS policies on brew_logs); tasters only taste. */
 export const canManageBrews = (ctx: EditContext): boolean =>
   !!ctx.isAdmin || !ctx.breweryRole || ['admin', 'brewmaster', 'brewer'].includes(ctx.breweryRole);
+
+/** Library, stock, brewing installation and imports follow the recipe rights: brewery admins and brewmasters. */
+export const canManageLibrary = canManageRecipes;
+
+/** Tasters do not see the stock (nor what it says about recipes, like "brewable"). */
+export const canViewStock = (ctx: EditContext): boolean => !!ctx.isAdmin || ctx.breweryRole !== 'taster';

@@ -8,18 +8,21 @@ import { formatStockAmount } from '../services/calculations';
 interface VoorraadViewProps {
   ingredients: LibraryIngredient[];
   onUpdate: (ingredient: LibraryIngredient) => void;
+  /** Brewers and tasters see the stock but cannot change it */
+  readOnly?: boolean;
 }
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'type' | 'name' | 'stock_low' | 'stock_high';
 
-export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdate }) => {
+export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdate, readOnly = false }) => {
   const { t, lang } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTypes, setActiveTypes] = useState<string[]>(['fermentable', 'hop', 'culture', 'misc']);
   const [sortOption, setSortOption] = useState<SortOption>('type');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [editingIngredient, setEditingIngredient] = useState<LibraryIngredient | null>(null);
+  const startEdit = (ing: LibraryIngredient) => { if (!readOnly) setEditingIngredient(ing); };
 
   const stockableIngredients = useMemo(() => {
     return ingredients.filter(ing => ['fermentable', 'hop', 'culture', 'misc'].includes(ing.type));
@@ -118,6 +121,11 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
 
   return (
     <div className="space-y-6">
+      {readOnly && (
+        <p className="p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold text-[var(--color-text-muted)]">
+          <i className="fas fa-lock mr-2" aria-hidden="true"></i>{t('stock_read_only')}
+        </p>
+      )}
       {/* Filter Bar */}
       <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] p-4 shadow-[var(--shadow-sm)] flex flex-col md:flex-row items-center gap-4">
         {/* Type Toggles */}
@@ -214,7 +222,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
             return (
               <button
                 key={ing.id}
-                onClick={() => setEditingIngredient(ing)}
+                onClick={() => startEdit(ing)}
                 className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] p-4 flex flex-col items-center gap-2 hover:shadow-[var(--shadow)] hover:-translate-y-0.5 transition-all group text-left cursor-pointer"
               >
                 <div className={`w-1.5 h-1.5 rounded-full self-start mb-1 ${
@@ -254,7 +262,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                 return (
                   <tr
                     key={ing.id}
-                    onClick={() => setEditingIngredient(ing)}
+                    onClick={() => startEdit(ing)}
                     className="border-b border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3">
