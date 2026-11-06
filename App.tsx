@@ -31,7 +31,7 @@ import { breweryService } from './services/breweryService';
 import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
-type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'brews' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities';
+type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
 
 interface LanguageContextType {
@@ -122,6 +122,8 @@ const AppContent: React.FC = () => {
   
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [selectedBrewLog, setSelectedBrewLog] = useState<BrewLogEntry | null>(null);
+  // Where to go back to after saving a tasting note: the brews or the tasting notes list
+  const [tastingReturnView, setTastingReturnView] = useState<'brouwlogboek' | 'proefnotities'>('brouwlogboek');
   
   const [xmlUrl, setXmlUrl] = useState('');
   const [showFallbackModal, setShowFallbackModal] = useState(false);
@@ -616,7 +618,7 @@ const AppContent: React.FC = () => {
   const handleSaveAndExitBrewLog = (entry: BrewLogEntry) => {
     handleUpdateBrewLog(entry);
     setSelectedBrewLog(null);
-    setView('brews');
+    setView('brouwlogboek');
   };
 
   const handleExportData = () => {
@@ -1098,7 +1100,6 @@ const AppContent: React.FC = () => {
       case 'importeren': return t('nav_import');
       case 'brouwinstallatie': return t('nav_installation');
       case 'library': return t('nav_library');
-      case 'brews': return t('nav_brews');
       case 'settings': return t('settings_label');
       case 'admin': return t('nav_admin');
       case 'help': return t('help_nav_label');
@@ -1809,10 +1810,10 @@ const AppContent: React.FC = () => {
                 </div>
               )}
               {view === 'brouwlogboek' && (
-                <BrewLogView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('tasting'); } }} onPrintReport={handlePrintBrewReport} />
+                <BrewLogView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setTastingReturnView('brouwlogboek'); setView('tasting'); } }} onPrintReport={handlePrintBrewReport} />
               )}
               {view === 'proefnotities' && (
-                <TastingNotesView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('tasting'); } }} />
+                <TastingNotesView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} onAddTasting={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setTastingReturnView('proefnotities'); setView('tasting'); } }} />
               )}
               {view === 'log' && selectedRecipe && (
                 <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} equipment={resolveEquipment(selectedRecipe, deduplicatedLibrary)} library={deduplicatedLibrary} />
@@ -1900,7 +1901,7 @@ const AppContent: React.FC = () => {
                     if (user?.id) {
                       await supabaseService.saveTastingNote(targetNote, user.id, profile?.brewery_id);
                     }
-                    setView('brews');
+                    setView(tastingReturnView);
                   }}
                 />
               )}
