@@ -63,3 +63,12 @@ describe('rights per brewery role (mirror the RLS policies)', () => {
     expect(canManageLibrary({})).toBe(true);
   });
 });
+
+import { canViewStock } from '../../services/permissions';
+describe('stock visibility', () => {
+  it('is hidden for tasters only', () => {
+    expect(['admin', 'brewmaster', 'brewer', 'taster'].map(r => canViewStock({ breweryRole: r }))).toEqual([true, true, true, false]);
+    expect(canViewStock({ breweryRole: 'taster', isAdmin: true })).toBe(true);
+    expect(canViewStock({})).toBe(true);
+  });
+});

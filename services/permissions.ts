@@ -30,3 +30,6 @@ export const canManageBrews = (ctx: EditContext): boolean =>
 
 /** Library, stock, brewing installation and imports follow the recipe rights: brewery admins and brewmasters. */
 export const canManageLibrary = canManageRecipes;
+
+/** Tasters do not see the stock (nor what it says about recipes, like "brewable"). */
+export const canViewStock = (ctx: EditContext): boolean => !!ctx.isAdmin || ctx.breweryRole !== 'taster';

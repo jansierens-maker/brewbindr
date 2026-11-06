@@ -3,9 +3,10 @@ import { useUser } from '../services/userContext';
 import { useTranslation } from '../App';
 import { Language } from '../services/i18n';
 import BrewerySettings from './BrewerySettings';
+import { canViewStock } from '../services/permissions';
 
 const Settings: React.FC = () => {
-  const { preferences, updatePreferences, updateDisplayName, signOut, user, profile } = useUser();
+  const { preferences, updatePreferences, updateDisplayName, signOut, user, profile, breweryRole, isAdmin } = useUser();
   const { t } = useTranslation();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -166,7 +167,8 @@ const Settings: React.FC = () => {
             </div>
           </div>
 
-          {/* Stock Management Setting */}
+          {/* Stock Management Setting: not for tasters */}
+          {canViewStock({ breweryRole, isAdmin }) && (
           <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8 flex flex-col">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -197,6 +199,7 @@ const Settings: React.FC = () => {
               </p>
             </div>
           </div>
+          )}
 
           {/* Language Preferences */}
           <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8">
