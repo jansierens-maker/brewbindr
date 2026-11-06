@@ -26,7 +26,7 @@ React 19, TypeScript (strict), Vite 8, Tailwind CSS 4 · Supabase (Auth, Postgre
 
 ## Prerequisites
 
-- **Node.js** 22
+- **Node.js** 26 (the version Vercel runs; set in `package.json` → `engines`)
 - A **Supabase** project
 - A **Google Gemini API key** for the AI features
 - A **Resend API key** for invitation e-mails
