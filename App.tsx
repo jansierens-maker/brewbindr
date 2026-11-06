@@ -21,7 +21,7 @@ import { InfoBanner } from './components/InfoBanner';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment } from './services/calculations';
-import { canEditRecipe, canManageBrews } from './services/permissions';
+import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes } from './services/permissions';
 import { Taster, batchNumbers, memberName } from './services/tasting';
 import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
@@ -356,6 +356,27 @@ const AppContent: React.FC = () => {
   }, [members, user?.id, user?.email, profile?.display_name]);
   const myTasterName = memberName(tasters.find(m => m.id === user?.id)) || user?.email || '';
   const brewManager = canManageBrews({ isAdmin, breweryRole: profile?.brewery_role ?? null });
+  // Recipes, library, stock and imports: brewery admins and brewmasters (see the RLS policies)
+  const recipeManager = canManageRecipes({ isAdmin, breweryRole: profile?.brewery_role ?? null });
+  const libraryManager = canManageLibrary({ isAdmin, breweryRole: profile?.brewery_role ?? null });
+
+  /** Shows a failed save or delete; returns true when it failed. */
+  const reportFailure = (result: { error?: { message?: string } | null } | null | undefined, kind: 'save' | 'delete' = 'save'): boolean => {
+    if (!result?.error) return false;
+    alert(`${t(kind === 'save' ? 'save_failed' : 'delete_failed')}: ${result.error.message || ''}`);
+    return true;
+  };
+
+  /** After a failed save: show what is really stored. */
+  const reloadFromServer = async () => {
+    if (!user?.id) return;
+    const remote = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
+    if (!remote) return;
+    setRecipes(withoutDeleted(remote.recipes));
+    setBrewLogs(remote.brewLogs);
+    setTastingNotes(remote.tastingNotes);
+    if (remote.library) setLibrary(remote.library);
+  };
 
   useEffect(() => {
     if (view !== 'proefnotities') setNotesBatch(undefined);
@@ -682,7 +703,8 @@ const AppContent: React.FC = () => {
       return [targetLog, ...prev];
     });
     if (user?.id) {
-      await supabaseService.saveBrewLog(targetLog, targetLog.user_id || user.id, targetLog.brewery_id || profile?.brewery_id);
+      const result = await supabaseService.saveBrewLog(targetLog, targetLog.user_id || user.id, targetLog.brewery_id || profile?.brewery_id);
+      if (reportFailure(result)) await reloadFromServer();
     }
   };
 
@@ -1485,7 +1507,7 @@ const AppContent: React.FC = () => {
           <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-w)]">
             <Topbar
               title={getPageTitle()}
-              showNewRecipeButton={view === 'recipes' && libraryView === 'personal'}
+              showNewRecipeButton={view === 'recipes' && libraryView === 'personal' && recipeManager}
               isGuest={!user}
               syncError={syncError}
               onRefresh={handleRefreshAppData}
@@ -1715,7 +1737,7 @@ const AppContent: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {['all', 'brewable'].includes(recipeTab) ? (
                       <>
-                        {libraryView === 'personal' && (
+                        {libraryView === 'personal' && recipeManager && (
                           <button
                             onClick={() => { setSelectedRecipe(null); setView('create'); }}
                             className="bg-white rounded-3xl border-2 border-dashed border-stone-200 p-6 hover:border-amber-500 hover:bg-amber-50/30 transition-all flex flex-col items-center justify-center gap-4 group h-full min-h-[300px]"
@@ -1779,11 +1801,11 @@ const AppContent: React.FC = () => {
                             </div>
                             <div className="flex flex-col gap-2 mt-auto">
                               <div className="flex gap-2">
-                                <button onClick={() => { setSelectedRecipe(r); setSelectedBrewLog(null); setView('log'); }} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">{t('brew_btn')}</button>
+                                {brewManager && <button onClick={() => { setSelectedRecipe(r); setSelectedBrewLog(null); setView('log'); }} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">{t('brew_btn')}</button>}
                                 {libraryView === 'personal' && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">{canEditRecipe(r, editContext) ? t('edit_btn') : t('view_btn')}</button>}
                               </div>
 
-                              {libraryView === 'public' && (
+                              {libraryView === 'public' && (!user || recipeManager) && (
                                 <button
                                   onClick={() => handleRecipeAddToPersonal(r)}
                                   className="w-full bg-stone-900 text-white text-[10px] font-black uppercase py-3 rounded-xl hover:bg-black transition-all tracking-widest"
@@ -1849,7 +1871,7 @@ const AppContent: React.FC = () => {
                                   <p className="font-bold text-xs">{log.measurements.actual_fg?.toFixed(3) || '-'}</p>
                                 </div>
                               </div>
-                              <button
+                              {brewManager && (<button
                                 onClick={() => {
                                   setSelectedBrewLog(log);
                                   setSelectedRecipe(recipe || null);
@@ -1858,7 +1880,7 @@ const AppContent: React.FC = () => {
                                 className="w-full bg-[var(--color-text)] text-white text-xs font-bold py-3 rounded-xl hover:opacity-90 transition-all shadow-lg"
                               >
                                 {log.status === 'bottled' ? t('view_btn') : t('update_btn')}
-                              </button>
+                              </button>)}
                             </div>
                           );
                         })}
@@ -1950,7 +1972,8 @@ const AppContent: React.FC = () => {
 
                     if (user?.id && changed.length > 0) {
                       for (const item of changed) {
-                        await supabaseService.saveLibraryIngredient(item, user.id, profile?.brewery_id);
+                        const result = await supabaseService.saveLibraryIngredient(item, item.user_id || user.id, item.brewery_id || profile?.brewery_id);
+                        if (reportFailure(result)) { await reloadFromServer(); break; }
                       }
                     }
                   }}
@@ -1990,10 +2013,12 @@ const AppContent: React.FC = () => {
               {view === 'voorraad' && (
                 <VoorraadView
                   ingredients={library}
+                  readOnly={!libraryManager}
                   onUpdate={async (item) => {
                     setLibrary(prev => prev.map(l => l.id === item.id ? item : l));
                     if (user?.id) {
-                      await supabaseService.saveLibraryIngredient(item, user.id, profile?.brewery_id);
+                      const result = await supabaseService.saveLibraryIngredient(item, item.user_id || user.id, item.brewery_id || profile?.brewery_id);
+                      if (reportFailure(result)) await reloadFromServer();
                     }
                   }}
                 />
@@ -2006,6 +2031,7 @@ const AppContent: React.FC = () => {
                   xmlUrl={xmlUrl}
                   onXmlUrlChange={setXmlUrl}
                   onUrlImport={handleUrlImport}
+                  canImport={libraryManager}
                 />
               )}
 

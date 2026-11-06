@@ -43,3 +43,23 @@ describe('canManageRecipes', () => {
     expect(canManageRecipes({ breweryRole: 'taster', isAdmin: true })).toBe(true);
   });
 });
+
+import { canManageBrews, canManageLibrary } from '../../services/permissions';
+describe('rights per brewery role (mirror the RLS policies)', () => {
+  const roles = ['admin', 'brewmaster', 'brewer', 'taster'] as const;
+  it('brews: admin, brewmaster and brewer; not taster', () => {
+    expect(roles.map(r => canManageBrews({ breweryRole: r }))).toEqual([true, true, true, false]);
+  });
+  it('recipes and library: admin and brewmaster only', () => {
+    expect(roles.map(r => canManageRecipes({ breweryRole: r }))).toEqual([true, true, false, false]);
+    expect(roles.map(r => canManageLibrary({ breweryRole: r }))).toEqual([true, true, false, false]);
+  });
+  it('the app admin may do everything', () => {
+    expect(canManageBrews({ breweryRole: 'taster', isAdmin: true })).toBe(true);
+    expect(canManageLibrary({ breweryRole: 'taster', isAdmin: true })).toBe(true);
+  });
+  it('without a brewery (local use) nothing is blocked', () => {
+    expect(canManageBrews({})).toBe(true);
+    expect(canManageLibrary({})).toBe(true);
+  });
+});

@@ -9,6 +9,8 @@ interface ImportViewProps {
   xmlUrl: string;
   onXmlUrlChange: (url: string) => void;
   onUrlImport: () => void;
+  /** Brewery admins and brewmasters import; others can still export */
+  canImport: boolean;
 }
 
 const ImportView: React.FC<ImportViewProps> = ({
@@ -17,10 +19,12 @@ const ImportView: React.FC<ImportViewProps> = ({
   importStatus,
   xmlUrl,
   onXmlUrlChange,
-  onUrlImport
+  onUrlImport,
+  canImport
 }) => {
   const { t } = useTranslation();
   const { user } = useUser();
+  const allowed = !!user && canImport;
 
   return (
     <div className="space-y-12 animate-in fade-in duration-500">
@@ -46,8 +50,14 @@ const ImportView: React.FC<ImportViewProps> = ({
                 <p className="text-xs font-bold">{t('login_to_import')}</p>
               </div>
             )}
+            {user && !canImport && (
+              <div className="p-4 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] flex items-center gap-3 text-[var(--color-text-muted)]">
+                <i className="fas fa-lock" aria-hidden="true"></i>
+                <p className="text-xs font-bold">{t('import_role_note')}</p>
+              </div>
+            )}
 
-            <div className="space-y-4" style={{ opacity: user ? 1 : 0.5, pointerEvents: user ? 'auto' : 'none' }}>
+            <div className="space-y-4" style={{ opacity: allowed ? 1 : 0.5, pointerEvents: allowed ? 'auto' : 'none' }}>
               <p className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('via_file')}</p>
               <label className="group flex flex-col items-center justify-center w-full h-64 bg-[var(--color-bg-subtle)] border-2 border-dashed border-[var(--color-border)] rounded-[var(--radius)] cursor-pointer hover:bg-[var(--color-accent-light)] hover:border-[var(--color-accent)] transition-all">
                 <div className="w-16 h-16 bg-[var(--color-bg)] rounded-2xl flex items-center justify-center shadow-sm mb-4 group-hover:bg-[var(--color-accent)] group-hover:text-white transition-all">
@@ -62,7 +72,7 @@ const ImportView: React.FC<ImportViewProps> = ({
                   className="hidden"
                   accept=".xml,.beerxml"
                   onChange={onFileImport}
-                  disabled={!user}
+                  disabled={!allowed}
                   aria-label={t('upload_beerxml')}
                 />
               </label>
@@ -78,13 +88,13 @@ const ImportView: React.FC<ImportViewProps> = ({
                     className="flex-1 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all"
                     value={xmlUrl}
                     onChange={(e) => onXmlUrlChange(e.target.value)}
-                    disabled={!user}
+                    disabled={!allowed}
                     aria-label={t('recipe_xml_url')}
                   />
                   <button
                     onClick={onUrlImport}
                     className="bg-[var(--color-text)] text-white px-8 py-3 rounded-[var(--radius-sm)] font-bold text-sm shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
-                    disabled={!user || !xmlUrl}
+                    disabled={!allowed || !xmlUrl}
                   >
                     {t('import_btn')}
                   </button>

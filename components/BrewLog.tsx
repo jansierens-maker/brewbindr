@@ -4,6 +4,7 @@ import { Recipe, BrewLogEntry, LibraryIngredient } from '../types';
 import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
+import { canManageBrews } from '../services/permissions';
 import GravityInput from './GravityInput';
 import YeastPitch from './YeastPitch';
 import WaterPlanCard from './WaterPlanCard';
@@ -22,9 +23,9 @@ interface BrewLogProps {
 
 const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit, equipment, library = [] }) => {
   const { t, lang } = useTranslation();
-  const { preferences, breweryRole } = useUser();
+  const { preferences, breweryRole, isAdmin } = useUser();
 
-  const canEdit = breweryRole !== 'taster';
+  const canEdit = canManageBrews({ breweryRole, isAdmin });
   const [activeTab, setActiveTab] = useState<'brew' | 'ferment' | 'lager' | 'bottle'>('brew');
   const [saveIndicator, setSaveIndicator] = useState<boolean>(false);
   

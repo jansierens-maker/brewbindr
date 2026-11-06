@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { LibraryIngredient, MashStep, Vessel } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
+import { canManageLibrary } from '../services/permissions';
 import { supabaseService } from '../services/supabaseService';
 import { equipmentCapacity } from '../services/calculations';
 import WaterProfilesManager from './WaterProfilesManager';
@@ -131,14 +132,14 @@ const PRESETS: EquipmentPreset[] = [
 
 const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
   const { t } = useTranslation();
-  const { user, profile, breweryRole } = useUser();
+  const { user, profile, breweryRole, isAdmin } = useUser();
   const [activeTab, setActiveTab] = useState<'equipment' | 'mash' | 'water'>('equipment');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
   const [itemToDelete, setItemToDelete] = useState<LibraryIngredient | null>(null);
   const [creationStep, setCreationStep] = useState<1 | 2>(1);
 
-  const canEdit = breweryRole === 'admin' || breweryRole === 'brewmaster' || !breweryRole;
+  const canEdit = canManageLibrary({ breweryRole, isAdmin });
 
   const equipment = useMemo(() => library.filter(i => i.type === 'equipment' && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)), [library, profile?.brewery_id, user?.id]);
   const mashProfiles = useMemo(() => library.filter(i => i.type === 'mash_profile' && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)), [library, profile?.brewery_id, user?.id]);
@@ -166,7 +167,8 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
     }
 
     if (user?.id) {
-      await supabaseService.saveLibraryIngredient(updatedItem, user.id, profile?.brewery_id);
+      const result = await supabaseService.saveLibraryIngredient(updatedItem, updatedItem.user_id || user.id, updatedItem.brewery_id || profile?.brewery_id);
+      if (result?.error) alert(`${t('save_failed')}: ${result.error.message}`);
     }
 
     setEditingId(null);
@@ -232,8 +234,13 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
 
   const confirmDelete = async () => {
     if (itemToDelete) {
+      const before = library;
       onUpdate(library.filter(i => i.id !== itemToDelete.id));
-      await supabaseService.deleteLibraryIngredient(itemToDelete.id, itemToDelete.type);
+      const result = await supabaseService.deleteLibraryIngredient(itemToDelete.id, itemToDelete.type);
+      if (result?.error) {
+        alert(`${t('delete_failed')}: ${result.error.message}`);
+        onUpdate(before);
+      }
       setItemToDelete(null);
     }
   };
