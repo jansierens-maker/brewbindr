@@ -15,8 +15,13 @@ on:
 jobs:
   e2e:
     name: Playwright E2E
-    # Only run once a deployment has succeeded (Vercel also sends pending/failure events)
-    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+    # Only run once a deployment has succeeded (Vercel also sends pending/failure events),
+    # and only for Vercel: the Database workflow's approval for the "production"
+    # environment also creates a GitHub deployment, whose URL is the Actions run page.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       !startsWith(github.event.deployment_status.environment_url || github.event.deployment_status.target_url, 'https://github.com/'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
