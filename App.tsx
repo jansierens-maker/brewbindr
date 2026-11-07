@@ -325,6 +325,34 @@ const AppContent: React.FC = () => {
   // Recipes deleted in this session. A fetch or realtime event that was already
   // on its way can still contain them; without this they would reappear.
   const deletedRecipeIds = useRef(new Set<string>());
+
+  // Saves and deletes in flight, and a counter that changes with every one of them.
+  // Loading all data takes a moment; a save made meanwhile would be overwritten by
+  // the loaded data (and realtime is not listening yet), so the load waits and retries.
+  const localWrites = useRef({ pending: 0, seq: 0 });
+  const trackWrite = async <T,>(write: () => Promise<T>): Promise<T> => {
+    localWrites.current.pending++;
+    localWrites.current.seq++;
+    try {
+      return await write();
+    } finally {
+      localWrites.current.pending--;
+      localWrites.current.seq++;
+    }
+  };
+  /** Loads all data; loads again when something was saved while loading. */
+  const fetchAppDataStable = async (isCancelled: () => boolean, userId?: string, breweryId?: string) => {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      while (localWrites.current.pending > 0) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        if (isCancelled()) return null;
+      }
+      const seq = localWrites.current.seq;
+      const data = await supabaseService.fetchAppData(userId, breweryId);
+      if (isCancelled() || localWrites.current.seq === seq) return data;
+    }
+    return supabaseService.fetchAppData(userId, breweryId);
+  };
   const withoutDeleted = (list: Recipe[]) =>
     deletedRecipeIds.current.size ? list.filter(r => !r.id || !deletedRecipeIds.current.has(r.id)) : list;
 
@@ -405,8 +433,8 @@ const AppContent: React.FC = () => {
     setView(tastingReturnView);
     if (!user?.id) return;
     const result = existing
-      ? await supabaseService.updateTastingNote(target)
-      : await supabaseService.saveTastingNote(target, user.id, profile?.brewery_id);
+      ? await trackWrite(() => supabaseService.updateTastingNote(target))
+      : await trackWrite(() => supabaseService.saveTastingNote(target, user.id, profile?.brewery_id));
     if (result?.error) {
       alert(`${t('save_failed')}: ${result.error.message}`);
       const remote = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
@@ -426,7 +454,7 @@ const AppContent: React.FC = () => {
     const before = tastingNotes;
     setTastingNotes(prev => prev.filter(n => n.id !== id));
     if (!user?.id) return;
-    const result = await supabaseService.deleteTastingNote(id);
+    const result = await trackWrite(() => supabaseService.deleteTastingNote(id));
     if (result?.error) {
       alert(`${t('delete_failed')}: ${result.error.message}`);
       setTastingNotes(before);
@@ -509,7 +537,7 @@ const AppContent: React.FC = () => {
           }
         }
 
-        const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
+        const remoteData = await fetchAppDataStable(() => cancelled, user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
         if (cancelled) return;
         if (remoteData) {
           setRecipes(withoutDeleted(remoteData.recipes));
@@ -615,7 +643,7 @@ const AppContent: React.FC = () => {
     if (newIngredients.length > 0) {
       setLibrary(prev => [...prev, ...newIngredients]);
       if (user?.id) {
-        await supabaseService.batchSaveLibraryIngredients(newIngredients, user.id, profile?.brewery_id);
+        await trackWrite(() => supabaseService.batchSaveLibraryIngredients(newIngredients, user.id, profile?.brewery_id));
       }
     }
 
@@ -631,7 +659,7 @@ const AppContent: React.FC = () => {
 
     if (user?.id) {
       // Keep the original maker when a brewery admin edits a colleague's recipe
-      const result = await supabaseService.saveRecipe(targetRecipe, targetRecipe.user_id || user.id, targetRecipe.brewery_id || profile?.brewery_id);
+      const result = await trackWrite(() => supabaseService.saveRecipe(targetRecipe, targetRecipe.user_id || user.id, targetRecipe.brewery_id || profile?.brewery_id));
       if (result?.error) {
         alert(isUniqueViolation(result.error)
           ? t('recipe_name_taken').replace('{name}', targetRecipe.name)
@@ -672,7 +700,7 @@ const AppContent: React.FC = () => {
     if (!confirm(question)) return false;
 
     if (user?.id) {
-      const result = await supabaseService.deleteRecipeCascade(id, withBrews);
+      const result = await trackWrite(() => supabaseService.deleteRecipeCascade(id, withBrews));
       if (result?.error) {
         alert(`${t('delete_failed')}: ${result.error.message}`);
         return false;
@@ -704,7 +732,7 @@ const AppContent: React.FC = () => {
       return [targetLog, ...prev];
     });
     if (user?.id) {
-      const result = await supabaseService.saveBrewLog(targetLog, targetLog.user_id || user.id, targetLog.brewery_id || profile?.brewery_id);
+      const result = await trackWrite(() => supabaseService.saveBrewLog(targetLog, targetLog.user_id || user.id, targetLog.brewery_id || profile?.brewery_id));
       if (reportFailure(result)) await reloadFromServer();
     }
   };
@@ -1975,7 +2003,7 @@ const AppContent: React.FC = () => {
 
                     if (user?.id && changed.length > 0) {
                       for (const item of changed) {
-                        const result = await supabaseService.saveLibraryIngredient(item, item.user_id || user.id, item.brewery_id || profile?.brewery_id);
+                        const result = await trackWrite(() => supabaseService.saveLibraryIngredient(item, item.user_id || user.id, item.brewery_id || profile?.brewery_id));
                         if (reportFailure(result)) { await reloadFromServer(); break; }
                       }
                     }
@@ -2020,7 +2048,7 @@ const AppContent: React.FC = () => {
                   onUpdate={async (item) => {
                     setLibrary(prev => prev.map(l => l.id === item.id ? item : l));
                     if (user?.id) {
-                      const result = await supabaseService.saveLibraryIngredient(item, item.user_id || user.id, item.brewery_id || profile?.brewery_id);
+                      const result = await trackWrite(() => supabaseService.saveLibraryIngredient(item, item.user_id || user.id, item.brewery_id || profile?.brewery_id));
                       if (reportFailure(result)) await reloadFromServer();
                     }
                   }}
