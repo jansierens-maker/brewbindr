@@ -91,7 +91,8 @@ export const breweryService = {
     });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Failed to send email');
+      // code: invite_resend_limit or invite_daily_limit when a limit was reached
+      throw Object.assign(new Error(errData.error || 'Failed to send email'), { code: errData.code as string | undefined });
     }
   },
 
