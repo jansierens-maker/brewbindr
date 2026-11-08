@@ -720,7 +720,9 @@ export const translations = {
     auth_switch_to_signup: "Don't have an account? Sign Up",
     auth_switch_to_signin: "Already have an account? Sign In",
     auth_error_invalid_email: "Invalid email address",
-    auth_error_password_short: "Password must be at least 6 characters",
+    auth_error_password_short: "Password must be at least {n} characters",
+    auth_password_hint: "At least {n} characters. Passwords known from data breaches are refused.",
+    auth_error_password_pwned: "This password appears {n} times in known data breaches. Choose another one.",
     auth_error_generic: "An error occurred",
     auth_signup_confirm: "Check your email for the confirmation link!"
   },
@@ -1443,7 +1445,9 @@ export const translations = {
     auth_switch_to_signup: "Nog geen account? Registreren",
     auth_switch_to_signin: "Heb je al een account? Aanmelden",
     auth_error_invalid_email: "Ongeldig e-mailadres",
-    auth_error_password_short: "Wachtwoord moet minstens 6 tekens bevatten",
+    auth_error_password_short: "Wachtwoord moet minstens {n} tekens bevatten",
+    auth_password_hint: "Minstens {n} tekens. Wachtwoorden die in datalekken voorkomen, worden geweigerd.",
+    auth_error_password_pwned: "Dit wachtwoord komt {n} keer voor in bekende datalekken. Kies een ander.",
     auth_error_generic: "Er is een fout opgetreden",
     auth_signup_confirm: "Check je e-mail voor de bevestigingslink!"
   },
@@ -2166,7 +2170,9 @@ export const translations = {
     auth_switch_to_signup: "Pas encore de compte ? S'inscrire",
     auth_switch_to_signin: "Vous avez déjà un compte ? Se connecter",
     auth_error_invalid_email: "Adresse e-mail invalide",
-    auth_error_password_short: "Le mot de passe doit comporter au moins 6 caractères",
+    auth_error_password_short: "Le mot de passe doit comporter au moins {n} caractères",
+    auth_password_hint: "Au moins {n} caractères. Les mots de passe connus de fuites de données sont refusés.",
+    auth_error_password_pwned: "Ce mot de passe apparaît {n} fois dans des fuites de données connues. Choisissez-en un autre.",
     auth_error_generic: "Une erreur est survenue",
     auth_signup_confirm: "Consultez votre boîte e-mail pour le lien de confirmation !"
   }
