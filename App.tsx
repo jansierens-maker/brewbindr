@@ -23,6 +23,7 @@ import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment } from './services/calculations';
 import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes, canPublish } from './services/permissions';
 import { Taster, batchNumbers, memberName } from './services/tasting';
+import { URL_IMPORT_ENABLED } from './services/features';
 import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
@@ -1022,6 +1023,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleUrlImport = async (urlInput?: any) => {
+    if (!URL_IMPORT_ENABLED) return; // switched off for now (#121)
     const targetUrl = typeof urlInput === 'string' ? urlInput : xmlUrl;
     if (!targetUrl) return;
 

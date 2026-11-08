@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
+import { URL_IMPORT_ENABLED } from '../services/features';
 
 interface ImportViewProps {
   onFileImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -77,6 +78,8 @@ const ImportView: React.FC<ImportViewProps> = ({
                 />
               </label>
 
+              {/* URL import is switched off for now (#121) */}
+              {URL_IMPORT_ENABLED && (
               <div className="pt-4 space-y-4 border-t border-[var(--color-border)]">
                 <p className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('via_url')}</p>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -100,6 +103,7 @@ const ImportView: React.FC<ImportViewProps> = ({
                   </button>
                 </div>
               </div>
+              )}
             </div>
 
             {importStatus !== 'idle' && (
