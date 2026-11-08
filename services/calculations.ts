@@ -439,9 +439,16 @@ export const resolveEquipment = (recipe: Pick<Recipe, 'equipmentId'>, library: L
  * Capacity of installations whose stored settings predate the capacity fields, by preset.
  * Brewie: 22 L water + grain in the mash tank (27 L), about 1 L per kg for grain and bag,
  * 23 L boil tank (Brewie's own guidance, as published by Brewie distributors).
+ * Brew Monk: 40/50/70 L kettle with malt pipe, at most 8/12/18 kg of malt (Brouwland).
+ * Grainfather G40: at most 13 kg of grain, 46 L boil volume (Grainfather).
  */
-const PRESET_CAPACITY: Record<string, Pick<LibraryIngredient, 'mash_capacity' | 'grain_displacement' | 'boil_capacity'>> = {
+type PresetCapacity = Pick<LibraryIngredient, 'mash_capacity' | 'grain_displacement' | 'boil_capacity' | 'max_grain_kg'>;
+const PRESET_CAPACITY: Record<string, PresetCapacity> = {
   Brewie: { mash_capacity: 22, grain_displacement: 1.0, boil_capacity: 23 },
+  'Brew Monk B40': { mash_capacity: 40, boil_capacity: 40, max_grain_kg: 8 },
+  'Brew Monk B50': { mash_capacity: 50, boil_capacity: 50, max_grain_kg: 12 },
+  'Brew Monk B70': { mash_capacity: 70, boil_capacity: 70, max_grain_kg: 18 },
+  'Grainfather G40': { mash_capacity: 46, boil_capacity: 46, max_grain_kg: 13 },
 };
 export const DEFAULT_GRAIN_DISPLACEMENT_L_PER_KG = 0.7;
 /** Below this the mash is too thick to stir or pump. */
@@ -449,17 +456,18 @@ export const MIN_MASH_RATIO_L_PER_KG = 2.0;
 
 /** The installation's capacity settings, falling back to its preset. */
 export const equipmentCapacity = (equipment: LibraryIngredient) => {
-  const preset = (equipment.preset && PRESET_CAPACITY[equipment.preset]) || {};
+  const preset: PresetCapacity = (equipment.preset && PRESET_CAPACITY[equipment.preset]) || {};
   const biab = equipment.equipment_type === 'biab';
   return {
     mashCapacity: equipment.mash_capacity ?? preset.mash_capacity,
     grainDisplacement: equipment.grain_displacement ?? preset.grain_displacement ?? DEFAULT_GRAIN_DISPLACEMENT_L_PER_KG,
     grainAbsorption: equipment.grain_absorption ?? (biab ? BIAB_GRAIN_ABSORPTION_L_PER_KG : GRAIN_ABSORPTION_L_PER_KG),
     boilCapacity: equipment.boil_capacity ?? preset.boil_capacity,
+    maxGrainKg: equipment.max_grain_kg ?? preset.max_grain_kg,
   };
 };
 
-export type WaterWarning = 'mash_capped' | 'too_much_grain' | 'mash_over_capacity' | 'boil_over_capacity';
+export type WaterWarning = 'mash_capped' | 'too_much_grain' | 'grain_over_capacity' | 'mash_over_capacity' | 'boil_over_capacity';
 
 export interface WaterPlan {
   grainKg: number;
@@ -520,6 +528,7 @@ export const waterPlan = (recipe: Recipe, equipment: LibraryIngredient, og?: num
     warnings.push('mash_capped');
   }
   if (grainKg > 0 && maxMashL !== undefined && maxMashL / grainKg < MIN_MASH_RATIO_L_PER_KG) warnings.push('too_much_grain');
+  if (cap.maxGrainKg !== undefined && grainKg > cap.maxGrainKg + 0.005) warnings.push('grain_over_capacity');
   const suggestedSpargeL = Math.max(0, neededTotal - suggestedMashL);
 
   // What will be used: own values where given

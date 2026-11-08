@@ -105,6 +105,7 @@ export interface LibraryIngredient {
   grain_displacement?: number; // L per kg: room the grain (and bag) takes in the mash
   grain_absorption?: number;   // L per kg: water the spent grain keeps
   boil_capacity?: number;      // L: most wort the boil kettle takes
+  max_grain_kg?: number;       // kg: most grain the mash tun / malt pipe takes
 
   // Water profile (mg/L)
   calcium?: number;

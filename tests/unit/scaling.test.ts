@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { scaleRecipe, fitProblems, suggestScale } from '../../services/scaling';
-import { waterPlan } from '../../services/calculations';
+import { equipmentCapacity, waterPlan } from '../../services/calculations';
 import { LibraryIngredient, Recipe } from '../../types';
 
 const brewie = {
@@ -96,3 +96,27 @@ describe('fit on the Brewie (22 L mash, 1 L/kg grain, 23 L kettle, 23 L batch)',
     expect(suggestScale(recipe(23, 6), undefined)).toBeNull();
   });
 });
+
+describe('Brew Monk B40 (40 L kettle, at most 8 kg malt)', () => {
+  const b40 = {
+    id: 'e2', name: 'Brew Monk B40', type: 'equipment', preset: 'Brew Monk B40', equipment_type: 'all_in_one',
+    batch_size: 30, boil_time: 60, evap_rate: 3, trub_chiller_loss: 2, top_up_water: 0,
+  } as unknown as LibraryIngredient;
+  it('takes its capacity from the preset', () => {
+    expect(equipmentCapacity(b40)).toMatchObject({ boilCapacity: 40, maxGrainKg: 8 });
+  });
+  it('warns about more malt than the malt pipe takes and scales down to fit', () => {
+    const r = recipe(25, 9); // 9 kg pils (+ 0.75 kg sugar, which is no grain)
+    expect(waterPlan(r, b40).warnings).toContain('grain_over_capacity');
+    const s = suggestScale(r, b40)!;
+    expect(s.direction).toBe('down');
+    expect(s.problems).toEqual(['grain']);
+    const scaled = scaleRecipe(r, s.factor);
+    expect(scaled.ingredients.fermentables[0].amount.value).toBeLessThanOrEqual(8);
+    expect(fitProblems(scaled, b40)).toEqual([]);
+  });
+  it('an own maximum overrides the preset', () => {
+    expect(fitProblems(recipe(25, 9), { ...b40, max_grain_kg: 10 } as LibraryIngredient)).toEqual([]);
+  });
+});
+
