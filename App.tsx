@@ -1452,7 +1452,7 @@ const AppContent: React.FC = () => {
             <div className="p-4 md:p-8">
               <div className="max-w-4xl mx-auto bg-white shadow-2xl ring-1 ring-stone-200 print:shadow-none print:ring-0">
                 <Suspense fallback={<ScreenLoading />}>
-                  <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} />
+                  <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} equipment={printData.recipe ? resolveEquipment(printData.recipe, deduplicatedLibrary) : undefined} />
                 </Suspense>
               </div>
             </div>

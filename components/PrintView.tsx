@@ -1,21 +1,47 @@
 
 import React from 'react';
-import { Recipe, BrewLogEntry, TastingNote } from '../types';
+import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
 import { useTranslation } from '../App';
-import { calculateABV, formatBrewNumber, formatGravity } from '../services/calculations';
+import { calculateABV, calculateRecipeStats, equipmentCapacity, formatBrewNumber, formatGravity, waterPlan, WaterWarning } from '../services/calculations';
+import { SALTS, SaltId } from '../services/waterChemistry';
 import { useUser } from '../services/userContext';
 
 interface PrintViewProps {
   recipe?: Recipe;
   log?: BrewLogEntry;
   tastingNote?: TastingNote;
+  /** The recipe's brewing installation, for the water volumes */
+  equipment?: LibraryIngredient;
 }
 
-const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
+const SALT_KEYS = {
+  gypsum: 'salt_gypsum', cacl2: 'salt_cacl2', cacl2_33: 'salt_cacl2_33', cacl2_36: 'salt_cacl2_36',
+  epsom: 'salt_epsom', nacl: 'salt_nacl', nahco3: 'salt_nahco3',
+} as const satisfies Record<SaltId, string>;
+
+const WARNING_KEYS = {
+  mash_capped: 'water_warn_mash_capped',
+  too_much_grain: 'water_warn_too_much_grain',
+  mash_over_capacity: 'water_warn_mash_over_capacity',
+  boil_over_capacity: 'water_warn_boil_over_capacity',
+} as const satisfies Record<WaterWarning, string>;
+
+const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote, equipment }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
 
   if (!recipe) return null;
+
+  // Water: the same calculation as in the recipe (own values where set)
+  const plannedOg = equipment ? calculateRecipeStats(recipe, undefined, equipment).plannedOg : undefined;
+  const plan = equipment ? waterPlan(recipe, equipment, plannedOg) : undefined;
+  const volUnit = preferences.units === 'imperial' ? 'Gal' : 'L';
+  const tempUnit = preferences.units === 'imperial' ? '°F' : '°C';
+  const vol = (l: number) => `${formatBrewNumber(l, 'vol', lang, preferences)} ${volUnit}`;
+  const chem = recipe.water_chem;
+  const salts = chem?.salts || {};
+  const usedSalts = (Object.keys(SALT_KEYS) as SaltId[]).filter(id => (salts[id] ?? 0) > 0);
+  const hasTreatment = !!(chem && (usedSalts.length > 0 || chem.dilution_pct || chem.lactic_ml));
 
   const abv = log 
     ? calculateABV(log.measurements.actual_og, log.measurements.actual_fg, log.status === 'bottled', (log.bottling?.method === 'keg' ? 0 : log.bottling?.sugar_amount), log.bottling?.bottling_volume || log.measurements.actual_volume)
@@ -88,6 +114,60 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote }) => {
                 ))}
               </tbody>
             </table>
+          </section>
+        )}
+
+        {(plan || hasTreatment) && (
+          <section className="page-break-inside-avoid">
+            <h2 className="text-lg font-black uppercase border-b-2 border-stone-900 pb-2 mb-4">
+              {t('water_plan')}{equipment ? ` - ${equipment.name}` : ''}
+            </h2>
+            <div className="grid grid-cols-2 gap-12">
+              {plan && (
+                <div>
+                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">
+                    {plan.manual ? t('water_own') : t('water_suggested')}{recipe.water?.drain_all ? ` · ${t('drain_all_on')}` : ''}
+                  </p>
+                  <table className="w-full text-left">
+                    <tbody>
+                      <tr className="border-b border-stone-100"><td className="py-2">{t('water_mash')}</td><td className="py-2 text-right font-bold">{vol(plan.mashWaterL)}</td></tr>
+                      <tr className="border-b border-stone-100"><td className="py-2">{t('water_sparge')}</td><td className="py-2 text-right font-bold">{vol(plan.spargeWaterL)}</td></tr>
+                      <tr className="border-b border-stone-100"><td className="py-2">{t('water_total')}</td><td className="py-2 text-right font-bold">{vol(plan.totalWaterL)}</td></tr>
+                      {plan.strikeTempC !== undefined && (
+                        <tr className="border-b border-stone-100"><td className="py-2">{t('strike_temp')}</td><td className="py-2 text-right font-bold">{formatBrewNumber(plan.strikeTempC, 'temp', lang, preferences)}{tempUnit}</td></tr>
+                      )}
+                      <tr className="border-b border-stone-100"><td className="py-2">{t('pre_boil_volume')}</td><td className="py-2 text-right font-bold">{vol(plan.preBoilL)}</td></tr>
+                      <tr className="border-b border-stone-100"><td className="py-2">{t('post_boil_volume')}</td><td className="py-2 text-right font-bold">{vol(plan.postBoilL)}</td></tr>
+                      <tr className="border-b border-stone-100"><td className="py-2">{t('into_fermenter')}</td><td className="py-2 text-right font-bold">{vol(plan.intoFermenterL)}</td></tr>
+                      {plan.preBoilSg !== undefined && (
+                        <tr className="border-b border-stone-100"><td className="py-2">{t('pre_boil_gravity')}</td><td className="py-2 text-right font-bold">{formatGravity(plan.preBoilSg, lang, preferences.gravityUnit)}</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                  {plan.warnings.length > 0 && equipment && (
+                    <ul className="mt-3 space-y-1">
+                      {plan.warnings.map(w => (
+                        <li key={w} className="text-xs font-bold">
+                          ⚠ {t(WARNING_KEYS[w])
+                            .replace('{max}', plan.maxMashL !== undefined ? vol(plan.maxMashL) : '-')
+                            .replace('{boil}', vol(equipmentCapacity(equipment).boilCapacity ?? 0))}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              {hasTreatment && chem && (
+                <div>
+                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('water_treatment')}</p>
+                  <ul className="space-y-1 font-bold">
+                    {chem.dilution_pct && plan ? <li>{t('water_dilution_line').replace('{pct}', formatBrewNumber(chem.dilution_pct, 'default', lang)).replace('{l}', vol(plan.totalWaterL * chem.dilution_pct / 100))}</li> : null}
+                    {usedSalts.map(id => <li key={id}>{formatBrewNumber(salts[id]!, 'default', lang)} {SALTS[id].unit} {t(SALT_KEYS[id])}</li>)}
+                    {chem.lactic_ml ? <li>{formatBrewNumber(chem.lactic_ml, 'default', lang)} ml {t('lactic_acid_80')}</li> : null}
+                  </ul>
+                </div>
+              )}
+            </div>
           </section>
         )}
 
