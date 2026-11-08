@@ -525,9 +525,9 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
           <li><strong>Pre-boil gravity</strong> from the OG and the volumes.</li>
         </ul>
         <h3>Machines with limited space (e.g. Brewie)</h3>
-        <p>In some machines the grain sits in bags in the mash tank: the more grain, the less room for water. Set the <b>mash capacity</b> (water + grain), the <b>grain volume</b> per kg and the <b>boil kettle capacity</b> on the installation. The calculated mash water then never exceeds <code>mash capacity − grain × volume per kg</code>; the rest goes to the sparge. Warnings appear when the mash water had to be limited, when there is too much grain (less than 2 L of water per kg fits), when your own mash water doesn't fit, or when there is more wort than the kettle holds.</p>
+        <p>In some machines the grain sits in bags in the mash tank: the more grain, the less room for water. Set the <b>mash capacity</b> (water + grain), the <b>grain volume</b> per kg and the <b>boil kettle capacity</b> on the installation. The calculated mash water then never exceeds <code>mash capacity − grain × volume per kg</code>; the rest goes to the sparge. Warnings appear when the mash water had to be limited, when there is too much grain (less than 2 L of water per kg fits), when your own mash water doesn't fit, when there is more wort than the kettle holds, or when there is more grain than the <b>max. grain</b> of the installation.</p>
         <h3>Too big or too small for the installation</h3>
-        <p>When a recipe does not fit the installation (more wort than the boil kettle holds, too much grain for the mash tun, or a larger batch than the installation's batch size), a banner proposes the largest batch that fits, rounded down to 0.5 L. When the installation can brew at least 10 % more, it proposes scaling up. Everything is scaled in proportion: malt (10 g), hops (1 g), other ingredients, dry yeast, salts and acid (0.1), mash infusions and your own water. Gravity, colour, bitterness, times and temperatures stay the same.</p>
+        <p>When a recipe does not fit the installation (more wort than the boil kettle holds, too much grain for the mash tun or malt pipe, or a larger batch than the installation's batch size), a banner proposes the largest batch that fits, rounded down to 0.5 L. When the installation can brew at least 10 % more, it proposes scaling up. Everything is scaled in proportion: malt (10 g), hops (1 g), other ingredients, dry yeast, salts and acid (0.1), mash infusions and your own water. Gravity, colour, bitterness, times and temperatures stay the same.</p>
         <ul class="doc-list">
           <li><strong>In the recipe</strong> — <b>Scale to …</b> changes the recipe itself after confirmation; save the recipe to keep it.</li>
           <li><strong>On brew day</strong> — the same banner appears on the brew day tab. Only this brew is scaled; the recipe stays as it is. The brew shows the new amounts, the volume into the fermenter follows, and the brew report prints the scaled amounts. <b>Back to the recipe size</b> undoes it.</li>
@@ -689,6 +689,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
             <tr><td>Mash capacity (water + grain), grain volume in the mash (L/kg)</td><td>Maximum mash water</td></tr>
             <tr><td>Grain absorption (L/kg)</td><td>Total water (default 1.0, BIAB 0.7)</td></tr>
             <tr><td>Boil kettle capacity</td><td>Warning when there is too much wort</td></tr>
+            <tr><td>Max. grain (kg)</td><td>Warning when the malt pipe or mash tun gets more grain; the batch can be scaled down</td></tr>
           </tbody>
         </table>
         <details>
@@ -699,7 +700,10 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
               <tbody>
                 <tr><td>Brewie</td><td>Two-vessel (22 L mash capacity, 1 L/kg, 23 L kettle)</td><td>23 L</td><td>70%</td></tr>
                 <tr><td>Grainfather G30</td><td>All-in-one</td><td>25 L</td><td>72%</td></tr>
-                <tr><td>Grainfather G40</td><td>All-in-one</td><td>35 L</td><td>72%</td></tr>
+                <tr><td>Grainfather G40</td><td>All-in-one (46 L, max. 13 kg grain)</td><td>35 L</td><td>72%</td></tr>
+                <tr><td>Brew Monk B40</td><td>All-in-one (40 L, max. 8 kg malt)</td><td>30 L</td><td>72%</td></tr>
+                <tr><td>Brew Monk B50</td><td>All-in-one (50 L, max. 12 kg malt)</td><td>45 L</td><td>72%</td></tr>
+                <tr><td>Brew Monk B70</td><td>All-in-one (70 L, max. 18 kg malt)</td><td>65 L</td><td>72%</td></tr>
                 <tr><td>Robobrew / BrewZilla</td><td>All-in-one</td><td>30 L</td><td>70%</td></tr>
                 <tr><td>BIAB 20 L</td><td>Brew-in-a-bag</td><td>20 L</td><td>65%</td></tr>
                 <tr><td>BIAB 30 L</td><td>Brew-in-a-bag</td><td>30 L</td><td>65%</td></tr>
@@ -1072,9 +1076,9 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
           <li><strong>Densiteit voor het koken</strong> volgt uit de OG en de volumes.</li>
         </ul>
         <h3>Toestellen met beperkte ruimte (bv. Brewie)</h3>
-        <p>In sommige toestellen zit de mout in zakken in de maischtank: hoe meer mout, hoe minder plaats voor water. Vul bij de installatie de <b>maischcapaciteit</b> (water + mout), het <b>volume van de mout</b> per kg en de <b>capaciteit van de kookketel</b> in. Het berekende maischwater wordt dan nooit meer dan <code>maischcapaciteit − mout × volume per kg</code>; de rest gaat naar het spoelwater. Je krijgt een waarschuwing als het maischwater beperkt werd, als er te veel mout is (minder dan 2 L water per kg past), als je eigen maischwater niet past, of als er meer wort is dan de kookketel aankan.</p>
+        <p>In sommige toestellen zit de mout in zakken in de maischtank: hoe meer mout, hoe minder plaats voor water. Vul bij de installatie de <b>maischcapaciteit</b> (water + mout), het <b>volume van de mout</b> per kg en de <b>capaciteit van de kookketel</b> in. Het berekende maischwater wordt dan nooit meer dan <code>maischcapaciteit − mout × volume per kg</code>; de rest gaat naar het spoelwater. Je krijgt een waarschuwing als het maischwater beperkt werd, als er te veel mout is (minder dan 2 L water per kg past), als je eigen maischwater niet past, als er meer wort is dan de kookketel aankan, of als er meer mout is dan de <b>max. mout</b> van de installatie.</p>
         <h3>Te groot of te klein voor de installatie</h3>
-        <p>Past een recept niet in de installatie (meer wort dan de kookketel aankan, te veel mout voor de maischtank, of een grotere batch dan de batchgrootte van de installatie), dan stelt een melding de grootste batch voor die wel past, afgerond naar beneden op 0,5 L. Kan de installatie minstens 10 % meer brouwen, dan stelt ze voor om te vergroten. Alles wordt in verhouding omgerekend: mout (10 g), hop (1 g), andere ingrediënten, droge gist, zouten en zuur (0,1), maischgiften en je eigen water. Densiteit, kleur, bitterheid, tijden en temperaturen blijven gelijk.</p>
+        <p>Past een recept niet in de installatie (meer wort dan de kookketel aankan, te veel mout voor de maischtank of moutpijp, of een grotere batch dan de batchgrootte van de installatie), dan stelt een melding de grootste batch voor die wel past, afgerond naar beneden op 0,5 L. Kan de installatie minstens 10 % meer brouwen, dan stelt ze voor om te vergroten. Alles wordt in verhouding omgerekend: mout (10 g), hop (1 g), andere ingrediënten, droge gist, zouten en zuur (0,1), maischgiften en je eigen water. Densiteit, kleur, bitterheid, tijden en temperaturen blijven gelijk.</p>
         <ul class="doc-list">
           <li><strong>In het recept</strong> — <b>Omrekenen naar …</b> past het recept zelf aan na bevestiging; sla het recept op om het te bewaren.</li>
           <li><strong>Op brouwdag</strong> — dezelfde melding verschijnt bij de brouwdag. Alleen dit brouwsel wordt omgerekend; het recept blijft zoals het is. Het brouwsel toont de nieuwe hoeveelheden, het volume in het gistvat volgt, en het brouwrapport drukt de omgerekende hoeveelheden af. <b>Terug naar de receptgrootte</b> maakt het ongedaan.</li>
@@ -1236,6 +1240,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
             <tr><td>Maischcapaciteit (water + mout), volume mout in de maisch (L/kg)</td><td>Maximaal maischwater</td></tr>
             <tr><td>Opname door mout (L/kg)</td><td>Totaal water (standaard 1,0, BIAB 0,7)</td></tr>
             <tr><td>Capaciteit kookketel</td><td>Waarschuwing bij te veel wort</td></tr>
+            <tr><td>Max. mout (kg)</td><td>Waarschuwing als er meer mout is dan de moutpijp of maischtank aankan; de batch kan verkleind worden</td></tr>
           </tbody>
         </table>
         <details>
@@ -1246,7 +1251,10 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
               <tbody>
                 <tr><td>Brewie</td><td>Twee vaten (maischcapaciteit 22 L, 1 L/kg, kookketel 23 L)</td><td>23 L</td><td>70%</td></tr>
                 <tr><td>Grainfather G30</td><td>Alles-in-één</td><td>25 L</td><td>72%</td></tr>
-                <tr><td>Grainfather G40</td><td>Alles-in-één</td><td>35 L</td><td>72%</td></tr>
+                <tr><td>Grainfather G40</td><td>Alles-in-één (46 L, max. 13 kg mout)</td><td>35 L</td><td>72%</td></tr>
+                <tr><td>Brew Monk B40</td><td>Alles-in-één (40 L, max. 8 kg mout)</td><td>30 L</td><td>72%</td></tr>
+                <tr><td>Brew Monk B50</td><td>Alles-in-één (50 L, max. 12 kg mout)</td><td>45 L</td><td>72%</td></tr>
+                <tr><td>Brew Monk B70</td><td>Alles-in-één (70 L, max. 18 kg mout)</td><td>65 L</td><td>72%</td></tr>
                 <tr><td>Robobrew / BrewZilla</td><td>Alles-in-één</td><td>30 L</td><td>70%</td></tr>
                 <tr><td>BIAB 20 L</td><td>Brew-in-a-bag</td><td>20 L</td><td>65%</td></tr>
                 <tr><td>BIAB 30 L</td><td>Brew-in-a-bag</td><td>30 L</td><td>65%</td></tr>
@@ -1619,7 +1627,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
           <li><strong>Densité avant ébullition</strong> déduite de la DI et des volumes.</li>
         </ul>
         <h3>Appareils à capacité limitée (p. ex. Brewie)</h3>
-        <p>Dans certains appareils, le grain est dans des sacs dans la cuve d'empâtage : plus il y a de grain, moins il reste de place pour l'eau. Renseignez pour l'installation la <b>capacité d'empâtage</b> (eau + grain), le <b>volume du grain</b> par kg et la <b>capacité de la cuve d'ébullition</b>. L'eau d'empâtage calculée ne dépasse alors jamais <code>capacité d'empâtage − grain × volume par kg</code> ; le reste va à l'eau de rinçage. Un avertissement apparaît si l'eau d'empâtage a été limitée, s'il y a trop de grain (moins de 2 L d'eau par kg), si votre eau d'empâtage saisie ne tient pas, ou s'il y a plus de moût que la cuve d'ébullition ne peut contenir.</p>
+        <p>Dans certains appareils, le grain est dans des sacs dans la cuve d'empâtage : plus il y a de grain, moins il reste de place pour l'eau. Renseignez pour l'installation la <b>capacité d'empâtage</b> (eau + grain), le <b>volume du grain</b> par kg et la <b>capacité de la cuve d'ébullition</b>. L'eau d'empâtage calculée ne dépasse alors jamais <code>capacité d'empâtage − grain × volume par kg</code> ; le reste va à l'eau de rinçage. Un avertissement apparaît si l'eau d'empâtage a été limitée, s'il y a trop de grain (moins de 2 L d'eau par kg), si votre eau d'empâtage saisie ne tient pas, s'il y a plus de moût que la cuve d'ébullition ne peut contenir, ou s'il y a plus de malt que le <b>malt max.</b> de l'installation.</p>
         <h3>Trop grand ou trop petit pour l'installation</h3>
         <p>Si une recette ne tient pas dans l'installation (plus de moût que la cuve d'ébullition ne contient, trop de grain pour la cuve d'empâtage, ou un brassin plus grand que la taille de l'installation), un bandeau propose le plus grand brassin qui tient, arrondi vers le bas à 0,5 L. Si l'installation peut brasser au moins 10 % de plus, il propose d'agrandir. Tout est recalculé proportionnellement : malt (10 g), houblon (1 g), autres ingrédients, levure sèche, sels et acide (0,1), infusions d'empâtage et votre propre eau. Densité, couleur, amertume, durées et températures restent identiques.</p>
         <ul class="doc-list">
@@ -1783,6 +1791,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
             <tr><td>Capacité d'empâtage (eau + grain), volume du grain dans la maische (L/kg)</td><td>Eau d'empâtage maximale</td></tr>
             <tr><td>Absorption du grain (L/kg)</td><td>Eau totale (1,0 par défaut, BIAB 0,7)</td></tr>
             <tr><td>Capacité de la cuve d'ébullition</td><td>Avertissement en cas de trop de moût</td></tr>
+            <tr><td>Malt max. (kg)</td><td>Avertissement s'il y a plus de malt que le tube à malt ou la cuve n'accepte ; le brassin peut être réduit</td></tr>
           </tbody>
         </table>
         <details>
@@ -1793,7 +1802,10 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
               <tbody>
                 <tr><td>Brewie</td><td>Deux cuves (capacité d'empâtage 22 L, 1 L/kg, cuve d'ébullition 23 L)</td><td>23 L</td><td>70%</td></tr>
                 <tr><td>Grainfather G30</td><td>Tout-en-un</td><td>25 L</td><td>72%</td></tr>
-                <tr><td>Grainfather G40</td><td>Tout-en-un</td><td>35 L</td><td>72%</td></tr>
+                <tr><td>Grainfather G40</td><td>Tout-en-un (46 L, malt max. 13 kg)</td><td>35 L</td><td>72%</td></tr>
+                <tr><td>Brew Monk B40</td><td>Tout-en-un (40 L, malt max. 8 kg)</td><td>30 L</td><td>72%</td></tr>
+                <tr><td>Brew Monk B50</td><td>Tout-en-un (50 L, malt max. 12 kg)</td><td>45 L</td><td>72%</td></tr>
+                <tr><td>Brew Monk B70</td><td>Tout-en-un (70 L, malt max. 18 kg)</td><td>65 L</td><td>72%</td></tr>
                 <tr><td>Robobrew / BrewZilla</td><td>Tout-en-un</td><td>30 L</td><td>70%</td></tr>
                 <tr><td>BIAB 20 L</td><td>Brew-in-a-bag</td><td>20 L</td><td>65%</td></tr>
                 <tr><td>BIAB 30 L</td><td>Brew-in-a-bag</td><td>30 L</td><td>65%</td></tr>

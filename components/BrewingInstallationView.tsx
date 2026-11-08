@@ -23,6 +23,7 @@ type EquipmentPreset = {
   mash_capacity?: number;
   grain_displacement?: number;
   boil_capacity?: number;
+  max_grain_kg?: number;
 };
 
 const PRESETS: EquipmentPreset[] = [
@@ -54,7 +55,43 @@ const PRESETS: EquipmentPreset[] = [
     batch: 35,
     efficiency: 72,
     trub_loss: 2,
+    mash_capacity: 46,
+    boil_capacity: 46,
+    max_grain_kg: 13,
     vessels: [{ name: "G40", role: 'combined', volume: 40, heating: 'electric', pump: true }]
+  },
+  {
+    name: "Brew Monk B40",
+    type: 'all_in_one',
+    batch: 30,
+    efficiency: 72,
+    trub_loss: 2,
+    mash_capacity: 40,
+    boil_capacity: 40,
+    max_grain_kg: 8,
+    vessels: [{ name: "B40", role: 'combined', volume: 40, heating: 'electric', pump: true }]
+  },
+  {
+    name: "Brew Monk B50",
+    type: 'all_in_one',
+    batch: 45,
+    efficiency: 72,
+    trub_loss: 2,
+    mash_capacity: 50,
+    boil_capacity: 50,
+    max_grain_kg: 12,
+    vessels: [{ name: "B50", role: 'combined', volume: 50, heating: 'electric', pump: true }]
+  },
+  {
+    name: "Brew Monk B70",
+    type: 'all_in_one',
+    batch: 65,
+    efficiency: 72,
+    trub_loss: 3,
+    mash_capacity: 70,
+    boil_capacity: 70,
+    max_grain_kg: 18,
+    vessels: [{ name: "B70", role: 'combined', volume: 70, heating: 'electric', pump: true }]
   },
   {
     name: "Robobrew / BrewZilla",
@@ -212,6 +249,7 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
             mash_capacity: preset.mash_capacity,
             grain_displacement: preset.grain_displacement,
             boil_capacity: preset.boil_capacity,
+            max_grain_kg: preset.max_grain_kg,
             vessels: preset.vessels
         });
     }
@@ -571,6 +609,10 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
                             <div>
                                 <label htmlFor="eq_boil_capacity" className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('boil_capacity_label')} (L)</label>
                                 <input id="eq_boil_capacity" name="boil_capacity" type="number" step="0.1" min="0" max="500" placeholder={String(equipmentCapacity(editForm as LibraryIngredient).boilCapacity ?? t('no_limit'))} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.boil_capacity ?? ""} onChange={e => setEditForm({...editForm, boil_capacity: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
+                            </div>
+                            <div>
+                                <label htmlFor="eq_max_grain_kg" className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('max_grain_label')} (kg)</label>
+                                <input id="eq_max_grain_kg" name="max_grain_kg" type="number" step="0.5" min="0" max="500" placeholder={String(equipmentCapacity(editForm as LibraryIngredient).maxGrainKg ?? t('no_limit'))} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.max_grain_kg ?? ""} onChange={e => setEditForm({...editForm, max_grain_kg: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
                             </div>
                              {showField('tun_specific_heat') && (
                                 <div>

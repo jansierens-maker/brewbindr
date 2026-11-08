@@ -23,6 +23,7 @@ const SALT_KEYS = {
 const WARNING_KEYS = {
   mash_capped: 'water_warn_mash_capped',
   too_much_grain: 'water_warn_too_much_grain',
+  grain_over_capacity: 'water_warn_grain_over_capacity',
   mash_over_capacity: 'water_warn_mash_over_capacity',
   boil_over_capacity: 'water_warn_boil_over_capacity',
 } as const satisfies Record<WaterWarning, string>;
@@ -153,7 +154,8 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingN
                         <li key={w} className="text-xs font-bold">
                           ⚠ {t(WARNING_KEYS[w])
                             .replace('{max}', plan.maxMashL !== undefined ? vol(plan.maxMashL) : '-')
-                            .replace('{boil}', vol(equipmentCapacity(equipment).boilCapacity ?? 0))}
+                            .replace('{boil}', vol(equipmentCapacity(equipment).boilCapacity ?? 0))
+                            .replace('{kg}', formatBrewNumber(equipmentCapacity(equipment).maxGrainKg ?? 0, 'kg', lang))}
                         </li>
                       ))}
                     </ul>

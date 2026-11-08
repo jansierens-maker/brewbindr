@@ -84,7 +84,7 @@ export const fitProblems = (recipe: Recipe, equipment: LibraryIngredient): FitPr
   const plan = waterPlan(recipe, equipment);
   const problems: FitProblem[] = [];
   if (plan.warnings.includes('boil_over_capacity')) problems.push('boil');
-  if (plan.warnings.includes('too_much_grain')) problems.push('grain');
+  if (plan.warnings.includes('too_much_grain') || plan.warnings.includes('grain_over_capacity')) problems.push('grain');
   if (equipment.batch_size && toLiters(recipe) > equipment.batch_size + 0.05) problems.push('batch');
   return problems;
 };
