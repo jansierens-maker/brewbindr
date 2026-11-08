@@ -4,6 +4,7 @@ import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
 import { useTranslation } from '../App';
 import { calculateABV, calculateRecipeStats, equipmentCapacity, formatBrewNumber, formatGravity, waterPlan, WaterWarning } from '../services/calculations';
 import { SALTS, SaltId } from '../services/waterChemistry';
+import { scaleRecipe } from '../services/scaling';
 import { useUser } from '../services/userContext';
 
 interface PrintViewProps {
@@ -26,11 +27,13 @@ const WARNING_KEYS = {
   boil_over_capacity: 'water_warn_boil_over_capacity',
 } as const satisfies Record<WaterWarning, string>;
 
-const PrintView: React.FC<PrintViewProps> = ({ recipe, log, tastingNote, equipment }) => {
+const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingNote, equipment }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
 
-  if (!recipe) return null;
+  if (!baseRecipe) return null;
+  // A brew made at another size shows the amounts it was brewed with
+  const recipe = log?.scale ? scaleRecipe(baseRecipe, log.scale.factor) : baseRecipe;
 
   // Water: the same calculation as in the recipe (own values where set)
   const plannedOg = equipment ? calculateRecipeStats(recipe, undefined, equipment).plannedOg : undefined;

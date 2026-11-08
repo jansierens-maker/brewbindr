@@ -526,6 +526,13 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         </ul>
         <h3>Machines with limited space (e.g. Brewie)</h3>
         <p>In some machines the grain sits in bags in the mash tank: the more grain, the less room for water. Set the <b>mash capacity</b> (water + grain), the <b>grain volume</b> per kg and the <b>boil kettle capacity</b> on the installation. The calculated mash water then never exceeds <code>mash capacity − grain × volume per kg</code>; the rest goes to the sparge. Warnings appear when the mash water had to be limited, when there is too much grain (less than 2 L of water per kg fits), when your own mash water doesn't fit, or when there is more wort than the kettle holds.</p>
+        <h3>Too big or too small for the installation</h3>
+        <p>When a recipe does not fit the installation (more wort than the boil kettle holds, too much grain for the mash tun, or a larger batch than the installation's batch size), a banner proposes the largest batch that fits, rounded down to 0.5 L. When the installation can brew at least 10 % more, it proposes scaling up. Everything is scaled in proportion: malt (10 g), hops (1 g), other ingredients, dry yeast, salts and acid (0.1), mash infusions and your own water. Gravity, colour, bitterness, times and temperatures stay the same.</p>
+        <ul class="doc-list">
+          <li><strong>In the recipe</strong> — <b>Scale to …</b> changes the recipe itself after confirmation; save the recipe to keep it.</li>
+          <li><strong>On brew day</strong> — the same banner appears on the brew day tab. Only this brew is scaled; the recipe stays as it is. The brew shows the new amounts, the volume into the fermenter follows, and the brew report prints the scaled amounts. <b>Back to the recipe size</b> undoes it.</li>
+        </ul>
+        <p>With the Brewie (23 L kettle, 2 L/h evaporation, 2 L trub loss) a 60-minute boil fits about 19 L. Check evaporation and losses on the installation if that seems low.</p>
         <h3>Your own water</h3>
         <ul class="doc-list">
           <li><strong>Mash and sparge water</strong> can be typed in per recipe (e.g. as you enter them in Brewie Studio). Press Enter or click outside the field. The calculated values stay visible; <b>Use calculated water</b> resets them.</li>
@@ -1066,6 +1073,13 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         </ul>
         <h3>Toestellen met beperkte ruimte (bv. Brewie)</h3>
         <p>In sommige toestellen zit de mout in zakken in de maischtank: hoe meer mout, hoe minder plaats voor water. Vul bij de installatie de <b>maischcapaciteit</b> (water + mout), het <b>volume van de mout</b> per kg en de <b>capaciteit van de kookketel</b> in. Het berekende maischwater wordt dan nooit meer dan <code>maischcapaciteit − mout × volume per kg</code>; de rest gaat naar het spoelwater. Je krijgt een waarschuwing als het maischwater beperkt werd, als er te veel mout is (minder dan 2 L water per kg past), als je eigen maischwater niet past, of als er meer wort is dan de kookketel aankan.</p>
+        <h3>Te groot of te klein voor de installatie</h3>
+        <p>Past een recept niet in de installatie (meer wort dan de kookketel aankan, te veel mout voor de maischtank, of een grotere batch dan de batchgrootte van de installatie), dan stelt een melding de grootste batch voor die wel past, afgerond naar beneden op 0,5 L. Kan de installatie minstens 10 % meer brouwen, dan stelt ze voor om te vergroten. Alles wordt in verhouding omgerekend: mout (10 g), hop (1 g), andere ingrediënten, droge gist, zouten en zuur (0,1), maischgiften en je eigen water. Densiteit, kleur, bitterheid, tijden en temperaturen blijven gelijk.</p>
+        <ul class="doc-list">
+          <li><strong>In het recept</strong> — <b>Omrekenen naar …</b> past het recept zelf aan na bevestiging; sla het recept op om het te bewaren.</li>
+          <li><strong>Op brouwdag</strong> — dezelfde melding verschijnt bij de brouwdag. Alleen dit brouwsel wordt omgerekend; het recept blijft zoals het is. Het brouwsel toont de nieuwe hoeveelheden, het volume in het gistvat volgt, en het brouwrapport drukt de omgerekende hoeveelheden af. <b>Terug naar de receptgrootte</b> maakt het ongedaan.</li>
+        </ul>
+        <p>Met de Brewie (kookketel 23 L, verdamping 2 L/u, trubverlies 2 L) past bij 60 minuten koken ongeveer 19 L. Kijk verdamping en verliezen na bij de installatie als dat laag lijkt.</p>
         <h3>Je eigen water</h3>
         <ul class="doc-list">
           <li><strong>Maisch- en spoelwater</strong> vul je per recept zelf in (bv. zoals in Brewie Studio). Druk op Enter of klik buiten het veld. De berekende waarden blijven zichtbaar; <b>Berekend water gebruiken</b> zet ze terug.</li>
@@ -1606,6 +1620,13 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         </ul>
         <h3>Appareils à capacité limitée (p. ex. Brewie)</h3>
         <p>Dans certains appareils, le grain est dans des sacs dans la cuve d'empâtage : plus il y a de grain, moins il reste de place pour l'eau. Renseignez pour l'installation la <b>capacité d'empâtage</b> (eau + grain), le <b>volume du grain</b> par kg et la <b>capacité de la cuve d'ébullition</b>. L'eau d'empâtage calculée ne dépasse alors jamais <code>capacité d'empâtage − grain × volume par kg</code> ; le reste va à l'eau de rinçage. Un avertissement apparaît si l'eau d'empâtage a été limitée, s'il y a trop de grain (moins de 2 L d'eau par kg), si votre eau d'empâtage saisie ne tient pas, ou s'il y a plus de moût que la cuve d'ébullition ne peut contenir.</p>
+        <h3>Trop grand ou trop petit pour l'installation</h3>
+        <p>Si une recette ne tient pas dans l'installation (plus de moût que la cuve d'ébullition ne contient, trop de grain pour la cuve d'empâtage, ou un brassin plus grand que la taille de l'installation), un bandeau propose le plus grand brassin qui tient, arrondi vers le bas à 0,5 L. Si l'installation peut brasser au moins 10 % de plus, il propose d'agrandir. Tout est recalculé proportionnellement : malt (10 g), houblon (1 g), autres ingrédients, levure sèche, sels et acide (0,1), infusions d'empâtage et votre propre eau. Densité, couleur, amertume, durées et températures restent identiques.</p>
+        <ul class="doc-list">
+          <li><strong>Dans la recette</strong> — <b>Convertir en …</b> modifie la recette elle-même après confirmation ; enregistrez la recette pour la garder.</li>
+          <li><strong>Le jour du brassage</strong> — le même bandeau apparaît à l'onglet jour de brassage. Seul ce brassin est recalculé ; la recette reste inchangée. Le brassin affiche les nouvelles quantités, le volume en fermenteur suit, et le rapport de brassage imprime les quantités recalculées. <b>Revenir à la taille de la recette</b> l'annule.</li>
+        </ul>
+        <p>Avec la Brewie (cuve de 23 L, évaporation 2 L/h, pertes 2 L), une ébullition de 60 minutes permet environ 19 L. Vérifiez l'évaporation et les pertes de l'installation si cela paraît peu.</p>
         <h3>Votre propre eau</h3>
         <ul class="doc-list">
           <li><strong>Eau d'empâtage et de rinçage</strong> se saisissent par recette (p. ex. comme dans Brewie Studio). Appuyez sur Entrée ou cliquez hors du champ. Les valeurs calculées restent visibles ; <b>Utiliser l'eau calculée</b> les rétablit.</li>

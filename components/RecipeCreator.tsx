@@ -6,6 +6,8 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canEditRecipe, canManageRecipes } from '../services/permissions';
 import WaterPlanCard from './WaterPlanCard';
+import ScaleSuggestionBanner from './ScaleSuggestionBanner';
+import { scaleRecipe, suggestScale } from '../services/scaling';
 import WaterChemistryCard from './WaterChemistryCard';
 
 interface RecipeCreatorProps {
@@ -75,6 +77,12 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
   const equipmentOptions = useMemo(() => library.filter(l => l.type === 'equipment'), [library]);
   const equipment = useMemo(() => resolveEquipment(recipe, library), [recipe.equipmentId, library]);
   const defaultEquipment = useMemo(() => resolveEquipment({}, library), [library]);
+  // Too big (or much smaller) for the installation: offer to scale the whole recipe
+  const scaleSuggestion = useMemo(() => suggestScale(recipe, equipment), [recipe, equipment]);
+  const applyScale = () => {
+    if (!scaleSuggestion || !confirm(t('scale_confirm_recipe'))) return;
+    setRecipe(prev => scaleRecipe(prev, scaleSuggestion.factor));
+  };
   const stats = useMemo(() => calculateRecipeStats(recipe, undefined, equipment), [recipe, equipment]);
 
   const handleAiAnalyze = async () => {
@@ -643,6 +651,16 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
 
         {/* Water volumes and strike temperature */}
         <div className="pt-6 border-t border-stone-100">
+          {scaleSuggestion && equipment && (
+            <div className="mb-4">
+              <ScaleSuggestionBanner
+                suggestion={scaleSuggestion}
+                equipmentName={equipment.name}
+                equipmentBatchL={equipment.batch_size}
+                onApply={canEdit ? applyScale : undefined}
+              />
+            </div>
+          )}
           <WaterPlanCard
             recipe={recipe}
             equipment={equipment}

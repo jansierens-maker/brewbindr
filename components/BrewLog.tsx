@@ -5,6 +5,8 @@ import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNu
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canManageBrews } from '../services/permissions';
+import { scaleRecipe, suggestScale } from '../services/scaling';
+import ScaleSuggestionBanner from './ScaleSuggestionBanner';
 import GravityInput from './GravityInput';
 import YeastPitch from './YeastPitch';
 import WaterPlanCard from './WaterPlanCard';
@@ -21,7 +23,7 @@ interface BrewLogProps {
   library?: LibraryIngredient[];
 }
 
-const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveAndExit, equipment, library = [] }) => {
+const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpdate, onSaveAndExit, equipment, library = [] }) => {
   const { t, lang } = useTranslation();
   const { preferences, breweryRole, isAdmin } = useUser();
 
@@ -31,26 +33,62 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
   
   const [entry, setEntry] = useState<BrewLogEntry>(initialLog || {
     id: crypto.randomUUID(),
-    recipeId: recipe.id || 'unassigned',
+    recipeId: baseRecipe.id || 'unassigned',
     date: new Date().toISOString().split('T')[0],
     brewDate: new Date().toISOString().split('T')[0],
     status: 'brewing',
     notes: '',
     measurements: {
-      actual_og: recipe.specifications?.og?.value,
+      actual_og: baseRecipe.specifications?.og?.value,
       actual_fg: undefined,
-      actual_volume: recipe.batch_size.value,
+      actual_volume: baseRecipe.batch_size.value,
       fermentation_temp: 20,
-      measured_alpha: recipe.ingredients.hops.reduce((acc, h) => ({...acc, [h.name]: h.alpha_acid?.value || 5}), {})
+      measured_alpha: baseRecipe.ingredients.hops.reduce((acc, h) => ({...acc, [h.name]: h.alpha_acid?.value || 5}), {})
     },
     bottling: {
       date: undefined,
       target_co2: 2.4,
       sugar_type: 'table_sugar',
       sugar_amount: 0,
-      bottling_volume: recipe.batch_size.value
+      bottling_volume: baseRecipe.batch_size.value
     }
   });
+
+  // Brewed at another size than the recipe: every amount of the recipe × factor
+  const recipe = useMemo(
+    () => (entry.scale ? scaleRecipe(baseRecipe, entry.scale.factor) : baseRecipe),
+    [baseRecipe, entry.scale?.factor],
+  );
+  const scaleSuggestion = useMemo(
+    () => (entry.scale ? null : suggestScale(baseRecipe, equipment)),
+    [baseRecipe, equipment, entry.scale],
+  );
+  const batchValue = (r: typeof baseRecipe) => r.batch_size.value;
+  const applyBrewScale = () => {
+    if (!scaleSuggestion || !confirm(t('scale_confirm_brew'))) return;
+    const scaled = scaleRecipe(baseRecipe, scaleSuggestion.factor);
+    const from = batchValue(baseRecipe);
+    const to = batchValue(scaled);
+    setEntry(prev => ({
+      ...prev,
+      scale: { factor: scaleSuggestion.factor, batch_l: scaleSuggestion.toL },
+      // Volumes still at the recipe size follow the new size
+      measurements: { ...prev.measurements, actual_volume: prev.measurements.actual_volume === from ? to : prev.measurements.actual_volume },
+      bottling: prev.bottling ? { ...prev.bottling, bottling_volume: prev.bottling.bottling_volume === from ? to : prev.bottling.bottling_volume } : prev.bottling,
+    }));
+  };
+  const undoBrewScale = () => {
+    const to = batchValue(recipe);
+    const from = batchValue(baseRecipe);
+    setEntry(prev => {
+      const { scale, ...rest } = prev;
+      return {
+        ...rest,
+        measurements: { ...prev.measurements, actual_volume: prev.measurements.actual_volume === to ? from : prev.measurements.actual_volume },
+        bottling: prev.bottling ? { ...prev.bottling, bottling_volume: prev.bottling.bottling_volume === to ? from : prev.bottling.bottling_volume } : prev.bottling,
+      };
+    });
+  };
 
   // Calculate dynamic stats based on current overrides in the log
   const currentStats = useMemo(() => {
@@ -188,6 +226,30 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe, initialLog, onUpdate, onSaveA
       <section className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-12">
         {activeTab === 'brew' && (
           <div className="space-y-10">
+            {scaleSuggestion && equipment && (
+              <ScaleSuggestionBanner
+                suggestion={scaleSuggestion}
+                equipmentName={equipment.name}
+                equipmentBatchL={equipment.batch_size}
+                onApply={canEdit ? applyBrewScale : undefined}
+              />
+            )}
+            {entry.scale && (
+              <div role="status" className="p-4 rounded-xl border bg-stone-50 border-stone-200 flex flex-col sm:flex-row sm:items-center gap-3">
+                <i className="fas fa-ruler-combined text-lg text-stone-500" aria-hidden="true"></i>
+                <p className="flex-1 text-sm font-semibold text-stone-700">
+                  {t('scale_brewed_at')
+                    .replace('{to}', `${formatBrewNumber(entry.scale.batch_l, 'vol', lang, preferences)} ${preferences.units === 'imperial' ? 'gal' : 'L'}`)
+                    .replace('{from}', `${formatBrewNumber(entry.scale.batch_l / entry.scale.factor, 'vol', lang, preferences)} ${preferences.units === 'imperial' ? 'gal' : 'L'}`)
+                    .replace('{factor}', formatBrewNumber(Math.round(entry.scale.factor * 100) / 100, 'default', lang))}
+                </p>
+                {canEdit && entry.status === 'brewing' && (
+                  <button type="button" onClick={undoBrewScale} className="px-4 py-2 rounded-lg bg-white border border-stone-300 text-xs font-black uppercase tracking-wider text-stone-700 hover:bg-stone-100 whitespace-nowrap">
+                    {t('scale_undo')}
+                  </button>
+                )}
+              </div>
+            )}
             {/* Log Metadata */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
