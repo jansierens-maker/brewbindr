@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MIN_PASSWORD_LENGTH, pwnedCount } from '../services/passwordCheck';
 import { authService } from '../services/authService';
 import { useTranslation } from '../App';
 
@@ -31,14 +32,22 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, initialIsSignUp = false }) => {
       setLoading(false);
       return;
     }
-    if (password.length < 6) {
-      setError(t('auth_error_password_short' as any));
+    // New accounts: at least MIN_PASSWORD_LENGTH characters (also set in Supabase Auth).
+    // Signing in keeps working with older, shorter passwords.
+    if (password.length < (isSignUp ? MIN_PASSWORD_LENGTH : 6)) {
+      setError(t('auth_error_password_short' as any).replace('{n}', String(isSignUp ? MIN_PASSWORD_LENGTH : 6)));
       setLoading(false);
       return;
     }
 
     try {
       if (isSignUp) {
+        // Refuse passwords known from data breaches (only a hash prefix leaves the browser)
+        const breached = await pwnedCount(password);
+        if (breached && breached > 0) {
+          setError(t('auth_error_password_pwned').replace('{n}', breached.toLocaleString()));
+          return;
+        }
         await authService.signUp(email, password, inviteCode.trim() || undefined);
         alert(t('auth_signup_confirm' as any));
       } else {
@@ -93,8 +102,16 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, initialIsSignUp = false }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
+            minLength={isSignUp ? MIN_PASSWORD_LENGTH : undefined}
             maxLength={100}
+            autoComplete={isSignUp ? 'new-password' : 'current-password'}
+            aria-describedby={isSignUp ? 'auth-password-hint' : undefined}
           />
+          {isSignUp && (
+            <p id="auth-password-hint" className="text-[9px] text-stone-400 mt-1 ml-1 font-bold italic">
+              {t('auth_password_hint').replace('{n}', String(MIN_PASSWORD_LENGTH))}
+            </p>
+          )}
         </div>
 
         {isSignUp && (
