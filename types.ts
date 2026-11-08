@@ -266,6 +266,8 @@ export interface BrewLogEntry {
   fermentationDate?: string;
   lageringDate?: string;
   status: 'brewing' | 'fermenting' | 'lagering' | 'bottled';
+  /** Brewed at another size than the recipe: every amount × factor (the recipe itself is unchanged) */
+  scale?: { factor: number; batch_l: number };
   /** All bottles or the keg are finished: no longer offered for new tasting notes */
   finished?: boolean;
   finishedDate?: string;
