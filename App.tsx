@@ -10,6 +10,7 @@ const PrintView = lazy(() => import('./components/PrintView'));
 const AdminView = lazy(() => import('./components/AdminView'));
 const ImportView = lazy(() => import('./components/ImportView'));
 import Auth from './components/Auth';
+import EquipmentPickerDialog from './components/EquipmentPickerDialog';
 const Settings = lazy(() => import('./components/Settings'));
 const HelpView = lazy(() => import('./components/HelpView'));
 const BrewingInstallationView = lazy(() => import('./components/BrewingInstallationView'));
@@ -124,6 +125,10 @@ const AppContent: React.FC = () => {
   
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [selectedBrewLog, setSelectedBrewLog] = useState<BrewLogEntry | null>(null);
+  /** Recipe waiting for the choice of installation before its brew starts */
+  const [brewPickRecipe, setBrewPickRecipe] = useState<Recipe | null>(null);
+  /** Installation chosen for the brew being started */
+  const [newBrewEquipmentId, setNewBrewEquipmentId] = useState<string | undefined>(undefined);
   // Where to go back to after saving a tasting note: the brews or the tasting notes list
   const [tastingReturnView, setTastingReturnView] = useState<'brouwlogboek' | 'proefnotities'>('brouwlogboek');
   
@@ -736,6 +741,23 @@ const AppContent: React.FC = () => {
       const result = await trackWrite(() => supabaseService.saveBrewLog(targetLog, targetLog.user_id || user.id, targetLog.brewery_id || profile?.brewery_id));
       if (reportFailure(result)) await reloadFromServer();
     }
+  };
+
+  const openNewBrew = (recipe: Recipe, equipmentId?: string) => {
+    setNewBrewEquipmentId(equipmentId);
+    setSelectedRecipe(recipe);
+    setSelectedBrewLog(null);
+    setView('log');
+  };
+
+  /**
+   * Start a brew. When neither the recipe nor a brewery default decides the installation
+   * and there are several, ask which one first.
+   */
+  const startBrew = (recipe: Recipe) => {
+    const installations = deduplicatedLibrary.filter(l => l.type === 'equipment');
+    if (installations.length > 1 && !resolveEquipment(recipe, deduplicatedLibrary)) setBrewPickRecipe(recipe);
+    else openNewBrew(recipe);
   };
 
   const handleSaveAndExitBrewLog = (entry: BrewLogEntry) => {
@@ -1452,7 +1474,7 @@ const AppContent: React.FC = () => {
             <div className="p-4 md:p-8">
               <div className="max-w-4xl mx-auto bg-white shadow-2xl ring-1 ring-stone-200 print:shadow-none print:ring-0">
                 <Suspense fallback={<ScreenLoading />}>
-                  <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} equipment={printData.recipe ? resolveEquipment(printData.recipe, deduplicatedLibrary) : undefined} />
+                  <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} equipment={printData.recipe ? resolveEquipment(printData.recipe, deduplicatedLibrary, printData.log?.equipmentId) : undefined} />
                 </Suspense>
               </div>
             </div>
@@ -1834,7 +1856,7 @@ const AppContent: React.FC = () => {
                             </div>
                             <div className="flex flex-col gap-2 mt-auto">
                               <div className="flex gap-2">
-                                {brewManager && <button onClick={() => { setSelectedRecipe(r); setSelectedBrewLog(null); setView('log'); }} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">{t('brew_btn')}</button>}
+                                {brewManager && <button onClick={() => startBrew(r)} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">{t('brew_btn')}</button>}
                                 {libraryView === 'personal' && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">{canEditRecipe(r, editContext) ? t('edit_btn') : t('view_btn')}</button>}
                               </div>
 
@@ -1953,8 +1975,16 @@ const AppContent: React.FC = () => {
                   onDeleteNote={handleDeleteTastingNote}
                 />
               )}
+              {brewPickRecipe && (
+                <EquipmentPickerDialog
+                  recipeName={brewPickRecipe.name}
+                  installations={deduplicatedLibrary.filter(l => l.type === 'equipment')}
+                  onPick={id => { const r = brewPickRecipe; setBrewPickRecipe(null); openNewBrew(r, id); }}
+                  onCancel={() => setBrewPickRecipe(null)}
+                />
+              )}
               {view === 'log' && selectedRecipe && (
-                <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} equipment={resolveEquipment(selectedRecipe, deduplicatedLibrary)} library={deduplicatedLibrary} />
+                <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} initialEquipmentId={selectedBrewLog ? undefined : newBrewEquipmentId} library={deduplicatedLibrary} />
               )}
               {view === 'create' && (
                 <RecipeCreator

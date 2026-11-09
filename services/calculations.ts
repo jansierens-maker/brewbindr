@@ -425,14 +425,28 @@ const batchLiters = (recipe: Recipe): number => {
   return normalizeUnit(recipe.batch_size?.unit) === 'gallons' ? v * 3.78541 : v;
 };
 
-/**
- * The brewing installation for a recipe: the one it names, otherwise the brewery's only
- * installation. Undefined when there is none or the choice is ambiguous.
- */
-export const resolveEquipment = (recipe: Pick<Recipe, 'equipmentId'>, library: LibraryIngredient[]): LibraryIngredient | undefined => {
+/** The brewery's default installation: the one marked as default, otherwise its only one. */
+export const defaultEquipment = (library: LibraryIngredient[]): LibraryIngredient | undefined => {
   const all = library.filter(l => l.type === 'equipment');
-  if (recipe.equipmentId) return all.find(e => e.id === recipe.equipmentId);
-  return all.length === 1 ? all[0] : undefined;
+  return all.find(e => e.is_default) ?? (all.length === 1 ? all[0] : undefined);
+};
+
+/**
+ * The brewing installation: the one chosen for the brew, otherwise the one the recipe
+ * names, otherwise the brewery default. Undefined when there is none or the choice is
+ * ambiguous (several installations, none marked as default).
+ */
+export const resolveEquipment = (
+  recipe: Pick<Recipe, 'equipmentId'>,
+  library: LibraryIngredient[],
+  brewEquipmentId?: string,
+): LibraryIngredient | undefined => {
+  const all = library.filter(l => l.type === 'equipment');
+  for (const id of [brewEquipmentId, recipe.equipmentId]) {
+    const found = id ? all.find(e => e.id === id) : undefined;
+    if (found) return found;
+  }
+  return defaultEquipment(library);
 };
 
 /**

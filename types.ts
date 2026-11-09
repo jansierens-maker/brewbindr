@@ -106,6 +106,7 @@ export interface LibraryIngredient {
   grain_absorption?: number;   // L per kg: water the spent grain keeps
   boil_capacity?: number;      // L: most wort the boil kettle takes
   max_grain_kg?: number;       // kg: most grain the mash tun / malt pipe takes
+  is_default?: boolean;        // the brewery's default installation
 
   // Water profile (mg/L)
   calcium?: number;
@@ -269,6 +270,8 @@ export interface BrewLogEntry {
   status: 'brewing' | 'fermenting' | 'lagering' | 'bottled';
   /** Brewed at another size than the recipe: every amount × factor (the recipe itself is unchanged) */
   scale?: { factor: number; batch_l: number };
+  /** Installation this brew is made on (otherwise the recipe's, or the brewery default) */
+  equipmentId?: string;
   /** All bottles or the keg are finished: no longer offered for new tasting notes */
   finished?: boolean;
   finishedDate?: string;

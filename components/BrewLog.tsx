@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, BrewLogEntry, LibraryIngredient } from '../types';
-import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure } from '../services/calculations';
+import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure, resolveEquipment } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canManageBrews } from '../services/permissions';
@@ -17,13 +17,13 @@ interface BrewLogProps {
   initialLog?: BrewLogEntry;
   onUpdate: (entry: BrewLogEntry) => void;
   onSaveAndExit: (entry: BrewLogEntry) => void;
-  /** Brewing installation of the recipe, for water volumes and boil gravity */
-  equipment?: LibraryIngredient;
-  /** Library, for the recipe's water profiles */
+  /** Installation chosen when the brew was started (new brews only) */
+  initialEquipmentId?: string;
+  /** Library: installations and the recipe's water profiles */
   library?: LibraryIngredient[];
 }
 
-const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpdate, onSaveAndExit, equipment, library = [] }) => {
+const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpdate, onSaveAndExit, initialEquipmentId, library = [] }) => {
   const { t, lang } = useTranslation();
   const { preferences, breweryRole, isAdmin } = useUser();
 
@@ -34,6 +34,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
   const [entry, setEntry] = useState<BrewLogEntry>(initialLog || {
     id: crypto.randomUUID(),
     recipeId: baseRecipe.id || 'unassigned',
+    ...(initialEquipmentId ? { equipmentId: initialEquipmentId } : {}),
     date: new Date().toISOString().split('T')[0],
     brewDate: new Date().toISOString().split('T')[0],
     status: 'brewing',
@@ -53,6 +54,11 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
       bottling_volume: baseRecipe.batch_size.value
     }
   });
+
+  // Installation: the one chosen for this brew, otherwise the recipe's or the brewery default
+  const equipmentOptions = useMemo(() => library.filter(l => l.type === 'equipment'), [library]);
+  const equipment = useMemo(() => resolveEquipment(baseRecipe, library, entry.equipmentId), [baseRecipe, library, entry.equipmentId]);
+  const recipeEquipment = useMemo(() => resolveEquipment(baseRecipe, library), [baseRecipe, library]);
 
   // Brewed at another size than the recipe: every amount of the recipe × factor
   const recipe = useMemo(
@@ -364,7 +370,19 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
               </div>
             </div>
 
-            <WaterPlanCard recipe={recipe} equipment={equipment} og={currentStats.plannedOg} />
+            <WaterPlanCard
+              recipe={recipe}
+              equipment={equipment}
+              og={currentStats.plannedOg}
+              equipmentOptions={canEdit && entry.status === 'brewing' ? equipmentOptions : undefined}
+              defaultEquipment={recipeEquipment}
+              selectedEquipmentId={entry.equipmentId ?? ''}
+              onEquipmentChange={canEdit && entry.status === 'brewing' ? equipmentId => setEntry(prev => {
+                const next = { ...prev };
+                if (equipmentId) next.equipmentId = equipmentId; else delete next.equipmentId;
+                return next;
+              }) : undefined}
+            />
             <WaterChemistryCard recipe={recipe} library={library} equipment={equipment} />
 
             {recipe.ingredients.cultures.length > 0 && (
