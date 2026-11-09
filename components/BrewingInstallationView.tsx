@@ -270,6 +270,27 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
     startEditing(newItem);
   };
 
+  /** Make this installation the brewery default, or (again) remove the default. */
+  const toggleDefault = async (item: LibraryIngredient) => {
+    const makeDefault = !item.is_default;
+    const changed = equipment
+      .filter(e => (e.id === item.id ? !!e.is_default !== makeDefault : !!e.is_default && makeDefault))
+      .map(e => ({ ...e, is_default: e.id === item.id ? makeDefault : false }));
+    if (changed.length === 0) return;
+    const before = library;
+    onUpdate(library.map(i => changed.find(c => c.id === i.id) ?? i));
+    if (user?.id) {
+      for (const c of changed) {
+        const result = await supabaseService.saveLibraryIngredient(c, c.user_id || user.id, c.brewery_id || profile?.brewery_id);
+        if (result?.error) {
+          alert(`${t('save_failed')}: ${result.error.message}`);
+          onUpdate(before);
+          return;
+        }
+      }
+    }
+  };
+
   const confirmDelete = async () => {
     if (itemToDelete) {
       const before = library;
@@ -405,14 +426,25 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
                 <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
                     {canEdit && (
                         <>
-                            <button onClick={() => startEditing(item)} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors"><i className="fas fa-edit text-xs"></i></button>
-                            <button onClick={() => setItemToDelete(item)} className="text-[var(--color-text-xmuted)] hover:text-red-500 transition-colors"><i className="fas fa-trash-alt text-xs"></i></button>
+                            {activeTab === 'equipment' && (
+                              <button
+                                type="button"
+                                onClick={() => toggleDefault(item)}
+                                aria-pressed={!!item.is_default}
+                                aria-label={item.is_default ? t('unset_default_equipment') : t('set_default_equipment')}
+                                title={item.is_default ? t('unset_default_equipment') : t('set_default_equipment')}
+                                className={`transition-colors ${item.is_default ? 'text-amber-500 hover:text-amber-700' : 'text-[var(--color-text-xmuted)] hover:text-amber-500'}`}
+                              ><i className={`${item.is_default ? 'fas' : 'far'} fa-star text-xs`} aria-hidden="true"></i></button>
+                            )}
+                            <button type="button" onClick={() => startEditing(item)} aria-label={t('edit_btn')} title={t('edit_btn')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors"><i className="fas fa-edit text-xs" aria-hidden="true"></i></button>
+                            <button type="button" onClick={() => setItemToDelete(item)} aria-label={t('delete_btn')} title={t('delete_btn')} className="text-[var(--color-text-xmuted)] hover:text-red-500 transition-colors"><i className="fas fa-trash-alt text-xs" aria-hidden="true"></i></button>
                         </>
                     )}
                 </div>
                 <div className="mb-4">
                     <h4 className="font-black text-xl text-[var(--color-text)] leading-tight pr-12">{item.name}</h4>
                     {item.equipment_type && <span className="text-[10px] font-black text-[var(--color-accent-dark)] uppercase tracking-widest mt-1 inline-block">{t(item.equipment_type as any)}</span>}
+                    {activeTab === 'equipment' && item.is_default && <span className="ml-2 text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full uppercase tracking-widest inline-block">{t('default_equipment_badge')}</span>}
                 </div>
 
                 {activeTab === 'equipment' ? (

@@ -5,7 +5,7 @@ import {
   sgToPlato, platoToSg, formatGravity, correctHydrometer, buGuRatio,
   brixToSg, sgToBrix, refractometerFg, kegPressure,
   pitchRate, cellsNeeded, liquidViability, starterGrowth, starterFor, DRY_CELLS_PER_GRAM,
-  waterPlan, resolveEquipment,
+  waterPlan, resolveEquipment, defaultEquipment,
   roundTo, roundByUnit, normalizeRecipe, normalizeLibraryItem, formatBrewNumber, formatStockAmount, srmToEbc,
 } from '../../services/calculations';
 import type { Recipe } from '../../types';
@@ -413,6 +413,20 @@ describe('water plan', () => {
     expect(resolveEquipment({ equipmentId: 'eq1' }, lib)?.id).toBe('eq1');
     expect(resolveEquipment({}, [...lib, { ...brewie, id: 'eq2' }])).toBeUndefined();
     expect(resolveEquipment({}, [])).toBeUndefined();
+  });
+
+  it('brew choice, then recipe, then the brewery default', () => {
+    const monk = { ...brewie, id: 'eq2', name: 'Brew Monk B40' };
+    const two: any[] = [brewie, monk];
+    expect(resolveEquipment({}, two)).toBeUndefined();               // nothing decides: ask
+    expect(defaultEquipment(two)).toBeUndefined();
+    const withDefault: any[] = [brewie, { ...monk, is_default: true }];
+    expect(defaultEquipment(withDefault)?.id).toBe('eq2');
+    expect(resolveEquipment({}, withDefault)?.id).toBe('eq2');
+    expect(resolveEquipment({ equipmentId: 'eq1' }, withDefault)?.id).toBe('eq1');
+    expect(resolveEquipment({ equipmentId: 'eq1' }, withDefault, 'eq2')?.id).toBe('eq2');
+    // a removed installation falls back to the default
+    expect(resolveEquipment({ equipmentId: 'gone' }, withDefault)?.id).toBe('eq2');
   });
 
   it('uses the average boil gravity for IBU when the installation is known', () => {

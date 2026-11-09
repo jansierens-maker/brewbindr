@@ -16,6 +16,8 @@ interface WaterPlanCardProps {
   onWaterChange?: (water: RecipeWater | undefined) => void;
   /** The installation used when the recipe names none (the brewery's only one) */
   defaultEquipment?: LibraryIngredient;
+  /** Installation chosen in the picker (default: the recipe's) */
+  selectedEquipmentId?: string;
 }
 
 const WARNING_KEYS = {
@@ -27,7 +29,7 @@ const WARNING_KEYS = {
 } as const satisfies Record<WaterWarning, string>;
 
 /** Water volumes and strike temperature for brew day, from the recipe and the installation. */
-const WaterPlanCard: React.FC<WaterPlanCardProps> = ({ recipe, equipment, og, equipmentOptions, onEquipmentChange, onWaterChange, defaultEquipment }) => {
+const WaterPlanCard: React.FC<WaterPlanCardProps> = ({ recipe, equipment, og, equipmentOptions, onEquipmentChange, onWaterChange, defaultEquipment, selectedEquipmentId }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
   const imperial = preferences.units === 'imperial';
@@ -93,7 +95,7 @@ const WaterPlanCard: React.FC<WaterPlanCardProps> = ({ recipe, equipment, og, eq
               id="recipe_equipment"
               name="recipe_equipment"
               className="px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-700"
-              value={recipe.equipmentId ?? ''}
+              value={(selectedEquipmentId !== undefined ? selectedEquipmentId : recipe.equipmentId) ?? ''}
               onChange={e => onEquipmentChange(e.target.value || undefined)}
             >
               <option value="">{defaultEquipment ? t('equipment_default').replace('{name}', defaultEquipment.name) : t('equipment_none')}</option>
@@ -104,7 +106,7 @@ const WaterPlanCard: React.FC<WaterPlanCardProps> = ({ recipe, equipment, og, eq
       </div>
 
       {!plan ? (
-        <p className="text-xs font-bold text-stone-500">{t('water_needs_equipment')}</p>
+        <p className="text-xs font-bold text-stone-500">{t(equipmentOptions?.length && onEquipmentChange ? 'water_needs_equipment' : 'water_no_equipment')}</p>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

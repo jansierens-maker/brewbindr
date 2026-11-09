@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, resolveEquipment, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
+import { calculateRecipeStats, resolveEquipment, defaultEquipment as breweryDefaultEquipment, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canEditRecipe, canManageRecipes } from '../services/permissions';
@@ -76,7 +76,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
   // Brewing installation: the one the recipe names, or the brewery's only one
   const equipmentOptions = useMemo(() => library.filter(l => l.type === 'equipment'), [library]);
   const equipment = useMemo(() => resolveEquipment(recipe, library), [recipe.equipmentId, library]);
-  const defaultEquipment = useMemo(() => resolveEquipment({}, library), [library]);
+  const defaultEquipment = useMemo(() => breweryDefaultEquipment(library), [library]);
   // Too big (or much smaller) for the installation: offer to scale the whole recipe
   const scaleSuggestion = useMemo(() => suggestScale(recipe, equipment), [recipe, equipment]);
   const applyScale = () => {
