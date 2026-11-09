@@ -102,7 +102,7 @@ export const supabaseService = {
     try {
       const tableList = ['recipes', 'brew_logs', 'tasting_notes', ...Object.values(TABLE_MAP)];
       // Tables that have a `status` column
-      const STATUS_TABLES = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+      const STATUS_TABLES = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
 
       const requests = tableList.map(t => {
         const hasStatus = STATUS_TABLES.includes(t);
@@ -262,7 +262,7 @@ export const supabaseService = {
     const table = TABLE_MAP[item.type];
     if (!client || !table) return;
 
-    const STATUS_TABLES = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+    const STATUS_TABLES = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
     const hasStatus = STATUS_TABLES.includes(item.type === 'mash_profile' ? 'mash_profiles' : table);
 
     const payload: any = {
@@ -296,7 +296,7 @@ export const supabaseService = {
   async fetchPendingSubmissions() {
     const client = supabase;
     if (!client) return [];
-    const tables = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+    const tables = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
 
     try {
       const requests = tables.map(t => client.from(t).select('data, user_id, status').eq('status', 'submitted'));
@@ -365,7 +365,7 @@ export const supabaseService = {
       }
     });
 
-    const STATUS_TABLES = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles'];
+    const STATUS_TABLES = ['recipes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
 
     const tasks = Object.entries(libraryByType).map(async ([table, items]) => {
       // Find the ingredient type that corresponds to this table

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, BrewLogEntry, LibraryIngredient } from '../types';
-import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure, resolveEquipment } from '../services/calculations';
+import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure, resolveEquipment, ownInstallations } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canManageBrews } from '../services/permissions';
@@ -56,7 +56,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
   });
 
   // Installation: the one chosen for this brew, otherwise the recipe's or the brewery default
-  const equipmentOptions = useMemo(() => library.filter(l => l.type === 'equipment'), [library]);
+  const equipmentOptions = useMemo(() => ownInstallations(library), [library]);
   const equipment = useMemo(() => resolveEquipment(baseRecipe, library, entry.equipmentId), [baseRecipe, library, entry.equipmentId]);
   const recipeEquipment = useMemo(() => resolveEquipment(baseRecipe, library), [baseRecipe, library]);
 

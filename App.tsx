@@ -21,7 +21,7 @@ import { BottomNav } from './components/BottomNav';
 import { InfoBanner } from './components/InfoBanner';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
-import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment } from './services/calculations';
+import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment, ownInstallations } from './services/calculations';
 import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes, canPublish } from './services/permissions';
 import { Taster, batchNumbers, memberName } from './services/tasting';
 import { URL_IMPORT_ENABLED } from './services/features';
@@ -755,7 +755,7 @@ const AppContent: React.FC = () => {
    * the brewery has a default and the recipe uses that one (or names none).
    */
   const startBrew = (recipe: Recipe) => {
-    const installations = deduplicatedLibrary.filter(l => l.type === 'equipment');
+    const installations = ownInstallations(deduplicatedLibrary);
     if (installations.length <= 1) return openNewBrew(recipe);
     const def = installations.find(e => e.is_default);
     const recipeId = installations.some(e => e.id === recipe.equipmentId) ? recipe.equipmentId : undefined;
@@ -1981,7 +1981,7 @@ const AppContent: React.FC = () => {
               {brewPickRecipe && (
                 <EquipmentPickerDialog
                   recipeName={brewPickRecipe.name}
-                  installations={deduplicatedLibrary.filter(l => l.type === 'equipment')}
+                  installations={ownInstallations(deduplicatedLibrary)}
                   recipeEquipmentId={brewPickRecipe.equipmentId}
                   onPick={id => { const r = brewPickRecipe; setBrewPickRecipe(null); openNewBrew(r, id); }}
                   onCancel={() => setBrewPickRecipe(null)}

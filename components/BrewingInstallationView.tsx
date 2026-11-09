@@ -3,9 +3,10 @@ import React, { useState, useMemo } from 'react';
 import { LibraryIngredient, MashStep, Vessel } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
-import { canManageLibrary } from '../services/permissions';
+import { canManageLibrary, canPublish } from '../services/permissions';
+import { submitToPublicLibrary } from '../services/publicLibrary';
 import { supabaseService } from '../services/supabaseService';
-import { equipmentCapacity } from '../services/calculations';
+import { equipmentCapacity, isPrivateItem } from '../services/calculations';
 import WaterProfilesManager from './WaterProfilesManager';
 
 interface Props {
@@ -177,9 +178,11 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
   const [creationStep, setCreationStep] = useState<1 | 2>(1);
 
   const canEdit = canManageLibrary({ breweryRole, isAdmin });
+  // Submitting to the public library: brewery admin only
+  const canSubmit = canPublish({ breweryRole, isAdmin });
 
-  const equipment = useMemo(() => library.filter(i => i.type === 'equipment' && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)), [library, profile?.brewery_id, user?.id]);
-  const mashProfiles = useMemo(() => library.filter(i => i.type === 'mash_profile' && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)), [library, profile?.brewery_id, user?.id]);
+  const equipment = useMemo(() => library.filter(i => i.type === 'equipment' && isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)), [library, profile?.brewery_id, user?.id]);
+  const mashProfiles = useMemo(() => library.filter(i => i.type === 'mash_profile' && isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)), [library, profile?.brewery_id, user?.id]);
 
   const startEditing = (item: LibraryIngredient) => {
     setEditingId(item.id);
@@ -268,6 +271,12 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
     };
     onUpdate([...library, newItem]);
     startEditing(newItem);
+  };
+
+  const submitPublic = async (item: LibraryIngredient) => {
+    if (!user?.id) return;
+    const copy = await submitToPublicLibrary(item, library, { userId: user.id, breweryId: profile?.brewery_id, t });
+    if (copy) onUpdate([...library, copy]);
   };
 
   /** Make this installation the brewery default, or (again) remove the default. */
@@ -403,7 +412,7 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
       </div>
 
       {activeTab === 'water' ? (
-        <WaterProfilesManager library={library} onUpdate={onUpdate} canEdit={canEdit} />
+        <WaterProfilesManager library={library} onUpdate={onUpdate} canEdit={canEdit} canSubmit={canSubmit} />
       ) : !editingId ? (
         <>
           <div className="flex justify-between items-center px-2">
@@ -435,6 +444,9 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
                                 title={item.is_default ? t('unset_default_equipment') : t('set_default_equipment')}
                                 className={`transition-colors ${item.is_default ? 'text-amber-500 hover:text-amber-700' : 'text-[var(--color-text-xmuted)] hover:text-amber-500'}`}
                               ><i className={`${item.is_default ? 'fas' : 'far'} fa-star text-xs`} aria-hidden="true"></i></button>
+                            )}
+                            {canSubmit && (
+                              <button type="button" onClick={() => submitPublic(item)} aria-label={`${t('submit_to_public')}: ${item.name}`} title={t('submit_to_public')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors"><i className="fas fa-cloud-upload-alt text-xs" aria-hidden="true"></i></button>
                             )}
                             <button type="button" onClick={() => startEditing(item)} aria-label={t('edit_btn')} title={t('edit_btn')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors"><i className="fas fa-edit text-xs" aria-hidden="true"></i></button>
                             <button type="button" onClick={() => setItemToDelete(item)} aria-label={t('delete_btn')} title={t('delete_btn')} className="text-[var(--color-text-xmuted)] hover:text-red-500 transition-colors"><i className="fas fa-trash-alt text-xs" aria-hidden="true"></i></button>
