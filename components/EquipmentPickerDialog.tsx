@@ -5,14 +5,18 @@ import { useTranslation } from '../App';
 interface Props {
   recipeName: string;
   installations: LibraryIngredient[];
+  /** The recipe's installation: marked and focused */
+  recipeEquipmentId?: string;
   onPick: (equipmentId: string) => void;
   onCancel: () => void;
 }
 
 /** "Which installation do you brew this on?" — shown when a brew starts and nothing decides it. */
-const EquipmentPickerDialog: React.FC<Props> = ({ recipeName, installations, onPick, onCancel }) => {
+const EquipmentPickerDialog: React.FC<Props> = ({ recipeName, installations, recipeEquipmentId, onPick, onCancel }) => {
   const { t } = useTranslation();
   const firstRef = useRef<HTMLButtonElement>(null);
+  const suggestedId =
+    installations.find(e => e.id === recipeEquipmentId)?.id ?? installations.find(e => e.is_default)?.id ?? installations[0]?.id;
 
   useEffect(() => {
     firstRef.current?.focus();
@@ -35,15 +39,19 @@ const EquipmentPickerDialog: React.FC<Props> = ({ recipeName, installations, onP
           <p className="text-sm text-stone-500 mt-1">{t('choose_equipment_hint').replace('{recipe}', recipeName)}</p>
         </div>
         <div className="space-y-2">
-          {installations.map((e, i) => (
+          {installations.map(e => (
             <button
               key={e.id}
-              ref={i === 0 ? firstRef : undefined}
+              ref={e.id === suggestedId ? firstRef : undefined}
               type="button"
               onClick={() => onPick(e.id)}
-              className="w-full text-left p-4 rounded-xl border border-stone-200 hover:border-amber-500 hover:bg-amber-50 transition-all flex items-center justify-between gap-3"
+              className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between gap-3 hover:border-amber-500 hover:bg-amber-50 ${e.id === suggestedId ? 'border-amber-500 bg-amber-50' : 'border-stone-200'}`}
             >
-              <span className="font-bold text-stone-900">{e.name}</span>
+              <span className="font-bold text-stone-900 flex flex-wrap items-center gap-2">
+                {e.name}
+                {e.id === recipeEquipmentId && <span className="text-[10px] font-black uppercase tracking-widest text-sky-800 bg-sky-100 px-2 py-0.5 rounded-full">{t('equipment_tag_recipe')}</span>}
+                {e.is_default && <span className="text-[10px] font-black uppercase tracking-widest text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">{t('default_equipment_badge')}</span>}
+              </span>
               <span className="text-xs font-bold text-stone-500 whitespace-nowrap">{e.batch_size ? `${e.batch_size} L` : ''}</span>
             </button>
           ))}

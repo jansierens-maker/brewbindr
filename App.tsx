@@ -751,13 +751,16 @@ const AppContent: React.FC = () => {
   };
 
   /**
-   * Start a brew. When neither the recipe nor a brewery default decides the installation
-   * and there are several, ask which one first.
+   * Start a brew. With several installations, ask which one the brew is made on, unless
+   * the brewery has a default and the recipe uses that one (or names none).
    */
   const startBrew = (recipe: Recipe) => {
     const installations = deduplicatedLibrary.filter(l => l.type === 'equipment');
-    if (installations.length > 1 && !resolveEquipment(recipe, deduplicatedLibrary)) setBrewPickRecipe(recipe);
-    else openNewBrew(recipe);
+    if (installations.length <= 1) return openNewBrew(recipe);
+    const def = installations.find(e => e.is_default);
+    const recipeId = installations.some(e => e.id === recipe.equipmentId) ? recipe.equipmentId : undefined;
+    if (def && (!recipeId || recipeId === def.id)) return openNewBrew(recipe);
+    setBrewPickRecipe(recipe);
   };
 
   const handleSaveAndExitBrewLog = (entry: BrewLogEntry) => {
@@ -1979,6 +1982,7 @@ const AppContent: React.FC = () => {
                 <EquipmentPickerDialog
                   recipeName={brewPickRecipe.name}
                   installations={deduplicatedLibrary.filter(l => l.type === 'equipment')}
+                  recipeEquipmentId={brewPickRecipe.equipmentId}
                   onPick={id => { const r = brewPickRecipe; setBrewPickRecipe(null); openNewBrew(r, id); }}
                   onCancel={() => setBrewPickRecipe(null)}
                 />
