@@ -70,6 +70,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { section: t('nav_section_library'), items: [
       { id: 'recipes-public', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'public' },
       { id: 'library', label: t('ingredients_header'), icon: 'fa-seedling', view: 'library' },
+      { id: 'library_mash', label: t('nav_lib_mash'), icon: 'fa-layer-group', view: 'library_mash' },
+      { id: 'library_styles', label: t('nav_lib_styles'), icon: 'fa-tags', view: 'library_styles' },
+      { id: 'library_equipment', label: t('lib_tab_equipment'), icon: 'fa-gears', view: 'library_equipment' },
+      { id: 'library_water', label: t('tab_water_profiles'), icon: 'fa-droplet', view: 'library_water' },
     ]},
     { section: t('nav_section_system'), items: [
       { id: 'settings', label: t('settings_nav_label'), icon: 'fa-gear', view: 'settings' },
@@ -86,7 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const isGated = (item: any) => {
-    return !user && item.id !== 'recipes-public' && item.id !== 'library' && item.id !== 'settings' && item.id !== 'help';
+    return !user && item.id !== 'recipes-public' && !String(item.id).startsWith('library') && item.id !== 'settings' && item.id !== 'help';
   };
 
   const handleNavClick = (item: any) => {

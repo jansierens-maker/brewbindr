@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { LibraryIngredient, MashStep } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -19,7 +19,11 @@ const TABLE_MAP: Record<string, string> = {
   'water': 'waters'
 };
 
+/** Library screen: ingredients (malt, hops, yeast, other), or one kind of item */
+export type LibrarySection = 'ingredients' | 'mash_profile' | 'style' | 'equipment' | 'water';
+
 interface LibraryProps {
+  section?: LibrarySection;
   ingredients: LibraryIngredient[];
   libraryView: 'personal' | 'public';
   onUpdate: (ingredients: LibraryIngredient[]) => void;
@@ -28,6 +32,7 @@ interface LibraryProps {
 }
 
 const IngredientLibrary: React.FC<LibraryProps> = ({ 
+  section = 'ingredients',
   ingredients, 
   libraryView,
   onUpdate,
@@ -70,16 +75,11 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   // Submitting to the public library: brewery admin only
   const canSubmit = canPublish({ breweryRole, isAdmin });
   type Filter = 'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style' | 'equipment' | 'water';
-  const [filter, setFilter] = useState<Filter>('fermentable');
+  const filters: Filter[] = section === 'ingredients' ? ['fermentable', 'hop', 'culture', 'misc'] : [section];
+  const [filter, setFilter] = useState<Filter>(filters[0]);
   // Installations and water profiles are managed under Brewing Installation; here only
   // their public library (browse, add to your own)
-  const filters: Filter[] = libraryView === 'public'
-    ? ['fermentable', 'hop', 'culture', 'misc', 'mash_profile', 'style', 'equipment', 'water']
-    : ['fermentable', 'hop', 'culture', 'misc', 'mash_profile', 'style'];
   const readOnlyType = filter === 'equipment' || filter === 'water';
-  useEffect(() => {
-    if (libraryView === 'personal' && (filter === 'equipment' || filter === 'water')) setFilter('fermentable');
-  }, [libraryView, filter]);
   const filterLabel = (f: Filter) =>
     f === 'fermentable' ? t('malt') : f === 'hop' ? t('hops') : f === 'culture' ? t('yeast_lib') : f === 'mash_profile' ? t('mash_profile')
     : f === 'misc' ? t('miscs_label') : f === 'equipment' ? t('lib_tab_equipment') : f === 'water' ? t('tab_water_profiles') : t('style_label');
@@ -284,7 +284,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between bg-[var(--color-bg)] p-6 rounded-[var(--radius)] shadow-[var(--shadow-sm)] border border-[var(--color-border)]">
+      {filters.length > 1 && <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between bg-[var(--color-bg)] p-6 rounded-[var(--radius)] shadow-[var(--shadow-sm)] border border-[var(--color-border)]">
         <div className="w-full">
           <div className="flex flex-wrap gap-1">
             {filters.map(f => (
@@ -298,13 +298,15 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             ))}
           </div>
         </div>
-      </div>
+      </div>}
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end px-2 gap-4">
         <div>
-          <h3 className="text-2xl font-black capitalize text-[var(--color-text)] font-[var(--font-display)]">
-            {filterLabel(filter)}
-          </h3>
+          {filters.length > 1 && (
+            <h3 className="text-2xl font-black capitalize text-[var(--color-text)] font-[var(--font-display)]">
+              {filterLabel(filter)}
+            </h3>
+          )}
           <p className="text-[var(--color-text-xmuted)] text-xs font-bold">
             {visibleIngredients.length} {t('items_in_collection')}
           </p>
