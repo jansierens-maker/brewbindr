@@ -425,9 +425,20 @@ const batchLiters = (recipe: Recipe): number => {
   return normalizeUnit(recipe.batch_size?.unit) === 'gallons' ? v * 3.78541 : v;
 };
 
+/** A brewery's own item, not a copy in (or on its way to) the public library. */
+export const isPrivateItem = (item: Pick<LibraryIngredient, 'status'>) => !item.status || item.status === 'private';
+
+/** The brewery's own brewing installations. */
+export const ownInstallations = (library: LibraryIngredient[]) =>
+  library.filter(l => l.type === 'equipment' && isPrivateItem(l));
+
+/** The brewery's own water profiles. */
+export const ownWaterProfiles = (library: LibraryIngredient[]) =>
+  library.filter(l => l.type === 'water' && isPrivateItem(l));
+
 /** The brewery's default installation: the one marked as default, otherwise its only one. */
 export const defaultEquipment = (library: LibraryIngredient[]): LibraryIngredient | undefined => {
-  const all = library.filter(l => l.type === 'equipment');
+  const all = ownInstallations(library);
   return all.find(e => e.is_default) ?? (all.length === 1 ? all[0] : undefined);
 };
 
@@ -441,7 +452,7 @@ export const resolveEquipment = (
   library: LibraryIngredient[],
   brewEquipmentId?: string,
 ): LibraryIngredient | undefined => {
-  const all = library.filter(l => l.type === 'equipment');
+  const all = ownInstallations(library);
   for (const id of [brewEquipmentId, recipe.equipmentId]) {
     const found = id ? all.find(e => e.id === id) : undefined;
     if (found) return found;

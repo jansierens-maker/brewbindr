@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LibraryIngredient, MashStep } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -69,7 +69,20 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   const canEdit = canManageLibrary({ breweryRole, isAdmin });
   // Submitting to the public library: brewery admin only
   const canSubmit = canPublish({ breweryRole, isAdmin });
-  const [filter, setFilter] = useState<'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style'>('fermentable');
+  type Filter = 'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style' | 'equipment' | 'water';
+  const [filter, setFilter] = useState<Filter>('fermentable');
+  // Installations and water profiles are managed under Brewing Installation; here only
+  // their public library (browse, add to your own)
+  const filters: Filter[] = libraryView === 'public'
+    ? ['fermentable', 'hop', 'culture', 'misc', 'mash_profile', 'style', 'equipment', 'water']
+    : ['fermentable', 'hop', 'culture', 'misc', 'mash_profile', 'style'];
+  const readOnlyType = filter === 'equipment' || filter === 'water';
+  useEffect(() => {
+    if (libraryView === 'personal' && (filter === 'equipment' || filter === 'water')) setFilter('fermentable');
+  }, [libraryView, filter]);
+  const filterLabel = (f: Filter) =>
+    f === 'fermentable' ? t('malt') : f === 'hop' ? t('hops') : f === 'culture' ? t('yeast_lib') : f === 'mash_profile' ? t('mash_profile')
+    : f === 'misc' ? t('miscs_label') : f === 'equipment' ? t('lib_tab_equipment') : f === 'water' ? t('tab_water_profiles') : t('style_label');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
   const [itemToDelete, setItemToDelete] = useState<LibraryIngredient | null>(null);
@@ -274,13 +287,13 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between bg-[var(--color-bg)] p-6 rounded-[var(--radius)] shadow-[var(--shadow-sm)] border border-[var(--color-border)]">
         <div className="w-full">
           <div className="flex flex-wrap gap-1">
-            {['fermentable', 'hop', 'culture', 'misc', 'mash_profile', 'style'].map((f: any) => (
+            {filters.map(f => (
               <button 
                 key={f}
                 onClick={() => { setFilter(f); cancelEditing(); setSelectedIds([]); }}
                 className={`px-5 py-2.5 rounded-[var(--radius-sm)] font-bold text-xs transition-all ${filter === f ? 'bg-[var(--color-accent)] text-white shadow-lg' : 'text-[var(--color-text-xmuted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-muted)]'}`}
               >
-                {f === 'fermentable' ? t('malt') : f === 'hop' ? t('hops') : f === 'culture' ? t('yeast_lib') : f === 'mash_profile' ? t('mash_profile') : f === 'misc' ? t('miscs_label') : t('style_label')}
+                {filterLabel(f)}
               </button>
             ))}
           </div>
@@ -290,7 +303,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end px-2 gap-4">
         <div>
           <h3 className="text-2xl font-black capitalize text-[var(--color-text)] font-[var(--font-display)]">
-            {filter === 'fermentable' ? t('malt') : filter === 'hop' ? t('hops') : filter === 'culture' ? t('yeast_lib') : filter === 'mash_profile' ? t('mash_profile') : filter === 'misc' ? t('miscs_label') : t('style_label')}
+            {filterLabel(filter)}
           </h3>
           <p className="text-[var(--color-text-xmuted)] text-xs font-bold">
             {visibleIngredients.length} {t('items_in_collection')}
@@ -352,7 +365,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                      <i className="fas fa-check text-[10px]"></i>
                    </button>
                    )}
-                   {((!item.user_id || item.user_id === user?.id) || (item.brewery_id === profile?.brewery_id)) && canEdit && (
+                   {((!item.user_id || item.user_id === user?.id) || (item.brewery_id === profile?.brewery_id)) && canEdit && !readOnlyType && (
                       <button onClick={() => startEditing(item)} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors">
                         <i className="fas fa-edit text-xs"></i>
                       </button>
@@ -532,6 +545,24 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     {item.type === 'mash_profile' && (
                       <div className="space-y-1">
                         <p>{(item.steps || []).length} {t('mash_steps')}</p>
+                      </div>
+                    )}
+                    {item.type === 'equipment' && (
+                      <div className="space-y-1">
+                        {item.equipment_type && <p>{t(item.equipment_type as any)}</p>}
+                        <div className="flex flex-wrap gap-2 text-[8px] text-[var(--color-text)]">
+                          {item.batch_size !== undefined && <span className="bg-[var(--color-bg-subtle)] px-1 rounded border border-[var(--color-border)]">{t('batch_size')}: {item.batch_size} L</span>}
+                          {item.efficiency !== undefined && <span className="bg-[var(--color-bg-subtle)] px-1 rounded border border-[var(--color-border)]">{t('efficiency')}: {item.efficiency}%</span>}
+                          {item.boil_capacity !== undefined && <span className="bg-[var(--color-bg-subtle)] px-1 rounded border border-[var(--color-border)]">{t('boil_capacity_label')}: {item.boil_capacity} L</span>}
+                          {item.max_grain_kg !== undefined && <span className="bg-[var(--color-bg-subtle)] px-1 rounded border border-[var(--color-border)]">{t('max_grain_label')}: {item.max_grain_kg} kg</span>}
+                        </div>
+                      </div>
+                    )}
+                    {item.type === 'water' && (
+                      <div className="flex flex-wrap gap-2 text-[8px] text-[var(--color-text)]">
+                        {([['Ca', item.calcium], ['Mg', item.magnesium], ['Na', item.sodium], ['Cl', item.chloride], ['SO₄', item.sulfate], ['HCO₃', item.bicarbonate]] as const).map(([label, v]) => (
+                          <span key={label} className="bg-[var(--color-bg-subtle)] px-1 rounded border border-[var(--color-border)] normal-case">{label} {v ?? '-'}</span>
+                        ))}
                       </div>
                     )}
                   </div>

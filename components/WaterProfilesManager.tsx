@@ -4,12 +4,15 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { supabaseService } from '../services/supabaseService';
 import { ionsOf, residualAlkalinity, sulfateChlorideRatio, WATER_PRESETS } from '../services/waterChemistry';
-import { formatBrewNumber } from '../services/calculations';
+import { formatBrewNumber, isPrivateItem } from '../services/calculations';
+import { submitToPublicLibrary } from '../services/publicLibrary';
 
 interface Props {
   library: LibraryIngredient[];
   onUpdate: (newLibrary: LibraryIngredient[]) => void;
   canEdit: boolean;
+  /** May submit to the public library (brewery admin) */
+  canSubmit?: boolean;
 }
 
 const FIELDS = [
@@ -22,12 +25,12 @@ const FIELDS = [
 ] as const;
 
 /** Water profiles of the brewery (e.g. the tap water), with their minerals in mg/L. */
-const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit }) => {
+const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, canSubmit }) => {
   const { t, lang } = useTranslation();
   const { user, profile } = useUser();
   const [form, setForm] = useState<Partial<LibraryIngredient> | null>(null);
   const waters = useMemo(
-    () => library.filter(i => i.type === 'water' && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)),
+    () => library.filter(i => i.type === 'water' && isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)),
     [library, profile?.brewery_id, user?.id],
   );
 
@@ -45,6 +48,12 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit }) =
       if (result?.error) alert(`${t('save_failed')}: ${result.error.message}`);
     }
     setForm(null);
+  };
+
+  const submitPublic = async (item: LibraryIngredient) => {
+    if (!user?.id) return;
+    const copy = await submitToPublicLibrary(item, library, { userId: user.id, breweryId: profile?.brewery_id, t });
+    if (copy) onUpdate([...library, copy]);
   };
 
   const remove = async (item: LibraryIngredient) => {
@@ -115,6 +124,9 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit }) =
               <h4 className="font-black text-[var(--color-text)]">{w.name}</h4>
               {canEdit && (
                 <div className="flex gap-3">
+                  {canSubmit && (
+                    <button type="button" onClick={() => submitPublic(w)} aria-label={`${t('submit_to_public')}: ${w.name}`} title={t('submit_to_public')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)]"><i className="fas fa-cloud-upload-alt text-xs" aria-hidden="true"></i></button>
+                  )}
                   <button onClick={() => setForm(w)} aria-label={`${t('edit_btn')} ${w.name}`} title={t('edit_btn')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)]"><i className="fas fa-edit text-xs" aria-hidden="true"></i></button>
                   <button onClick={() => remove(w)} aria-label={`${t('delete_btn')} ${w.name}`} title={t('delete_btn')} className="text-[var(--color-text-xmuted)] hover:text-red-500"><i className="fas fa-trash-alt text-xs" aria-hidden="true"></i></button>
                 </div>
