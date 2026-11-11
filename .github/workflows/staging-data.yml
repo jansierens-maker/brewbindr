@@ -30,11 +30,21 @@ jobs:
         with:
           node-version: '26'
 
-      - name: Copy
+      # Production is read through the Management API; staging is written with psql over
+      # its session pooler (the access token may not cover the staging project)
+      - name: Read production
         run: node scripts/copy-to-staging.mjs
         env:
+          SQL_FILE: ${{ runner.temp }}/staging.sql
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROD_REF: tgbeaombwskioefhunxf
           STAGING_REF: xylsffujkzcwfeyxkzve
           SOURCE_EMAIL: ${{ inputs.source_email }}
           TARGET_EMAIL: ${{ inputs.target_email }}
+
+      - name: Write staging
+        run: |
+          command -v psql >/dev/null || (sudo apt-get update -q && sudo apt-get install -y -q postgresql-client)
+          psql "$STAGING_DB_URL" -v ON_ERROR_STOP=1 -q -f "$RUNNER_TEMP/staging.sql"
+        env:
+          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
