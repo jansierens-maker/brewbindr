@@ -44,7 +44,8 @@ async function deleteRecipe(page: Page, name: string) {
 }
 
 test.describe('Recepten', () => {
-  test('recept aanmaken, dubbele naam geweigerd, recept verwijderen', async ({ page }) => {
+  // Writes data: runs on previews (staging database), not on production
+  test('recept aanmaken, dubbele naam geweigerd, recept verwijderen', { tag: '@writes' }, async ({ page }) => {
     // Login, two saves and a delete against the live preview: allow more than the default 30 s
     test.setTimeout(60000);
     // Unique per run; the recipe is removed again at the end

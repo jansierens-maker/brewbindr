@@ -1,8 +1,9 @@
 name: E2E Tests
 
 # Runs after Vercel finishes a deployment, against THAT deployment's URL:
-# - every PR push → Vercel preview → tests run against the preview
-# - every merge to main → Vercel production → tests run against production
+# - every PR push → Vercel preview (staging database) → all tests
+# - every merge to main → Vercel production → only the tests that change nothing
+#   (tests tagged @writes are skipped), so no test data ends up in production
 # The result is reported on the commit, so it shows up as a check on the PR.
 on:
   deployment_status:
@@ -40,20 +41,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # --with-deps installs system packages through apt; when the Ubuntu mirrors are down,
+      # fall back to the browser alone (the runner image has most libraries already)
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium || npx playwright install chromium
 
       - name: Run E2E tests
-        run: npx playwright test
+        run: npx playwright test ${{ github.event.deployment.environment == 'Production' && '--grep-invert @writes' || '' }}
         env:
           CI: true
           # URL of the deployment Vercel just finished (preview or production)
           PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url || inputs.base_url }}
           # Lets Playwright past Vercel Deployment Protection on preview URLs
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-          # Test account (create in Supabase Dashboard)
-          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
-          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          # Test account: in the staging database for previews (STAGING_TEST_USER_*),
+          # in production for production (TEST_USER_*, only used to log in and out)
+          TEST_USER_EMAIL: ${{ github.event.deployment.environment != 'Production' && secrets.STAGING_TEST_USER_EMAIL || secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ github.event.deployment.environment != 'Production' && secrets.STAGING_TEST_USER_PASSWORD || secrets.TEST_USER_PASSWORD }}
 
       - name: Upload test report
         uses: actions/upload-artifact@v7
