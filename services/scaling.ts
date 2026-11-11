@@ -33,7 +33,6 @@ export const scaleRecipe = (recipe: Recipe, factor: number): Recipe => {
   if (!(factor > 0) || factor === 1) return recipe;
   const f = factor;
   const batchUnit = recipe.batch_size?.unit;
-  const salts = recipe.water_chem?.salts;
   return {
     ...recipe,
     batch_size: { ...recipe.batch_size, value: clean(round((recipe.batch_size?.value || 0) * f, batchUnit === 'gallons' ? 0.01 : 0.1)) },
@@ -69,13 +68,18 @@ export const scaleRecipe = (recipe: Recipe, factor: number): Recipe => {
         ...(recipe.water.sparge_l !== undefined ? { sparge_l: clean(round(recipe.water.sparge_l * f, 0.1)) } : {}),
       },
     } : {}),
-    ...(recipe.water_chem ? {
-      water_chem: {
-        ...recipe.water_chem,
-        ...(salts ? { salts: Object.fromEntries(Object.entries(salts).map(([k, v]) => [k, clean(round((v || 0) * f, 0.1))])) } : {}),
-        ...(recipe.water_chem.lactic_ml !== undefined ? { lactic_ml: clean(round(recipe.water_chem.lactic_ml * f, 0.1)) } : {}),
-      },
-    } : {}),
+    ...(recipe.water_chem ? { water_chem: scaleWaterChem(recipe.water_chem, f) } : {}),
+  };
+};
+
+/** Water treatment for another batch size: salts and lactic acid × factor (0.1 g / 0.1 ml). */
+export const scaleWaterChem = (chem: NonNullable<Recipe['water_chem']>, factor: number): NonNullable<Recipe['water_chem']> => {
+  if (!(factor > 0) || factor === 1) return chem;
+  const salts = chem.salts;
+  return {
+    ...chem,
+    ...(salts ? { salts: Object.fromEntries(Object.entries(salts).map(([k, v]) => [k, clean(round((v || 0) * factor, 0.1))])) } : {}),
+    ...(chem.lactic_ml !== undefined ? { lactic_ml: clean(round(chem.lactic_ml * factor, 0.1)) } : {}),
   };
 };
 

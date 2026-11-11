@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { LibraryIngredient, Recipe } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
-import { formatBrewNumber, roundTo, waterPlan, normalizeFermentableType, ownWaterProfiles } from '../services/calculations';
+import { formatBrewNumber, roundTo, waterPlan, normalizeFermentableType, ownWaterProfiles, defaultWaterProfile } from '../services/calculations';
 import {
   CaCl2Form, ION_KEYS, Ions, SALTS, SaltId, WATER_PRESETS, ionsOf, ratioCharacter, residualAlkalinity,
   suggestSalts, sulfateChlorideRatio, treatedWater, estimateMashPh, lacticAcidFor, DEFAULT_TARGET_MASH_PH, MashMalt,
@@ -33,7 +33,7 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
   const editable = !!onChange;
   const waters = useMemo(() => ownWaterProfiles(library), [library]);
 
-  // Profiles: 'preset:<key>' or a library id. Default source: the brewery's only own profile.
+  // Profiles: 'preset:<key>' or a library id. Default source: the brewery's default (★) or only profile.
   const resolve = (ref: string | undefined) => {
     if (!ref) return undefined;
     if (ref.startsWith('preset:')) {
@@ -43,7 +43,7 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
     const w = waters.find(x => x.id === ref);
     return w && { name: w.name, ions: ionsOf(w) };
   };
-  const defaultSource = waters.length === 1 ? waters[0] : undefined;
+  const defaultSource = useMemo(() => defaultWaterProfile(library), [library]);
   const source = resolve(chem.source) ?? (defaultSource && { name: defaultSource.name, ions: ionsOf(defaultSource) });
   const target = resolve(chem.target);
   const cacl2Form: CaCl2Form = chem.cacl2_form ?? 'cacl2_33';

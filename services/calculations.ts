@@ -436,6 +436,25 @@ export const ownInstallations = (library: LibraryIngredient[]) =>
 export const ownWaterProfiles = (library: LibraryIngredient[]) =>
   library.filter(l => l.type === 'water' && isPrivateItem(l));
 
+/** The brewery's default water profile: the one marked as default, otherwise its only one. */
+export const defaultWaterProfile = (library: LibraryIngredient[]): LibraryIngredient | undefined => {
+  const all = ownWaterProfiles(library);
+  return all.find(w => w.is_default) ?? (all.length === 1 ? all[0] : undefined);
+};
+
+/**
+ * The water treatment a new brew starts with: the recipe's, with the brewery's default
+ * water profile as source when the recipe names none (so the brew records what was used).
+ */
+export const initialBrewWaterChem = (recipe: Pick<Recipe, 'water_chem'>, library: LibraryIngredient[]): Recipe['water_chem'] => {
+  const chem = recipe.water_chem ? structuredClone(recipe.water_chem) : {};
+  if (!chem.source) {
+    const def = defaultWaterProfile(library);
+    if (def) chem.source = def.id;
+  }
+  return Object.keys(chem).length ? chem : undefined;
+};
+
 /** The brewery's default installation: the one marked as default, otherwise its only one. */
 export const defaultEquipment = (library: LibraryIngredient[]): LibraryIngredient | undefined => {
   const all = ownInstallations(library);
