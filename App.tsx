@@ -6,6 +6,7 @@ const TastingNotes = lazy(() => import('./components/TastingNotes'));
 const BrewLogView = lazy(() => import('./components/BrewLogView'));
 const TastingNotesView = lazy(() => import('./components/TastingNotesView'));
 const IngredientLibrary = lazy(() => import('./components/IngredientLibrary'));
+import type { LibrarySection } from './components/IngredientLibrary';
 const PrintView = lazy(() => import('./components/PrintView'));
 const AdminView = lazy(() => import('./components/AdminView'));
 const ImportView = lazy(() => import('./components/ImportView'));
@@ -34,7 +35,7 @@ import { breweryService } from './services/breweryService';
 import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
-type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities';
+type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'library_mash' | 'library_styles' | 'library_equipment' | 'library_water' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
 
 interface LanguageContextType {
@@ -763,6 +764,14 @@ const AppContent: React.FC = () => {
     setBrewPickRecipe(recipe);
   };
 
+  // Library screens: ingredients, mash profiles, styles, and (public only) installations and water profiles
+  const librarySection = ({
+    library: 'ingredients', library_mash: 'mash_profile', library_styles: 'style',
+    library_equipment: 'equipment', library_water: 'water',
+  } as const)[view as 'library' | 'library_mash' | 'library_styles' | 'library_equipment' | 'library_water'] as LibrarySection | undefined;
+  // Own installations and water profiles are managed under Brewing Installation
+  const publicOnlySection = librarySection === 'equipment' || librarySection === 'water';
+
   const handleSaveAndExitBrewLog = (entry: BrewLogEntry) => {
     handleUpdateBrewLog(entry);
     setSelectedBrewLog(null);
@@ -1250,7 +1259,11 @@ const AppContent: React.FC = () => {
       case 'team': return t('team_label');
       case 'importeren': return t('nav_import');
       case 'brouwinstallatie': return t('nav_installation');
-      case 'library': return t('nav_library');
+      case 'library': return t('ingredients_header');
+      case 'library_mash': return t('nav_lib_mash');
+      case 'library_styles': return t('nav_lib_styles');
+      case 'library_equipment': return t('lib_tab_equipment');
+      case 'library_water': return t('tab_water_profiles');
       case 'settings': return t('settings_label');
       case 'admin': return t('nav_admin');
       case 'help': return t('help_nav_label');
@@ -1999,13 +2012,19 @@ const AppContent: React.FC = () => {
                   library={deduplicatedLibrary}
                 />
               )}
-              {view === 'library' && (
+              {librarySection && (
                 <div className="space-y-8">
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
                     <div>
-                      <h2 className="text-4xl font-black text-stone-900">{t('nav_library')}</h2>
+                      <h2 className="text-4xl font-black text-stone-900">{getPageTitle()}</h2>
+                      {publicOnlySection && (
+                        <p className="text-sm text-stone-500 mt-2">
+                          {t('lib_own_under_installation')}{' '}
+                          {user && <button type="button" onClick={() => setView('brouwinstallatie')} className="text-amber-600 underline hover:text-amber-700">{t('nav_installation')}</button>}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex bg-stone-100 p-1 rounded-2xl w-fit">
+                    {!publicOnlySection && <div className="flex bg-stone-100 p-1 rounded-2xl w-fit">
                       <button
                         onClick={() => setLibraryView('personal')}
                         className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'personal' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
@@ -2018,11 +2037,13 @@ const AppContent: React.FC = () => {
                       >
                         {t('public_library')}
                       </button>
-                    </div>
+                    </div>}
                   </div>
                 <IngredientLibrary
+                  key={librarySection}
+                  section={librarySection}
                   ingredients={library}
-                  libraryView={libraryView}
+                  libraryView={publicOnlySection ? 'public' : libraryView}
                   onReplace={setLibrary}
                   onUpdate={async (newLib) => {
                     // Track and handle deletions for Supabase sync
