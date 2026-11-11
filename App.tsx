@@ -39,7 +39,7 @@ import { breweryService } from './services/breweryService';
 import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
-type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'library_mash' | 'library_styles' | 'library_equipment' | 'library_water' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities';
+type View = 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'library_mash' | 'library_styles' | 'library_equipment' | 'library_water' | 'own_mash' | 'own_water' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
 
 interface LanguageContextType {
@@ -781,8 +781,10 @@ const AppContent: React.FC = () => {
     library: 'ingredients', library_mash: 'mash_profile', library_styles: 'style',
     library_equipment: 'equipment', library_water: 'water',
   } as const)[view as 'library' | 'library_mash' | 'library_styles' | 'library_equipment' | 'library_water'] as LibrarySection | undefined;
-  // Own installations and water profiles are managed under Brewing Installation
-  const publicOnlySection = librarySection === 'equipment' || librarySection === 'water';
+  // Own installations, mash profiles and water profiles have their own screens (#168);
+  // in the library they only show the public library
+  const publicOnlySection = librarySection === 'equipment' || librarySection === 'water' || librarySection === 'mash_profile';
+  const ownViewFor: Record<'equipment' | 'water' | 'mash_profile', View> = { equipment: 'brouwinstallatie', water: 'own_water', mash_profile: 'own_mash' };
 
   const handleSaveAndExitBrewLog = (entry: BrewLogEntry) => {
     handleUpdateBrewLog(entry);
@@ -1285,13 +1287,15 @@ const AppContent: React.FC = () => {
 
   const getPageTitle = () => {
     switch (view) {
-      case 'recipes': return libraryView === 'personal' ? t('nav_brewery') : t('public_library');
+      case 'recipes': return t('nav_recipes');
       case 'brouwlogboek': return t('nav_brews');
       case 'proefnotities': return t('tasting_notes');
       case 'voorraad': return t('nav_stock');
       case 'team': return t('team_label');
       case 'importeren': return t('nav_import');
-      case 'brouwinstallatie': return t('nav_installation');
+      case 'brouwinstallatie': return t('lib_tab_equipment');
+      case 'own_mash': return t('nav_lib_mash');
+      case 'own_water': return t('tab_water_profiles');
       case 'library': return t('ingredients_header');
       case 'library_mash': return t('nav_lib_mash');
       case 'library_styles': return t('nav_lib_styles');
@@ -1692,7 +1696,8 @@ const AppContent: React.FC = () => {
                 <div className="space-y-10 animate-in fade-in duration-500">
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                      <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{libraryView === 'personal' ? t('nav_brewery') : t('public_library')}</h2>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{libraryView === 'personal' ? t('nav_section_brewery') : t('public_library')}</p>
+                      <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{t('nav_recipes')}</h2>
                     </div>
                   </div>
 
@@ -2006,7 +2011,7 @@ const AppContent: React.FC = () => {
                         <i className={`fas ${['all', 'brewable'].includes(recipeTab) ? 'fa-beer' : 'fa-history'} text-5xl text-amber-100 mb-6 block`}></i>
                         {['all', 'brewable'].includes(recipeTab) ? (
                           <>
-                            <p className="text-stone-400 font-bold max-w-sm mx-auto mb-6"> {t('empty_recipes_hint').split('Library')[0]} <button onClick={() => setView('library')} className="text-amber-600 underline hover:text-amber-700"> {t('go_to_library')} </button> {t('empty_recipes_hint').split('Library')[1]} </p>
+                            <p className="text-stone-400 font-bold max-w-sm mx-auto mb-6"> {t('empty_recipes_hint').split('Library')[0]} <button onClick={() => setView('importeren')} className="text-amber-600 underline hover:text-amber-700"> {t('go_to_library')} </button> {t('empty_recipes_hint').split('Library')[1]} </p>
                             <div className="flex flex-col items-center gap-4"> <p className="text-xs font-black text-stone-300 uppercase tracking-widest">{t('demo_hint')}</p> <button onClick={handleImportDemoData} className="bg-amber-600 text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl hover:bg-amber-700 transition-all flex items-center gap-2"> <i className="fas fa-download"></i> {t('import_demo')} </button> </div>
                           </>
                         ) : (
@@ -2082,28 +2087,15 @@ const AppContent: React.FC = () => {
                 <div className="space-y-8">
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
                     <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">{publicOnlySection || libraryView === 'public' ? t('public_library') : t('nav_section_brewery')}</p>
                       <h2 className="text-4xl font-black text-stone-900">{getPageTitle()}</h2>
                       {publicOnlySection && (
                         <p className="text-sm text-stone-500 mt-2">
                           {t('lib_own_under_installation')}{' '}
-                          {user && <button type="button" onClick={() => setView('brouwinstallatie')} className="text-amber-600 underline hover:text-amber-700">{t('nav_installation')}</button>}
+                          {user && <button type="button" onClick={() => setView(ownViewFor[librarySection as 'equipment' | 'water' | 'mash_profile'])} className="text-amber-600 underline hover:text-amber-700">{t('nav_section_brewery')} → {getPageTitle()}</button>}
                         </p>
                       )}
                     </div>
-                    {!publicOnlySection && <div className="flex bg-stone-100 p-1 rounded-2xl w-fit">
-                      <button
-                        onClick={() => setLibraryView('personal')}
-                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'personal' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
-                      >
-                        {t('personal_collection')}
-                      </button>
-                      <button
-                        onClick={() => setLibraryView('public')}
-                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${libraryView === 'public' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
-                      >
-                        {t('public_library')}
-                      </button>
-                    </div>}
                   </div>
                 <IngredientLibrary
                   key={librarySection}
@@ -2189,8 +2181,10 @@ const AppContent: React.FC = () => {
                 />
               )}
 
-              {view === 'brouwinstallatie' && (
+              {(view === 'brouwinstallatie' || view === 'own_mash' || view === 'own_water') && (
                 <BrewingInstallationView
+                  key={view}
+                  section={view === 'own_mash' ? 'mash' : view === 'own_water' ? 'water' : 'equipment'}
                   library={library}
                   onUpdate={(newLib) => setLibrary(newLib)}
                 />
