@@ -12,6 +12,7 @@ const AdminView = lazy(() => import('./components/AdminView'));
 const ImportView = lazy(() => import('./components/ImportView'));
 import Auth from './components/Auth';
 import EquipmentPickerDialog from './components/EquipmentPickerDialog';
+import { copyRecipe } from './services/recipeCopy';
 const Settings = lazy(() => import('./components/Settings'));
 const HelpView = lazy(() => import('./components/HelpView'));
 const BrewingInstallationView = lazy(() => import('./components/BrewingInstallationView'));
@@ -1210,6 +1211,27 @@ const AppContent: React.FC = () => {
     alert(t('recipe_added_personal'));
   };
 
+  /** Copy a brewery recipe: saved as a new private recipe and opened in the editor. */
+  const handleCopyRecipe = async (recipe: Recipe) => {
+    const copy = normalizeRecipe(copyRecipe(recipe, {
+      suffix: t('copy_suffix'),
+      takenNames: privateRecipeNames(recipes, profile?.brewery_id, user?.id),
+      userId: user?.id,
+      breweryId: profile?.brewery_id,
+    }));
+    if (user?.id) {
+      const result = await trackWrite(() => supabaseService.saveRecipe(copy, user.id, profile?.brewery_id));
+      if (result?.error) {
+        alert(`${t('save_failed')}: ${result.error.message}`);
+        return;
+      }
+    }
+    setRecipes(prev => [copy, ...prev]);
+    setLibraryView('personal');
+    setSelectedRecipe(copy);
+    setView('create');
+  };
+
   const handleRefreshAppData = async () => {
     setSyncError(false);
     const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
@@ -1874,6 +1896,17 @@ const AppContent: React.FC = () => {
                               <div className="flex gap-2">
                                 {brewManager && <button onClick={() => startBrew(r)} className="flex-1 bg-amber-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-100">{t('brew_btn')}</button>}
                                 {libraryView === 'personal' && <button onClick={() => { setSelectedRecipe(r); setView('create'); }} className="flex-1 bg-stone-100 text-stone-900 text-xs font-bold py-3 rounded-xl hover:bg-stone-200 transition-all">{canEditRecipe(r, editContext) ? t('edit_btn') : t('view_btn')}</button>}
+                                {libraryView === 'personal' && recipeManager && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyRecipe(r)}
+                                    aria-label={`${t('copy_recipe')}: ${r.name}`}
+                                    title={t('copy_recipe')}
+                                    className="flex-none bg-stone-100 text-stone-700 px-4 py-3 rounded-xl hover:bg-stone-200 transition-all"
+                                  >
+                                    <i className="fas fa-copy text-xs" aria-hidden="true"></i>
+                                  </button>
+                                )}
                               </div>
 
                               {libraryView === 'public' && (!user || recipeManager) && (
@@ -2005,7 +2038,9 @@ const AppContent: React.FC = () => {
               )}
               {view === 'create' && (
                 <RecipeCreator
+                  key={selectedRecipe?.id || 'new'}
                   initialRecipe={selectedRecipe || undefined}
+                  onCopy={recipeManager ? handleCopyRecipe : undefined}
                   onSave={handleSaveRecipe}
                   onSubmitToPublic={publisher ? handleRecipeSubmitToPublic : undefined}
                   onDelete={handleDeleteRecipe}

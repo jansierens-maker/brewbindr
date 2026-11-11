@@ -14,11 +14,13 @@ interface RecipeCreatorProps {
   onSave: (recipe: Recipe) => void;
   onSubmitToPublic?: (recipe: Recipe) => void;
   onDelete?: (id: string) => void;
+  /** Save a copy of the recipe (as shown in the editor) and open it */
+  onCopy?: (recipe: Recipe) => void;
   initialRecipe?: Recipe;
   library: LibraryIngredient[];
 }
 
-const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, initialRecipe, library }) => {
+const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, onCopy, initialRecipe, library }) => {
   const { t, lang } = useTranslation();
   const { preferences, user, profile, breweryRole, isAdmin } = useUser();
   const gravityUnit = preferences.gravityUnit ?? 'sg';
@@ -713,6 +715,17 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               {t('save_recipe')}
             </button>
           </div>
+
+          {recipe.id && onCopy && (
+            <button
+              type="button"
+              onClick={() => onCopy({...recipe, specifications: { og: {value: stats.og}, fg: {value: stats.fg}, abv: {value: stats.abv}, ibu: {value: stats.ibu}, color: {value: stats.color}}})}
+              className="w-full bg-stone-100 text-stone-800 py-4 rounded-2xl font-black hover:bg-stone-200 transition-all uppercase tracking-widest text-sm"
+            >
+              <i className="fas fa-copy mr-2" aria-hidden="true"></i>
+              {t('copy_recipe')}
+            </button>
+          )}
 
           {recipe.id && recipe.status === 'private' && onSubmitToPublic && (
             <button
