@@ -11,6 +11,8 @@ import GravityInput from './GravityInput';
 import YeastPitch from './YeastPitch';
 import WaterPlanCard from './WaterPlanCard';
 import WaterChemistryCard from './WaterChemistryCard';
+import BrewIngredients from './BrewIngredients';
+import { ingredientsDiffer } from '../services/ingredientEdit';
 
 interface BrewLogProps {
   recipe: Recipe;
@@ -37,6 +39,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
     ...(initialEquipmentId ? { equipmentId: initialEquipmentId } : {}),
     // The water starts as the recipe's and records what is actually used
     water_chem: initialBrewWaterChem(baseRecipe, library),
+    // The ingredients start as the recipe's and record what is actually used (#166)
+    ingredients: structuredClone(baseRecipe.ingredients),
     date: new Date().toISOString().split('T')[0],
     brewDate: new Date().toISOString().split('T')[0],
     status: 'brewing',
@@ -81,6 +85,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
       ...prev,
       scale: { factor: scaleSuggestion.factor, batch_l: scaleSuggestion.toL },
       ...(prev.water_chem ? { water_chem: scaleWaterChem(prev.water_chem, scaleSuggestion.factor) } : {}),
+      ...(prev.ingredients ? { ingredients: scaleRecipe({ ...baseRecipe, ingredients: prev.ingredients }, scaleSuggestion.factor).ingredients } : {}),
       // Volumes still at the recipe size follow the new size
       measurements: { ...prev.measurements, actual_volume: prev.measurements.actual_volume === from ? to : prev.measurements.actual_volume },
       bottling: prev.bottling ? { ...prev.bottling, bottling_volume: prev.bottling.bottling_volume === from ? to : prev.bottling.bottling_volume } : prev.bottling,
@@ -94,6 +99,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
       return {
         ...rest,
         ...(prev.water_chem && scale ? { water_chem: scaleWaterChem(prev.water_chem, 1 / scale.factor) } : {}),
+        ...(prev.ingredients && scale ? { ingredients: scaleRecipe({ ...baseRecipe, ingredients: prev.ingredients }, 1 / scale.factor).ingredients } : {}),
         measurements: { ...prev.measurements, actual_volume: prev.measurements.actual_volume === to ? from : prev.measurements.actual_volume },
         bottling: prev.bottling ? { ...prev.bottling, bottling_volume: prev.bottling.bottling_volume === to ? from : prev.bottling.bottling_volume } : prev.bottling,
       };
@@ -101,17 +107,23 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
   };
 
   // Water treatment of this brew (older brews without one: the recipe's)
+  // and its ingredients (#166)
   const brewRecipe = useMemo(
-    () => (entry.water_chem !== undefined ? { ...recipe, water_chem: entry.water_chem } : recipe),
-    [recipe, entry.water_chem],
+    () => ({
+      ...recipe,
+      ...(entry.water_chem !== undefined ? { water_chem: entry.water_chem } : {}),
+      ...(entry.ingredients ? { ingredients: entry.ingredients } : {}),
+    }),
+    [recipe, entry.water_chem, entry.ingredients],
   );
+  const ingredientsChanged = !!entry.ingredients && ingredientsDiffer(entry.ingredients, recipe.ingredients);
   const recipeWaterChem = useMemo(() => initialBrewWaterChem(recipe, library), [recipe, library]);
   const waterChanged = entry.water_chem !== undefined && JSON.stringify(entry.water_chem ?? {}) !== JSON.stringify(recipeWaterChem ?? {});
 
   // Calculate dynamic stats based on current overrides in the log
   const currentStats = useMemo(() => {
-    return calculateRecipeStats(recipe, entry.measurements.measured_alpha, equipment);
-  }, [recipe, entry.measurements.measured_alpha, equipment]);
+    return calculateRecipeStats(brewRecipe, entry.measurements.measured_alpha, equipment);
+  }, [brewRecipe, entry.measurements.measured_alpha, equipment]);
 
   const currentAbvDisplay = useMemo(() => {
     const isActuallyBottled = entry.status === 'bottled';
@@ -323,63 +335,23 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
                 <h3 className="text-xl font-black flex items-center gap-2"><i className="fas fa-list-check text-amber-600"></i> {t('additions')}</h3>
               </div>
 
-              {/* Fermentables View */}
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('grains')}</h4>
-                {recipe.ingredients.fermentables.map((f, i) => (
-                  <div key={i} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                    <div className="font-bold text-stone-900">{f.name}</div>
-                    <div className="text-sm font-black text-stone-400 uppercase">{formatBrewNumber(f.amount.value, 'kg', lang, preferences)} {f.amount.unit === 'pounds' ? 'lb' : 'kg'}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Hops View with Alpha override */}
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('hops')} - {t('actual_batch_values')}</h4>
-                <div className="grid grid-cols-1 gap-3">
-                  {recipe.ingredients.hops.map((h, i) => (
-                    <div key={i} className="flex flex-col md:flex-row md:items-center gap-4 p-5 bg-white border border-stone-200 rounded-2xl shadow-sm">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                           <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase text-white ${h.use === 'boil' ? 'bg-red-500' : h.use === 'dry_hop' ? 'bg-green-600' : 'bg-stone-500'}`}>{h.use}</span>
-                           <div className="font-bold text-stone-900">{h.name}</div>
-                        </div>
-                        <div className="text-[10px] font-bold text-stone-400 uppercase mt-1">
-                          <i className="fas fa-clock mr-1"></i> {h.time?.value ?? 0} min • {formatBrewNumber(h.amount.value, 'g', lang, preferences)} {h.amount.unit === 'ounces' ? 'oz' : 'g'}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-3 bg-stone-50 p-2 rounded-xl border border-stone-100">
-                <label htmlFor={`alpha-override-${i}`} className="text-[10px] font-black text-stone-400 uppercase pl-2">Alpha %</label>
-                        <input 
-                  id={`alpha-override-${i}`}
-                  name={`alpha_${h.name}`}
-                          type="number" 
-                          step="0.1" 
-                          className="w-20 p-2 bg-white border border-stone-200 rounded-lg text-right font-black text-stone-900"
-                          value={entry.measurements.measured_alpha?.[h.name] ?? (h.alpha_acid?.value || 5)} 
-                          onChange={e => handleAlphaChange(h.name, parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                    </div>
-                  ))}
+              {canEdit && ingredientsChanged && (
+                <div role="status" className="p-3 rounded-xl border bg-amber-50 border-amber-200 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <p className="flex-1 text-sm font-semibold text-amber-900">
+                    <i className="fas fa-pen mr-2" aria-hidden="true"></i>{t('brew_ingredients_changed')}
+                  </p>
+                  <button type="button" onClick={() => setEntry(prev => ({ ...prev, ingredients: structuredClone(recipe.ingredients) }))} className="px-4 py-2 rounded-lg bg-white border border-amber-300 text-xs font-black uppercase tracking-wider text-amber-900 hover:bg-amber-100 whitespace-nowrap">
+                    {t('water_back_to_recipe')}
+                  </button>
                 </div>
-              </div>
-
-              {/* Yeast View */}
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('yeast_lib')}</h4>
-                {recipe.ingredients.cultures.map((c, i) => (
-                  <div key={i} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                    <div className="flex items-center gap-2">
-                       <i className="fas fa-flask text-purple-600 text-xs"></i>
-                       <div className="font-bold text-stone-900">{c.name}</div>
-                    </div>
-                    <div className="text-sm font-black text-stone-400 uppercase">{c.attenuation}% {c.form}</div>
-                  </div>
-                ))}
-              </div>
+              )}
+              <BrewIngredients
+                ingredients={brewRecipe.ingredients}
+                library={library}
+                measuredAlpha={entry.measurements.measured_alpha}
+                onChange={canEdit ? ingredients => setEntry(prev => ({ ...prev, ingredients })) : undefined}
+                onAlphaChange={canEdit ? handleAlphaChange : undefined}
+              />
             </div>
 
             <WaterPlanCard
@@ -412,9 +384,9 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
               onChange={canEdit ? water_chem => setEntry(prev => ({ ...prev, water_chem: water_chem ?? {} })) : undefined}
             />
 
-            {recipe.ingredients.cultures.length > 0 && (
+            {brewRecipe.ingredients.cultures.length > 0 && (
               <YeastPitch
-                cultures={recipe.ingredients.cultures}
+                cultures={brewRecipe.ingredients.cultures}
                 og={entry.measurements.actual_og || recipe.specifications?.og?.value || currentStats.og}
                 volumeL={entry.measurements.actual_volume || (recipe.batch_size.unit === 'gallons' ? recipe.batch_size.value * 3.78541 : recipe.batch_size.value)}
                 value={entry.yeast_pitch}
