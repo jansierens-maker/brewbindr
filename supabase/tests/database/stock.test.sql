@@ -1,7 +1,7 @@
 -- Stock in its own table (#137)
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT plan(14);
+SELECT plan(16);
 
 -- Brewery A: a1 admin, a2 brewmaster, a3 brewer, a4 taster; b1 admin of brewery B
 INSERT INTO auth.users (id, email) VALUES
@@ -24,6 +24,10 @@ INSERT INTO hops (id, data, user_id, brewery_id, status)
   SELECT 'h1', '{"name":"Saaz","stock":{"amount":100,"unit":"g","stock_target":250}}', auth.uid(), brewery_a, 'private' FROM t;
 SELECT results_eq($$SELECT amount, unit, target FROM stock WHERE ingredient_id = 'h1'$$,
   $$VALUES (100::numeric, 'g'::text, 250::numeric)$$, 'stock in the data JSON is copied into the table');
+RESET ROLE;
+SELECT is((SELECT data ? 'stock' FROM hops WHERE id = 'h1'), false, 'and dropped from the row');
+SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
+SET LOCAL ROLE authenticated;
 UPDATE hops SET data = '{"name":"Saaz","stock":{"amount":80,"unit":"g"}}' WHERE id = 'h1';
 SELECT is((SELECT amount FROM stock WHERE ingredient_id = 'h1'), 80::numeric, 'and kept in sync');
 UPDATE hops SET data = '{"name":"Saaz (new app)"}' WHERE id = 'h1';
@@ -50,6 +54,7 @@ RESET ROLE;
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a4","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
 SELECT is((SELECT count(*) FROM stock), 0::bigint, 'a taster does not read the stock');
+SELECT is((SELECT count(*) FROM hops WHERE data ? 'stock'), 0::bigint, 'nor through the ingredient rows');
 RESET ROLE;
 
 -- Another brewery neither

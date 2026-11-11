@@ -13,6 +13,7 @@ const ImportView = lazy(() => import('./components/ImportView'));
 import Auth from './components/Auth';
 import EquipmentPickerDialog from './components/EquipmentPickerDialog';
 import { copyRecipe } from './services/recipeCopy';
+import { applyStockChange } from './services/stock';
 const Settings = lazy(() => import('./components/Settings'));
 const HelpView = lazy(() => import('./components/HelpView'));
 const BrewingInstallationView = lazy(() => import('./components/BrewingInstallationView'));
@@ -493,6 +494,10 @@ const AppContent: React.FC = () => {
           if (newRecord.status) mergedData.status = newRecord.status;
 
           const exists = prev.find(item => item.id === mergedData.id);
+          // The stock has its own table (#137): keep what we have, ignore any old copy in the data
+          if (['fermentables', 'hops', 'cultures', 'miscs'].includes(table)) {
+            if (exists?.stock) mergedData.stock = exists.stock; else delete mergedData.stock;
+          }
           if (exists) {
             return prev.map(item => item.id === mergedData.id ? mergedData : item);
           }
@@ -500,6 +505,10 @@ const AppContent: React.FC = () => {
         });
       };
 
+      if (table === 'stock') {
+        setLibrary(prev => applyStockChange(prev, eventType, eventType === 'DELETE' ? oldRecord : newRecord));
+        return;
+      }
       if (table === 'recipes') {
         if (eventType !== 'DELETE' && newRecord?.id && deletedRecipeIds.current.has(newRecord.id)) return;
         updateState(setRecipes);
@@ -597,7 +606,7 @@ const AppContent: React.FC = () => {
       // Channel 1.5: Brewery shared data
       if (profile?.brewery_id) {
         breweryDataChannel = supabase.channel('brewery-updates');
-        const tables = ['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters'];
+        const tables = ['recipes', 'brew_logs', 'tasting_notes', 'fermentables', 'hops', 'cultures', 'styles', 'miscs', 'mash_profiles', 'equipment', 'waters', 'stock'];
 
         tables.forEach(table => {
           breweryDataChannel.on('postgres_changes', {
