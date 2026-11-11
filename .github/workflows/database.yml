@@ -2,13 +2,16 @@ name: Database
 
 # Database migrations live in supabase/migrations.
 # - Pull request: start a fresh local Supabase database, apply every migration,
-#   run the database tests (supabase/tests) and show what would change on production.
-# - Merge to main: apply new migrations to production (after approval when the
-#   "production" environment requires a reviewer).
+#   run the database tests (supabase/tests), apply the new migrations to the staging
+#   database (used by the Vercel previews) and show what would change on production.
+# - Merge to main: apply new migrations to staging, and to production (after approval
+#   when the "production" environment requires a reviewer).
 #
 # Required repository secrets:
 #   SUPABASE_ACCESS_TOKEN  personal access token (supabase.com > Account > Access Tokens)
-#   SUPABASE_DB_PASSWORD   database password of the project
+#   SUPABASE_DB_PASSWORD   database password of the production project
+#   STAGING_DB_PASSWORD    database password of the staging project (staging steps are
+#                          skipped while it is not set)
 on:
   pull_request:
     branches: [main]
@@ -20,12 +23,15 @@ on:
 
 env:
   SUPABASE_PROJECT_ID: tgbeaombwskioefhunxf
+  # brewbindr-staging: the database of the Vercel previews and their E2E tests
+  STAGING_PROJECT_ID: xylsffujkzcwfeyxkzve
 
 jobs:
   test:
     name: Migrations & database tests
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    concurrency: staging-database
     timeout-minutes: 20
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -49,9 +55,42 @@ jobs:
       - name: Database tests
         run: supabase test db
 
+      # Only after the tests pass, so the previews never get a broken migration.
+      # Staging may run ahead of main (open PRs); see docs/environments.md to reset it.
+      - name: Apply new migrations to staging
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.STAGING_DB_PASSWORD != ''
+        env:
+          STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+        run: supabase db push --remote="$STAGING_PROJECT_ID" --password "$STAGING_DB_PASSWORD" --yes
+
       - name: What would change on production (dry run)
         if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
         run: supabase db push --dry-run --remote="$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+  staging:
+    name: Apply migrations to staging
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency: staging-database
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        if: env.STAGING_DB_PASSWORD != ''
+        uses: actions/checkout@v7
+
+      - name: Setup Supabase CLI
+        if: env.STAGING_DB_PASSWORD != ''
+        uses: supabase/setup-cli@v3
+        with:
+          version: 3.0.0
+
+      - name: Apply new migrations
+        if: env.STAGING_DB_PASSWORD != ''
+        run: supabase db push --remote="$STAGING_PROJECT_ID" --password "$STAGING_DB_PASSWORD" --yes
 
   deploy:
     name: Apply migrations to production
