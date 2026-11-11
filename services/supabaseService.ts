@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeRecipe, normalizeLibraryItem } from './calculations';
+import { applyStock, StockRow } from './stock';
 
 /**
  * Supabase Service for Brewbindr
@@ -20,6 +21,7 @@ const TABLE_MAP: Record<string, string> = {
   'equipment': 'equipment',
   'water': 'waters'
 };
+
 
 export const supabaseService = {
   async checkTableHealth() {
@@ -138,8 +140,13 @@ export const supabaseService = {
         return query;
       });
 
+      // Stock lives in its own table (#137); null when it cannot be read (not there yet)
+      const stockRequest = userId
+        ? client.from('stock').select('ingredient_type, ingredient_id, amount, unit, target')
+        : Promise.resolve({ data: null, error: null });
+
       const responses = await Promise.race([
-        Promise.all(requests),
+        Promise.all([...requests, stockRequest]),
         new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
       ]);
       const data: any = {};
@@ -162,12 +169,14 @@ export const supabaseService = {
           library.push(...(data[table] as LibraryIngredient[]).map(normalizeLibraryItem));
         }
       });
+      const stockResponse = responses[tableList.length];
+      const stockRows: StockRow[] | null = stockResponse?.error ? null : (stockResponse?.data ?? null);
 
       return {
         recipes: (data['recipes'] as Recipe[]).map(normalizeRecipe),
         brewLogs: data['brew_logs'] as BrewLogEntry[],
         tastingNotes: data['tasting_notes'] as TastingNote[],
-        library
+        library: applyStock(library, stockRows)
       };
     } catch (err) {
       console.error('Critical error fetching from Supabase:', err);
