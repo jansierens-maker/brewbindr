@@ -17,6 +17,9 @@ interface UserContextType {
   signOut: () => Promise<void>;
   isAdmin: boolean;
   breweryRole: string | null;
+  /** Signed in through a password reset link: the app asks for a new password */
+  passwordRecovery: boolean;
+  endPasswordRecovery: () => void;
 }
 
 const getDefaultLanguage = (): Language => {
@@ -41,6 +44,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -58,7 +62,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase?.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase?.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
@@ -213,7 +218,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateDisplayName,
     signOut,
     isAdmin: profile?.role === 'admin',
-    breweryRole: profile?.brewery_role ?? null
+    breweryRole: profile?.brewery_role ?? null,
+    passwordRecovery,
+    endPasswordRecovery: () => setPasswordRecovery(false)
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

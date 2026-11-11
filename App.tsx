@@ -12,6 +12,8 @@ const AdminView = lazy(() => import('./components/AdminView'));
 const ImportView = lazy(() => import('./components/ImportView'));
 import Auth from './components/Auth';
 import EquipmentPickerDialog from './components/EquipmentPickerDialog';
+import NewPasswordForm from './components/NewPasswordForm';
+import { authService } from './services/authService';
 import { copyRecipe } from './services/recipeCopy';
 import { applyStockChange } from './services/stock';
 const Settings = lazy(() => import('./components/Settings'));
@@ -114,7 +116,7 @@ const App: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { user, profile, preferences, isAdmin, loading: authLoading, updatePreferences } = useUser();
+  const { user, profile, preferences, isAdmin, loading: authLoading, updatePreferences, passwordRecovery, endPasswordRecovery } = useUser();
   const editContext = useMemo(
     () => ({ userId: user?.id, breweryId: profile?.brewery_id, breweryRole: profile?.brewery_role, isAdmin }),
     [user?.id, profile?.brewery_id, profile?.brewery_role, isAdmin],
@@ -2032,6 +2034,26 @@ const AppContent: React.FC = () => {
                   onEditNote={(noteId) => { const note = tastingNotes.find(n => n.id === noteId); if (note) openTasting(note.brewLogId, 'proefnotities', note); }}
                   onDeleteNote={handleDeleteTastingNote}
                 />
+              )}
+              {passwordRecovery && user && (
+                <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[300] flex items-center justify-center p-6">
+                  <div role="dialog" aria-modal="true" aria-labelledby="password-reset-title" className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-4">
+                    <h3 id="password-reset-title" className="text-2xl font-black text-stone-900">{t('password_reset_title')}</h3>
+                    <p className="text-sm text-stone-500">{t('password_reset_hint').replace('{email}', user.email || '')}</p>
+                    <NewPasswordForm
+                      idPrefix="recovery"
+                      onSubmit={async password => {
+                        await authService.updatePassword(password);
+                        endPasswordRecovery();
+                        alert(t('password_changed'));
+                      }}
+                      submitLabel={t('password_change_btn')}
+                    />
+                    <button type="button" onClick={endPasswordRecovery} className="w-full py-3 rounded-xl bg-stone-100 text-stone-700 text-xs font-black uppercase tracking-wider hover:bg-stone-200">
+                      {t('cancel_btn')}
+                    </button>
+                  </div>
+                </div>
               )}
               {brewPickRecipe && (
                 <EquipmentPickerDialog

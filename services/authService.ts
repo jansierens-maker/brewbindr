@@ -23,6 +23,31 @@ export const authService = {
     return data;
   },
 
+  /**
+   * Sends a password reset mail. The link brings the user back to this site, signed in for
+   * a password recovery (the app then asks for a new password). Says nothing about whether
+   * the address has an account.
+   */
+  async requestPasswordReset(email: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    if (error) throw error;
+  },
+
+  /** Whether this is the user's current password (signs in again with it). */
+  async verifyPassword(email: string, password: string): Promise<boolean> {
+    if (!supabase) return false;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return !error;
+  },
+
+  /** Sets a new password for the signed-in user. */
+  async updatePassword(password: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  },
+
   async signOut() {
     if (!supabase) return;
     const { error } = await supabase.auth.signOut();
