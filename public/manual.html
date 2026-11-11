@@ -339,7 +339,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <a class="nav-item" href="#tasting"><i class="fas fa-star-half-stroke"></i>Tasting notes</a>
       <a class="nav-item" href="#stock"><i class="fas fa-boxes-stacked"></i>Stock</a>
       <a class="nav-item" href="#library"><i class="fas fa-seedling"></i>Ingredient library</a>
-      <a class="nav-item" href="#installation"><i class="fas fa-temperature-half"></i>Brewing installation</a>
+      <a class="nav-item" href="#installation"><i class="fas fa-temperature-half"></i>Installations &amp; water</a>
       <a class="nav-item" href="#import"><i class="fas fa-arrow-up-from-bracket"></i>Import &amp; export</a>
       <a class="nav-item" href="#team"><i class="fas fa-users"></i>Team &amp; roles</a>
       <a class="nav-item" href="#settings"><i class="fas fa-gear"></i>Settings</a>
@@ -448,9 +448,9 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         <table>
           <thead><tr><th>Group</th><th>Contains</th><th>Purpose</th></tr></thead>
           <tbody>
-            <tr><td><b>Brewery</b></td><td>Brewery recipes, Brews, Tasting notes, Stock, Team, Import, Brewing installation</td><td>Your own workspace: everything you and your team brew.</td></tr>
-            <tr><td><b>Library</b></td><td>Public recipes, Ingredients</td><td>Shared community content and your ingredient catalogue.</td></tr>
-            <tr><td><b>System</b></td><td>Settings, Help &amp; manuals (and <b>Admin</b> for administrators)</td><td>Preferences, language, units, and documentation.</td></tr>
+            <tr><td><b>Brewery</b></td><td>Recipes, Ingredients, Stock, Mash profiles, Beer styles, Installations, Water profiles, Brews, Tasting notes</td><td>Your own workspace: everything you and your team brew, and the catalogue you brew with.</td></tr>
+            <tr><td><b>Public library</b></td><td>Recipes, Ingredients, Mash profiles, Beer styles, Installations, Water profiles</td><td>The same kinds of items, shared by all breweries: browse them and add them to your own.</td></tr>
+            <tr><td><b>System</b></td><td>Team, Import, Settings, Help &amp; manuals (and <b>Admin</b> for administrators)</td><td>Your team, imports, preferences and documentation.</td></tr>
           </tbody>
         </table>
         <p>The card at the bottom of the sidebar shows your account: your e-mail, your <b>brewery role</b> and your brewery. Click it for Settings and Sign out.</p>
@@ -549,7 +549,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         <div class="section-eyebrow"><i class="fas fa-vial"></i> Brewer's Guide</div>
         <h2>Water treatment &amp; mash pH <span class="role-badge brewer">Brewer</span></h2>
         <h3>Water profiles</h3>
-        <p>Add your tap water under <b>Brewing installation → Water profiles</b>: calcium, magnesium, sodium, chloride, sulfate and bicarbonate in mg/L. Your water company publishes these values per address (look for "water quality"). Bicarbonate is sometimes given as alkalinity or temporary hardness: 1 °dH ≈ 21.8 mg/L, 1 °f TAC ≈ 12.2 mg/L bicarbonate.</p>
+        <p>Add your tap water under <b>Brewery → Water profiles</b>: calcium, magnesium, sodium, chloride, sulfate and bicarbonate in mg/L. Your water company publishes these values per address (look for "water quality"). Bicarbonate is sometimes given as alkalinity or temporary hardness: 1 °dH ≈ 21.8 mg/L, 1 °f TAC ≈ 12.2 mg/L bicarbonate.</p>
         <p>Always available: osmosis water, classic waters (Pilsen, Munich, Vienna, Dortmund, Dublin, Edinburgh, London, Burton), target profiles per colour, and <b>19 beer style profiles</b> (IPA variants, NEIPA, pale ale, pils, Belgian blond, tripel, dubbel, quadrupel, saison, witbier, weizen, amber, Märzen, stouts).</p>
         <h3>Treating the water of a recipe</h3>
         <div class="steps">
@@ -658,7 +658,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-seedling"></i> Brewer's Guide</div>
         <h2>Ingredient library <span class="role-badge brewer">Brewer</span></h2>
-        <p>The library is your catalogue of raw materials. In the menu under <b>Library</b> you find <b>Ingredients</b> (malt, hops, yeast, other), <b>Mash profiles</b>, <b>Beer styles</b>, <b>Installations</b> and <b>Water profiles</b>, each with your own collection and the public library (installations and water profiles: public only).</p>
+        <p>The library is your catalogue of raw materials. The menu has the same items twice: under <b>Brewery</b> your own <b>Ingredients</b> (malt, hops, yeast, other), <b>Mash profiles</b>, <b>Beer styles</b>, <b>Installations</b> and <b>Water profiles</b>, and under <b>Public library</b> the shared ones.</p>
         <table>
           <thead><tr><th>Type</th><th>Examples</th><th>Key properties</th></tr></thead>
           <tbody>
@@ -671,15 +671,15 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         </table>
         <p>Ingredients you add are private to your brewery, and a name exists once per type in your brewery. When you build recipes, you pick from this library — a well-kept library makes recipes fast.</p>
         <div class="callout note"><i class="fas fa-upload"></i><div>The <b>brewery admin</b> can <b>submit</b> ingredients or recipes to the public library. If a name is already public or waiting for review, you are warned first. Submissions appear publicly only after an administrator approves them.</div></div>
-        <p><b>Brewing installations and water profiles</b> are in the public library too, under <b>Library → Installations</b> and <b>Library → Water profiles</b>: add one to your collection and it appears under Brewing Installation. The brewery admin submits their own with the <i class="fas fa-cloud-upload-alt"></i> button on the installation or water profile (under Brewing Installation). The default setting (★) is not shared.</p>
+        <p><b>Brewing installations and water profiles</b> are in the public library too, under <b>Public library → Installations</b> and <b>Public library → Water profiles</b>: add one to your collection and it appears under <b>Brewery → Installations</b> or <b>Water profiles</b>. The brewery admin submits their own with the <i class="fas fa-cloud-upload-alt"></i> button on the installation or water profile. The default setting (★) is not shared.</p>
       </div>
     </section>
 
     <section class="doc" id="installation" data-audience="brewer">
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-temperature-half"></i> Brewer's Guide</div>
-        <h2>Brewing installation <span class="role-badge brewer">Brewer</span></h2>
-        <p>Describe your equipment and water so the calculations match reality. The view has three tabs: <b>Equipment</b>, <b>Mash profiles</b> and <b>Water profiles</b>. Everything here is shared with your brewery.</p>
+        <h2>Installations, mash and water profiles <span class="role-badge brewer">Brewer</span></h2>
+        <p>Describe your equipment and water so the calculations match reality. In the menu under <b>Brewery</b> they are three items: <b>Installations</b>, <b>Mash profiles</b> and <b>Water profiles</b>. Everything here is shared with your brewery.</p>
         <h3>Equipment</h3>
         <p>Start from a preset or build your own: batch size, efficiency, boil time, vessels, and the values the water calculation uses:</p>
         <table>
@@ -895,7 +895,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <a class="nav-item" href="#tasting"><i class="fas fa-star-half-stroke"></i>Proefnotities</a>
       <a class="nav-item" href="#stock"><i class="fas fa-boxes-stacked"></i>Voorraad</a>
       <a class="nav-item" href="#library"><i class="fas fa-seedling"></i>Ingrediëntenbibliotheek</a>
-      <a class="nav-item" href="#installation"><i class="fas fa-temperature-half"></i>Brouwinstallatie</a>
+      <a class="nav-item" href="#installation"><i class="fas fa-temperature-half"></i>Installaties &amp; water</a>
       <a class="nav-item" href="#import"><i class="fas fa-arrow-up-from-bracket"></i>Importeren &amp; exporteren</a>
       <a class="nav-item" href="#team"><i class="fas fa-users"></i>Team &amp; rollen</a>
       <a class="nav-item" href="#settings"><i class="fas fa-gear"></i>Instellingen</a>
@@ -1004,9 +1004,9 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <table>
           <thead><tr><th>Groep</th><th>Bevat</th><th>Waarvoor</th></tr></thead>
           <tbody>
-            <tr><td><b>Brouwerij</b></td><td>Recepten, Brouwsels, Proefnotities, Voorraad, Team, Importeren, Brouwinstallatie</td><td>Je eigen werkruimte: alles wat jij en je team brouwen.</td></tr>
-            <tr><td><b>Bibliotheek</b></td><td>Publieke recepten, Ingrediënten</td><td>Gedeelde inhoud en je ingrediëntencatalogus.</td></tr>
-            <tr><td><b>Systeem</b></td><td>Instellingen, Help &amp; handleidingen (en <b>Beheer</b> voor beheerders)</td><td>Voorkeuren, taal, eenheden en documentatie.</td></tr>
+            <tr><td><b>Brouwerij</b></td><td>Recepten, Ingrediënten, Voorraad, Maischprofielen, Bierstijlen, Installaties, Waterprofielen, Brouwsels, Proefnotities</td><td>Je eigen werkruimte: alles wat jij en je team brouwen, en de catalogus waarmee je brouwt.</td></tr>
+            <tr><td><b>Publieke bibliotheek</b></td><td>Recepten, Ingrediënten, Maischprofielen, Bierstijlen, Installaties, Waterprofielen</td><td>Dezelfde soorten items, gedeeld door alle brouwerijen: bekijk ze en voeg ze toe aan je eigen.</td></tr>
+            <tr><td><b>Systeem</b></td><td>Team, Importeren, Instellingen, Help &amp; handleidingen (en <b>Beheer</b> voor beheerders)</td><td>Je team, importeren, voorkeuren en documentatie.</td></tr>
           </tbody>
         </table>
         <p>De kaart onderaan de zijbalk toont je account: e-mailadres, je <b>rol in de brouwerij</b> en je brouwerij. Klik erop voor Instellingen en Afmelden.</p>
@@ -1105,7 +1105,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <div class="section-eyebrow"><i class="fas fa-vial"></i> Voor brouwers</div>
         <h2>Waterbehandeling &amp; maisch-pH <span class="role-badge brewer">Brouwer</span></h2>
         <h3>Waterprofielen</h3>
-        <p>Voeg je leidingwater toe onder <b>Brouwinstallatie → Waterprofielen</b>: calcium, magnesium, natrium, chloride, sulfaat en bicarbonaat in mg/L. Je waterbedrijf publiceert die waarden per adres (zoek naar "waterkwaliteit"). Bicarbonaat staat soms als alkaliteit of tijdelijke hardheid: 1 °dH ≈ 21,8 mg/L, 1 °f TAC ≈ 12,2 mg/L bicarbonaat.</p>
+        <p>Voeg je leidingwater toe onder <b>Brouwerij → Waterprofielen</b>: calcium, magnesium, natrium, chloride, sulfaat en bicarbonaat in mg/L. Je waterbedrijf publiceert die waarden per adres (zoek naar "waterkwaliteit"). Bicarbonaat staat soms als alkaliteit of tijdelijke hardheid: 1 °dH ≈ 21,8 mg/L, 1 °f TAC ≈ 12,2 mg/L bicarbonaat.</p>
         <p>Altijd beschikbaar: osmosewater, klassieke waters (Pilsen, München, Wenen, Dortmund, Dublin, Edinburgh, Londen, Burton), doelprofielen per kleur en <b>19 profielen per bierstijl</b> (IPA's, NEIPA, pale ale, pils, Belgisch blond, tripel, dubbel, quadrupel, saison, witbier, weizen, amber, Märzen, stouts).</p>
         <h3>Het water van een recept behandelen</h3>
         <div class="steps">
@@ -1214,7 +1214,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-seedling"></i> Voor brouwers</div>
         <h2>Ingrediëntenbibliotheek <span class="role-badge brewer">Brouwer</span></h2>
-        <p>De bibliotheek is je catalogus van grondstoffen. In het menu onder <b>Bibliotheek</b> vind je <b>Ingrediënten</b> (mout, hop, gist, overige), <b>Maischprofielen</b>, <b>Bierstijlen</b>, <b>Installaties</b> en <b>Waterprofielen</b>, elk met je eigen collectie en de publieke bibliotheek (installaties en waterprofielen: alleen publiek).</p>
+        <p>De bibliotheek is je catalogus van grondstoffen. Het menu heeft dezelfde items twee keer: onder <b>Brouwerij</b> je eigen <b>Ingrediënten</b> (mout, hop, gist, overige), <b>Maischprofielen</b>, <b>Bierstijlen</b>, <b>Installaties</b> en <b>Waterprofielen</b>, en onder <b>Publieke bibliotheek</b> de gedeelde.</p>
         <table>
           <thead><tr><th>Soort</th><th>Voorbeelden</th><th>Belangrijkste eigenschappen</th></tr></thead>
           <tbody>
@@ -1227,15 +1227,15 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         </table>
         <p>Wat je toevoegt is privé voor je brouwerij, en een naam bestaat één keer per soort in je brouwerij. Bij het maken van recepten kies je uit deze bibliotheek — een goed bijgehouden bibliotheek maakt recepten snel.</p>
         <div class="callout note"><i class="fas fa-upload"></i><div>De <b>beheerder van de brouwerij</b> kan ingrediënten of recepten <b>indienen</b> voor de publieke bibliotheek. Staat de naam er al of wacht hij op goedkeuring, dan krijg je eerst een waarschuwing. Ingediende items verschijnen pas publiek na goedkeuring door een beheerder.</div></div>
-        <p>Ook <b>brouwinstallaties en waterprofielen</b> staan in de publieke bibliotheek, onder <b>Bibliotheek → Installaties</b> en <b>Bibliotheek → Waterprofielen</b>: voeg er een toe aan je collectie en ze verschijnt onder Brouwinstallatie. De beheerder van de brouwerij dient de eigen in met de knop <i class="fas fa-cloud-upload-alt"></i> bij de installatie of het waterprofiel (onder Brouwinstallatie). De standaardinstelling (★) wordt niet gedeeld.</p>
+        <p>Ook <b>brouwinstallaties en waterprofielen</b> staan in de publieke bibliotheek, onder <b>Publieke bibliotheek → Installaties</b> en <b>Publieke bibliotheek → Waterprofielen</b>: voeg er een toe aan je collectie en ze verschijnt onder <b>Brouwerij → Installaties</b> of <b>Waterprofielen</b>. De beheerder van de brouwerij dient de eigen in met de knop <i class="fas fa-cloud-upload-alt"></i> bij de installatie of het waterprofiel. De standaardinstelling (★) wordt niet gedeeld.</p>
       </div>
     </section>
 
     <section class="doc" id="installation" data-audience="brewer">
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-temperature-half"></i> Voor brouwers</div>
-        <h2>Brouwinstallatie <span class="role-badge brewer">Brouwer</span></h2>
-        <p>Beschrijf je toestel en je water, zodat de berekeningen kloppen met de werkelijkheid. Het scherm heeft drie tabbladen: <b>Installatie</b>, <b>Maischschema's</b> en <b>Waterprofielen</b>. Alles hier wordt gedeeld met je brouwerij.</p>
+        <h2>Installaties, maisch- en waterprofielen <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Beschrijf je toestel en je water, zodat de berekeningen kloppen met de werkelijkheid. In het menu onder <b>Brouwerij</b> zijn dat drie items: <b>Installaties</b>, <b>Maischprofielen</b> en <b>Waterprofielen</b>. Alles hier wordt gedeeld met je brouwerij.</p>
         <h3>Installatie</h3>
         <p>Vertrek van een voorbeeld of bouw je eigen: batchgrootte, rendement, kooktijd, vaten, en de waarden die de waterberekening gebruikt:</p>
         <table>
@@ -1451,7 +1451,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <a class="nav-item" href="#tasting"><i class="fas fa-star-half-stroke"></i>Notes de dégustation</a>
       <a class="nav-item" href="#stock"><i class="fas fa-boxes-stacked"></i>Stock</a>
       <a class="nav-item" href="#library"><i class="fas fa-seedling"></i>Bibliothèque d'ingrédients</a>
-      <a class="nav-item" href="#installation"><i class="fas fa-temperature-half"></i>Installation de brassage</a>
+      <a class="nav-item" href="#installation"><i class="fas fa-temperature-half"></i>Installations &amp; eau</a>
       <a class="nav-item" href="#import"><i class="fas fa-arrow-up-from-bracket"></i>Importer &amp; exporter</a>
       <a class="nav-item" href="#team"><i class="fas fa-users"></i>Équipe &amp; rôles</a>
       <a class="nav-item" href="#settings"><i class="fas fa-gear"></i>Paramètres</a>
@@ -1560,9 +1560,9 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <table>
           <thead><tr><th>Groupe</th><th>Contient</th><th>Pour</th></tr></thead>
           <tbody>
-            <tr><td><b>Brasserie</b></td><td>Recettes, Brassins, Notes de dégustation, Stock, Équipe, Importer, Installation de brassage</td><td>Votre espace de travail : tout ce que vous et votre équipe brassez.</td></tr>
-            <tr><td><b>Bibliothèque</b></td><td>Recettes publiques, Ingrédients</td><td>Contenu partagé et votre catalogue d'ingrédients.</td></tr>
-            <tr><td><b>Système</b></td><td>Paramètres, Aide &amp; manuels (et <b>Admin</b> pour les administrateurs)</td><td>Préférences, langue, unités et documentation.</td></tr>
+            <tr><td><b>Brasserie</b></td><td>Recettes, Ingrédients, Stock, Profils d'empâtage, Styles de bière, Installations, Profils d'eau, Brassins, Notes de dégustation</td><td>Votre espace de travail : tout ce que vous et votre équipe brassez, et le catalogue avec lequel vous brassez.</td></tr>
+            <tr><td><b>Bibliothèque publique</b></td><td>Recettes, Ingrédients, Profils d'empâtage, Styles de bière, Installations, Profils d'eau</td><td>Les mêmes types d'éléments, partagés par toutes les brasseries : consultez-les et ajoutez-les aux vôtres.</td></tr>
+            <tr><td><b>Système</b></td><td>Équipe, Importer, Paramètres, Aide &amp; manuels (et <b>Admin</b> pour les administrateurs)</td><td>Votre équipe, les imports, les préférences et la documentation.</td></tr>
           </tbody>
         </table>
         <p>La carte en bas de la barre latérale montre votre compte : e-mail, votre <b>rôle dans la brasserie</b> et votre brasserie. Cliquez dessus pour Paramètres et Se déconnecter.</p>
@@ -1661,7 +1661,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <div class="section-eyebrow"><i class="fas fa-vial"></i> Pour les brasseurs</div>
         <h2>Traitement de l'eau &amp; pH de maische <span class="role-badge brewer">Brasseur</span></h2>
         <h3>Profils d'eau</h3>
-        <p>Ajoutez votre eau du robinet dans <b>Installation de brassage → Profils d'eau</b> : calcium, magnésium, sodium, chlorure, sulfate et bicarbonate en mg/L. Votre distributeur d'eau publie ces valeurs par adresse (cherchez « qualité de l'eau »). Le bicarbonate est parfois donné comme alcalinité ou TAC : 1 °dH ≈ 21,8 mg/L, 1 °f TAC ≈ 12,2 mg/L de bicarbonate.</p>
+        <p>Ajoutez votre eau du robinet dans <b>Brasserie → Profils d'eau</b> : calcium, magnésium, sodium, chlorure, sulfate et bicarbonate en mg/L. Votre distributeur d'eau publie ces valeurs par adresse (cherchez « qualité de l'eau »). Le bicarbonate est parfois donné comme alcalinité ou TAC : 1 °dH ≈ 21,8 mg/L, 1 °f TAC ≈ 12,2 mg/L de bicarbonate.</p>
         <p>Toujours disponibles : eau osmosée, eaux classiques (Pilsen, Munich, Vienne, Dortmund, Dublin, Édimbourg, Londres, Burton), profils cibles par couleur et <b>19 profils par style de bière</b> (IPA, NEIPA, pale ale, pils, blonde belge, tripel, dubbel, quadrupel, saison, blanche, weizen, ambrée, Märzen, stouts).</p>
         <h3>Traiter l'eau d'une recette</h3>
         <div class="steps">
@@ -1770,7 +1770,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-seedling"></i> Pour les brasseurs</div>
         <h2>Bibliothèque d'ingrédients <span class="role-badge brewer">Brasseur</span></h2>
-        <p>La bibliothèque est votre catalogue de matières premières. Dans le menu, sous <b>Bibliothèque</b>, vous trouvez <b>Ingrédients</b> (malt, houblon, levure, autres), <b>Profils d'empâtage</b>, <b>Styles de bière</b>, <b>Installations</b> et <b>Profils d'eau</b>, chacun avec votre collection et la bibliothèque publique (installations et profils d'eau : public uniquement).</p>
+        <p>La bibliothèque est votre catalogue de matières premières. Le menu a les mêmes éléments deux fois : sous <b>Brasserie</b> vos <b>Ingrédients</b> (malt, houblon, levure, autres), <b>Profils d'empâtage</b>, <b>Styles de bière</b>, <b>Installations</b> et <b>Profils d'eau</b>, et sous <b>Bibliothèque publique</b> ceux qui sont partagés.</p>
         <table>
           <thead><tr><th>Type</th><th>Exemples</th><th>Propriétés principales</th></tr></thead>
           <tbody>
@@ -1783,15 +1783,15 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         </table>
         <p>Ce que vous ajoutez est privé pour votre brasserie, et un nom n'existe qu'une fois par type dans votre brasserie. Pour créer des recettes, vous choisissez dans cette bibliothèque — une bibliothèque bien tenue rend les recettes rapides.</p>
         <div class="callout note"><i class="fas fa-upload"></i><div>L'<b>administrateur de la brasserie</b> peut <b>proposer</b> des ingrédients ou recettes pour la bibliothèque publique. Si le nom existe déjà ou attend une validation, un avertissement apparaît d'abord. Les éléments proposés ne deviennent publics qu'après validation par un administrateur.</div></div>
-        <p>Les <b>installations de brassage et profils d'eau</b> sont aussi dans la bibliothèque publique, sous <b>Bibliothèque → Installations</b> et <b>Bibliothèque → Profils d'eau</b> : ajoutez-en un à votre collection et il apparaît sous Installation de brassage. L'administrateur de la brasserie propose les siens avec le bouton <i class="fas fa-cloud-upload-alt"></i> sur l'installation ou le profil d'eau (sous Installation de brassage). Le réglage par défaut (★) n'est pas partagé.</p>
+        <p>Les <b>installations de brassage et profils d'eau</b> sont aussi dans la bibliothèque publique, sous <b>Bibliothèque publique → Installations</b> et <b>Bibliothèque publique → Profils d'eau</b> : ajoutez-en un à votre collection et il apparaît sous <b>Brasserie → Installations</b> ou <b>Profils d'eau</b>. L'administrateur de la brasserie propose les siens avec le bouton <i class="fas fa-cloud-upload-alt"></i> sur l'installation ou le profil d'eau. Le réglage par défaut (★) n'est pas partagé.</p>
       </div>
     </section>
 
     <section class="doc" id="installation" data-audience="brewer">
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-temperature-half"></i> Pour les brasseurs</div>
-        <h2>Installation de brassage <span class="role-badge brewer">Brasseur</span></h2>
-        <p>Décrivez votre matériel et votre eau, pour que les calculs correspondent à la réalité. L'écran a trois onglets : <b>Installation</b>, <b>Schémas d'empâtage</b> et <b>Profils d'eau</b>. Tout ici est partagé avec votre brasserie.</p>
+        <h2>Installations, profils d'empâtage et d'eau <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Décrivez votre matériel et votre eau, pour que les calculs correspondent à la réalité. Dans le menu, sous <b>Brasserie</b>, ce sont trois éléments : <b>Installations</b>, <b>Profils d'empâtage</b> et <b>Profils d'eau</b>. Tout ici est partagé avec votre brasserie.</p>
         <h3>Installation</h3>
         <p>Partez d'un modèle ou créez la vôtre : taille du brassin, rendement, durée d'ébullition, cuves, et les valeurs utilisées par le calcul de l'eau :</p>
         <table>

@@ -10,6 +10,8 @@ import { equipmentCapacity, isPrivateItem } from '../services/calculations';
 import WaterProfilesManager from './WaterProfilesManager';
 
 interface Props {
+  /** Which of the brewery's own items this screen shows (#168: one menu item each) */
+  section?: 'equipment' | 'mash' | 'water';
   library: LibraryIngredient[];
   onUpdate: (newLibrary: LibraryIngredient[]) => void;
 }
@@ -168,10 +170,10 @@ const PRESETS: EquipmentPreset[] = [
   }
 ];
 
-const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
+const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', library, onUpdate }) => {
   const { t } = useTranslation();
   const { user, profile, breweryRole, isAdmin } = useUser();
-  const [activeTab, setActiveTab] = useState<'equipment' | 'mash' | 'water'>('equipment');
+  const activeTab = section;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
   const [itemToDelete, setItemToDelete] = useState<LibraryIngredient | null>(null);
@@ -384,31 +386,10 @@ const BrewingInstallationView: React.FC<Props> = ({ library, onUpdate }) => {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
-        <div>
-          <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{t('nav_installation')}</h2>
-          <p className="text-[var(--color-text-xmuted)] text-xs font-bold mt-1 uppercase tracking-widest">{t('installation_subtitle')}</p>
-        </div>
-        <div className="flex bg-[var(--color-bg-subtle)] p-1 rounded-[var(--radius)] w-fit border border-[var(--color-border)]">
-          <button
-            onClick={() => { setActiveTab('equipment'); cancelEditing(); }}
-            className={`px-6 py-2 rounded-[var(--radius-sm)] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'equipment' ? 'bg-[var(--color-bg)] text-[var(--color-text)] shadow-sm' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
-          >
-            {t('tab_equipment')}
-          </button>
-          <button
-            onClick={() => { setActiveTab('mash'); cancelEditing(); }}
-            className={`px-6 py-2 rounded-[var(--radius-sm)] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'mash' ? 'bg-[var(--color-bg)] text-[var(--color-text)] shadow-sm' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
-          >
-            {t('tab_mash_profiles')}
-          </button>
-          <button
-            onClick={() => { setActiveTab('water'); cancelEditing(); }}
-            className={`px-6 py-2 rounded-[var(--radius-sm)] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'water' ? 'bg-[var(--color-bg)] text-[var(--color-text)] shadow-sm' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
-          >
-            {t('tab_water_profiles')}
-          </button>
-        </div>
+      <div className="px-2">
+        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{t('nav_section_brewery')}</p>
+        <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{activeTab === 'equipment' ? t('lib_tab_equipment') : activeTab === 'mash' ? t('nav_lib_mash') : t('tab_water_profiles')}</h2>
+        {activeTab === 'equipment' && <p className="text-[var(--color-text-xmuted)] text-xs font-bold mt-1 uppercase tracking-widest">{t('installation_subtitle')}</p>}
       </div>
 
       {activeTab === 'water' ? (

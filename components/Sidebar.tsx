@@ -4,6 +4,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { breweryService } from '../services/breweryService';
 import { Brewery } from '../types';
+import { navSections, isNavItemActive, NavItem } from './navItems';
 
 interface SidebarProps {
   currentView: string;
@@ -57,43 +58,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [profile?.brewery_id]);
 
-  const navItems = [
-    { section: t('nav_section_brewery'), items: [
-      { id: 'recipes-personal', label: t('nav_brewery'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
-      { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
-      { id: 'proefnotities', label: t('proefnotities_label'), icon: 'fa-star-half-stroke', view: 'proefnotities' },
-      { id: 'voorraad', label: t('nav_stock'), icon: 'fa-boxes-stacked', view: 'voorraad', hideIf: !preferences.enableStockManagement },
-      { id: 'team', label: t('team_label'), icon: 'fa-users', view: 'team' },
-      { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
-      { id: 'brouwinstallatie', label: t('nav_installation'), icon: 'fa-temperature-half', view: 'brouwinstallatie' },
-    ]},
-    { section: t('nav_section_library'), items: [
-      { id: 'recipes-public', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'public' },
-      { id: 'library', label: t('ingredients_header'), icon: 'fa-seedling', view: 'library' },
-      { id: 'library_mash', label: t('nav_lib_mash'), icon: 'fa-layer-group', view: 'library_mash' },
-      { id: 'library_styles', label: t('nav_lib_styles'), icon: 'fa-tags', view: 'library_styles' },
-      { id: 'library_equipment', label: t('lib_tab_equipment'), icon: 'fa-gears', view: 'library_equipment' },
-      { id: 'library_water', label: t('tab_water_profiles'), icon: 'fa-droplet', view: 'library_water' },
-    ]},
-    { section: t('nav_section_system'), items: [
-      { id: 'settings', label: t('settings_nav_label'), icon: 'fa-gear', view: 'settings' },
-      { id: 'help', label: t('help_nav_label'), icon: 'fa-question-circle', view: 'help' },
-      { id: 'admin', label: t('admin_nav_label' as any), icon: 'fa-user-shield', view: 'admin', hideIf: !isAdmin },
-    ]}
-  ];
+  // Shared with the mobile menu (#168)
+  const navItems = navSections(t, { stock: !!preferences.enableStockManagement, isAdmin })
+    .map(section => ({ section: section.label, items: section.items }));
 
-  const isActive = (item: any) => {
-    if (item.view === 'recipes') {
-      return currentView === 'recipes' && libraryView === item.libView;
-    }
-    return currentView === item.view || currentView === item.id;
-  };
+  const isActive = (item: NavItem) => isNavItemActive(item, currentView, libraryView);
 
-  const isGated = (item: any) => {
-    return !user && item.id !== 'recipes-public' && !String(item.id).startsWith('library') && item.id !== 'settings' && item.id !== 'help';
-  };
+  const isGated = (item: NavItem) => !user && !item.public;
 
-  const handleNavClick = (item: any) => {
+  const handleNavClick = (item: NavItem) => {
     if (isGated(item)) {
       if (onAuth) onAuth('signin');
       return;
@@ -125,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {section.section}
             </div>
             <nav className="space-y-0.5">
-              {section.items.filter(item => !(item as any).hideIf).map((item) => {
+              {section.items.filter(item => !item.hideIf).map((item) => {
                 const gated = isGated(item);
                 return (
                   <div key={item.id} className="relative group/tooltip">
