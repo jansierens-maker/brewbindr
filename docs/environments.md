@@ -28,6 +28,14 @@ Real data lives only in production. Previews, E2E runs and experiments use stagi
 - Authentication → Providers → Email: minimum password length 12, as in production
 - Authentication e-mails use Supabase's own mail service (no Resend SMTP): fine for testing, limited to a few per hour
 
+## Test data
+
+**Actions → Copy data to staging → Run workflow** copies from production to staging:
+- the public library (all approved recipes and library items), and
+- the own recipes, library items (ingredients, mash profiles, styles, installations, water profiles) and stock of the brewery of *source_email*,
+
+into the brewery of *target_email* in staging (that account must exist there). Ids stay the same, so recipes keep pointing to their ingredients and installation. Running it again updates the copies; items in staging with the same name make room. Production is only read; brews, tasting notes, team members and other breweries are not copied. Script: `scripts/copy-to-staging.mjs` (uses `SUPABASE_ACCESS_TOKEN` and the Management API).
+
 ## Notes
 
 - Staging can run ahead of `main`: migrations of open PRs are applied there as soon as their tests pass. A PR that is closed without merging leaves its migration on staging; migrations are idempotent, so this is usually harmless.

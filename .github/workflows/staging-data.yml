@@ -1,0 +1,40 @@
+name: Copy data to staging
+
+# Copies the public library and one brewery's recipes, library items and stock from
+# production to the staging database (see docs/environments.md). Production is only read.
+# Run it by hand: Actions > Copy data to staging > Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      source_email:
+        description: 'Production account whose brewery is copied'
+        required: true
+      target_email:
+        description: 'Staging account that receives it (must exist in staging)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency: staging-database
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+
+      - name: Copy
+        run: node scripts/copy-to-staging.mjs
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROD_REF: tgbeaombwskioefhunxf
+          STAGING_REF: xylsffujkzcwfeyxkzve
+          SOURCE_EMAIL: ${{ inputs.source_email }}
+          TARGET_EMAIL: ${{ inputs.target_email }}
