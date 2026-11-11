@@ -15,7 +15,7 @@ Real data lives only in production. Previews, E2E runs and experiments use stagi
 **GitHub secrets** (repository settings → Secrets and variables → Actions)
 - `SUPABASE_ACCESS_TOKEN`: personal access token, works for both projects
 - `SUPABASE_DB_PASSWORD`: production database password
-- `STAGING_DB_PASSWORD`: staging database password (Supabase → brewbindr-staging → Settings → Database → Reset database password)
+- `STAGING_DB_URL`: connection string of the staging *Session pooler* with the password filled in (Supabase → brewbindr-staging → **Connect** → *Session pooler*; the password is the one from Settings → Database → Reset database password). GitHub runners have no IPv6, and for this project the CLI does not find the pooler by itself.
 - `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`: production test account
 - `STAGING_TEST_USER_EMAIL`, `STAGING_TEST_USER_PASSWORD`: staging test account (Supabase → brewbindr-staging → Authentication → Users → Add user, *Auto Confirm User*)
 
@@ -31,5 +31,5 @@ Real data lives only in production. Previews, E2E runs and experiments use stagi
 ## Notes
 
 - Staging can run ahead of `main`: migrations of open PRs are applied there as soon as their tests pass. A PR that is closed without merging leaves its migration on staging; migrations are idempotent, so this is usually harmless.
-- Reset staging when it drifts: Supabase → brewbindr-staging → Database → reset (or delete and recreate the project, update `STAGING_PROJECT_ID` in `.github/workflows/database.yml`, the password secret and the Vercel Preview variables), then re-run the Database workflow (*Run workflow*) or push to a PR.
+- Reset staging when it drifts: Supabase → brewbindr-staging → Database → reset (or delete and recreate the project, update `STAGING_PROJECT_ID` in `.github/workflows/database.yml`, the `STAGING_DB_URL` secret and the Vercel Preview variables), then re-run the Database workflow (*Run workflow*) or push to a PR.
 - Free plan: a project with no activity for a week is paused. The E2E runs on previews keep staging active; when it is paused, restore it in the dashboard.

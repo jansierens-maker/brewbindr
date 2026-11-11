@@ -10,8 +10,10 @@ name: Database
 # Required repository secrets:
 #   SUPABASE_ACCESS_TOKEN  personal access token (supabase.com > Account > Access Tokens)
 #   SUPABASE_DB_PASSWORD   database password of the production project
-#   STAGING_DB_PASSWORD    database password of the staging project (staging steps are
-#                          skipped while it is not set)
+#   STAGING_DB_URL         connection string of the staging project's *Session pooler*
+#                          (Supabase > brewbindr-staging > Connect), password filled in.
+#                          GitHub runners have no IPv6, so the direct connection does not
+#                          work for that project. Staging steps are skipped while it is not set.
 on:
   pull_request:
     branches: [main]
@@ -58,10 +60,10 @@ jobs:
       # Only after the tests pass, so the previews never get a broken migration.
       # Staging may run ahead of main (open PRs); see docs/environments.md to reset it.
       - name: Apply new migrations to staging
-        if: env.SUPABASE_ACCESS_TOKEN != '' && env.STAGING_DB_PASSWORD != ''
+        if: env.STAGING_DB_URL != ''
         env:
-          STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
-        run: supabase db push --remote="$STAGING_PROJECT_ID" --password "$STAGING_DB_PASSWORD" --yes
+          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+        run: supabase db push --remote="$STAGING_DB_URL" --yes
 
       - name: What would change on production (dry run)
         if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
@@ -74,23 +76,22 @@ jobs:
     timeout-minutes: 15
     concurrency: staging-database
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
 
     steps:
       - name: Checkout
-        if: env.STAGING_DB_PASSWORD != ''
+        if: env.STAGING_DB_URL != ''
         uses: actions/checkout@v7
 
       - name: Setup Supabase CLI
-        if: env.STAGING_DB_PASSWORD != ''
+        if: env.STAGING_DB_URL != ''
         uses: supabase/setup-cli@v3
         with:
           version: 3.0.0
 
       - name: Apply new migrations
-        if: env.STAGING_DB_PASSWORD != ''
-        run: supabase db push --remote="$STAGING_PROJECT_ID" --password "$STAGING_DB_PASSWORD" --yes
+        if: env.STAGING_DB_URL != ''
+        run: supabase db push --remote="$STAGING_DB_URL" --yes
 
   deploy:
     name: Apply migrations to production
