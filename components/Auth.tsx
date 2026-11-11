@@ -20,6 +20,27 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, initialIsSignUp = false }) => {
   }, [initialIsSignUp]);
   const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // "Forgot password": only the e-mail address, then a reset mail
+  const [forgot, setForgot] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!email.includes('@')) {
+      setError(t('auth_error_invalid_email'));
+      return;
+    }
+    setLoading(true);
+    try {
+      await authService.requestPasswordReset(email);
+      setResetSent(true);
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : t('auth_error_generic'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,10 +93,44 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, initialIsSignUp = false }) => {
         </div>
         <h2 className="text-3xl font-black text-stone-900 uppercase italic">brewbindr</h2>
         <p className="text-stone-400 font-bold text-xs uppercase tracking-widest mt-1">
-          {isSignUp ? t('auth_signup_title' as any) : t('auth_signin_title' as any)}
+          {forgot ? t('auth_forgot_title') : isSignUp ? t('auth_signup_title' as any) : t('auth_signin_title' as any)}
         </p>
       </div>
 
+      {forgot ? (
+        <div className="space-y-4">
+          {resetSent ? (
+            <p role="status" className="p-4 bg-green-50 border border-green-100 rounded-xl text-green-800 text-sm font-medium">{t('auth_forgot_sent')}</p>
+          ) : (
+            <form onSubmit={handleForgot} className="space-y-4">
+              <p className="text-sm text-stone-500">{t('auth_forgot_hint')}</p>
+              <div>
+                <label htmlFor="auth-forgot-email" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">{t('auth_email_label' as any)}</label>
+                <input
+                  id="auth-forgot-email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  maxLength={255}
+                />
+              </div>
+              {error && <p role="alert" className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold">{error}</p>}
+              <button type="submit" disabled={loading} className="w-full py-4 bg-stone-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg disabled:opacity-50">
+                {loading ? <i className="fas fa-circle-notch fa-spin" aria-hidden="true"></i> : t('auth_forgot_btn')}
+              </button>
+            </form>
+          )}
+          <div className="pt-6 border-t border-stone-100 text-center">
+            <button type="button" onClick={() => { setForgot(false); setResetSent(false); setError(null); }} className="text-stone-400 hover:text-amber-600 font-bold text-xs uppercase tracking-widest transition-colors">
+              {t('auth_back_to_signin')}
+            </button>
+          </div>
+        </div>
+      ) : (<>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="auth-email" className="block text-[10px] font-black text-stone-400 uppercase mb-1 ml-1">{t('auth_email_label' as any)}</label>
@@ -149,6 +204,13 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, initialIsSignUp = false }) => {
             isSignUp ? t('auth_signup_btn' as any) : t('auth_signin_btn' as any)
           )}
         </button>
+        {!isSignUp && (
+          <div className="text-center">
+            <button type="button" onClick={() => { setForgot(true); setError(null); }} className="text-stone-400 hover:text-amber-600 font-bold text-[11px] transition-colors">
+              {t('auth_forgot_link')}
+            </button>
+          </div>
+        )}
       </form>
 
       <div className="mt-8 pt-6 border-t border-stone-100 text-center">
@@ -159,6 +221,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, initialIsSignUp = false }) => {
           {isSignUp ? t('auth_switch_to_signin' as any) : t('auth_switch_to_signup' as any)}
         </button>
       </div>
+      </>)}
     </div>
   );
 };

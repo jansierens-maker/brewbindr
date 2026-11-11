@@ -4,6 +4,8 @@ import { useTranslation } from '../App';
 import { Language } from '../services/i18n';
 import BrewerySettings from './BrewerySettings';
 import { canViewStock } from '../services/permissions';
+import NewPasswordForm from './NewPasswordForm';
+import { authService } from '../services/authService';
 
 const Settings: React.FC = () => {
   const { preferences, updatePreferences, updateDisplayName, signOut, user, profile, breweryRole, isAdmin } = useUser();
@@ -294,6 +296,25 @@ const Settings: React.FC = () => {
                   />
                   <p className="text-xs text-stone-500">{t('display_name_desc')}</p>
                 </div>
+              )}
+              {user?.email && (
+                <details className="group pt-2">
+                  <summary className="cursor-pointer text-xs font-black text-stone-600 uppercase tracking-widest hover:text-amber-600">
+                    <i className="fas fa-key mr-2" aria-hidden="true"></i>{t('password_change_title')}
+                  </summary>
+                  <div className="mt-4">
+                    <NewPasswordForm
+                      idPrefix="settings"
+                      askCurrent
+                      verifyCurrent={current => authService.verifyPassword(user.email!, current)}
+                      onSubmit={async password => {
+                        await authService.updatePassword(password);
+                        alert(t('password_changed'));
+                      }}
+                      submitLabel={t('password_change_btn')}
+                    />
+                  </div>
+                </details>
               )}
             </div>
 

@@ -26,3 +26,15 @@ describe('password breach check', () => {
     expect(await pwnedCount('password', notOk)).toBeNull();
   });
 });
+
+import { newPasswordProblem } from '../../services/passwordCheck';
+
+describe('newPasswordProblem', () => {
+  it('needs 12 characters, twice the same, and something new', () => {
+    expect(newPasswordProblem('kort', 'kort')).toBe('short');
+    expect(newPasswordProblem('lang-genoeg-123', 'lang-genoeg-124')).toBe('mismatch');
+    expect(newPasswordProblem('lang-genoeg-123', 'lang-genoeg-123', 'lang-genoeg-123')).toBe('same');
+    expect(newPasswordProblem('lang-genoeg-123', 'lang-genoeg-123', 'oud-wachtwoord-1')).toBeNull();
+    expect(newPasswordProblem('lang-genoeg-123', 'lang-genoeg-123')).toBeNull();
+  });
+});

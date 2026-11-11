@@ -39,3 +39,13 @@ export const pwnedCount = async (password: string, fetchFn: typeof fetch = fetch
     return null;
   }
 };
+
+export type NewPasswordProblem = 'short' | 'mismatch' | 'same';
+
+/** What is wrong with a new password (before the breach check), or null. */
+export const newPasswordProblem = (password: string, confirm: string, current?: string): NewPasswordProblem | null => {
+  if (password.length < MIN_PASSWORD_LENGTH) return 'short';
+  if (password !== confirm) return 'mismatch';
+  if (current !== undefined && password === current) return 'same';
+  return null;
+};
