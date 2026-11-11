@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, BrewLogEntry, LibraryIngredient } from '../types';
-import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure, resolveEquipment, ownInstallations } from '../services/calculations';
+import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure, resolveEquipment, ownInstallations, initialBrewWaterChem } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canManageBrews } from '../services/permissions';
-import { scaleRecipe, suggestScale } from '../services/scaling';
+import { scaleRecipe, scaleWaterChem, suggestScale } from '../services/scaling';
 import ScaleSuggestionBanner from './ScaleSuggestionBanner';
 import GravityInput from './GravityInput';
 import YeastPitch from './YeastPitch';
@@ -35,6 +35,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
     id: crypto.randomUUID(),
     recipeId: baseRecipe.id || 'unassigned',
     ...(initialEquipmentId ? { equipmentId: initialEquipmentId } : {}),
+    // The water starts as the recipe's and records what is actually used
+    water_chem: initialBrewWaterChem(baseRecipe, library),
     date: new Date().toISOString().split('T')[0],
     brewDate: new Date().toISOString().split('T')[0],
     status: 'brewing',
@@ -78,6 +80,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
     setEntry(prev => ({
       ...prev,
       scale: { factor: scaleSuggestion.factor, batch_l: scaleSuggestion.toL },
+      ...(prev.water_chem ? { water_chem: scaleWaterChem(prev.water_chem, scaleSuggestion.factor) } : {}),
       // Volumes still at the recipe size follow the new size
       measurements: { ...prev.measurements, actual_volume: prev.measurements.actual_volume === from ? to : prev.measurements.actual_volume },
       bottling: prev.bottling ? { ...prev.bottling, bottling_volume: prev.bottling.bottling_volume === from ? to : prev.bottling.bottling_volume } : prev.bottling,
@@ -90,11 +93,20 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
       const { scale, ...rest } = prev;
       return {
         ...rest,
+        ...(prev.water_chem && scale ? { water_chem: scaleWaterChem(prev.water_chem, 1 / scale.factor) } : {}),
         measurements: { ...prev.measurements, actual_volume: prev.measurements.actual_volume === to ? from : prev.measurements.actual_volume },
         bottling: prev.bottling ? { ...prev.bottling, bottling_volume: prev.bottling.bottling_volume === to ? from : prev.bottling.bottling_volume } : prev.bottling,
       };
     });
   };
+
+  // Water treatment of this brew (older brews without one: the recipe's)
+  const brewRecipe = useMemo(
+    () => (entry.water_chem !== undefined ? { ...recipe, water_chem: entry.water_chem } : recipe),
+    [recipe, entry.water_chem],
+  );
+  const recipeWaterChem = useMemo(() => initialBrewWaterChem(recipe, library), [recipe, library]);
+  const waterChanged = entry.water_chem !== undefined && JSON.stringify(entry.water_chem ?? {}) !== JSON.stringify(recipeWaterChem ?? {});
 
   // Calculate dynamic stats based on current overrides in the log
   const currentStats = useMemo(() => {
@@ -383,7 +395,22 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
                 return next;
               }) : undefined}
             />
-            <WaterChemistryCard recipe={recipe} library={library} equipment={equipment} />
+            {canEdit && waterChanged && (
+              <div role="status" className="p-3 rounded-xl border bg-teal-50 border-teal-200 flex flex-col sm:flex-row sm:items-center gap-3">
+                <p className="flex-1 text-sm font-semibold text-teal-900">
+                  <i className="fas fa-pen mr-2" aria-hidden="true"></i>{t('water_brew_changed')}
+                </p>
+                <button type="button" onClick={() => setEntry(prev => ({ ...prev, water_chem: recipeWaterChem }))} className="px-4 py-2 rounded-lg bg-white border border-teal-300 text-xs font-black uppercase tracking-wider text-teal-900 hover:bg-teal-100 whitespace-nowrap">
+                  {t('water_back_to_recipe')}
+                </button>
+              </div>
+            )}
+            <WaterChemistryCard
+              recipe={brewRecipe}
+              library={library}
+              equipment={equipment}
+              onChange={canEdit ? water_chem => setEntry(prev => ({ ...prev, water_chem: water_chem ?? {} })) : undefined}
+            />
 
             {recipe.ingredients.cultures.length > 0 && (
               <YeastPitch

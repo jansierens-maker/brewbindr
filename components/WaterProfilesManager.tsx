@@ -56,6 +56,27 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
     if (copy) onUpdate([...library, copy]);
   };
 
+  /** Make this profile the brewery default (★), or remove the default again. */
+  const toggleDefault = async (item: LibraryIngredient) => {
+    const makeDefault = !item.is_default;
+    const changed = waters
+      .filter(w => (w.id === item.id ? !!w.is_default !== makeDefault : !!w.is_default && makeDefault))
+      .map(w => ({ ...w, is_default: w.id === item.id ? makeDefault : false }));
+    if (changed.length === 0) return;
+    const before = library;
+    onUpdate(library.map(i => changed.find(c => c.id === i.id) ?? i));
+    if (user?.id) {
+      for (const c of changed) {
+        const result = await supabaseService.saveLibraryIngredient(c, c.user_id || user.id, c.brewery_id || profile?.brewery_id);
+        if (result?.error) {
+          alert(`${t('save_failed')}: ${result.error.message}`);
+          onUpdate(before);
+          return;
+        }
+      }
+    }
+  };
+
   const remove = async (item: LibraryIngredient) => {
     if (!confirm(t('confirm_delete'))) return;
     const before = library;
@@ -121,9 +142,20 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
         {waters.map(w => (
           <div key={w.id} className="bg-[var(--color-bg)] p-5 rounded-[var(--radius)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
             <div className="flex justify-between items-start gap-3">
-              <h4 className="font-black text-[var(--color-text)]">{w.name}</h4>
+              <h4 className="font-black text-[var(--color-text)]">
+                {w.name}
+                {w.is_default && <span className="ml-2 align-middle text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full uppercase tracking-widest">{t('default_equipment_badge')}</span>}
+              </h4>
               {canEdit && (
                 <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleDefault(w)}
+                    aria-pressed={!!w.is_default}
+                    aria-label={`${w.is_default ? t('unset_default_water') : t('set_default_water')}: ${w.name}`}
+                    title={w.is_default ? t('unset_default_water') : t('set_default_water')}
+                    className={w.is_default ? 'text-amber-500 hover:text-amber-700' : 'text-[var(--color-text-xmuted)] hover:text-amber-500'}
+                  ><i className={`${w.is_default ? 'fas' : 'far'} fa-star text-xs`} aria-hidden="true"></i></button>
                   {canSubmit && (
                     <button type="button" onClick={() => submitPublic(w)} aria-label={`${t('submit_to_public')}: ${w.name}`} title={t('submit_to_public')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)]"><i className="fas fa-cloud-upload-alt text-xs" aria-hidden="true"></i></button>
                   )}

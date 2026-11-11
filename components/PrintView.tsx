@@ -42,7 +42,8 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingN
   const volUnit = preferences.units === 'imperial' ? 'Gal' : 'L';
   const tempUnit = preferences.units === 'imperial' ? '°F' : '°C';
   const vol = (l: number) => `${formatBrewNumber(l, 'vol', lang, preferences)} ${volUnit}`;
-  const chem = recipe.water_chem;
+  // A brew shows the water treatment it was brewed with
+  const chem = log?.water_chem ?? recipe.water_chem;
   const salts = chem?.salts || {};
   const usedSalts = (Object.keys(SALT_KEYS) as SaltId[]).filter(id => (salts[id] ?? 0) > 0);
   const hasTreatment = !!(chem && (usedSalts.length > 0 || chem.dilution_pct || chem.lactic_ml));

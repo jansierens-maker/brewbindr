@@ -272,6 +272,8 @@ export interface BrewLogEntry {
   scale?: { factor: number; batch_l: number };
   /** Installation this brew is made on (otherwise the recipe's, or the brewery default) */
   equipmentId?: string;
+  /** Water treatment actually used (starts as the recipe's); absent in older brews: the recipe's */
+  water_chem?: Recipe['water_chem'];
   /** All bottles or the keg are finished: no longer offered for new tasting notes */
   finished?: boolean;
   finishedDate?: string;
