@@ -6,7 +6,9 @@
 // Production is only read. Brews, tasting notes, teams and other breweries are not copied.
 //
 // Runs in the "Copy data to staging" workflow. Needs: SUPABASE_ACCESS_TOKEN, PROD_REF,
-// STAGING_REF, SOURCE_EMAIL, TARGET_EMAIL.
+// STAGING_REF, SOURCE_EMAIL, TARGET_EMAIL. Production is read through the Management API.
+// With SQL_FILE set, the staging part is written to that file (the workflow runs it with
+// psql over STAGING_DB_URL); otherwise it is sent through the Management API as well.
 
 const { SUPABASE_ACCESS_TOKEN, PROD_REF, STAGING_REF, SOURCE_EMAIL, TARGET_EMAIL } = process.env;
 for (const [k, v] of Object.entries({ SUPABASE_ACCESS_TOKEN, PROD_REF, STAGING_REF, SOURCE_EMAIL, TARGET_EMAIL })) {
@@ -81,5 +83,10 @@ COMMIT;
 SELECT ${TABLES.map(t => `(SELECT count(*) FROM public.${t}) AS ${t}`).join(', ')}, (SELECT count(*) FROM public.stock) AS stock;`;
 
 if (offline) { console.log(sql); process.exit(0); }
+if (process.env.SQL_FILE) {
+  (await import('node:fs')).writeFileSync(process.env.SQL_FILE, sql);
+  console.log(`Staging SQL written to ${process.env.SQL_FILE}`);
+  process.exit(0);
+}
 const result = await query(STAGING_REF, sql);
 console.log('Staging now has:', result[result.length - 1] ?? result);
