@@ -2,7 +2,7 @@ import { supabase } from './supabaseClient';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeRecipe, normalizeLibraryItem } from './calculations';
-import { applyStock, StockRow } from './stock';
+import { applyStock, StockRow, stockRowFor, withoutStock } from './stock';
 
 /**
  * Supabase Service for Brewbindr
@@ -276,7 +276,8 @@ export const supabaseService = {
 
     const payload: any = {
       id: item.id || uuidv4(),
-      data: normalizeLibraryItem(item),
+      // The stock has its own table (#137)
+      data: normalizeLibraryItem(withoutStock(item)),
       user_id: userId || item.user_id,
       brewery_id: breweryId || item.brewery_id
     };
@@ -289,9 +290,16 @@ export const supabaseService = {
 
     if (error) {
       console.error(`Save error for ${table}:`, error.message, error.details, error.hint, error.code);
+      return { error };
     }
 
-    return { error };
+    const stockRow = stockRowFor({ ...item, id: payload.id, status: payload.status ?? item.status }, payload.brewery_id);
+    if (stockRow) {
+      const { error: stockError } = await client.from('stock').upsert(stockRow);
+      if (stockError) console.error('Stock save error:', stockError.message);
+      return { error: stockError };
+    }
+    return { error: null };
   },
 
   async deleteLibraryIngredient(id: string, type: string) {
@@ -381,10 +389,11 @@ export const supabaseService = {
       const firstItemType = Object.entries(TABLE_MAP).find(([type, tbl]) => tbl === table)?.[0] || '';
       const hasStatus = STATUS_TABLES.includes(table) || STATUS_TABLES.includes(firstItemType);
 
-      const { error } = await client.from(table).upsert(items.map(i => {
+      const payloads = items.map(i => {
         const payload: any = {
           id: i.id || uuidv4(),
-          data: normalizeLibraryItem(i),
+          // The stock has its own table (#137)
+          data: normalizeLibraryItem(withoutStock(i)),
           user_id: userId,
           brewery_id: breweryId || i.brewery_id
         };
@@ -392,11 +401,21 @@ export const supabaseService = {
           payload.status = i.status || 'private';
         }
         return payload;
-      }));
+      });
+      const { error } = await client.from(table).upsert(payloads);
       if (error) {
         console.error(`Batch save error for ${table}:`, error.message, error.details, error.hint, error.code);
+        return { error };
       }
-      return { error };
+      const stockRows = items
+        .map((i, idx) => stockRowFor({ ...i, id: payloads[idx].id, status: payloads[idx].status ?? i.status }, payloads[idx].brewery_id))
+        .filter((r): r is NonNullable<typeof r> => !!r);
+      if (stockRows.length > 0) {
+        const { error: stockError } = await client.from('stock').upsert(stockRows);
+        if (stockError) console.error('Stock save error:', stockError.message);
+        return { error: stockError };
+      }
+      return { error: null };
     });
 
     // One result for all tables: the first error, if any

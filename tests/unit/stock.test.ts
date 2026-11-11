@@ -27,3 +27,29 @@ describe('applyStock', () => {
     expect(applyStock(lib, null)).toBe(lib);
   });
 });
+
+import { stockRowFor, withoutStock, applyStockChange } from '../../services/stock';
+
+describe('writing stock (step 2)', () => {
+  const hop = { id: 'h1', name: 'Saaz', type: 'hop', status: 'private', stock: { amount: 80, unit: 'g', stock_target: 250 } } as LibraryIngredient;
+  it('a brewery ingredient gives a stock row', () => {
+    expect(stockRowFor(hop, 'b1')).toEqual({ ingredient_type: 'hop', ingredient_id: 'h1', brewery_id: 'b1', amount: 80, unit: 'g', target: 250 });
+  });
+  it('no row for public copies, other kinds, no stock or no brewery', () => {
+    expect(stockRowFor({ ...hop, status: 'submitted' }, 'b1')).toBeNull();
+    expect(stockRowFor({ ...hop, type: 'equipment' } as LibraryIngredient, 'b1')).toBeNull();
+    expect(stockRowFor(withoutStock(hop), 'b1')).toBeNull();
+    expect(stockRowFor(hop, undefined)).toBeNull();
+  });
+  it('the ingredient row is saved without stock', () => {
+    expect('stock' in withoutStock(hop)).toBe(false);
+    expect(hop.stock?.amount).toBe(80);
+  });
+  it('realtime changes update the library', () => {
+    const lib = [hop, { id: 'f1', name: 'Pils', type: 'fermentable' } as LibraryIngredient];
+    const up = applyStockChange(lib, 'UPDATE', { ingredient_type: 'fermentable', ingredient_id: 'f1', amount: 3, unit: 'kg', target: null });
+    expect(up[1].stock).toEqual({ amount: 3, unit: 'kg' });
+    expect(up[0]).toBe(hop);
+    expect(applyStockChange(lib, 'DELETE', { ingredient_type: 'hop', ingredient_id: 'h1' })[0].stock).toBeUndefined();
+  });
+});

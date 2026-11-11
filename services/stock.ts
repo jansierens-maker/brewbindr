@@ -32,3 +32,39 @@ export const applyStock = (library: LibraryIngredient[], rows: StockRow[] | null
     } as LibraryIngredient;
   });
 };
+
+/** The item without its stock, as stored in the ingredient row (the stock has its own table). */
+export const withoutStock = (item: LibraryIngredient): LibraryIngredient => {
+  if (!('stock' in item)) return item;
+  const { stock: _stock, ...rest } = item;
+  return rest as LibraryIngredient;
+};
+
+/** The stock table row for a brewery's own ingredient, or null when it has no stock to store. */
+export const stockRowFor = (item: LibraryIngredient, breweryId?: string | null) => {
+  if (!STOCK_TYPES.includes(item.type) || !item.stock || !breweryId) return null;
+  if (item.status && item.status !== 'private') return null;
+  return {
+    ingredient_type: item.type,
+    ingredient_id: item.id,
+    brewery_id: breweryId,
+    amount: Number(item.stock.amount) || 0,
+    unit: item.stock.unit || (item.type === 'hop' || item.type === 'misc' ? 'g' : 'kg'),
+    target: item.stock.stock_target ?? null,
+  };
+};
+
+/** The library after a change in the stock table (realtime). */
+export const applyStockChange = (
+  library: LibraryIngredient[],
+  event: 'INSERT' | 'UPDATE' | 'DELETE',
+  row: Partial<StockRow> | null | undefined,
+): LibraryIngredient[] => {
+  if (!row?.ingredient_id || !row.ingredient_type) return library;
+  return library.map(item => {
+    if (item.id !== row.ingredient_id || item.type !== row.ingredient_type) return item;
+    if (event === 'DELETE') return withoutStock(item);
+    const target = row.target === null || row.target === undefined ? undefined : Number(row.target);
+    return { ...item, stock: { amount: Number(row.amount) || 0, unit: row.unit || '', ...(target !== undefined ? { stock_target: target } : {}) } };
+  });
+};
