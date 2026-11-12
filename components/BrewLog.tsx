@@ -13,6 +13,7 @@ import WaterPlanCard from './WaterPlanCard';
 import WaterChemistryCard from './WaterChemistryCard';
 import BrewIngredients from './BrewIngredients';
 import { ingredientsDiffer } from '../services/ingredientEdit';
+import { recalcHopsForIbu } from '../services/hopRecalc';
 
 interface BrewLogProps {
   recipe: Recipe;
@@ -124,6 +125,17 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
   const currentStats = useMemo(() => {
     return calculateRecipeStats(brewRecipe, entry.measurements.measured_alpha, equipment);
   }, [brewRecipe, entry.measurements.measured_alpha, equipment]);
+
+  // Bitterness of the recipe against this brew (other alpha acids, other amounts) (#167)
+  const recipeIbu = useMemo(() => calculateRecipeStats(recipe, undefined, equipment).ibuExact, [recipe, equipment]);
+  const [hopRecalcOpen, setHopRecalcOpen] = useState(false);
+  const [hopRecalcAroma, setHopRecalcAroma] = useState(false);
+  const hopRecalc = useMemo(
+    () => (hopRecalcOpen ? recalcHopsForIbu(brewRecipe, recipeIbu, entry.measurements.measured_alpha, equipment, hopRecalcAroma) : null),
+    [hopRecalcOpen, brewRecipe, recipeIbu, entry.measurements.measured_alpha, equipment, hopRecalcAroma],
+  );
+  const ibuOff = Math.abs(currentStats.ibuExact - recipeIbu) >= 1;
+  const hopUnit = (unit: string) => (unit === 'ounces' ? 'oz' : unit === 'kilograms' ? 'kg' : unit === 'pounds' ? 'lb' : 'g');
 
   const currentAbvDisplay = useMemo(() => {
     const isActuallyBottled = entry.status === 'bottled';
@@ -343,6 +355,52 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
                   <button type="button" onClick={() => setEntry(prev => ({ ...prev, ingredients: structuredClone(recipe.ingredients) }))} className="px-4 py-2 rounded-lg bg-white border border-amber-300 text-xs font-black uppercase tracking-wider text-amber-900 hover:bg-amber-100 whitespace-nowrap">
                     {t('water_back_to_recipe')}
                   </button>
+                </div>
+              )}
+              {canEdit && ibuOff && (
+                <div className="p-4 rounded-xl border bg-sky-50 border-sky-200 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <p className="flex-1 text-sm font-semibold text-sky-900">
+                      <i className="fas fa-scale-balanced mr-2" aria-hidden="true"></i>
+                      {t('hop_recalc_off').replace('{brew}', String(Math.round(currentStats.ibuExact))).replace('{recipe}', String(Math.round(recipeIbu)))}
+                    </p>
+                    {!hopRecalcOpen && (
+                      <button type="button" onClick={() => setHopRecalcOpen(true)} className="px-4 py-2 rounded-lg bg-stone-900 text-white text-xs font-black uppercase tracking-wider whitespace-nowrap hover:bg-black">
+                        {t('hop_recalc_btn')}
+                      </button>
+                    )}
+                  </div>
+                  {hopRecalcOpen && (
+                    <div className="space-y-3">
+                      <label htmlFor="hop-recalc-aroma" className="flex items-center gap-2 text-xs font-bold text-sky-900">
+                        <input id="hop-recalc-aroma" name="hop_recalc_aroma" type="checkbox" checked={hopRecalcAroma} onChange={e => setHopRecalcAroma(e.target.checked)} />
+                        {t('hop_recalc_include_aroma')}
+                      </label>
+                      {hopRecalc ? (
+                        <>
+                          <ul className="text-sm text-stone-800 space-y-1">
+                            {hopRecalc.changes.map(c => (
+                              <li key={c.index} className="flex justify-between gap-3 bg-white rounded-lg px-3 py-2 border border-sky-100">
+                                <span className="font-bold">{c.name}</span>
+                                <span className="font-black">{formatBrewNumber(c.from, 'default', lang)} → {formatBrewNumber(c.to, 'default', lang)} {hopUnit(c.unit)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="text-xs font-bold text-sky-900">{t('hop_recalc_result').replace('{ibu}', String(Math.round(hopRecalc.resultIbu)))}</p>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => { setEntry(prev => ({ ...prev, ingredients: hopRecalc.ingredients })); setHopRecalcOpen(false); }} className="px-4 py-2 rounded-lg bg-stone-900 text-white text-xs font-black uppercase tracking-wider hover:bg-black">
+                              {t('hop_recalc_apply')}
+                            </button>
+                            <button type="button" onClick={() => setHopRecalcOpen(false)} className="px-4 py-2 rounded-lg bg-white border border-stone-200 text-xs font-black uppercase tracking-wider text-stone-700 hover:bg-stone-100">
+                              {t('cancel_btn')}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-xs font-bold text-amber-800">{t('hop_recalc_impossible')}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               <BrewIngredients

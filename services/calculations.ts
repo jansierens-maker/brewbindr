@@ -711,6 +711,8 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
     abv,
     color: colorSRM,
     ibu: Math.round(ibu),
+    /** IBU before rounding (for recalculating hop amounts) */
+    ibuExact: ibu,
     /** OG for the recipe's batch volume, before any water set by hand (input for waterPlan) */
     plannedOg,
   };
