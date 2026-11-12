@@ -9,6 +9,7 @@ import { findPrivateIngredient } from '../services/duplicates';
 import { supabaseService } from '../services/supabaseService';
 import { equipmentCapacity, isPrivateItem } from '../services/calculations';
 import WaterProfilesManager from './WaterProfilesManager';
+import { EQUIPMENT_PRESETS, presetToItem } from '../services/equipmentPresets';
 
 interface Props {
   /** Which of the brewery's own items this screen shows (#168: one menu item each) */
@@ -19,160 +20,6 @@ interface Props {
   onUpdate: (newLibrary: LibraryIngredient[]) => void;
 }
 
-type EquipmentPreset = {
-  name: string;
-  type: LibraryIngredient['equipment_type'];
-  batch: number;
-  efficiency: number;
-  vessels: Vessel[];
-  trub_loss: number;
-  mash_capacity?: number;
-  grain_displacement?: number;
-  boil_capacity?: number;
-  max_grain_kg?: number;
-};
-
-const PRESETS: EquipmentPreset[] = [
-  {
-    name: "Brewie",
-    type: 'two_vessel',
-    batch: 23,
-    efficiency: 70,
-    trub_loss: 2,
-    mash_capacity: 22,
-    grain_displacement: 1,
-    boil_capacity: 23,
-    vessels: [
-      { name: "Maischketel", role: 'combined', volume: 27, heating: 'electric', pump: true },
-      { name: "Kookketel", role: 'boil', volume: 23, heating: 'electric', pump: true }
-    ]
-  },
-  {
-    name: "Grainfather G30",
-    type: 'all_in_one',
-    batch: 25,
-    efficiency: 72,
-    trub_loss: 2,
-    vessels: [{ name: "G30", role: 'combined', volume: 30, heating: 'electric', pump: true }]
-  },
-  {
-    name: "Grainfather G40",
-    type: 'all_in_one',
-    batch: 35,
-    efficiency: 72,
-    trub_loss: 2,
-    mash_capacity: 46,
-    boil_capacity: 46,
-    max_grain_kg: 13,
-    vessels: [{ name: "G40", role: 'combined', volume: 40, heating: 'electric', pump: true }]
-  },
-  {
-    name: "Brew Monk B40",
-    type: 'all_in_one',
-    batch: 30,
-    efficiency: 72,
-    trub_loss: 2,
-    mash_capacity: 40,
-    boil_capacity: 40,
-    max_grain_kg: 8,
-    vessels: [{ name: "B40", role: 'combined', volume: 40, heating: 'electric', pump: true }]
-  },
-  {
-    name: "Brew Monk B50",
-    type: 'all_in_one',
-    batch: 45,
-    efficiency: 72,
-    trub_loss: 2,
-    mash_capacity: 50,
-    boil_capacity: 50,
-    max_grain_kg: 12,
-    vessels: [{ name: "B50", role: 'combined', volume: 50, heating: 'electric', pump: true }]
-  },
-  {
-    name: "Brew Monk B70",
-    type: 'all_in_one',
-    batch: 65,
-    efficiency: 72,
-    trub_loss: 3,
-    mash_capacity: 70,
-    boil_capacity: 70,
-    max_grain_kg: 18,
-    vessels: [{ name: "B70", role: 'combined', volume: 70, heating: 'electric', pump: true }]
-  },
-  {
-    name: "Robobrew / BrewZilla",
-    type: 'all_in_one',
-    batch: 30,
-    efficiency: 70,
-    trub_loss: 2,
-    vessels: [{ name: "BrewZilla", role: 'combined', volume: 35, heating: 'electric', pump: true }]
-  },
-  {
-    name: "BIAB 20L",
-    type: 'biab',
-    batch: 20,
-    efficiency: 65,
-    trub_loss: 2,
-    vessels: [{ name: "Ketel", role: 'combined', volume: 30, heating: 'gas', pump: false }]
-  },
-  {
-    name: "BIAB 30L",
-    type: 'biab',
-    batch: 30,
-    efficiency: 65,
-    trub_loss: 2,
-    vessels: [{ name: "Ketel", role: 'combined', volume: 45, heating: 'gas', pump: false }]
-  },
-  {
-    name: "Klassiek 3-vatten 20L",
-    type: 'three_vessel',
-    batch: 20,
-    efficiency: 75,
-    trub_loss: 1,
-    vessels: [
-      { name: "HLT", role: 'hlt', volume: 30, heating: 'electric', pump: true },
-      { name: "MLT", role: 'mash', volume: 30, heating: 'none', pump: false },
-      { name: "Kookketel", role: 'boil', volume: 30, heating: 'gas', pump: true }
-    ]
-  },
-  {
-    name: "Klassiek 3-vatten 30L",
-    type: 'three_vessel',
-    batch: 30,
-    efficiency: 75,
-    trub_loss: 2,
-    vessels: [
-      { name: "HLT", role: 'hlt', volume: 40, heating: 'electric', pump: true },
-      { name: "MLT", role: 'mash', volume: 40, heating: 'none', pump: false },
-      { name: "Kookketel", role: 'boil', volume: 40, heating: 'gas', pump: true }
-    ]
-  },
-  {
-    name: "RIMS 20L",
-    type: 'rims',
-    batch: 20,
-    efficiency: 78,
-    trub_loss: 1,
-    vessels: [
-      { name: "HLT", role: 'hlt', volume: 30, heating: 'electric', pump: true },
-      { name: "MLT", role: 'mash', volume: 30, heating: 'none', pump: true },
-      { name: "Kookketel", role: 'boil', volume: 30, heating: 'gas', pump: true }
-    ]
-  },
-  {
-    name: "HERMS 20L",
-    type: 'herms',
-    batch: 20,
-    efficiency: 80,
-    trub_loss: 1,
-    vessels: [
-      { name: "HLT", role: 'hlt', volume: 30, heating: 'electric', pump: true },
-      { name: "MLT", role: 'mash', volume: 30, heating: 'none', pump: true },
-      { name: "Kookketel", role: 'boil', volume: 30, heating: 'gas', pump: true }
-    ]
-  }
-];
-
 const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope = 'own', library, onUpdate }) => {
   const isPublic = scope === 'public';
   const { t } = useTranslation();
@@ -182,6 +29,7 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
   const [editForm, setEditForm] = useState<Partial<LibraryIngredient>>({});
   const [itemToDelete, setItemToDelete] = useState<LibraryIngredient | null>(null);
   const [creationStep, setCreationStep] = useState<1 | 2>(1);
+  const [presetSearch, setPresetSearch] = useState('');
 
   // Own items: brewery admins and brewmasters. Public items: only the app admin (#169).
   const canEdit = isPublic ? isAdmin : canManageLibrary({ breweryRole, isAdmin });
@@ -193,6 +41,15 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
     ? i.status === 'approved'
     : isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id));
   const equipment = useMemo(() => library.filter(i => i.type === 'equipment' && visible(i)).sort((a, b) => a.name.localeCompare(b.name)), [library, profile?.brewery_id, user?.id, isPublic]);
+  // Starting points for a new installation: the public installations (#164); the built-in list only when none could be loaded
+  const startingPoints = useMemo(() => {
+    const pub = library.filter(i => i.type === 'equipment' && i.status === 'approved');
+    return (pub.length > 0 ? pub : EQUIPMENT_PRESETS.map(presetToItem)).sort((a, b) => a.name.localeCompare(b.name));
+  }, [library]);
+  const shownStartingPoints = useMemo(() => {
+    const q = presetSearch.trim().toLowerCase();
+    return q ? startingPoints.filter(p => p.name.toLowerCase().includes(q)) : startingPoints;
+  }, [startingPoints, presetSearch]);
   const mashProfiles = useMemo(() => library.filter(i => i.type === 'mash_profile' && visible(i)).sort((a, b) => a.name.localeCompare(b.name)), [library, profile?.brewery_id, user?.id, isPublic]);
 
   const startEditing = (item: LibraryIngredient) => {
@@ -248,25 +105,21 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
     setCreationStep(1);
   };
 
-  const applyPreset = (preset: EquipmentPreset | 'custom') => {
-    if (preset === 'custom') {
+  /** Start from a public installation (#164): its settings, but a new private item of this brewery. */
+  const applyPreset = (source: LibraryIngredient | 'custom') => {
+    if (source === 'custom') {
         setEditForm({ ...editForm, preset: t('custom'), equipment_type: 'custom' });
     } else {
+        const { id: _id, user_id: _u, brewery_id: _b, status: _s, is_default: _d, ...settings } = source;
         setEditForm({
             ...editForm,
-            name: preset.name,
-            preset: preset.name,
-            equipment_type: preset.type,
-            batch_size: preset.batch,
-            efficiency: preset.efficiency,
-            trub_chiller_loss: preset.trub_loss,
-            mash_capacity: preset.mash_capacity,
-            grain_displacement: preset.grain_displacement,
-            boil_capacity: preset.boil_capacity,
-            max_grain_kg: preset.max_grain_kg,
-            vessels: preset.vessels
+            ...settings,
+            // Keeps the capacity fallback by preset name working
+            preset: source.preset || source.name,
+            vessels: (source.vessels || []).map(v => ({ ...v })),
         });
     }
+    setPresetSearch('');
     setCreationStep(2);
   };
 
@@ -529,20 +382,30 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
           <div className="p-8 md:p-12 space-y-8">
             {activeTab === 'equipment' ? (
                 creationStep === 1 ? (
+                    <div className="space-y-4">
+                    {startingPoints.length > 9 && (
+                        <div>
+                            <label htmlFor="equipment-preset-search" className="sr-only">{t('search_installation')}</label>
+                            <input id="equipment-preset-search" name="equipment_preset_search" type="search" maxLength={100}
+                                className="w-full p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none"
+                                placeholder={t('search_installation')} value={presetSearch} onChange={e => setPresetSearch(e.target.value)} />
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {PRESETS.map(p => (
+                        {shownStartingPoints.map(p => (
                             <button
-                                key={p.name}
+                                key={p.id}
+                                type="button"
                                 onClick={() => applyPreset(p)}
                                 className="p-6 rounded-3xl border-2 border-stone-100 hover:border-amber-500 hover:bg-amber-50/30 transition-all text-left group"
                             >
                                 <div className="w-12 h-12 rounded-2xl bg-stone-50 flex items-center justify-center mb-4 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-sm">
-                                    <i className={`fas ${p.type === 'all_in_one' ? 'fa-blender' : 'fa-vials'}`}></i>
+                                    <i className={`fas ${p.equipment_type === 'all_in_one' ? 'fa-blender' : 'fa-vials'}`} aria-hidden="true"></i>
                                 </div>
                                 <h4 className="font-black text-stone-900 text-sm mb-1">{p.name}</h4>
                                 <div className="flex gap-2">
-                                    <span className="text-[10px] font-bold text-stone-400 uppercase">{t(p.type as any)}</span>
-                                    <span className="text-[10px] font-bold text-amber-600 uppercase">{p.batch}L</span>
+                                    <span className="text-[10px] font-bold text-stone-400 uppercase">{p.equipment_type ? t(p.equipment_type as any) : ''}</span>
+                                    {p.batch_size ? <span className="text-[10px] font-bold text-amber-600 uppercase">{p.batch_size}L</span> : null}
                                 </div>
                             </button>
                         ))}
@@ -556,6 +419,7 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
                             <h4 className="font-black text-stone-900 text-sm mb-1">{t('custom')}</h4>
                             <p className="text-[10px] font-bold text-stone-400 uppercase">{t('fill_manually')}</p>
                         </button>
+                    </div>
                     </div>
                 ) : (
                     <div className="space-y-10">

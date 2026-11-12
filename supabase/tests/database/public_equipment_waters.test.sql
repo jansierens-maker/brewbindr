@@ -20,7 +20,7 @@ UPDATE profiles SET role = 'admin' WHERE id = '00000000-0000-0000-0000-000000000
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
 SELECT lives_ok(
-  $$INSERT INTO equipment (id, data, user_id, brewery_id) SELECT 'e1', '{"name":"Brewie"}', auth.uid(), brewery_a FROM t$$,
+  $$INSERT INTO equipment (id, data, user_id, brewery_id) SELECT 'e1', '{"name":"Testkit"}', auth.uid(), brewery_a FROM t$$,
   'a brewmaster adds an installation (private by default)');
 SELECT is((SELECT status FROM equipment WHERE id = 'e1'), 'private', 'a row without status is private');
 SELECT throws_ok(
@@ -33,7 +33,7 @@ RESET ROLE;
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
 SELECT lives_ok(
-  $$INSERT INTO equipment (id, data, user_id, brewery_id, status) SELECT 'e2', '{"name":"Brewie"}', auth.uid(), brewery_a, 'submitted' FROM t$$,
+  $$INSERT INTO equipment (id, data, user_id, brewery_id, status) SELECT 'e2', '{"name":"Testkit"}', auth.uid(), brewery_a, 'submitted' FROM t$$,
   'the brewery admin submits an installation');
 SELECT lives_ok(
   $$INSERT INTO waters (id, data, user_id, brewery_id, status) SELECT 'w1', '{"name":"Aalst"}', auth.uid(), brewery_a, 'submitted' FROM t$$,
@@ -51,13 +51,13 @@ SELECT lives_ok($$UPDATE equipment SET status = 'approved' WHERE id = 'e2'$$, 't
 UPDATE waters SET status = 'approved' WHERE id = 'w1';
 RESET ROLE;
 SELECT throws_ok(
-  $$INSERT INTO equipment (id, data, user_id, brewery_id, status) SELECT 'e3', '{"name":"BREWIE "}', '00000000-0000-0000-0000-0000000000a1', brewery_a, 'approved' FROM t$$,
+  $$INSERT INTO equipment (id, data, user_id, brewery_id, status) SELECT 'e3', '{"name":"TESTKIT "}', '00000000-0000-0000-0000-0000000000a1', brewery_a, 'approved' FROM t$$,
   '23505', NULL, 'one public installation per name');
 
 -- Another brewery sees the public rows, not the private ones
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
-SELECT results_eq($$SELECT id FROM equipment ORDER BY id$$, ARRAY['e2'], 'another brewery reads only the approved installation');
+SELECT results_eq($$SELECT id FROM equipment WHERE id NOT LIKE 'preset-%' ORDER BY id$$, ARRAY['e2'], 'another brewery reads only the approved installation');
 SELECT results_eq($$SELECT id FROM waters ORDER BY id$$, ARRAY['w1'], 'another brewery reads the approved water profile');
 RESET ROLE;
 
