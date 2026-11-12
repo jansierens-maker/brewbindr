@@ -17,7 +17,7 @@ INSERT INTO hops (id, data, user_id, brewery_id, status)
 INSERT INTO hops (id, data, user_id, brewery_id, status)
   SELECT 'h2', '{"name":"Citra","alpha":12}', '00000000-0000-0000-0000-0000000000a1', brewery_a, 'approved' FROM t;
 INSERT INTO equipment (id, data, user_id, brewery_id, status)
-  SELECT 'e1', '{"name":"Brewie"}', '00000000-0000-0000-0000-0000000000a1', brewery_a, 'approved' FROM t;
+  SELECT 'e1', '{"name":"Testkit"}', '00000000-0000-0000-0000-0000000000a1', brewery_a, 'approved' FROM t;
 INSERT INTO recipes (id, data, user_id, brewery_id, status)
   SELECT 'r1', '{"name":"Tripel"}', '00000000-0000-0000-0000-0000000000a1', brewery_a, 'approved' FROM t;
 
@@ -34,7 +34,7 @@ SET LOCAL ROLE authenticated;
 SELECT lives_ok(
   $$UPDATE hops SET data = '{"name":"Saaz","alpha":4}', user_id = user_id, brewery_id = brewery_id, status = 'approved' WHERE id = 'h1'$$,
   'the app admin edits a public hop');
-SELECT lives_ok($$UPDATE equipment SET data = '{"name":"Brewie","batch_size":23}' WHERE id = 'e1'$$, 'the app admin edits a public installation');
+SELECT lives_ok($$UPDATE equipment SET data = '{"name":"Testkit","batch_size":23}' WHERE id = 'e1'$$, 'the app admin edits a public installation');
 SELECT lives_ok($$UPDATE recipes SET data = '{"name":"Tripel","notes":"fixed"}' WHERE id = 'r1'$$, 'the app admin edits a public recipe');
 SELECT throws_ok($$UPDATE hops SET data = '{"name":"CITRA "}' WHERE id = 'h1'$$,
   '23505', NULL, 'a public name still exists once');
