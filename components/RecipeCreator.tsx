@@ -9,6 +9,7 @@ import WaterPlanCard from './WaterPlanCard';
 import ScaleSuggestionBanner from './ScaleSuggestionBanner';
 import { scaleRecipe, suggestScale } from '../services/scaling';
 import WaterChemistryCard from './WaterChemistryCard';
+import { IngredientKind, newIngredient, fromLibraryItem, replaceIngredient, addIngredient as addIngredientTo } from '../services/ingredientEdit';
 
 interface RecipeCreatorProps {
   onSave: (recipe: Recipe) => void;
@@ -139,20 +140,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
     return checkInRange(val, min, max) ? 'text-green-500' : 'text-red-500';
   };
 
-  const addIngredient = (type: 'fermentable' | 'hop' | 'culture' | 'misc') => {
-    setRecipe(prev => {
-      const newIngredients = { ...prev.ingredients };
-      if (type === 'fermentable') {
-        newIngredients.fermentables = [...prev.ingredients.fermentables, { name: '', type: 'grain', amount: { unit: preferences.units === 'imperial' ? 'pounds' : 'kilograms', value: 0 }, color: { value: 2 } }];
-      } else if (type === 'hop') {
-        newIngredients.hops = [...prev.ingredients.hops, { name: '', amount: { unit: preferences.units === 'imperial' ? 'ounces' : 'grams', value: 0 }, use: 'boil', time: { unit: 'minutes', value: 60 }, alpha_acid: { value: 5 } }];
-      } else if (type === 'culture') {
-        newIngredients.cultures = [...prev.ingredients.cultures, { name: '', type: 'ale', form: 'dry', attenuation: 75 }];
-      } else if (type === 'misc') {
-        newIngredients.miscellaneous = [...(prev.ingredients.miscellaneous || []), { name: '', type: 'spice', use: 'boil', amount: { unit: 'grams', value: 0 }, time: { unit: 'minutes', value: 10 } }];
-      }
-      return { ...prev, ingredients: newIngredients };
-    });
+  const addIngredient = (type: IngredientKind) => {
+    setRecipe(prev => ({ ...prev, ingredients: addIngredientTo(prev.ingredients, type, newIngredient(type, preferences.units === 'imperial')) }));
   };
 
   const handleLibrarySelect = (type: 'fermentable' | 'hop' | 'culture' | 'misc' | 'style' | 'mash_profile', idx: number, libId: string) => {
@@ -163,27 +152,12 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
       if (type === 'style') return { ...prev, style: { name: item.name, category: item.category, libraryId: item.id } };
       if (type === 'mash_profile') return { ...prev, mash: { name: item.name, steps: item.steps ? item.steps.map(s => ({ ...s })) : [] } };
       
-      const newIngredients = { ...prev.ingredients };
-      if (type === 'fermentable') {
-        const list = [...prev.ingredients.fermentables];
-        const potential = 1 + (item.yield || 75) / 100 * 0.046; 
-        list[idx] = { ...list[idx], name: item.name, libraryId: item.id, type: guessFermentableType(item.name), color: { value: item.color || 2 }, yield: { potential: { value: potential } } };
-        newIngredients.fermentables = list;
-      } else if (type === 'hop') {
-        const list = [...prev.ingredients.hops];
-        const form = item.form === 'leaf' || item.form === 'plug' || item.form === 'pellet' ? item.form : list[idx].form;
-        list[idx] = { ...list[idx], name: item.name, libraryId: item.id, alpha_acid: { value: item.alpha || 5 }, form };
-        newIngredients.hops = list;
-      } else if (type === 'culture') {
-        const list = [...prev.ingredients.cultures];
-        list[idx] = { ...list[idx], name: item.name, libraryId: item.id, type: item.type as any, form: item.form as any, attenuation: item.attenuation || 75 };
-        newIngredients.cultures = list;
-      } else if (type === 'misc') {
-        const list = [...(prev.ingredients.miscellaneous || [])];
-        list[idx] = { ...list[idx], name: item.name, libraryId: item.id, type: item.misc_type || 'spice', use: item.misc_use || 'boil' };
-        newIngredients.miscellaneous = list;
-      }
-      return { ...prev, ingredients: newIngredients };
+      // Same mapping as on brew day (services/ingredientEdit.ts)
+      const ings = prev.ingredients;
+      if (type === 'fermentable') return { ...prev, ingredients: replaceIngredient(ings, type, idx, fromLibraryItem(type, ings.fermentables[idx], item)) };
+      if (type === 'hop') return { ...prev, ingredients: replaceIngredient(ings, type, idx, fromLibraryItem(type, ings.hops[idx], item)) };
+      if (type === 'culture') return { ...prev, ingredients: replaceIngredient(ings, type, idx, fromLibraryItem(type, ings.cultures[idx], item)) };
+      return { ...prev, ingredients: replaceIngredient(ings, type, idx, fromLibraryItem('misc', (ings.miscellaneous ?? [])[idx], item)) };
     });
   };
 

@@ -34,7 +34,9 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingN
 
   if (!baseRecipe) return null;
   // A brew made at another size shows the amounts it was brewed with
-  const recipe = log?.scale ? scaleRecipe(baseRecipe, log.scale.factor) : baseRecipe;
+  const scaled = log?.scale ? scaleRecipe(baseRecipe, log.scale.factor) : baseRecipe;
+  // ... and the ingredients actually used (#166)
+  const recipe = log?.ingredients ? { ...scaled, ingredients: log.ingredients } : scaled;
 
   // Water: the same calculation as in the recipe (own values where set)
   const plannedOg = equipment ? calculateRecipeStats(recipe, undefined, equipment).plannedOg : undefined;
