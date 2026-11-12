@@ -13,13 +13,15 @@ interface Props {
   /** Without it the list is read-only */
   onChange?: (ingredients: Recipe['ingredients']) => void;
   onAlphaChange?: (hopName: string, alpha: number) => void;
+  /** Shown at the top of the hops (e.g. the bitterness check, #167) */
+  hopNotice?: React.ReactNode;
 }
 
 const unitLabel = (unit: string | undefined) =>
   unit === 'kilograms' ? 'kg' : unit === 'pounds' ? 'lb' : unit === 'grams' ? 'g' : unit === 'ounces' ? 'oz' : unit === 'units' ? '×' : unit || '';
 
 /** The ingredients actually used in a brew (#166): amounts, timing, other or extra ingredients. */
-const BrewIngredients: React.FC<Props> = ({ ingredients, library, measuredAlpha, onChange, onAlphaChange }) => {
+const BrewIngredients: React.FC<Props> = ({ ingredients, library, measuredAlpha, onChange, onAlphaChange, hopNotice }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
   const editable = !!onChange;
@@ -95,12 +97,13 @@ const BrewIngredients: React.FC<Props> = ({ ingredients, library, measuredAlpha,
     </button>
   );
 
-  const section = (title: string, kind: IngredientKind, rows: React.ReactNode[]) => (
+  const section = (title: string, kind: IngredientKind, rows: React.ReactNode[], notice?: React.ReactNode) => (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{title}</h4>
         {addButton(kind)}
       </div>
+      {notice}
       {rows.length === 0 ? <p className="text-xs text-stone-400">-</p> : rows}
     </div>
   );
@@ -151,7 +154,7 @@ const BrewIngredients: React.FC<Props> = ({ ingredients, library, measuredAlpha,
           </div>
           {removeButton('hop', i, h.name)}
         </div>
-      )))}
+      )), hopNotice)}
 
       {section(t('miscs_label'), 'misc', (ingredients.miscellaneous ?? []).map((m, i) => (
         <div key={`m${i}`} className={row}>
