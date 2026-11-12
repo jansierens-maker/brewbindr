@@ -25,6 +25,7 @@ export const navSections = (
   opts: { stock: boolean; isAdmin: boolean },
 ): NavSection[] => [
   { id: 'brewery', label: t('nav_section_brewery'), items: [
+    { id: 'dashboard', label: t('nav_dashboard'), icon: 'fa-gauge-high', view: 'dashboard' },
     { id: 'recipes-personal', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
     { id: 'library-personal', label: t('ingredients_header'), icon: 'fa-seedling', view: 'library', libView: 'personal' },
     { id: 'voorraad', label: t('nav_stock'), icon: 'fa-boxes-stacked', view: 'voorraad', hideIf: !opts.stock },
@@ -34,6 +35,7 @@ export const navSections = (
     { id: 'own_water', label: t('tab_water_profiles'), icon: 'fa-droplet', view: 'own_water' },
     { id: 'brouwlogboek', label: t('nav_brews'), icon: 'fa-clipboard-list', view: 'brouwlogboek' },
     { id: 'proefnotities', label: t('proefnotities_label'), icon: 'fa-star-half-stroke', view: 'proefnotities' },
+    { id: 'team', label: t('team_label'), icon: 'fa-users', view: 'team' },
   ]},
   { id: 'library', label: t('public_library'), items: [
     { id: 'recipes-public', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'public', public: true },
@@ -44,7 +46,6 @@ export const navSections = (
     { id: 'library_water', label: t('tab_water_profiles'), icon: 'fa-droplet', view: 'library_water', public: true },
   ]},
   { id: 'system', label: t('nav_section_system'), items: [
-    { id: 'team', label: t('team_label'), icon: 'fa-users', view: 'team' },
     { id: 'importeren', label: t('nav_import'), icon: 'fa-arrow-up-from-bracket', view: 'importeren' },
     { id: 'settings', label: t('settings_nav_label'), icon: 'fa-gear', view: 'settings', public: true },
     { id: 'help', label: t('help_nav_label'), icon: 'fa-question-circle', view: 'help', public: true },

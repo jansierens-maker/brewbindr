@@ -77,9 +77,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  // Signed in: the dashboard; otherwise the public recipes
   const handleLogoClick = () => {
-    onViewChange('recipes');
-    onLibraryViewChange('personal');
+    onViewChange(user ? 'dashboard' : 'recipes');
+    onLibraryViewChange(user ? 'personal' : 'public');
   };
 
   return (
@@ -94,9 +95,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {navItems.map((section) => (
           <div key={section.section} className="p-[12px_12px_2px]">
-            <div className="text-[10px] font-bold tracking-[0.09em] uppercase text-[var(--color-text-xmuted)] px-2 mb-1">
-              {section.section}
-            </div>
+            {section.section && (
+              <div className="text-[10px] font-bold tracking-[0.09em] uppercase text-[var(--color-text-xmuted)] px-2 mb-1">
+                {section.section}
+              </div>
+            )}
             <nav className="space-y-0.5">
               {section.items.filter(item => !item.hideIf).map((item) => {
                 const gated = isGated(item);

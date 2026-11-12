@@ -3,6 +3,8 @@ export type Language = 'en' | 'nl' | 'fr';
 export const translations = {
   en: {
     nav_recipes: "Recipes",
+    nav_dashboard: "Dashboard",
+    tab_all_brews: "All",
     nav_brews: "Brews",
     nav_library: "Library",
     nav_admin: "Data",
@@ -791,6 +793,8 @@ export const translations = {
   },
   nl: {
     nav_recipes: "Recepten",
+    nav_dashboard: "Dashboard",
+    tab_all_brews: "Alle",
     nav_brews: "Brouwsels",
     nav_library: "Bibliotheek",
     nav_admin: "Data",
@@ -1579,6 +1583,8 @@ export const translations = {
   },
   fr: {
     nav_recipes: "Recettes",
+    nav_dashboard: "Tableau de bord",
+    tab_all_brews: "Tous",
     nav_brews: "Brassin",
     nav_library: "Bibliothèque",
     nav_admin: "Données",
