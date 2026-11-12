@@ -5,6 +5,9 @@ import { getSRMColor, calculateABV, formatGravity } from '../services/calculatio
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { averageOverall, batchNumbers, formatDate } from '../services/tasting';
+import { BREW_PHASES, BrewPhase } from '../services/brewPhases';
+
+const PHASE_TAB = { brewing: 'tab_brewing', fermenting: 'tab_fermenting', lagering: 'tab_lagering', bottled: 'tab_bottled' } as const;
 
 interface BrewLogViewProps {
   logs: BrewLogEntry[];
@@ -26,7 +29,12 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
-  const sortedLogs = [...logs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Filter by phase (tabs, as they were on Recipes); bottled here means all bottled brews
+  const [phase, setPhase] = useState<BrewPhase | 'all'>('all');
+  const sortedLogs = [...logs]
+    .filter(l => phase === 'all' || l.status === phase)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const countOf = (p: BrewPhase) => logs.filter(l => l.status === p).length;
   const numbers = batchNumbers(logs);
 
   if (logs.length === 0) {
@@ -50,7 +58,20 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
         <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{t('history_title')}</h2>
         <p className="text-[var(--color-text-muted)] font-medium mt-1">{t('history_subtitle')}</p>
       </div>
-      <div className="grid grid-cols-1 gap-6">
+      <div role="tablist" aria-label={t('nav_brews')} className="flex border-b border-[var(--color-border)] gap-8 overflow-x-auto custom-scrollbar">
+        {(['all', ...BREW_PHASES] as const).map(p => {
+          const count = p === 'all' ? logs.length : countOf(p);
+          return (
+            <button key={p} type="button" role="tab" id={`brews-tab-${p}`} aria-selected={phase === p} aria-controls="brews-list" onClick={() => setPhase(p)}
+              className={`pb-4 text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${phase === p ? 'text-[var(--color-text)]' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}>
+              {p === 'all' ? t('tab_all_brews') : t(PHASE_TAB[p])} {count > 0 ? `(${count})` : ''}
+              {phase === p && <div className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--color-accent)] rounded-t-full"></div>}
+            </button>
+          );
+        })}
+      </div>
+      {sortedLogs.length === 0 && <p className="text-[var(--color-text-muted)] font-bold">{t('no_brews_with_status')}</p>}
+      <div id="brews-list" role="tabpanel" aria-labelledby={`brews-tab-${phase}`} className="grid grid-cols-1 gap-6">
         {sortedLogs.map(log => {
           const recipe = recipes.find(r => r.id === log.recipeId);
           const notes = tastingNotes.filter(n => n.brewLogId === log.id);

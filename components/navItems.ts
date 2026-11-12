@@ -15,7 +15,8 @@ export interface NavItem {
 }
 
 export interface NavSection {
-  id: 'brewery' | 'library' | 'system';
+  id: 'home' | 'brewery' | 'library' | 'system';
+  /** Empty for the dashboard, which stands above the sections */
   label: string;
   items: NavItem[];
 }
@@ -24,6 +25,9 @@ export const navSections = (
   t: (key: any) => string,
   opts: { stock: boolean; isAdmin: boolean },
 ): NavSection[] => [
+  { id: 'home', label: '', items: [
+    { id: 'dashboard', label: t('nav_dashboard'), icon: 'fa-gauge-high', view: 'dashboard' },
+  ]},
   { id: 'brewery', label: t('nav_section_brewery'), items: [
     { id: 'recipes-personal', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
     { id: 'library-personal', label: t('ingredients_header'), icon: 'fa-seedling', view: 'library', libView: 'personal' },
