@@ -13,6 +13,10 @@ interface Props {
   canEdit: boolean;
   /** May submit to the public library (brewery admin) */
   canSubmit?: boolean;
+  /** 'public': the public library's water profiles (#169) */
+  scope?: 'own' | 'public';
+  canAddToCollection?: boolean;
+  onAddToCollection?: (item: LibraryIngredient) => void;
 }
 
 const FIELDS = [
@@ -25,13 +29,15 @@ const FIELDS = [
 ] as const;
 
 /** Water profiles of the brewery (e.g. the tap water), with their minerals in mg/L. */
-const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, canSubmit }) => {
+const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, canSubmit, scope = 'own', canAddToCollection, onAddToCollection }) => {
   const { t, lang } = useTranslation();
   const { user, profile } = useUser();
   const [form, setForm] = useState<Partial<LibraryIngredient> | null>(null);
   const waters = useMemo(
-    () => library.filter(i => i.type === 'water' && isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)),
-    [library, profile?.brewery_id, user?.id],
+    () => library.filter(i => i.type === 'water' && (scope === 'public'
+      ? i.status === 'approved'
+      : isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id))).sort((a, b) => a.name.localeCompare(b.name)),
+    [library, profile?.brewery_id, user?.id, scope],
   );
 
   const startNew = () => setForm({
@@ -44,7 +50,8 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
     const item = { ...form, name: form.name.trim(), type: 'water' } as LibraryIngredient;
     onUpdate(waters.some(w => w.id === item.id) ? library.map(i => i.id === item.id ? item : i) : [...library, item]);
     if (user?.id) {
-      const result = await supabaseService.saveLibraryIngredient(item, user.id, profile?.brewery_id);
+      // A public profile keeps its owner (the app admin edits it, #169)
+      const result = await supabaseService.saveLibraryIngredient(item, item.user_id || user.id, item.brewery_id || profile?.brewery_id);
       if (result?.error) alert(`${t('save_failed')}: ${result.error.message}`);
     }
     setForm(null);
@@ -131,7 +138,7 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
     <div className="space-y-6">
       <div className="flex justify-between items-center px-2">
         <h3 className="text-2xl font-black text-[var(--color-text)] font-[var(--font-display)]">{t('tab_water_profiles')}</h3>
-        {canEdit && (
+        {canEdit && scope === 'own' && (
           <button onClick={startNew} className="bg-[var(--color-text)] text-white px-6 py-2.5 rounded-[var(--radius-sm)] font-bold text-xs shadow-lg hover:opacity-90 transition-all flex items-center gap-2">
             <i className="fas fa-plus" aria-hidden="true"></i> {t('add_water_profile')}
           </button>
@@ -146,23 +153,28 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
                 {w.name}
                 {w.is_default && <span className="ml-2 align-middle text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full uppercase tracking-widest">{t('default_equipment_badge')}</span>}
               </h4>
+              <div className="flex gap-3">
+                {canAddToCollection && onAddToCollection && (
+                  <button type="button" onClick={() => onAddToCollection(w)} aria-label={`${t('add_to_collection')}: ${w.name}`} title={t('add_to_collection')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)]"><i className="fas fa-plus-circle text-xs" aria-hidden="true"></i></button>
+                )}
               {canEdit && (
-                <div className="flex gap-3">
-                  <button
+                <>
+                  {scope === 'own' && <button
                     type="button"
                     onClick={() => toggleDefault(w)}
                     aria-pressed={!!w.is_default}
                     aria-label={`${w.is_default ? t('unset_default_water') : t('set_default_water')}: ${w.name}`}
                     title={w.is_default ? t('unset_default_water') : t('set_default_water')}
                     className={w.is_default ? 'text-amber-500 hover:text-amber-700' : 'text-[var(--color-text-xmuted)] hover:text-amber-500'}
-                  ><i className={`${w.is_default ? 'fas' : 'far'} fa-star text-xs`} aria-hidden="true"></i></button>
-                  {canSubmit && (
+                  ><i className={`${w.is_default ? 'fas' : 'far'} fa-star text-xs`} aria-hidden="true"></i></button>}
+                  {canSubmit && scope === 'own' && (
                     <button type="button" onClick={() => submitPublic(w)} aria-label={`${t('submit_to_public')}: ${w.name}`} title={t('submit_to_public')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)]"><i className="fas fa-cloud-upload-alt text-xs" aria-hidden="true"></i></button>
                   )}
                   <button onClick={() => setForm(w)} aria-label={`${t('edit_btn')} ${w.name}`} title={t('edit_btn')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)]"><i className="fas fa-edit text-xs" aria-hidden="true"></i></button>
                   <button onClick={() => remove(w)} aria-label={`${t('delete_btn')} ${w.name}`} title={t('delete_btn')} className="text-[var(--color-text-xmuted)] hover:text-red-500"><i className="fas fa-trash-alt text-xs" aria-hidden="true"></i></button>
-                </div>
+                </>
               )}
+              </div>
             </div>
             <p className="text-xs font-bold text-[var(--color-text-muted)] mt-2">
               {FIELDS.map(f => `${f.label} ${formatBrewNumber(w[f.key] || 0, 'default', lang)}`).join(' · ')}

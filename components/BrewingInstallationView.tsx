@@ -5,6 +5,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canManageLibrary, canPublish } from '../services/permissions';
 import { submitToPublicLibrary } from '../services/publicLibrary';
+import { findPrivateIngredient } from '../services/duplicates';
 import { supabaseService } from '../services/supabaseService';
 import { equipmentCapacity, isPrivateItem } from '../services/calculations';
 import WaterProfilesManager from './WaterProfilesManager';
@@ -12,6 +13,8 @@ import WaterProfilesManager from './WaterProfilesManager';
 interface Props {
   /** Which of the brewery's own items this screen shows (#168: one menu item each) */
   section?: 'equipment' | 'mash' | 'water';
+  /** 'public': the public library (browse, add to your collection; app admins edit, #169) */
+  scope?: 'own' | 'public';
   library: LibraryIngredient[];
   onUpdate: (newLibrary: LibraryIngredient[]) => void;
 }
@@ -170,7 +173,8 @@ const PRESETS: EquipmentPreset[] = [
   }
 ];
 
-const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', library, onUpdate }) => {
+const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope = 'own', library, onUpdate }) => {
+  const isPublic = scope === 'public';
   const { t } = useTranslation();
   const { user, profile, breweryRole, isAdmin } = useUser();
   const activeTab = section;
@@ -179,12 +183,17 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', libra
   const [itemToDelete, setItemToDelete] = useState<LibraryIngredient | null>(null);
   const [creationStep, setCreationStep] = useState<1 | 2>(1);
 
-  const canEdit = canManageLibrary({ breweryRole, isAdmin });
+  // Own items: brewery admins and brewmasters. Public items: only the app admin (#169).
+  const canEdit = isPublic ? isAdmin : canManageLibrary({ breweryRole, isAdmin });
+  const canAddToCollection = isPublic && !!user && canManageLibrary({ breweryRole, isAdmin });
   // Submitting to the public library: brewery admin only
-  const canSubmit = canPublish({ breweryRole, isAdmin });
+  const canSubmit = !isPublic && canPublish({ breweryRole, isAdmin });
 
-  const equipment = useMemo(() => library.filter(i => i.type === 'equipment' && isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)), [library, profile?.brewery_id, user?.id]);
-  const mashProfiles = useMemo(() => library.filter(i => i.type === 'mash_profile' && isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id)), [library, profile?.brewery_id, user?.id]);
+  const visible = (i: LibraryIngredient) => (isPublic
+    ? i.status === 'approved'
+    : isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id));
+  const equipment = useMemo(() => library.filter(i => i.type === 'equipment' && visible(i)).sort((a, b) => a.name.localeCompare(b.name)), [library, profile?.brewery_id, user?.id, isPublic]);
+  const mashProfiles = useMemo(() => library.filter(i => i.type === 'mash_profile' && visible(i)).sort((a, b) => a.name.localeCompare(b.name)), [library, profile?.brewery_id, user?.id, isPublic]);
 
   const startEditing = (item: LibraryIngredient) => {
     setEditingId(item.id);
@@ -279,6 +288,21 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', libra
     if (!user?.id) return;
     const copy = await submitToPublicLibrary(item, library, { userId: user.id, breweryId: profile?.brewery_id, t });
     if (copy) onUpdate([...library, copy]);
+  };
+
+  /** Copy a public item into the brewery's own collection (like the other library items). */
+  const addToCollection = async (item: LibraryIngredient) => {
+    if (!user?.id) return;
+    if (findPrivateIngredient(library, item.name, item.type, profile?.brewery_id, user.id)) {
+      alert(t('already_in_collection').replace('{name}', item.name));
+      return;
+    }
+    const { is_default: _d, ...rest } = item;
+    const copy = { ...rest, id: crypto.randomUUID(), user_id: user.id, brewery_id: profile?.brewery_id, status: 'private' as const };
+    const result = await supabaseService.saveLibraryIngredient(copy, user.id, profile?.brewery_id ?? undefined);
+    if (result?.error) { alert(`${t('save_failed')}: ${result.error.message}`); return; }
+    onUpdate([...library, copy]);
+    alert(t('item_added').replace('{name}', item.name));
   };
 
   /** Make this installation the brewery default, or (again) remove the default. */
@@ -387,20 +411,20 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', libra
       )}
 
       <div className="px-2">
-        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{t('nav_section_brewery')}</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{isPublic ? t('public_library') : t('nav_section_brewery')}</p>
         <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{activeTab === 'equipment' ? t('lib_tab_equipment') : activeTab === 'mash' ? t('nav_lib_mash') : t('tab_water_profiles')}</h2>
         {activeTab === 'equipment' && <p className="text-[var(--color-text-xmuted)] text-xs font-bold mt-1 uppercase tracking-widest">{t('installation_subtitle')}</p>}
       </div>
 
       {activeTab === 'water' ? (
-        <WaterProfilesManager library={library} onUpdate={onUpdate} canEdit={canEdit} canSubmit={canSubmit} />
+        <WaterProfilesManager library={library} onUpdate={onUpdate} canEdit={canEdit} canSubmit={canSubmit} scope={scope} canAddToCollection={canAddToCollection} onAddToCollection={addToCollection} />
       ) : !editingId ? (
         <>
           <div className="flex justify-between items-center px-2">
             <h3 className="text-2xl font-black text-[var(--color-text)] font-[var(--font-display)]">
               {activeTab === 'equipment' ? t('tab_equipment') : t('tab_mash_profiles')}
             </h3>
-            {canEdit && (
+            {canEdit && !isPublic && (
               <button
                 onClick={activeTab === 'equipment' ? handleAddNewEquipment : handleAddNewMash}
                 className="bg-[var(--color-text)] text-white px-6 py-2.5 rounded-[var(--radius-sm)] font-bold text-xs shadow-lg hover:opacity-90 transition-all flex items-center gap-2"
@@ -414,9 +438,12 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', libra
             {(activeTab === 'equipment' ? equipment : mashProfiles).map(item => (
               <div key={item.id} className="bg-[var(--color-bg)] p-8 rounded-[var(--radius)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] relative group hover:shadow-[var(--shadow)] transition-all">
                 <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
+                    {canAddToCollection && (
+                      <button type="button" onClick={() => addToCollection(item)} aria-label={`${t('add_to_collection')}: ${item.name}`} title={t('add_to_collection')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors"><i className="fas fa-plus-circle text-xs" aria-hidden="true"></i></button>
+                    )}
                     {canEdit && (
                         <>
-                            {activeTab === 'equipment' && (
+                            {activeTab === 'equipment' && !isPublic && (
                               <button
                                 type="button"
                                 onClick={() => toggleDefault(item)}
