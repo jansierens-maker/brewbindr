@@ -58,7 +58,7 @@ SELECT throws_ok(
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
 SELECT results_eq($$SELECT id FROM equipment WHERE id NOT LIKE 'preset-%' ORDER BY id$$, ARRAY['e2'], 'another brewery reads only the approved installation');
-SELECT results_eq($$SELECT id FROM waters ORDER BY id$$, ARRAY['w1'], 'another brewery reads the approved water profile');
+SELECT results_eq($$SELECT id FROM waters WHERE id NOT LIKE 'preset-%' ORDER BY id$$, ARRAY['w1'], 'another brewery reads the approved water profile');
 RESET ROLE;
 
 SELECT * FROM finish();

@@ -436,9 +436,9 @@ export const ownInstallations = (library: LibraryIngredient[]) =>
 export const ownWaterProfiles = (library: LibraryIngredient[]) =>
   library.filter(l => l.type === 'water' && isPrivateItem(l));
 
-/** The brewery's default water profile: the one marked as default, otherwise its only one. */
+/** The brewery's default base water: the one marked as default, otherwise its only one (target profiles do not count, #174). */
 export const defaultWaterProfile = (library: LibraryIngredient[]): LibraryIngredient | undefined => {
-  const all = ownWaterProfiles(library);
+  const all = ownWaterProfiles(library).filter(w => (w.water_kind ?? 'base') === 'base');
   return all.find(w => w.is_default) ?? (all.length === 1 ? all[0] : undefined);
 };
 

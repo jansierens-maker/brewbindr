@@ -3,7 +3,8 @@ import { LibraryIngredient } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { supabaseService } from '../services/supabaseService';
-import { ionsOf, residualAlkalinity, sulfateChlorideRatio, WATER_PRESETS } from '../services/waterChemistry';
+import { ionsOf, residualAlkalinity, sulfateChlorideRatio } from '../services/waterChemistry';
+import { WaterKind, waterKind } from '../services/waterProfiles';
 import { formatBrewNumber, isPrivateItem } from '../services/calculations';
 import { submitToPublicLibrary } from '../services/publicLibrary';
 
@@ -109,6 +110,19 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
           <input id="water_name" name="water_name" maxLength={100} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] font-bold"
             value={form.name || ''} onChange={e => setForm({ ...form, name: e.target.value })} />
         </div>
+        <fieldset>
+          <legend className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('water_kind_label')}</legend>
+          <div className="mt-2 flex flex-wrap gap-4">
+            {(['base', 'target'] as WaterKind[]).map(k => (
+              <label key={k} htmlFor={`water_kind_${k}`} className="flex items-start gap-2 text-sm font-bold text-[var(--color-text)] cursor-pointer">
+                <input id={`water_kind_${k}`} name="water_kind" type="radio" value={k} className="mt-1"
+                  checked={waterKind(form) === k}
+                  onChange={() => setForm({ ...form, water_kind: k, ...(k === 'target' ? { is_default: false } : {}) })} />
+                <span>{t(k === 'base' ? 'water_source' : 'water_target')}<span className="block text-[10px] font-normal text-[var(--color-text-muted)]">{t(k === 'base' ? 'water_kind_base_hint' : 'water_kind_target_hint')}</span></span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
           {FIELDS.map(f => (
             <div key={f.key}>
@@ -145,8 +159,14 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
         )}
       </div>
       {waters.length === 0 && <p className="px-2 text-sm text-[var(--color-text-muted)]">{t('water_profiles_empty')}</p>}
+      {(['base', 'target'] as WaterKind[]).map(kind => {
+        const list = waters.filter(w => waterKind(w) === kind);
+        if (list.length === 0) return null;
+        return (
+          <section key={kind} className="space-y-3" aria-labelledby={`water-group-${kind}`}>
+            <h4 id={`water-group-${kind}`} className="px-2 text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t(kind === 'base' ? 'water_group_base' : 'water_group_target')}</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {waters.map(w => (
+        {list.map(w => (
           <div key={w.id} className="bg-[var(--color-bg)] p-5 rounded-[var(--radius)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
             <div className="flex justify-between items-start gap-3">
               <h4 className="font-black text-[var(--color-text)]">
@@ -159,7 +179,7 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
                 )}
               {canEdit && (
                 <>
-                  {scope === 'own' && <button
+                  {scope === 'own' && waterKind(w) === 'base' && <button
                     type="button"
                     onClick={() => toggleDefault(w)}
                     aria-pressed={!!w.is_default}
@@ -183,9 +203,10 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
           </div>
         ))}
       </div>
-      <p className="px-2 text-[10px] text-[var(--color-text-xmuted)]">
-        {t('water_presets_note').replace('{names}', WATER_PRESETS.filter(p => p.kind === 'source').map(p => p.name).join(', '))}
-      </p>
+          </section>
+        );
+      })}
+      {scope === 'own' && <p className="px-2 text-[10px] text-[var(--color-text-xmuted)]">{t('water_presets_note')}</p>}
     </div>
   );
 };
