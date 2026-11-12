@@ -6,6 +6,8 @@ import { LibraryIngredient, Vessel } from '../types';
  * fallback when no public installation could be loaded, and the source of that migration.
  */
 export type EquipmentPreset = {
+  /** Fixed id when the name changed after the preset went into the public library */
+  id?: string;
   name: string;
   type: LibraryIngredient['equipment_type'];
   batch: number;
@@ -110,7 +112,8 @@ export const EQUIPMENT_PRESETS: EquipmentPreset[] = [
     vessels: [{ name: "Ketel", role: 'combined', volume: 45, heating: 'gas', pump: false }]
   },
   {
-    name: "Klassiek 3-vatten 20L",
+    id: "preset-klassiek-3-vatten-20l",
+    name: "Klassiek 3 ketels 20L",
     type: 'three_vessel',
     batch: 20,
     efficiency: 75,
@@ -122,7 +125,8 @@ export const EQUIPMENT_PRESETS: EquipmentPreset[] = [
     ]
   },
   {
-    name: "Klassiek 3-vatten 30L",
+    id: "preset-klassiek-3-vatten-30l",
+    name: "Klassiek 3 ketels 30L",
     type: 'three_vessel',
     batch: 30,
     efficiency: 75,
@@ -161,7 +165,7 @@ export const EQUIPMENT_PRESETS: EquipmentPreset[] = [
 
 /** A preset as a (not yet saved) library item, like the public installations. */
 export const presetToItem = (p: EquipmentPreset): LibraryIngredient => ({
-  id: `preset-${p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
+  id: p.id ?? `preset-${p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
   name: p.name,
   type: 'equipment',
   preset: p.name,
