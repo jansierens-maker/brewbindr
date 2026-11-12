@@ -1,7 +1,7 @@
 -- Installation presets in the public library (#164)
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT plan(6);
+SELECT plan(7);
 
 SELECT ok((SELECT count(*) FROM equipment WHERE id LIKE 'preset-%' AND status = 'approved') >= 13,
   'the presets are public installations');
@@ -13,6 +13,9 @@ SELECT is((SELECT (data->>'max_grain_kg')::numeric FROM equipment WHERE id = 'pr
 -- Running the migration again adds nothing
 SELECT is((SELECT count(*) FROM equipment WHERE status = 'approved' GROUP BY name_key(data->>'name') ORDER BY 1 DESC LIMIT 1), 1::bigint,
   'every public name exists once');
+
+SELECT is((SELECT data->>'name' FROM equipment WHERE id = 'preset-klassiek-3-vatten-20l'), 'Klassiek 3 ketels 20L',
+  'the 3-vessel presets are called "3 ketels"');
 
 -- Every signed-in user sees them
 INSERT INTO auth.users (id, email) VALUES ('00000000-0000-0000-0000-0000000000b1', 'brewer@test.local');

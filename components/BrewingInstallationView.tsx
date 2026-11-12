@@ -426,12 +426,12 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('name_label')}</label>
-                                    <input className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+                                    <label htmlFor="equipment_name" className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('name_label')}</label>
+                                    <input id="equipment_name" name="equipment_name" maxLength={100} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('heating_label')}</label>
-                                    <select className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.equipment_type} onChange={e => setEditForm({...editForm, equipment_type: e.target.value as any})}>
+                                    <label htmlFor="equipment_type" className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('equipment_type_label')}</label>
+                                    <select id="equipment_type" name="equipment_type" className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none" value={editForm.equipment_type} onChange={e => setEditForm({...editForm, equipment_type: e.target.value as any})}>
                                         <option value="biab">{t('biab')}</option>
                                         <option value="all_in_one">{t('all_in_one')}</option>
                                         <option value="two_vessel">{t('two_vessel')}</option>
@@ -443,8 +443,8 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
                                 </div>
                             </div>
                             <div>
-                                <label className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('description_label')}</label>
-                                <textarea className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none h-[116px] resize-none" value={editForm.description || ""} onChange={e => setEditForm({...editForm, description: e.target.value})} />
+                                <label htmlFor="equipment_description" className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest">{t('description_label')}</label>
+                                <textarea id="equipment_description" name="equipment_description" maxLength={1000} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold focus:ring-2 focus:ring-[var(--color-accent)] outline-none h-[116px] resize-none" value={editForm.description || ""} onChange={e => setEditForm({...editForm, description: e.target.value})} />
                             </div>
                         </div>
 
