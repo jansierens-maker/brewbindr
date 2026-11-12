@@ -382,6 +382,53 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                     <input id={`ing-name-${item.id}`} name="name" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm font-bold" value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} maxLength={100} />
                   </div>
                   
+                  {/* Properties used by the calculations */}
+                  {filter === 'fermentable' && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor={`ing-color-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('color')} (SRM)</label>
+                        <input id={`ing-color-${item.id}`} name="color" type="number" min="0" max="1000" step="0.1" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.color ?? ""} onChange={e => setEditForm({...editForm, color: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
+                      </div>
+                      <div>
+                        <label htmlFor={`ing-yield-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('potential_label')} (%)</label>
+                        <input id={`ing-yield-${item.id}`} name="yield" type="number" min="0" max="100" step="0.1" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.yield ?? ""} onChange={e => setEditForm({...editForm, yield: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
+                      </div>
+                    </div>
+                  )}
+
+                  {filter === 'hop' && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor={`ing-alpha-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('alpha_label')} (%)</label>
+                        <input id={`ing-alpha-${item.id}`} name="alpha" type="number" min="0" max="30" step="0.1" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.alpha ?? ""} onChange={e => setEditForm({...editForm, alpha: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
+                      </div>
+                      <div>
+                        <label htmlFor={`ing-hop-form-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('hop_form')}</label>
+                        <select id={`ing-hop-form-${item.id}`} name="hop_form" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.form || 'pellet'} onChange={e => setEditForm({...editForm, form: e.target.value})}>
+                          <option value="pellet">{t('hop_form_pellet')}</option>
+                          <option value="leaf">{t('hop_form_leaf')}</option>
+                          <option value="plug">{t('hop_form_plug')}</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {filter === 'culture' && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor={`ing-atten-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('atten_short')} (%)</label>
+                        <input id={`ing-atten-${item.id}`} name="attenuation" type="number" min="0" max="100" step="1" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.attenuation ?? ""} onChange={e => setEditForm({...editForm, attenuation: e.target.value === '' ? undefined : parseFloat(e.target.value)})} />
+                      </div>
+                      <div>
+                        <label htmlFor={`ing-yeast-form-${item.id}`} className="text-[10px] font-black text-[var(--color-text-xmuted)] uppercase">{t('form_label')}</label>
+                        <select id={`ing-yeast-form-${item.id}`} name="yeast_form" className="w-full p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-xs font-bold" value={editForm.form || 'dry'} onChange={e => setEditForm({...editForm, form: e.target.value})}>
+                          <option value="dry">{t('yeast_dry')}</option>
+                          <option value="liquid">{t('yeast_liquid')}</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
                   {filter === 'misc' && (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
