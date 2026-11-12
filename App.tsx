@@ -657,7 +657,11 @@ const AppContent: React.FC = () => {
       return;
     }
 
-    const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', library);
+    // A public recipe edited by the app admin (#169) keeps its links: nothing is added to
+    // the admin's own brewery
+    const { syncedRecipe, newIngredients } = recipe.status === 'approved'
+      ? { syncedRecipe: recipe, newIngredients: [] as LibraryIngredient[] }
+      : syncIngredientsWithLibrary(recipe, 'private', library);
 
     if (newIngredients.length > 0) {
       setLibrary(prev => [...prev, ...newIngredients]);
@@ -1937,6 +1941,15 @@ const AppContent: React.FC = () => {
                               {libraryView === 'public' && isAdmin && (
                                 <div className="flex gap-2">
                                   <button
+                                    type="button"
+                                    onClick={() => { setSelectedRecipe(r); setView('create'); }}
+                                    className="flex-none bg-stone-100 text-stone-800 border border-stone-200 px-4 py-2.5 rounded-xl hover:bg-stone-200 transition-all"
+                                    aria-label={`${t('edit_btn')}: ${r.name}`}
+                                    title={t('edit_btn')}
+                                  >
+                                    <i className="fas fa-edit text-xs" aria-hidden="true"></i>
+                                  </button>
+                                  <button
                                     onClick={() => handleAdminUnpublishRecipe(r)}
                                     className="flex-1 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-black uppercase py-2.5 rounded-xl hover:bg-amber-100 transition-all tracking-widest"
                                   >
@@ -2083,7 +2096,16 @@ const AppContent: React.FC = () => {
                   library={deduplicatedLibrary}
                 />
               )}
-              {librarySection && (
+              {publicOnlySection && (
+                <BrewingInstallationView
+                  key={view}
+                  scope="public"
+                  section={librarySection === 'equipment' ? 'equipment' : librarySection === 'water' ? 'water' : 'mash'}
+                  library={library}
+                  onUpdate={(newLib) => setLibrary(newLib)}
+                />
+              )}
+              {librarySection && !publicOnlySection && (
                 <div className="space-y-8">
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
                     <div>

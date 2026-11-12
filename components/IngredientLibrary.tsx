@@ -199,6 +199,11 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     if (!editForm.name) return;
     // Names are unique per type within a brewery
     const current = ingredients.find(i => i.id === editingId);
+    // A public name exists once (also enforced by the database)
+    if (current?.status === 'approved' && ingredients.some(i => i.id !== current.id && i.type === current.type && i.status === 'approved' && nameKey(i.name) === nameKey(editForm.name!))) {
+      alert(t('public_name_taken'));
+      return;
+    }
     if (current && (current.status === 'private' || !current.status) &&
         privateLibraryNames(ingredients, current.type, profile?.brewery_id, user?.id, current.id).some(n => nameKey(n) === nameKey(editForm.name!))) {
       alert(t('ingredient_name_taken').replace('{name}', editForm.name));
@@ -367,9 +372,12 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                      <i className="fas fa-check text-[10px]"></i>
                    </button>
                    )}
-                   {((!item.user_id || item.user_id === user?.id) || (item.brewery_id === profile?.brewery_id)) && canEdit && !readOnlyType && (
-                      <button onClick={() => startEditing(item)} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors">
-                        <i className="fas fa-edit text-xs"></i>
+                   {/* Own items: brewery admins and brewmasters; public items: only the app admin (#169) */}
+                   {!readOnlyType && (libraryView === 'public'
+                     ? isAdmin && item.status === 'approved'
+                     : ((!item.user_id || item.user_id === user?.id) || (item.brewery_id === profile?.brewery_id)) && canEdit) && (
+                      <button type="button" onClick={() => startEditing(item)} aria-label={`${t('edit_btn')}: ${item.name}`} title={t('edit_btn')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors">
+                        <i className="fas fa-edit text-xs" aria-hidden="true"></i>
                       </button>
                     )}
                 </div>
