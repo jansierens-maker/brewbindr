@@ -2,9 +2,10 @@ import React, { useMemo } from 'react';
 import { LibraryIngredient, Recipe } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
-import { formatBrewNumber, roundTo, waterPlan, normalizeFermentableType, ownWaterProfiles, defaultWaterProfile } from '../services/calculations';
+import { formatBrewNumber, roundTo, waterPlan, normalizeFermentableType, defaultWaterProfile } from '../services/calculations';
+import { WaterKind, resolveWater, waterOptions } from '../services/waterProfiles';
 import {
-  CaCl2Form, ION_KEYS, Ions, SALTS, SaltId, WATER_PRESETS, ionsOf, ratioCharacter, residualAlkalinity,
+  CaCl2Form, ION_KEYS, Ions, SALTS, SaltId, ionsOf, ratioCharacter, residualAlkalinity,
   suggestSalts, sulfateChlorideRatio, treatedWater, estimateMashPh, lacticAcidFor, DEFAULT_TARGET_MASH_PH, MashMalt,
 } from '../services/waterChemistry';
 
@@ -31,18 +32,10 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
   const { preferences } = useUser();
   const chem: WaterChem = recipe.water_chem ?? {};
   const editable = !!onChange;
-  const waters = useMemo(() => ownWaterProfiles(library), [library]);
+  const options = useMemo(() => ({ base: waterOptions(library, 'base'), target: waterOptions(library, 'target') }), [library]);
 
-  // Profiles: 'preset:<key>' or a library id. Default source: the brewery's default (★) or only profile.
-  const resolve = (ref: string | undefined) => {
-    if (!ref) return undefined;
-    if (ref.startsWith('preset:')) {
-      const p = WATER_PRESETS.find(x => x.key === ref.slice(7));
-      return p && { name: p.name, ions: ionsOf(p) };
-    }
-    const w = waters.find(x => x.id === ref);
-    return w && { name: w.name, ions: ionsOf(w) };
-  };
+  // Profiles: a library id, or 'preset:<key>' from before #174. Default base water: the brewery's default (★) or only one.
+  const resolve = (ref: string | undefined) => resolveWater(ref, library);
   const defaultSource = useMemo(() => defaultWaterProfile(library), [library]);
   const source = resolve(chem.source) ?? (defaultSource && { name: defaultSource.name, ions: ionsOf(defaultSource) });
   const target = resolve(chem.target);
@@ -97,27 +90,28 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
   const vol = (l: number) => preferences.units === 'imperial'
     ? `${formatBrewNumber(l / 3.78541, 'default', lang)} gal` : `${formatBrewNumber(l, 'vol', lang)} L`;
   const field = 'w-full p-2 bg-white border border-stone-200 rounded-lg text-sm font-bold';
-  // Base water: own profiles first, then classic waters. Target: beer styles first.
-  const group = (label: string, kind: 'source' | 'target' | 'style') => (
-    <optgroup key={kind} label={label}>
-      {WATER_PRESETS.filter(p => p.kind === kind).map(p => <option key={p.key} value={`preset:${p.key}`}>{p.name}</option>)}
-    </optgroup>
-  );
-  const own = waters.length > 0 && (
-    <optgroup label={t('water_own_profiles')}>
-      {waters.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-    </optgroup>
-  );
-  const profileOptions = (use: 'source' | 'target') => use === 'source' ? (
-    <>{own}{group(t('water_city_profiles'), 'source')}</>
-  ) : (
-    <>
-      {group(t('water_style_profiles'), 'style')}
-      {group(t('water_target_profiles'), 'target')}
-      {own}
-      {group(t('water_city_profiles'), 'source')}
-    </>
-  );
+  // Base water lists base waters, target lists target profiles (#174): own ones first, then the public library.
+  // A profile the recipe already uses stays selectable, also when it is of the other kind.
+  const profileOptions = (kind: WaterKind, current: string | undefined) => {
+    const { own, public: pub } = options[kind];
+    const listed = [...own, ...pub].some(w => w.id === current || (current?.startsWith('preset:') && w.preset_key === current.slice(7)));
+    const extra = current && !listed ? resolve(current) : undefined;
+    return (
+      <>
+        {extra && <option value={current}>{extra.name}</option>}
+        {own.length > 0 && (
+          <optgroup label={t('water_own_profiles')}>
+            {own.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </optgroup>
+        )}
+        {pub.length > 0 && (
+          <optgroup label={t('public_library')}>
+            {pub.map(w => <option key={w.id} value={w.preset_key && current === `preset:${w.preset_key}` ? current : w.id}>{w.name}</option>)}
+          </optgroup>
+        )}
+      </>
+    );
+  };
   const saltIds: SaltId[] = ['gypsum', cacl2Form, 'epsom', 'nacl', 'nahco3'];
   const usedSalts = (Object.keys(salts) as SaltId[]).filter(id => (salts[id] || 0) > 0);
 
@@ -133,7 +127,7 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
             <label htmlFor="chem_source" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('water_source')}</label>
             <select id="chem_source" name="chem_source" className={field} value={chem.source ?? ''} onChange={e => update({ source: e.target.value || undefined })}>
               <option value="">{defaultSource ? t('equipment_default').replace('{name}', defaultSource.name) : t('water_choose')}</option>
-              {profileOptions('source')}
+              {profileOptions('base', chem.source)}
             </select>
           </div>
           <div>
@@ -147,7 +141,7 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
             <label htmlFor="chem_target" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('water_target')}</label>
             <select id="chem_target" name="chem_target" className={field} value={chem.target ?? ''} onChange={e => update({ target: e.target.value || undefined })}>
               <option value="">{t('water_no_target')}</option>
-              {profileOptions('target')}
+              {profileOptions('target', chem.target)}
             </select>
           </div>
           <div>

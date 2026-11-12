@@ -550,13 +550,14 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         <h2>Water treatment &amp; mash pH <span class="role-badge brewer">Brewer</span></h2>
         <h3>Water profiles</h3>
         <p>Add your tap water under <b>Brewery → Water profiles</b>: calcium, magnesium, sodium, chloride, sulfate and bicarbonate in mg/L. Your water company publishes these values per address (look for "water quality"). Bicarbonate is sometimes given as alkalinity or temporary hardness: 1 °dH ≈ 21.8 mg/L, 1 °f TAC ≈ 12.2 mg/L bicarbonate.</p>
-        <p>Always available: osmosis water, classic waters (Pilsen, Munich, Vienna, Dortmund, Dublin, Edinburgh, London, Burton), target profiles per colour, and <b>19 beer style profiles</b> (IPA variants, NEIPA, pale ale, pils, Belgian blond, tripel, dubbel, quadrupel, saison, witbier, weizen, amber, Märzen, stouts).</p>
+        <p>A water profile is <b>base water</b> (the water you start from, like your tap water) or a <b>target profile</b> (what you aim for, like a beer style). Choose the kind in the form; profiles without a kind are base water. The ★ (default) is for base water only. Your own target profiles appear under <b>Target profile</b> in the water treatment.</p>
+        <p>In the <b>public library</b> (Public library → Water profiles), app admins maintain: osmosis water, classic waters (Pilsen, Munich, Vienna, Dortmund, Dublin, Edinburgh, London, Burton), target profiles per colour, and <b>19 beer style profiles</b> (IPA variants, NEIPA, pale ale, pils, Belgian blond, tripel, dubbel, quadrupel, saison, witbier, weizen, amber, Märzen, stouts). Recipes can use them directly; add one to your collection to adjust it.</p>
         <h3>Water on brew day</h3>
         <p>A brew starts with the recipe's water treatment (with the default water profile when the recipe names none). On brew day everything can be changed for this brew: base water, osmosis share, target, salts and acid. The brew keeps what was actually used; the recipe stays as it is. When it differs from the recipe a note says so, with <b>Back to the recipe</b>. Scaling the brew scales the salts and acid along. The brew report prints the water of the brew.</p>
         <h3>Treating the water of a recipe</h3>
         <div class="steps">
-          <div class="step"><div><b>Base water</b> — your own profile (by default the one marked with ★ under Brewery → Water profiles, or your only profile) or a classic water. Optionally a share of <b>osmosis water</b>.</div></div>
-          <div class="step"><div><b>Target profile</b> — a beer style, a colour profile or any other profile.</div></div>
+          <div class="step"><div><b>Base water</b> — your own profile (by default the one marked with ★ under Brewery → Water profiles, or your only base water) or a base water from the public library, like a classic water. Optionally a share of <b>osmosis water</b>.</div></div>
+          <div class="step"><div><b>Target profile</b> — your own target profiles, or those in the public library: beer styles and colour profiles.</div></div>
           <div class="step"><div><b>Salts</b> — gypsum, calcium chloride (33 % or 36 % solution in ml, or flakes in g), Epsom salt, table salt, baking soda. Or click <b>Suggest salts</b>: the app finds the additions closest to the target (salts can only add, never remove).</div></div>
           <div class="step"><div><b>Check the result</b> — the table shows base water, treated water and target; below it the <b>residual alkalinity</b> and the <b>sulfate/chloride</b> balance (bitter above 2, balanced 0.8–2, malty below 0.8). A warning appears when calcium is below 40 mg/L.</div></div>
         </div>
@@ -724,7 +725,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         <h3>Mash profiles</h3>
         <p>Reusable mash schedules (temperature, duration, type, infusion volume). Load one into a recipe; it appears as the checklist on brew day. Temperatures are kept to 0.1 °C.</p>
         <h3>Water profiles</h3>
-        <p>Your tap water and other waters with their minerals; see <a href="#water-treatment">Water treatment</a>.</p>
+        <p>Base water (your tap water, other waters) and target profiles with their minerals; see <a href="#water-treatment">Water treatment</a>.</p>
       </div>
     </section>
 
@@ -1110,13 +1111,14 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <h2>Waterbehandeling &amp; maisch-pH <span class="role-badge brewer">Brouwer</span></h2>
         <h3>Waterprofielen</h3>
         <p>Voeg je leidingwater toe onder <b>Brouwerij → Waterprofielen</b>: calcium, magnesium, natrium, chloride, sulfaat en bicarbonaat in mg/L. Je waterbedrijf publiceert die waarden per adres (zoek naar "waterkwaliteit"). Bicarbonaat staat soms als alkaliteit of tijdelijke hardheid: 1 °dH ≈ 21,8 mg/L, 1 °f TAC ≈ 12,2 mg/L bicarbonaat.</p>
-        <p>Altijd beschikbaar: osmosewater, klassieke waters (Pilsen, München, Wenen, Dortmund, Dublin, Edinburgh, Londen, Burton), doelprofielen per kleur en <b>19 profielen per bierstijl</b> (IPA's, NEIPA, pale ale, pils, Belgisch blond, tripel, dubbel, quadrupel, saison, witbier, weizen, amber, Märzen, stouts).</p>
+        <p>Een waterprofiel is <b>basiswater</b> (het water waarmee je begint, zoals je leidingwater) of een <b>doelprofiel</b> (waar je naartoe wilt, zoals een bierstijl). Je kiest de soort in het formulier; profielen zonder soort zijn basiswater. De ★ (standaard) geldt alleen voor basiswater. Je eigen doelprofielen verschijnen bij <b>Doelprofiel</b> in de waterbehandeling.</p>
+        <p>In de <b>publieke bibliotheek</b> (Publieke bibliotheek → Waterprofielen) beheren de app-beheerders: osmosewater, klassieke waters (Pilsen, München, Wenen, Dortmund, Dublin, Edinburgh, Londen, Burton), doelprofielen per kleur en <b>19 profielen per bierstijl</b> (IPA's, NEIPA, pale ale, pils, Belgisch blond, tripel, dubbel, quadrupel, saison, witbier, weizen, amber, Märzen, stouts). Recepten kunnen ze meteen gebruiken; voeg er een toe aan je collectie om het aan te passen.</p>
         <h3>Water op brouwdag</h3>
         <p>Een brouwsel start met de waterbehandeling van het recept (met het standaardwaterprofiel als het recept er geen noemt). Op brouwdag kun je alles aanpassen voor dit brouwsel: basiswater, aandeel osmosewater, doel, zouten en zuur. Het brouwsel bewaart wat effectief gebruikt werd; het recept blijft zoals het is. Wijkt het af van het recept, dan staat dat er, met <b>Terug naar het recept</b>. Omrekenen van het brouwsel rekent zouten en zuur mee om. Het brouwrapport drukt het water van het brouwsel af.</p>
         <h3>Het water van een recept behandelen</h3>
         <div class="steps">
-          <div class="step"><div><b>Basiswater</b> — je eigen profiel (standaard het profiel met ★ onder Brouwerij → Waterprofielen, of je enige profiel) of een klassiek water. Eventueel een deel <b>osmosewater</b>.</div></div>
-          <div class="step"><div><b>Doelprofiel</b> — een bierstijl, een kleurprofiel of een ander profiel.</div></div>
+          <div class="step"><div><b>Basiswater</b> — je eigen profiel (standaard het profiel met ★ onder Brouwerij → Waterprofielen, of je enige basiswater) of een basiswater uit de publieke bibliotheek, zoals een klassiek water. Eventueel een deel <b>osmosewater</b>.</div></div>
+          <div class="step"><div><b>Doelprofiel</b> — je eigen doelprofielen, of die uit de publieke bibliotheek: bierstijlen en kleurprofielen.</div></div>
           <div class="step"><div><b>Zouten</b> — gips, calciumchloride (vloeibaar 33 % of 36 % in ml, of vlokken in g), Epsom-zout, keukenzout, zuiveringszout. Of klik op <b>Zouten voorstellen</b>: de app zoekt de giften die het dichtst bij het doel komen (zouten kunnen alleen iets toevoegen, niets weghalen).</div></div>
           <div class="step"><div><b>Bekijk het resultaat</b> — de tabel toont basiswater, behandeld water en doel; daaronder de <b>restalkaliteit</b> en de verhouding <b>sulfaat/chloride</b> (boven 2 bitter, 0,8–2 gebalanceerd, onder 0,8 moutig). Onder 40 mg/L calcium krijg je een waarschuwing.</div></div>
         </div>
@@ -1284,7 +1286,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <h3>Maischschema's</h3>
         <p>Herbruikbare maischschema's (temperatuur, duur, type, infusievolume). Laad er een in een recept; het verschijnt als checklist op de brouwdag. Temperaturen worden bewaard tot op 0,1 °C.</p>
         <h3>Waterprofielen</h3>
-        <p>Je leidingwater en andere waters met hun mineralen; zie <a href="#water-treatment">Waterbehandeling</a>.</p>
+        <p>Basiswater (je leidingwater, andere waters) en doelprofielen met hun mineralen; zie <a href="#water-treatment">Waterbehandeling</a>.</p>
       </div>
     </section>
 
@@ -1670,13 +1672,14 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <h2>Traitement de l'eau &amp; pH de maische <span class="role-badge brewer">Brasseur</span></h2>
         <h3>Profils d'eau</h3>
         <p>Ajoutez votre eau du robinet dans <b>Brasserie → Profils d'eau</b> : calcium, magnésium, sodium, chlorure, sulfate et bicarbonate en mg/L. Votre distributeur d'eau publie ces valeurs par adresse (cherchez « qualité de l'eau »). Le bicarbonate est parfois donné comme alcalinité ou TAC : 1 °dH ≈ 21,8 mg/L, 1 °f TAC ≈ 12,2 mg/L de bicarbonate.</p>
-        <p>Toujours disponibles : eau osmosée, eaux classiques (Pilsen, Munich, Vienne, Dortmund, Dublin, Édimbourg, Londres, Burton), profils cibles par couleur et <b>19 profils par style de bière</b> (IPA, NEIPA, pale ale, pils, blonde belge, tripel, dubbel, quadrupel, saison, blanche, weizen, ambrée, Märzen, stouts).</p>
+        <p>Un profil d'eau est une <b>eau de base</b> (l'eau de départ, comme votre eau du robinet) ou un <b>profil cible</b> (ce que vous visez, comme un style de bière). Choisissez le type dans le formulaire ; les profils sans type sont des eaux de base. L'étoile ★ (par défaut) ne vaut que pour l'eau de base. Vos propres profils cibles apparaissent sous <b>Profil cible</b> dans le traitement de l'eau.</p>
+        <p>Dans la <b>bibliothèque publique</b> (Bibliothèque publique → Profils d'eau), les administrateurs de l'application gèrent : eau osmosée, eaux classiques (Pilsen, Munich, Vienne, Dortmund, Dublin, Édimbourg, Londres, Burton), profils cibles par couleur et <b>19 profils par style de bière</b> (IPA, NEIPA, pale ale, pils, blonde belge, tripel, dubbel, quadrupel, saison, blanche, weizen, ambrée, Märzen, stouts). Les recettes peuvent les utiliser directement ; ajoutez-en un à votre collection pour l'ajuster.</p>
         <h3>L'eau le jour du brassage</h3>
         <p>Un brassin commence avec le traitement de l'eau de la recette (avec le profil d'eau par défaut si la recette n'en indique pas). Le jour du brassage, tout peut être modifié pour ce brassin : eau de base, part d'eau osmosée, cible, sels et acide. Le brassin garde ce qui a été réellement utilisé ; la recette reste inchangée. S'il diffère de la recette, une note l'indique, avec <b>Revenir à la recette</b>. Recalculer le brassin recalcule aussi les sels et l'acide. Le rapport de brassage imprime l'eau du brassin.</p>
         <h3>Traiter l'eau d'une recette</h3>
         <div class="steps">
-          <div class="step"><div><b>Eau de base</b> — votre propre profil (par défaut celui marqué ★ sous Brasserie → Profils d'eau, ou votre seul profil) ou une eau classique. Éventuellement une part d'<b>eau osmosée</b>.</div></div>
-          <div class="step"><div><b>Profil cible</b> — un style de bière, un profil de couleur ou un autre profil.</div></div>
+          <div class="step"><div><b>Eau de base</b> — votre propre profil (par défaut celui marqué ★ sous Brasserie → Profils d'eau, ou votre seule eau de base) ou une eau de base de la bibliothèque publique, comme une eau classique. Éventuellement une part d'<b>eau osmosée</b>.</div></div>
+          <div class="step"><div><b>Profil cible</b> — vos propres profils cibles, ou ceux de la bibliothèque publique : styles de bière et profils de couleur.</div></div>
           <div class="step"><div><b>Sels</b> — gypse, chlorure de calcium (liquide 33 % ou 36 % en ml, ou paillettes en g), sel d'Epsom, sel de table, bicarbonate de soude. Ou cliquez sur <b>Proposer des sels</b> : l'application cherche les doses les plus proches de la cible (les sels ne peuvent qu'ajouter, jamais retirer).</div></div>
           <div class="step"><div><b>Voyez le résultat</b> — le tableau montre eau de base, eau traitée et cible ; en dessous l'<b>alcalinité résiduelle</b> et le rapport <b>sulfate/chlorure</b> (au-dessus de 2 amer, 0,8–2 équilibré, sous 0,8 malté). Sous 40 mg/L de calcium, un avertissement apparaît.</div></div>
         </div>
@@ -1844,7 +1847,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <h3>Schémas d'empâtage</h3>
         <p>Schémas d'empâtage réutilisables (température, durée, type, volume d'infusion). Chargez-en un dans une recette ; il apparaît comme liste de contrôle le jour du brassage. Les températures sont enregistrées au 0,1 °C près.</p>
         <h3>Profils d'eau</h3>
-        <p>Votre eau du robinet et d'autres eaux avec leurs minéraux ; voir <a href="#water-treatment">Traitement de l'eau</a>.</p>
+        <p>Eaux de base (votre eau du robinet, d'autres eaux) et profils cibles avec leurs minéraux ; voir <a href="#water-treatment">Traitement de l'eau</a>.</p>
       </div>
     </section>
 

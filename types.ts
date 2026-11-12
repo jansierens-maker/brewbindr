@@ -115,6 +115,10 @@ export interface LibraryIngredient {
   chloride?: number;
   sulfate?: number;
   bicarbonate?: number;
+  /** Water profile: the water you start from, or a profile to aim for (#174); default 'base' */
+  water_kind?: 'base' | 'target';
+  /** Water profile made from a built-in preset ('preset:<key>' references resolve to it) */
+  preset_key?: string;
   grain_temp?: number;
   sparge_temp?: number;
   ph?: number;
