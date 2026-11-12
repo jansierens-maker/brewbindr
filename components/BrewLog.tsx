@@ -235,6 +235,12 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 relative">
       {saveIndicator && <div className="fixed bottom-10 right-10 bg-green-600 text-white px-6 py-3 rounded-full font-bold shadow-2xl animate-in fade-in slide-in-from-bottom-2 z-[100] flex items-center gap-2"><i className="fas fa-cloud-upload-alt"></i> {t('auto_saved')}</div>}
       
+      {/* Which beer this is: the recipe's name */}
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{t('page_brew_session')}</p>
+        <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)] break-words">{recipe.name || t('unknown_recipe')}</h2>
+      </div>
+
       {/* Dynamic Header */}
       <div className="bg-stone-900 text-white p-8 rounded-3xl grid grid-cols-1 md:grid-cols-4 gap-8 shadow-xl border border-stone-800">
         <div className="md:border-r border-stone-800">
