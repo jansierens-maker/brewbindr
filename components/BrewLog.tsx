@@ -357,7 +357,13 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
                   </button>
                 </div>
               )}
-              {canEdit && ibuOff && (
+              <BrewIngredients
+                ingredients={brewRecipe.ingredients}
+                library={library}
+                measuredAlpha={entry.measurements.measured_alpha}
+                onChange={canEdit ? ingredients => setEntry(prev => ({ ...prev, ingredients })) : undefined}
+                onAlphaChange={canEdit ? handleAlphaChange : undefined}
+                hopNotice={canEdit && ibuOff ? (
                 <div className="p-4 rounded-xl border bg-sky-50 border-sky-200 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <p className="flex-1 text-sm font-semibold text-sky-900">
@@ -402,13 +408,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
                     </div>
                   )}
                 </div>
-              )}
-              <BrewIngredients
-                ingredients={brewRecipe.ingredients}
-                library={library}
-                measuredAlpha={entry.measurements.measured_alpha}
-                onChange={canEdit ? ingredients => setEntry(prev => ({ ...prev, ingredients })) : undefined}
-                onAlphaChange={canEdit ? handleAlphaChange : undefined}
+              ) : undefined}
               />
             </div>
 
