@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 import { siteUrl } from './_lib/siteUrl.js';
+import { isValidEmail } from '../services/emailAddress.js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -54,6 +55,10 @@ export default async function handler(req: any, res: any) {
 
   if (!invite || !invite.email || new Date(invite.expires_at) < new Date()) {
     return res.status(404).json({ error: 'Invitation not found' });
+  }
+  // The mail service refuses an address like "jan...sierens@gmail.com": say so instead of a generic failure
+  if (!isValidEmail(invite.email)) {
+    return res.status(400).json({ error: 'Invalid e-mail address', code: 'invalid_email' });
   }
 
   const { data: brewery } = await supabase
