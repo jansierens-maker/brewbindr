@@ -24,9 +24,11 @@ interface BrewLogProps {
   initialEquipmentId?: string;
   /** Library: installations and the recipe's water profiles */
   library?: LibraryIngredient[];
+  /** Which batch of this recipe the brew is (1, 2, …), also for a brew not saved yet */
+  batchNumberFor?: (log: BrewLogEntry) => number | undefined;
 }
 
-const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpdate, onSaveAndExit, initialEquipmentId, library = [] }) => {
+const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpdate, onSaveAndExit, initialEquipmentId, library = [], batchNumberFor }) => {
   const { t, lang } = useTranslation();
   const { preferences, breweryRole, isAdmin } = useUser();
 
@@ -231,6 +233,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
     return <i className="far fa-circle text-stone-300 mr-2"></i>;
   };
 
+  const batchNumber = batchNumberFor?.(entry);
+
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 relative">
       {saveIndicator && <div className="fixed bottom-10 right-10 bg-green-600 text-white px-6 py-3 rounded-full font-bold shadow-2xl animate-in fade-in slide-in-from-bottom-2 z-[100] flex items-center gap-2"><i className="fas fa-cloud-upload-alt"></i> {t('auto_saved')}</div>}
@@ -238,7 +242,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
       {/* Which beer this is: the recipe's name */}
       <div>
         <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{t('page_brew_session')}</p>
-        <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)] break-words">{recipe.name || t('unknown_recipe')}</h2>
+        <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)] break-words">{recipe.name || t('unknown_recipe')}{batchNumber ? <span className="text-[var(--color-text-muted)]"> – {t('batch_label').replace('{n}', String(batchNumber))}</span> : null}</h2>
       </div>
 
       {/* Dynamic Header */}
