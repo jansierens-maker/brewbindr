@@ -2,7 +2,7 @@
 
 | | Production | Staging |
 |---|---|---|
-| App | brewbindr.com (Vercel *Production*) | Vercel *Preview* deployments (every PR) |
+| App | brewbindr.vercel.app (Vercel *Production*) | Vercel *Preview* deployments (every PR) |
 | Supabase project | `tgbeaombwskioefhunxf` | `xylsffujkzcwfeyxkzve` (`brewbindr-staging`) |
 | Migrations | on merge to `main`, after approval (environment `production`) | on every PR (after the database tests pass) and on merge |
 | E2E tests | read-only tests only (`@writes` skipped) | all tests |

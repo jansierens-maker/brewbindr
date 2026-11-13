@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
+import { siteUrl } from './_lib/siteUrl.js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -78,7 +79,7 @@ export default async function handler(req: any, res: any) {
   const breweryName = escapeHtml(brewery?.name || 'a brewery');
   const role = ROLES.includes(invite.role) ? invite.role : 'member';
   const code = escapeHtml(invite.code);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://brewbindr.com';
+  const appUrl = siteUrl();
 
   try {
     const { data, error } = await resend.emails.send({
@@ -95,7 +96,7 @@ export default async function handler(req: any, res: any) {
           <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
             <code style="font-size: 32px; font-weight: 900; color: #b45309; letter-spacing: 4px;">${code}</code>
           </div>
-          <p>Head over to <a href="${siteUrl}" style="color: #d97706; font-weight: bold;">Brewbindr</a> to get started!</p>
+          <p>Head over to <a href="${appUrl}" style="color: #d97706; font-weight: bold;">Brewbindr</a> to get started!</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
           <p style="font-size: 12px; color: #999;">Happy brewing!<br />The Brewbindr Team</p>
         </div>
