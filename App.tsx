@@ -162,7 +162,7 @@ const AppContent: React.FC = () => {
   const [syncError, setSyncError] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
-  const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote } | null>(null);
+  const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote, batchNumber?: number } | null>(null);
 
   // Names already in the public library, to flag duplicate submissions for admins
   const publicKeys = useMemo(() => approvedKeys(recipes, library), [recipes, library]);
@@ -799,7 +799,7 @@ const AppContent: React.FC = () => {
     const recipe = recipes.find(r => r.id === log.recipeId);
     const tastingNote = tastingNotes.find(n => n.brewLogId === log.id);
     if (recipe) {
-      setPrintData({ recipe, log, tastingNote });
+      setPrintData({ recipe, log, tastingNote, batchNumber: batchNumbers(brewLogs).get(log.id) });
     }
   };
 
@@ -1501,7 +1501,7 @@ const AppContent: React.FC = () => {
             <div className="p-4 md:p-8">
               <div className="max-w-4xl mx-auto bg-white shadow-2xl ring-1 ring-stone-200 print:shadow-none print:ring-0">
                 <Suspense fallback={<ScreenLoading />}>
-                  <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} equipment={printData.recipe ? resolveEquipment(printData.recipe, deduplicatedLibrary, printData.log?.equipmentId) : undefined} />
+                  <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} batchNumber={printData.batchNumber} equipment={printData.recipe ? resolveEquipment(printData.recipe, deduplicatedLibrary, printData.log?.equipmentId) : undefined} />
                 </Suspense>
               </div>
             </div>
@@ -1922,7 +1922,7 @@ const AppContent: React.FC = () => {
                 />
               )}
               {view === 'log' && selectedRecipe && (
-                <BrewLog recipe={selectedRecipe} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} initialEquipmentId={selectedBrewLog ? undefined : newBrewEquipmentId} library={deduplicatedLibrary} />
+                <BrewLog recipe={selectedRecipe} batchNumberFor={log => batchNumbers(brewLogs.some(l => l.id === log.id) ? brewLogs : [...brewLogs, log]).get(log.id)} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} initialEquipmentId={selectedBrewLog ? undefined : newBrewEquipmentId} library={deduplicatedLibrary} />
               )}
               {view === 'create' && (
                 <RecipeCreator

@@ -13,6 +13,8 @@ interface PrintViewProps {
   tastingNote?: TastingNote;
   /** The recipe's brewing installation, for the water volumes */
   equipment?: LibraryIngredient;
+  /** Which batch of this recipe the brew is (1, 2, …) */
+  batchNumber?: number;
 }
 
 const SALT_KEYS = {
@@ -28,7 +30,7 @@ const WARNING_KEYS = {
   boil_over_capacity: 'water_warn_boil_over_capacity',
 } as const satisfies Record<WaterWarning, string>;
 
-const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingNote, equipment }) => {
+const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingNote, equipment, batchNumber }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
 
@@ -58,7 +60,9 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingN
     <div className="block print:block bg-white p-8 text-stone-900 text-sm font-sans">
       <div className="border-b-4 border-stone-900 pb-4 mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-serif font-bold italic text-stone-900">{recipe.name}</h1>
+          <h1 className="text-4xl font-serif font-bold italic text-stone-900">
+            {recipe.name}{log && batchNumber ? <span className="text-stone-500"> – {t('batch_label').replace('{n}', String(batchNumber))}</span> : null}
+          </h1>
           <p className="text-stone-500 font-bold uppercase tracking-widest text-xs mt-1">
             {log ? t('print_report') : t('print_recipe')} • {recipe.author || 'brewbindr'}
           </p>
