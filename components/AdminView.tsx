@@ -3,6 +3,7 @@ import { useTranslation } from '../App';
 
 import { useUser } from '../services/userContext';
 import { submissionKey } from '../services/duplicates';
+import AdminBreweries from './AdminBreweries';
 
 interface AdminViewProps {
   onExport: () => void;
@@ -87,6 +88,8 @@ const AdminView: React.FC<AdminViewProps> = ({
           </div>
         </div>
       )}
+
+      {isAdmin && <AdminBreweries />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Management Tools */}
