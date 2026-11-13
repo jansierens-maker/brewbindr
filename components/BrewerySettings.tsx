@@ -3,6 +3,7 @@ import { useUser } from '../services/userContext';
 import { useTranslation } from '../App';
 import { breweryService } from '../services/breweryService';
 import { Brewery, Invitation, BreweryRole, UserProfile } from '../types';
+import { isValidEmail } from '../services/emailAddress';
 
 const BrewerySettings: React.FC = () => {
   const { profile, user, breweryRole } = useUser();
@@ -67,6 +68,10 @@ const BrewerySettings: React.FC = () => {
       alert(t('invite_email_required'));
       return;
     }
+    if (!isValidEmail(inviteEmail)) {
+      alert(t('invite_email_invalid'));
+      return;
+    }
 
     setSendingInvite(true);
     try {
@@ -94,7 +99,8 @@ const BrewerySettings: React.FC = () => {
   };
 
   const sendErrorText = (err: any): string =>
-    err?.code === 'invite_resend_limit' ? t('invite_resend_limit')
+    err?.code === 'invalid_email' ? t('invite_email_invalid')
+      : err?.code === 'invite_resend_limit' ? t('invite_resend_limit')
       : err?.code === 'invite_daily_limit' ? t('invite_daily_limit')
       : err?.message || '';
 
