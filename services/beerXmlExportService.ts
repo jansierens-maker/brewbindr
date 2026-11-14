@@ -1,6 +1,8 @@
 
 import { Recipe, LibraryIngredient } from "../types";
 import { normalizeFermentableType } from './calculations';
+import { chemToWaterAgents, coveredByChem } from './beerXmlWater';
+import { PRESET_WATERS } from './waterProfiles';
 
 const FERMENTABLE_TYPE_XML: Record<string, string> = {
   grain: 'Grain', adjunct: 'Adjunct', sugar: 'Sugar', extract: 'Extract', dry_extract: 'Dry Extract',
@@ -14,7 +16,22 @@ const sanitize = (str: string) => str.replace(/[&<>"']/g, (m) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'
 }[m] || m));
 
-export const exportToBeerXml = (recipe: Recipe): string => {
+const num = (n: number | undefined) => Math.round((Number(n) || 0) * 1000) / 1000;
+
+/** A water reference of the recipe (library id or 'preset:<key>') as a full profile. */
+const findWater = (ref: string | undefined, library: LibraryIngredient[]): LibraryIngredient | undefined => {
+  if (!ref) return undefined;
+  const all = [...library.filter(l => l.type === 'water'), ...PRESET_WATERS];
+  return ref.startsWith('preset:') ? all.find(w => w.preset_key === ref.slice(7)) : all.find(w => w.id === ref);
+};
+
+/**
+ * One recipe as BeerXML 1.0. Its base water and target profile are written as <WATERS> inside the
+ * RECIPE with the BrewBindr tag <WATER_KIND>; the water treatment's salts and lactic acid as MISC
+ * "Water Agent"; dilution and target mash pH as <WATER_DILUTION_PCT> and <TARGET_MASH_PH>.
+ * Other programs ignore the unknown tags. `library` resolves the recipe's water profiles.
+ */
+export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = []): string => {
   const xmlParts: string[] = [];
   
   xmlParts.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -63,9 +80,13 @@ export const exportToBeerXml = (recipe: Recipe): string => {
   });
   xmlParts.push('    </HOPS>');
 
-  if (recipe.ingredients.miscellaneous && recipe.ingredients.miscellaneous.length > 0) {
+  // Misc, plus the water treatment's salts and acid; a water agent the treatment already holds is written once
+  const chem = recipe.water_chem;
+  const miscs = (recipe.ingredients.miscellaneous ?? []).filter(m => !coveredByChem(m, chem));
+  const agents = chemToWaterAgents(chem);
+  if (miscs.length > 0 || agents.length > 0) {
     xmlParts.push('    <MISCELLANEOUS>');
-    recipe.ingredients.miscellaneous.forEach(m => {
+    miscs.forEach(m => {
       xmlParts.push('      <MISC>');
       xmlParts.push(`        <NAME>${sanitize(m.name)}</NAME>`);
       xmlParts.push(`        <AMOUNT>${m.amount.value / 1000}</AMOUNT>`);
@@ -74,8 +95,47 @@ export const exportToBeerXml = (recipe: Recipe): string => {
       xmlParts.push(`        <TIME>${m.time.value}</TIME>`);
       xmlParts.push('      </MISC>');
     });
+    agents.forEach(a => {
+      xmlParts.push('      <MISC>');
+      xmlParts.push(`        <NAME>${sanitize(a.name)}</NAME>`);
+      xmlParts.push('        <VERSION>1</VERSION>');
+      xmlParts.push('        <TYPE>Water Agent</TYPE>');
+      xmlParts.push('        <USE>Mash</USE>');
+      xmlParts.push('        <TIME>0</TIME>');
+      // kg or L to 0.001 g or ml
+      xmlParts.push(`        <AMOUNT>${Math.round(a.amount * 1000) / 1e6}</AMOUNT>`);
+      xmlParts.push(`        <AMOUNT_IS_WEIGHT>${a.isWeight ? 'TRUE' : 'FALSE'}</AMOUNT_IS_WEIGHT>`);
+      xmlParts.push('      </MISC>');
+    });
     xmlParts.push('    </MISCELLANEOUS>');
   }
+
+  // The recipe's water profiles: base water and target profile
+  const waters = ([['base', chem?.source], ['target', chem?.target]] as const)
+    .map(([kind, ref]) => ({ kind, water: findWater(ref, library) }))
+    .filter((w): w is { kind: 'base' | 'target'; water: LibraryIngredient } => !!w.water);
+  if (waters.length > 0) {
+    xmlParts.push('    <WATERS>');
+    waters.forEach(({ kind, water: w }) => {
+      xmlParts.push('      <WATER>');
+      xmlParts.push(`        <NAME>${sanitize(w.name)}</NAME>`);
+      xmlParts.push('        <VERSION>1</VERSION>');
+      xmlParts.push(`        <AMOUNT>${num(w.amount)}</AMOUNT>`);
+      xmlParts.push(`        <CALCIUM>${num(w.calcium)}</CALCIUM>`);
+      xmlParts.push(`        <BICARBONATE>${num(w.bicarbonate)}</BICARBONATE>`);
+      xmlParts.push(`        <SULFATE>${num(w.sulfate)}</SULFATE>`);
+      xmlParts.push(`        <CHLORIDE>${num(w.chloride)}</CHLORIDE>`);
+      xmlParts.push(`        <SODIUM>${num(w.sodium)}</SODIUM>`);
+      xmlParts.push(`        <MAGNESIUM>${num(w.magnesium)}</MAGNESIUM>`);
+      if (w.ph) xmlParts.push(`        <PH>${w.ph}</PH>`);
+      if (w.notes) xmlParts.push(`        <NOTES>${sanitize(w.notes)}</NOTES>`);
+      xmlParts.push(`        <WATER_KIND>${kind}</WATER_KIND>`);
+      xmlParts.push('      </WATER>');
+    });
+    xmlParts.push('    </WATERS>');
+  }
+  if (chem?.dilution_pct) xmlParts.push(`    <WATER_DILUTION_PCT>${chem.dilution_pct}</WATER_DILUTION_PCT>`);
+  if (chem?.target_ph) xmlParts.push(`    <TARGET_MASH_PH>${chem.target_ph}</TARGET_MASH_PH>`);
 
   xmlParts.push('  </RECIPE>');
   xmlParts.push('</RECIPES>');
