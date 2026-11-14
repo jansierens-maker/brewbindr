@@ -4,10 +4,9 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { submissionKey } from '../services/duplicates';
 import AdminBreweries from './AdminBreweries';
+import BackupRestore from './BackupRestore';
 
 interface AdminViewProps {
-  onExport: () => void;
-  onRestore: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onUrlImport: () => void;
   importStatus: string;
   pendingSubmissions: any[];
@@ -18,8 +17,6 @@ interface AdminViewProps {
 }
 
 const AdminView: React.FC<AdminViewProps> = ({ 
-  onExport, 
-  onRestore, 
   onUrlImport, 
   importStatus,
   pendingSubmissions,
@@ -120,47 +117,8 @@ const AdminView: React.FC<AdminViewProps> = ({
           </div>
         </div>
 
-        {/* JSON Backup Management */}
-        <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8">
-          <div className="flex items-center gap-3">
-            <div className="bg-stone-100 p-3 rounded-2xl text-stone-600">
-              <i className="fas fa-database text-2xl"></i>
-            </div>
-            <h3 className="text-2xl font-black text-stone-900">{t('backup_title')} (JSON)</h3>
-          </div>
-
-          <div className="space-y-6">
-            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-4">
-              <div className="flex items-center gap-3">
-                <i className="fas fa-file-download text-stone-400"></i>
-                <h4 className="font-bold text-stone-900 text-sm">{t('export_full_data')}</h4>
-              </div>
-              <p className="text-xs text-stone-500 leading-relaxed">
-                {t('export_desc')}
-              </p>
-              <button 
-                onClick={onExport} 
-                className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold hover:bg-black transition-all shadow-lg text-sm"
-              >
-                {t('export')}
-              </button>
-            </div>
-
-            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-4" style={{ opacity: user ? 1 : 0.5, pointerEvents: user ? 'auto' : 'none' }}>
-              <div className="flex items-center gap-3">
-                <i className="fas fa-file-upload text-stone-400"></i>
-                <h4 className="font-bold text-stone-900 text-sm">{t('restore_data')}</h4>
-              </div>
-              <p className="text-xs text-stone-500 leading-relaxed">
-                {t('restore_desc')}
-              </p>
-              <label className="block w-full bg-white border border-stone-200 text-stone-900 py-4 rounded-xl font-bold cursor-pointer hover:bg-stone-100 transition-all shadow-sm text-center text-sm">
-                {t('restore')}
-                <input id="json-restore-file" name="json_restore" type="file" className="hidden" accept=".json" onChange={onRestore} disabled={!user} aria-label={t('upload_backup_file')} />
-              </label>
-            </div>
-          </div>
-        </div>
+        {/* Full backup and restore (app admin) */}
+        {isAdmin && <BackupRestore mode="full" />}
       </div>
     </div>
   );

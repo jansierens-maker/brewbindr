@@ -17,11 +17,13 @@ interface RecipeCreatorProps {
   onDelete?: (id: string) => void;
   /** Save a copy of the recipe (as shown in the editor) and open it */
   onCopy?: (recipe: Recipe) => void;
+  /** Open the stored recipe in Flavour Lab */
+  onOpenFlavourLab?: (recipe: Recipe) => void;
   initialRecipe?: Recipe;
   library: LibraryIngredient[];
 }
 
-const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, onCopy, initialRecipe, library }) => {
+const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, onCopy, onOpenFlavourLab, initialRecipe, library }) => {
   const { t, lang } = useTranslation();
   const { preferences, user, profile, breweryRole, isAdmin } = useUser();
   const gravityUnit = preferences.gravityUnit ?? 'sg';
@@ -559,6 +561,58 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           </div>
         </div>
 
+        <div>
+          <div className="flex justify-between items-center mb-4"><h4 className="font-bold uppercase text-stone-900"><i className="fas fa-mortar-pestle text-amber-700" aria-hidden="true"></i> {t('miscs_label')}</h4><button onClick={() => addIngredient('misc')} className="text-amber-600 font-bold text-xs uppercase">+ {t('add_ingredient')}</button></div>
+          <div className="space-y-3">
+            {(recipe.ingredients.miscellaneous ?? []).map((m, i) => m.type === 'water_agent' ? null : (
+              <div key={i} className="flex flex-wrap gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
+                <div className="flex-1 min-w-[12rem]">
+                  <label htmlFor={`misc-select-${i}`} className="sr-only">{t('select_misc')}</label>
+                  <select id={`misc-select-${i}`} name={`misc-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={m.libraryId || ""} onChange={e => handleLibrarySelect('misc', i, e.target.value)}>
+                    <option value="">{m.name || t('select_misc')}</option>
+                    {libraryByType.misc.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor={`misc-use-${i}`} className="sr-only">{t('hop_use')}</label>
+                  <select id={`misc-use-${i}`} name={`misc-use-${i}`} title={t('hop_use')} className="p-2 bg-white border border-stone-200 rounded-xl text-[10px] font-black uppercase text-stone-500" value={String(m.use || 'boil').toLowerCase()}
+                    onChange={e => {
+                      const use = e.target.value;
+                      const inBoil = use === 'boil' || use === 'mash';
+                      const list = [...(recipe.ingredients.miscellaneous ?? [])];
+                      list[i] = { ...list[i], use, time: { unit: inBoil ? 'minutes' : 'days', value: inBoil ? 10 : 0 } };
+                      setRecipe({ ...recipe, ingredients: { ...recipe.ingredients, miscellaneous: list } });
+                    }}>
+                    {(['mash', 'boil', 'primary', 'secondary', 'bottling'] as const).map(u => <option key={u} value={u}>{t(`misc_use_${u}`)}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor={`misc-amount-${i}`} className="sr-only">{t('amount_label')}</label>
+                  <input id={`misc-amount-${i}`} name={`misc-amount-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" min="0" max="100000" value={m.amount?.value ?? 0} onChange={e => updateField('misc', i, 'amount', parseFloat(e.target.value) || 0)} />
+                  <label htmlFor={`misc-unit-${i}`} className="sr-only">{t('unit_label')}</label>
+                  <select id={`misc-unit-${i}`} name={`misc-unit-${i}`} className="bg-transparent text-[10px] font-black text-stone-400 uppercase outline-none" value={m.amount?.unit || 'grams'}
+                    onChange={e => {
+                      const list = [...(recipe.ingredients.miscellaneous ?? [])];
+                      list[i] = { ...list[i], amount: { ...list[i].amount, unit: e.target.value } };
+                      setRecipe({ ...recipe, ingredients: { ...recipe.ingredients, miscellaneous: list } });
+                    }}>
+                    <option value="grams">g</option>
+                    <option value="ounces">oz</option>
+                    <option value="ml">ml</option>
+                    <option value="items">{t('misc_items')}</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor={`misc-time-${i}`} className="sr-only">{t('step_time')}</label>
+                  <input id={`misc-time-${i}`} name={`misc-time-${i}`} className="w-16 p-2 bg-white border rounded-xl text-right font-black" type="number" min="0" max="1000" value={m.time?.value ?? 0} onChange={e => updateField('misc', i, 'time', parseFloat(e.target.value) || 0)} />
+                  <span className="text-[10px] font-black text-stone-400 uppercase">{m.time?.unit === 'days' ? t('days_short') : 'min'}</span>
+                </div>
+                <button onClick={() => removeIngredient('misc', i)} aria-label={t('remove_misc')}><i className="fas fa-trash-alt text-stone-300" aria-hidden="true"></i></button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Mash Profile Editor */}
         <div className="pt-6 border-t border-stone-100">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -689,6 +743,21 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               {t('save_recipe')}
             </button>
           </div>
+
+          {recipe.id && recipe.status !== 'approved' && onOpenFlavourLab && initialRecipe && (
+            <button
+              type="button"
+              onClick={() => {
+                // Flavour Lab works on the stored recipe
+                if (JSON.stringify(recipe) !== JSON.stringify(initialRecipe) && !confirm(t('fl_unsaved_confirm'))) return;
+                onOpenFlavourLab(initialRecipe);
+              }}
+              className="w-full bg-stone-100 text-stone-800 py-4 rounded-2xl font-black hover:bg-stone-200 transition-all uppercase tracking-widest text-sm"
+            >
+              <i className="fas fa-flask-vial mr-2" aria-hidden="true"></i>
+              {t('fl_open_btn')}
+            </button>
+          )}
 
           {recipe.id && onCopy && (
             <button

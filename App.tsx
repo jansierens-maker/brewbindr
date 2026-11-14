@@ -5,6 +5,7 @@ const BrewLog = lazy(() => import('./components/BrewLog'));
 const TastingNotes = lazy(() => import('./components/TastingNotes'));
 const BrewLogView = lazy(() => import('./components/BrewLogView'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
+const FlavourLab = lazy(() => import('./components/FlavourLab'));
 const TastingNotesView = lazy(() => import('./components/TastingNotesView'));
 const IngredientLibrary = lazy(() => import('./components/IngredientLibrary'));
 import type { LibrarySection } from './components/IngredientLibrary';
@@ -41,7 +42,7 @@ import { breweryService } from './services/breweryService';
 import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
-type View = 'dashboard' | 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'library_mash' | 'library_styles' | 'library_equipment' | 'library_water' | 'own_mash' | 'own_water' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities';
+type View = 'dashboard' | 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'library_mash' | 'library_styles' | 'library_equipment' | 'library_water' | 'own_mash' | 'own_water' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities' | 'flavour_lab';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
 
 interface LanguageContextType {
@@ -134,6 +135,8 @@ const AppContent: React.FC = () => {
   const [library, setLibrary] = useState<LibraryIngredient[]>(EXAMPLES);
   
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  // Recipe opened in Flavour Lab from the recipe editor
+  const [flavourRecipeId, setFlavourRecipeId] = useState<string | undefined>(undefined);
   const [selectedBrewLog, setSelectedBrewLog] = useState<BrewLogEntry | null>(null);
   /** Recipe waiting for the choice of installation before its brew starts */
   const [brewPickRecipe, setBrewPickRecipe] = useState<Recipe | null>(null);
@@ -623,13 +626,17 @@ const AppContent: React.FC = () => {
     };
   }, [user?.id, profile?.brewery_id, authLoading, isAdmin]);
 
-  const handleSaveRecipe = async (recipe: Recipe) => {
+  /**
+   * Stores a recipe: new ingredients go to the library, the name must be free in the brewery.
+   * `existing` is the stored recipe it replaces (null for a new one). Returns false when it failed.
+   */
+  const storeRecipe = async (recipe: Recipe, existing: Recipe | null): Promise<boolean> => {
     // Recipe names are unique per brewery (enforced in the database too)
-    const ownId = selectedRecipe?.id;
+    const ownId = existing?.id;
     const isPrivate = !recipe.status || recipe.status === 'private';
     if (isPrivate && privateRecipeNames(recipes, profile?.brewery_id, user?.id, ownId).some(n => nameKey(n) === nameKey(recipe.name))) {
       alert(t('recipe_name_taken').replace('{name}', recipe.name));
-      return;
+      return false;
     }
 
     // A public recipe edited by the app admin (#169) keeps its links: nothing is added to
@@ -645,8 +652,8 @@ const AppContent: React.FC = () => {
       }
     }
 
-    const targetRecipe = normalizeRecipe(selectedRecipe && selectedRecipe.id
-      ? { ...syncedRecipe, id: selectedRecipe.id, user_id: selectedRecipe.user_id || user?.id, brewery_id: selectedRecipe.brewery_id || profile?.brewery_id }
+    const targetRecipe = normalizeRecipe(existing && existing.id
+      ? { ...syncedRecipe, id: existing.id, user_id: existing.user_id || user?.id, brewery_id: existing.brewery_id || profile?.brewery_id }
       : { ...syncedRecipe, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id });
 
     setRecipes(prev => {
@@ -665,13 +672,21 @@ const AppContent: React.FC = () => {
         // Reload so the list shows what is really stored
         const remoteData = await supabaseService.fetchAppData(user.id, profile?.brewery_id);
         if (remoteData) setRecipes(withoutDeleted(remoteData.recipes));
-        return;
+        return false;
       }
     }
+    return true;
+  };
 
+  const handleSaveRecipe = async (recipe: Recipe) => {
+    if (!(await storeRecipe(recipe, selectedRecipe))) return;
     setSelectedRecipe(null);
     setView('recipes');
   };
+
+  /** Flavour Lab changes a stored recipe and stays on its screen. */
+  const handleFlavourSaveRecipe = async (recipe: Recipe) =>
+    storeRecipe(recipe, recipes.find(r => r.id === recipe.id) ?? null);
 
   /**
    * Deletes a recipe after asking. When brews use it, the question offers to delete
@@ -771,19 +786,6 @@ const AppContent: React.FC = () => {
     setView('brouwlogboek');
   };
 
-  const handleExportData = () => {
-    const data = { version: 1, exportDate: new Date().toISOString(), recipes, brewLogs, tastingNotes, library };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `brewbindr-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const handleExportRecipeBeerXml = (recipe: Recipe) => {
     const xml = exportToBeerXml(recipe, deduplicatedLibrary);
     const blob = new Blob([xml], { type: 'text/xml' });
@@ -820,26 +822,6 @@ const AppContent: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
-  const handleRestoreData = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string);
-        if (data.recipes) setRecipes(data.recipes);
-        if (data.brewLogs) setBrewLogs(data.brewLogs);
-        if (data.tastingNotes) setTastingNotes(data.tastingNotes);
-        if (data.library) setLibrary(data.library);
-        alert(t('backup_restored'));
-        setView('recipes');
-      } catch (err) {
-        alert(t('backup_invalid'));
-      }
-    };
-    reader.readAsText(file);
   };
 
   const startImportFlow = (result: BeerXmlImportResult) => {
@@ -1303,6 +1285,7 @@ const AppContent: React.FC = () => {
   const getPageTitle = () => {
     switch (view) {
       case 'dashboard': return t('nav_dashboard');
+      case 'flavour_lab': return t('nav_flavour_lab');
       case 'recipes': return t('nav_recipes');
       case 'brouwlogboek': return t('nav_brews');
       case 'proefnotities': return t('tasting_notes');
@@ -1974,7 +1957,21 @@ const AppContent: React.FC = () => {
                   onSave={handleSaveRecipe}
                   onSubmitToPublic={publisher ? handleRecipeSubmitToPublic : undefined}
                   onDelete={handleDeleteRecipe}
+                  onOpenFlavourLab={user ? (r => { setFlavourRecipeId(r.id); setView('flavour_lab'); }) : undefined}
                   library={deduplicatedLibrary}
+                />
+              )}
+              {view === 'flavour_lab' && user && (
+                <FlavourLab
+                  recipes={recipes.filter(r => r.id && r.status !== 'approved' && (profile?.brewery_id ? r.brewery_id === profile.brewery_id : r.user_id === user.id))}
+                  initialRecipeId={flavourRecipeId}
+                  breweryId={profile?.brewery_id}
+                  userId={user.id}
+                  canEditRecipe={r => canEditRecipe(r, editContext)}
+                  canMap={brewManager}
+                  canCreateRecipe={recipeManager}
+                  onSaveRecipe={handleFlavourSaveRecipe}
+                  onStartRecipe={r => { setSelectedRecipe(r); setView('create'); }}
                 />
               )}
               {publicOnlySection && (
@@ -2031,8 +2028,6 @@ const AppContent: React.FC = () => {
               )}
               {view === 'admin' && (
                 <AdminView
-                  onExport={handleExportData}
-                  onRestore={handleRestoreData}
                   onUrlImport={handleImportDemoData}
                   importStatus={importStatus}
                   pendingSubmissions={pendingSubmissions}
