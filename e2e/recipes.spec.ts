@@ -123,6 +123,8 @@ test.describe('BeerXML import', () => {
       const skip = page.getByRole('button', { name: /^(skip|overslaan|ignorer)$/i });
       await page.waitForTimeout(2000);
       while (await skip.count() > 0) { await skip.first().click(); await page.waitForTimeout(1000); }
+      // The import summary covers the screen: close it
+      await page.getByRole('button', { name: /^(close|sluiten|fermer)$/i }).click({ timeout: 15000 });
 
       await page.locator('aside button:has(i.fa-flask)').first().click();
       await expect(recipeCard(page, name)).toHaveCount(1, { timeout: 15000 });
