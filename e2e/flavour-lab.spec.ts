@@ -62,6 +62,10 @@ test.describe('Flavour Lab', () => {
     try {
       await page.locator('aside button:has(i.fa-arrow-up-from-bracket)').first().click();
       await page.locator('#xml-file-import-view').setInputFiles({ name: 'wit.xml', mimeType: 'text/xml', buffer: Buffer.from(witXml(name)) });
+      // Ingredients that exist already but were changed by hand: keep the existing ones
+      const skip = page.getByRole('button', { name: /^(skip|overslaan|ignorer)$/i });
+      await page.waitForTimeout(2000);
+      while (await skip.count() > 0) { await skip.first().click(); await page.waitForTimeout(1000); }
       await page.getByRole('button', { name: /^(close|sluiten|fermer)$/i }).click({ timeout: 15000 });
 
       // Flow A: open the recipe in Flavour Lab from the recipe editor
