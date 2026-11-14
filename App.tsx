@@ -771,19 +771,6 @@ const AppContent: React.FC = () => {
     setView('brouwlogboek');
   };
 
-  const handleExportData = () => {
-    const data = { version: 1, exportDate: new Date().toISOString(), recipes, brewLogs, tastingNotes, library };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `brewbindr-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const handleExportRecipeBeerXml = (recipe: Recipe) => {
     const xml = exportToBeerXml(recipe, deduplicatedLibrary);
     const blob = new Blob([xml], { type: 'text/xml' });
@@ -820,26 +807,6 @@ const AppContent: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
-  const handleRestoreData = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string);
-        if (data.recipes) setRecipes(data.recipes);
-        if (data.brewLogs) setBrewLogs(data.brewLogs);
-        if (data.tastingNotes) setTastingNotes(data.tastingNotes);
-        if (data.library) setLibrary(data.library);
-        alert(t('backup_restored'));
-        setView('recipes');
-      } catch (err) {
-        alert(t('backup_invalid'));
-      }
-    };
-    reader.readAsText(file);
   };
 
   const startImportFlow = (result: BeerXmlImportResult) => {
@@ -2031,8 +1998,6 @@ const AppContent: React.FC = () => {
               )}
               {view === 'admin' && (
                 <AdminView
-                  onExport={handleExportData}
-                  onRestore={handleRestoreData}
                   onUrlImport={handleImportDemoData}
                   importStatus={importStatus}
                   pendingSubmissions={pendingSubmissions}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../services/userContext';
 import { useTranslation } from '../App';
+import BackupRestore from './BackupRestore';
 import { breweryService } from '../services/breweryService';
 import { Brewery, Invitation, BreweryRole, UserProfile } from '../types';
 import { isValidEmail } from '../services/emailAddress';
@@ -292,6 +293,11 @@ const BrewerySettings: React.FC = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Backup and restore of this brewery (brewery admin) */}
+        {isAdmin && profile?.brewery_id && (
+          <BackupRestore mode="brewery" brewery={{ id: profile.brewery_id, name: brewery?.name || t('my_brewery') }} />
         )}
       </div>
 

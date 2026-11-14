@@ -825,12 +825,13 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
         <h2>Demo data &amp; backups <span class="role-badge admin">Admin</span></h2>
         <h3>Demo data</h3>
         <p>The <b>Import demo data</b> button loads sample recipes and ingredients, for testing or demos.</p>
-        <h3>JSON backup &amp; restore</h3>
+        <h3>Backup &amp; restore</h3>
         <ul class="doc-list">
-          <li><strong>Export</strong> downloads a JSON backup of recipes, brew logs, tasting notes and your library.</li>
-          <li><strong>Restore</strong> loads a previously exported JSON file. Caution: this may overwrite data.</li>
+          <li><strong>Brewery backup</strong> (brewery admin, Settings → Brewery): a JSON file with all recipes, brews, tasting notes, ingredients with stock, mash and water profiles, beer styles and installations of your brewery.</li>
+          <li><strong>Full backup</strong> (app admin, Admin): everything in BrewBindr — all breweries, members, data, the public library and stock. Accounts (passwords) are not in it.</li>
+          <li><strong>Restore</strong> merges: items in the backup overwrite the same items, the rest is added, nothing is deleted. A confirmation first shows how many items are new and how many are overwritten. A brewery backup from another brewery gets new ids, and items with a name your brewery already uses are merged into them.</li>
         </ul>
-        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Supabase is the primary datastore; JSON backups complement, not replace, database backups.</div></div>
+        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Every week the whole production database is also dumped, encrypted, as a GitHub artifact (90 days). See <code>docs/backups.md</code>.</div></div>
       </div>
     </section>
 
@@ -1398,12 +1399,13 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <h2>Demodata &amp; back-ups <span class="role-badge admin">Beheer</span></h2>
         <h3>Demodata</h3>
         <p>De knop <b>Demodata importeren</b> laadt voorbeeldrecepten en -ingrediënten, om te testen of te demonstreren.</p>
-        <h3>JSON-back-up &amp; herstel</h3>
+        <h3>Back-up &amp; terugzetten</h3>
         <ul class="doc-list">
-          <li><strong>Exporteren</strong> downloadt een JSON-back-up van recepten, brouwsels, proefnotities en je bibliotheek.</li>
-          <li><strong>Herstellen</strong> laadt een eerder geëxporteerd JSON-bestand. Opgelet: dit kan gegevens overschrijven.</li>
+          <li><strong>Back-up van de brouwerij</strong> (brouwerijbeheerder, Instellingen → Brouwerij): een JSON-bestand met alle recepten, brouwsels, proefnotities, ingrediënten met voorraad, maisch- en waterprofielen, bierstijlen en installaties van je brouwerij.</li>
+          <li><strong>Volledige back-up</strong> (app-beheerder, Beheer): alles in BrewBindr — alle brouwerijen, leden, gegevens, de publieke bibliotheek en de voorraad. Accounts (wachtwoorden) zitten er niet in.</li>
+          <li><strong>Terugzetten</strong> voegt samen: items uit de back-up overschrijven dezelfde items, de rest wordt toegevoegd, er wordt niets verwijderd. Een bevestiging toont eerst hoeveel items nieuw zijn en hoeveel overschreven worden. Een back-up uit een andere brouwerij krijgt nieuwe id's, en items met een naam die je brouwerij al gebruikt, worden daarmee samengevoegd.</li>
         </ul>
-        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Supabase is de eigenlijke opslag; JSON-back-ups vullen de databaseback-ups aan, ze vervangen ze niet.</div></div>
+        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Elke week wordt ook de hele productiedatabase versleuteld weggeschreven als GitHub-artifact (90 dagen). Zie <code>docs/backups.md</code>.</div></div>
       </div>
     </section>
 
@@ -1971,12 +1973,13 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <h2>Données de démo &amp; sauvegardes <span class="role-badge admin">Admin</span></h2>
         <h3>Données de démo</h3>
         <p>Le bouton <b>Importer les données de démo</b> charge des recettes et ingrédients d'exemple, pour tester ou faire une démonstration.</p>
-        <h3>Sauvegarde &amp; restauration JSON</h3>
+        <h3>Sauvegarde &amp; restauration</h3>
         <ul class="doc-list">
-          <li><strong>Exporter</strong> télécharge une sauvegarde JSON des recettes, brassins, notes de dégustation et de votre bibliothèque.</li>
-          <li><strong>Restaurer</strong> charge un fichier JSON exporté auparavant. Attention : cela peut écraser des données.</li>
+          <li><strong>Sauvegarde de la brasserie</strong> (administrateur de la brasserie, Paramètres → Brasserie) : un fichier JSON avec toutes les recettes, brassins, notes de dégustation, ingrédients avec stock, profils d'empâtage et d'eau, styles de bière et installations de votre brasserie.</li>
+          <li><strong>Sauvegarde complète</strong> (administrateur de l'application, Admin) : tout BrewBindr — toutes les brasseries, membres, données, la bibliothèque publique et le stock. Les comptes (mots de passe) n'y sont pas.</li>
+          <li><strong>Restaurer</strong> fusionne : les éléments de la sauvegarde remplacent les mêmes éléments, le reste est ajouté, rien n'est supprimé. Une confirmation montre d'abord combien d'éléments sont nouveaux et combien sont remplacés. Une sauvegarde d'une autre brasserie reçoit de nouveaux identifiants, et les éléments dont votre brasserie utilise déjà le nom y sont fusionnés.</li>
         </ul>
-        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Supabase est le vrai stockage ; les sauvegardes JSON complètent les sauvegardes de la base de données, elles ne les remplacent pas.</div></div>
+        <div class="callout tip"><i class="fas fa-calendar-check"></i><div>Chaque semaine, toute la base de production est aussi sauvegardée, chiffrée, comme artefact GitHub (90 jours). Voir <code>docs/backups.md</code>.</div></div>
       </div>
     </section>
 
