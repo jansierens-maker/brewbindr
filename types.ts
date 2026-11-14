@@ -328,3 +328,23 @@ export interface TastingNote {
   /** The AI analysis of this note, kept with it */
   ai_feedback?: string;
 }
+
+/** A brewery as the app admin sees it in Admin → Breweries */
+export interface AdminBrewery {
+  id: string;
+  name: string;
+  created_at: string | null;
+  admins: string[];
+  member_count: number;
+  recipe_count: number;
+  brew_count: number;
+  last_sign_in: string | null;
+}
+
+/** What admin_delete_brewery removed */
+export interface BreweryDeletion {
+  brewery: string;
+  members: number;
+  deleted: Record<string, number>;
+  kept_public: number;
+}

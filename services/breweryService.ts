@@ -1,7 +1,23 @@
 import { supabase } from './supabaseClient';
-import { Brewery, BreweryRole, Invitation } from '../types';
+import { AdminBrewery, Brewery, BreweryDeletion, BreweryRole, Invitation } from '../types';
 
 export const breweryService = {
+  /** All breweries (app admin only, checked in the database) */
+  async listAllBreweries(): Promise<AdminBrewery[]> {
+    if (!supabase) return [];
+    const { data, error } = await supabase.rpc('admin_breweries');
+    if (error) throw error;
+    return (data ?? []).map((b: AdminBrewery) => ({ ...b, member_count: Number(b.member_count), recipe_count: Number(b.recipe_count), brew_count: Number(b.brew_count) }));
+  },
+
+  /** Delete a brewery, its members' accounts and everything under it; approved public items stay (app admin only) */
+  async deleteBrewery(id: string, confirmName: string): Promise<BreweryDeletion> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('admin_delete_brewery', { p_brewery_id: id, p_confirm_name: confirmName });
+    if (error) throw error;
+    return data as BreweryDeletion;
+  },
+
   async getBrewery(id: string): Promise<Brewery | null> {
     if (!supabase) return null;
     const { data, error } = await supabase
