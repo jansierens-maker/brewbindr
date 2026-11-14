@@ -86,3 +86,58 @@ test.describe('Recepten', () => {
     }
   });
 });
+
+// BeerXML with the water inside the RECIPE (BrewBindr's WATER_KIND tag) and water salts as MISC
+const waterXml = (name: string) => `<?xml version="1.0" encoding="UTF-8"?>
+<RECIPES>
+  <RECIPE>
+    <NAME>${name}</NAME>
+    <TYPE>All Grain</TYPE>
+    <BATCH_SIZE>20</BATCH_SIZE>
+    <BOIL_TIME>60</BOIL_TIME>
+    <EFFICIENCY>75</EFFICIENCY>
+    <FERMENTABLES><FERMENTABLE><NAME>Pilsner</NAME><TYPE>Grain</TYPE><AMOUNT>5</AMOUNT><COLOR>2</COLOR></FERMENTABLE></FERMENTABLES>
+    <MISCELLANEOUS>
+      <MISC><NAME>Gypsum (CaSO4)</NAME><TYPE>Water Agent</TYPE><USE>Mash</USE><TIME>0</TIME><AMOUNT>0.003</AMOUNT><AMOUNT_IS_WEIGHT>TRUE</AMOUNT_IS_WEIGHT></MISC>
+    </MISCELLANEOUS>
+    <WATERS>
+      <WATER><NAME>E2E basiswater</NAME><AMOUNT>0</AMOUNT><CALCIUM>50</CALCIUM><BICARBONATE>120</BICARBONATE><SULFATE>30</SULFATE><CHLORIDE>25</CHLORIDE><SODIUM>15</SODIUM><MAGNESIUM>5</MAGNESIUM><WATER_KIND>base</WATER_KIND></WATER>
+      <WATER><NAME>E2E doelprofiel</NAME><AMOUNT>0</AMOUNT><CALCIUM>70</CALCIUM><BICARBONATE>20</BICARBONATE><SULFATE>80</SULFATE><CHLORIDE>50</CHLORIDE><SODIUM>10</SODIUM><MAGNESIUM>8</MAGNESIUM><WATER_KIND>target</WATER_KIND></WATER>
+    </WATERS>
+  </RECIPE>
+</RECIPES>`;
+
+test.describe('BeerXML import', () => {
+  // Writes data: runs on previews (staging database), not on production. The two water profiles
+  // have fixed names and minerals: a next run reuses them instead of adding copies.
+  test('recept met water en zouten importeren: waterbehandeling gekoppeld', { tag: '@writes' }, async ({ page }) => {
+    test.setTimeout(60000);
+    const name = `E2E water ${Date.now()}`;
+    page.on('dialog', async (dialog: Dialog) => { await dialog.accept(); });
+
+    await login(page);
+    try {
+      await page.locator('aside button:has(i.fa-arrow-up-from-bracket)').first().click();
+      await page.locator('#xml-file-import-view').setInputFiles({ name: 'water.xml', mimeType: 'text/xml', buffer: Buffer.from(waterXml(name)) });
+      // Only when a profile with that name was changed by hand: keep the existing one
+      const skip = page.getByRole('button', { name: /^(skip|overslaan|ignorer)$/i });
+      await page.waitForTimeout(2000);
+      while (await skip.count() > 0) { await skip.first().click(); await page.waitForTimeout(1000); }
+      // The import summary covers the screen: close it
+      await page.getByRole('button', { name: /^(close|sluiten|fermer)$/i }).click({ timeout: 15000 });
+
+      await page.locator('aside button:has(i.fa-flask)').first().click();
+      await expect(recipeCard(page, name)).toHaveCount(1, { timeout: 15000 });
+      await recipeCard(page, name).first().getByRole('button', { name: EDIT }).click();
+
+      const selected = (id: string) => page.locator(id).evaluate((e: HTMLSelectElement) => e.options[e.selectedIndex]?.text ?? '');
+      await expect.poll(() => selected('#chem_source')).toBe('E2E basiswater');
+      await expect.poll(() => selected('#chem_target')).toBe('E2E doelprofiel');
+      // Back to the list without saving
+      await page.locator('aside button:has(i.fa-flask)').first().click();
+    } finally {
+      await deleteRecipe(page, name);
+    }
+  });
+});
+

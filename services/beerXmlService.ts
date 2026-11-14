@@ -1,5 +1,6 @@
 import { normalizeRecipe, normalizeFermentableType } from './calculations';
 import { Recipe, Fermentable, Hop, Culture, MashProfile, MashStep, LibraryIngredient } from "../types";
+import { RecipeWater, waterAgentsToChem } from './beerXmlWater';
 
 // BeerXML USE: Boil, Dry Hop, Mash, First Wort, Aroma (aroma = after the boil, i.e. whirlpool)
 const hopUse = (use: string): Hop['use'] => {
@@ -24,6 +25,8 @@ export interface BeerXmlImportResult {
   styles: any[];
   equipments: any[];
   mashes: any[];
+  /** Water profiles inside a RECIPE: saved in the library, then linked to that recipe's water treatment */
+  recipeWaters: RecipeWater[];
 }
 
 export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
@@ -39,11 +42,15 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
     waters: [],
     styles: [],
     equipments: [],
-    mashes: []
+    mashes: [],
+    recipeWaters: []
   };
 
   const getVal = (el: Element | null, tag: string) => el?.getElementsByTagName(tag)[0]?.textContent || "";
   const getNum = (el: Element | null, tag: string) => parseFloat(el?.getElementsByTagName(tag)[0]?.textContent || "0");
+  // A recipe's own fields: direct children only, not e.g. the NOTES of a hop or water inside it
+  const ownVal = (el: Element, tag: string) => Array.from(el.children).find(c => c.tagName === tag)?.textContent || "";
+  const ownNum = (el: Element, tag: string) => parseFloat(ownVal(el, tag) || "0");
 
   const parseMashSteps = (mashNode: Element): MashStep[] => {
     const steps: MashStep[] = [];
@@ -192,25 +199,27 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
     }
   }
 
+  // A WATER profile; <WATER_KIND> (BrewBindr, not in BeerXML 1.0) says base water or target profile
+  const parseWater = (w: Element) => ({
+    name: getVal(w, "NAME"),
+    type: 'water' as const,
+    water_kind: getVal(w, "WATER_KIND").trim().toLowerCase() === 'target' ? 'target' as const : 'base' as const,
+    amount: getNum(w, "AMOUNT"),
+    calcium: getNum(w, "CALCIUM"),
+    magnesium: getNum(w, "MAGNESIUM"),
+    sodium: getNum(w, "SODIUM"),
+    chloride: getNum(w, "CHLORIDE"),
+    sulfate: getNum(w, "SULFATE"),
+    bicarbonate: getNum(w, "BICARBONATE"),
+    ph: getNum(w, "PH") || undefined,
+    notes: getVal(w, "NOTES")
+  });
+
   // Global Waters
   const waters = xmlDoc.getElementsByTagName("WATER");
   for (let i = 0; i < waters.length; i++) {
     const w = waters[i];
-    if (isGlobal(w)) {
-      result.waters.push({
-        name: getVal(w, "NAME"),
-        type: 'water',
-        amount: getNum(w, "AMOUNT"),
-        calcium: getNum(w, "CALCIUM"),
-        magnesium: getNum(w, "MAGNESIUM"),
-        sodium: getNum(w, "SODIUM"),
-        chloride: getNum(w, "CHLORIDE"),
-        sulfate: getNum(w, "SULFATE"),
-        bicarbonate: getNum(w, "BICARBONATE"),
-        ph: getNum(w, "PH") || undefined,
-        notes: getVal(w, "NOTES")
-      });
-    }
+    if (isGlobal(w)) result.waters.push(parseWater(w));
   }
 
   // Recipes
@@ -252,12 +261,14 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
     const mNodes = r.getElementsByTagName("MISC");
     for (let j = 0; j < mNodes.length; j++) {
       const m = mNodes[j];
+      const isWeight = getVal(m, "AMOUNT_IS_WEIGHT").trim().toUpperCase();
       recipeMiscs.push({
         name: getVal(m, "NAME"),
         type: getVal(m, "TYPE").toLowerCase(),
         use: getVal(m, "USE").toLowerCase(),
         amount: { unit: "grams", value: getNum(m, "AMOUNT") * 1000 },
-        time: { unit: "minutes", value: getNum(m, "TIME") }
+        time: { unit: "minutes", value: getNum(m, "TIME") },
+        ...(isWeight === 'TRUE' ? { isWeight: true } : isWeight === 'FALSE' ? { isWeight: false } : {})
       });
     }
 
@@ -298,29 +309,51 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
       };
     }
 
+    const recipeId = crypto.randomUUID();
+
+    // Water profiles of the recipe: the first base water is the source, the first target the target
+    const wNodes = r.getElementsByTagName("WATER");
+    const roles = new Set<string>();
+    for (let j = 0; j < wNodes.length; j++) {
+      const water = parseWater(wNodes[j]);
+      const role = water.water_kind === 'target' ? 'target' : 'source';
+      if (roles.has(role)) { result.waters.push(water); continue; }
+      roles.add(role);
+      result.recipeWaters.push({ recipeId, role, water });
+    }
+
+    // Water salts and lactic acid (MISC "Water Agent") belong to the water treatment
+    const dilution = ownNum(r, "WATER_DILUTION_PCT");
+    const targetPh = ownNum(r, "TARGET_MASH_PH");
+    const water = waterAgentsToChem(recipeMiscs, {
+      ...(dilution > 0 ? { dilution_pct: dilution } : {}),
+      ...(targetPh > 0 ? { target_ph: targetPh } : {}),
+    });
+
     result.recipes.push({
-      id: crypto.randomUUID(),
-      name: getVal(r, "NAME"),
-      type: (getVal(r, "TYPE").toLowerCase().replace(" ", "_") as any) || "all_grain",
-      author: getVal(r, "BREWER"),
-      notes: getVal(r, "NOTES"),
-      batch_size: { unit: "liters", value: getNum(r, "BATCH_SIZE") },
-      efficiency: { brewhouse: getNum(r, "EFFICIENCY") },
-      boil_time: { unit: "minutes", value: getNum(r, "BOIL_TIME") },
+      id: recipeId,
+      name: ownVal(r, "NAME"),
+      type: (ownVal(r, "TYPE").toLowerCase().replace(" ", "_") as any) || "all_grain",
+      author: ownVal(r, "BREWER"),
+      notes: ownVal(r, "NOTES"),
+      batch_size: { unit: "liters", value: ownNum(r, "BATCH_SIZE") },
+      efficiency: { brewhouse: ownNum(r, "EFFICIENCY") },
+      boil_time: { unit: "minutes", value: ownNum(r, "BOIL_TIME") },
       ingredients: { 
         fermentables: recipeFermentables, 
         hops: recipeHops, 
         cultures: recipeCultures,
-        miscellaneous: recipeMiscs
+        miscellaneous: water.miscs
       },
+      ...(water.chem ? { water_chem: water.chem } : {}),
       style,
       mash,
       specifications: {
-        og: { value: getNum(r, "EST_OG") },
-        fg: { value: getNum(r, "EST_FG") },
-        abv: { value: getNum(r, "EST_ABV") },
-        ibu: { value: getNum(r, "IBU") },
-        color: { value: getNum(r, "EST_COLOR") }
+        og: { value: ownNum(r, "EST_OG") },
+        fg: { value: ownNum(r, "EST_FG") },
+        abv: { value: ownNum(r, "EST_ABV") },
+        ibu: { value: ownNum(r, "IBU") },
+        color: { value: ownNum(r, "EST_COLOR") }
       }
     });
   }

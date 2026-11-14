@@ -31,8 +31,9 @@ import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normali
 import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes, canPublish } from './services/permissions';
 import { Taster, batchNumbers, memberName } from './services/tasting';
 import { URL_IMPORT_ENABLED } from './services/features';
-import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey } from './services/duplicates';
+import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey, findPrivateIngredient } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
+import { WaterRole, isSameWater, withWaterLinks } from './services/beerXmlWater';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
 import { supabaseService } from './services/supabaseService';
@@ -91,6 +92,9 @@ const DEMO_OPTIONS = [
   { id: 'mash', name: "Five Mash Profiles", file: "mash.xml", icon: "fa-thermometer-half" },
 ];
 
+/** A step of the import: a recipe or a library item; a recipe's water profile links back to its recipe. */
+type ImportItem = { type: 'recipe' | 'library', data: any, link?: { recipeId: string; role: WaterRole } };
+
 const isExactlySame = (a: any, b: any) => {
   const strip = (obj: any) => {
     if (!obj) return "";
@@ -146,9 +150,11 @@ const AppContent: React.FC = () => {
   const [allowLocalStorage, setAllowLocalStorage] = useState(true);
   const [importStatus, setImportStatus] = useState<ImportStatus | 'complete'>('idle');
   const [libraryView, setLibraryView] = useState<'personal' | 'public'>('personal');
-  const [importQueue, setImportQueue] = useState<{ type: 'recipe' | 'library', data: any }[]>([]);
+  const [importQueue, setImportQueue] = useState<ImportItem[]>([]);
+  // Water profiles saved during an import, per imported recipe: linked to its water treatment
+  const importWaterLinks = useRef<Record<string, Partial<Record<WaterRole, string>>>>({});
   const [importSummary, setImportSummary] = useState<{ inserted: number, updated: number, ignored: number, errors: number } | null>(null);
-  const [currentDuplicate, setCurrentDuplicate] = useState<{ type: 'recipe' | 'library', data: any } | null>(null);
+  const [currentDuplicate, setCurrentDuplicate] = useState<ImportItem | null>(null);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [selectedDemoIds, setSelectedDemoIds] = useState<string[]>([]);
   const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
@@ -779,7 +785,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleExportRecipeBeerXml = (recipe: Recipe) => {
-    const xml = exportToBeerXml(recipe);
+    const xml = exportToBeerXml(recipe, deduplicatedLibrary);
     const blob = new Blob([xml], { type: 'text/xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -837,8 +843,14 @@ const AppContent: React.FC = () => {
   };
 
   const startImportFlow = (result: BeerXmlImportResult) => {
-    const queue: { type: 'recipe' | 'library', data: any }[] = [];
-    result.recipes.forEach(r => queue.push({ type: 'recipe', data: r }));
+    const queue: ImportItem[] = [];
+    importWaterLinks.current = {};
+    // A recipe's water profiles first, so the recipe can be saved with their ids
+    result.recipes.forEach(r => {
+      (result.recipeWaters ?? []).filter(w => w.recipeId === r.id)
+        .forEach(w => queue.push({ type: 'library', data: { ...w.water, type: 'water' }, link: { recipeId: w.recipeId, role: w.role } }));
+      queue.push({ type: 'recipe', data: r });
+    });
     result.fermentables.forEach(f => queue.push({ type: 'library', data: { ...f, type: 'fermentable' } }));
     result.hops.forEach(h => queue.push({ type: 'library', data: { ...h, type: 'hop' } }));
     result.cultures.forEach(c => queue.push({ type: 'library', data: { ...c, type: 'culture' } }));
@@ -866,7 +878,11 @@ const AppContent: React.FC = () => {
       setImportStatus('complete');
       return;
     }
-    const next = currentQueue[0];
+    const queued = currentQueue[0];
+    // A recipe gets the water profiles saved for it earlier in this import
+    const next: ImportItem = queued.type === 'recipe'
+      ? { ...queued, data: withWaterLinks(queued.data, importWaterLinks.current[queued.data.id]) }
+      : queued;
 
     // Only check for duplicates in personal collection
     const personalRecipes = currentRecipes.filter(r =>
@@ -886,13 +902,19 @@ const AppContent: React.FC = () => {
     if (next.type === 'recipe') {
       exactMatches = personalRecipes.filter(r => isExactlySame(r, next.data));
       isDuplicate = personalRecipes.some(r => nameKey(r.name) === nameKey(next.data.name));
+    } else if (next.data.type === 'water') {
+      // Same name, kind and minerals: reuse it (also a public profile, for a recipe's water)
+      const candidates = next.link ? [...personalLib, ...currentLib.filter(l => l.status === 'approved')] : personalLib;
+      exactMatches = candidates.filter(l => l.type === 'water' && isSameWater(l, next.data));
+      isDuplicate = personalLib.some(l => nameKey(l.name) === nameKey(next.data.name) && l.type === 'water');
     } else {
       exactMatches = personalLib.filter(l => l.type === next.data.type && isExactlySame(l, next.data));
       isDuplicate = personalLib.some(l => nameKey(l.name) === nameKey(next.data.name) && l.type === next.data.type);
     }
     
     if (exactMatches.length > 0) {
-      // Exactly the same data, ignore it
+      // Exactly the same data, ignore it (a recipe's water: link the existing one)
+      linkImportedWater(next, exactMatches[0].id);
       const nextSummary = { ...summary, ignored: summary.ignored + 1 };
       setImportSummary(nextSummary);
       const nextQ = currentQueue.slice(1);
@@ -924,8 +946,11 @@ const AppContent: React.FC = () => {
           newLib.push(newItem);
           itemsAdded = 1;
           if (user?.id) {
-            await supabaseService.saveLibraryIngredient(newItem, user.id, profile?.brewery_id);
+            const saved = await supabaseService.saveLibraryIngredient(newItem, user.id, profile?.brewery_id);
+            // A recipe must not point to a water profile that was not saved
+            if (saved?.error && next.link) throw saved.error;
           }
+          linkImportedWater(next, newItem.id);
         }
 
         const nextSummary = { ...summary, inserted: summary.inserted + itemsAdded };
@@ -950,6 +975,13 @@ const AppContent: React.FC = () => {
     }
   };
 
+  /** Remembers the saved (or reused) id of a recipe's water profile, for the recipe that follows. */
+  const linkImportedWater = (item: ImportItem, waterId: string | undefined) => {
+    if (!item.link || !waterId) return;
+    const links = importWaterLinks.current;
+    links[item.link.recipeId] = { ...links[item.link.recipeId], [item.link.role]: waterId };
+  };
+
   const linkIngredientsToLibrary = (recipe: Recipe, tempLib: LibraryIngredient[]) => {
     const { syncedRecipe, newIngredients } = syncIngredientsWithLibrary(recipe, 'private', tempLib);
     tempLib.push(...newIngredients);
@@ -958,7 +990,7 @@ const AppContent: React.FC = () => {
 
   const resolveConflict = (action: 'cancel' | 'skip' | 'overwrite' | 'copy') => {
     if (!currentDuplicate || !importSummary) return;
-    if (action === 'cancel') { setImportQueue([]); setCurrentDuplicate(null); setImportStatus('idle'); return; }
+    if (action === 'cancel') { setImportQueue([]); setCurrentDuplicate(null); setImportStatus('idle'); importWaterLinks.current = {}; return; }
 
     let updatedRecipes = [...recipes];
     let updatedLib = [...library];
@@ -997,6 +1029,7 @@ const AppContent: React.FC = () => {
           return l;
         });
         nextSummary.updated += 1;
+        linkImportedWater(currentDuplicate, (targetItem as LibraryIngredient | null)?.id);
         if (user?.id && targetItem) {
            supabaseService.saveLibraryIngredient(targetItem, user.id, profile?.brewery_id);
         }
@@ -1018,12 +1051,18 @@ const AppContent: React.FC = () => {
         const newItem = { ...currentDuplicate.data, name: freeName, id: crypto.randomUUID(), user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' };
         updatedLib = [...library, newItem];
         nextSummary.inserted += 1;
+        linkImportedWater(currentDuplicate, newItem.id);
         if (user?.id) {
            supabaseService.saveLibraryIngredient(newItem, user.id, profile?.brewery_id);
         }
       }
     } else if (action === 'skip') {
       nextSummary.ignored += 1;
+      // Ignored: a recipe's water links to the existing profile with that name
+      if (currentDuplicate.type === 'library') {
+        const existing = findPrivateIngredient(library, currentDuplicate.data.name, currentDuplicate.data.type, profile?.brewery_id, user?.id);
+        linkImportedWater(currentDuplicate, existing?.id);
+      }
     }
 
     setImportSummary(nextSummary);
@@ -1095,7 +1134,7 @@ const AppContent: React.FC = () => {
     setImportStatus('fetching');
 
     const aggregatedResult: BeerXmlImportResult = {
-        recipes: [], fermentables: [], hops: [], cultures: [], miscs: [], waters: [], styles: [], equipments: [], mashes: []
+        recipes: [], fermentables: [], hops: [], cultures: [], miscs: [], waters: [], styles: [], equipments: [], mashes: [], recipeWaters: []
     };
 
     try {
@@ -1117,6 +1156,9 @@ const AppContent: React.FC = () => {
             aggregatedResult.miscs.push(...result.miscs);
             aggregatedResult.styles.push(...result.styles);
             aggregatedResult.mashes.push(...result.mashes);
+            aggregatedResult.waters.push(...result.waters);
+            aggregatedResult.equipments.push(...result.equipments);
+            aggregatedResult.recipeWaters.push(...result.recipeWaters);
         }
         setImportStatus('parsing');
         startImportFlow(aggregatedResult);
