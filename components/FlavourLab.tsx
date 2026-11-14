@@ -100,7 +100,9 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
   useEffect(() => { setPreview(null); }, [activeTab, recipeId, mode, startId]);
   useEffect(() => { setMessage(''); }, [recipeId, mode]);
 
-  const bars = useMemo(() => (kb && profile ? familyBars(kb, profile.contributions, preview?.contributions ?? []) : []), [kb, profile, preview]);
+  // Only the recipe's own families get a bar: a previewed suggestion adds to them but never adds
+  // rows, so the cards below do not move while you point at them
+  const bars = useMemo(() => (kb && profile ? familyBars(kb, profile.contributions, preview?.contributions ?? []).filter(b => b.total > 0) : []), [kb, profile, preview]);
   const maxBar = Math.max(1e-9, ...bars.map(b => b.total + b.extra));
   const nf = (n: number, digits = 1) => new Intl.NumberFormat(lang, { maximumFractionDigits: digits }).format(n);
 
