@@ -332,6 +332,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
     <div class="nav-section">
       <div class="nav-section-label">Brewer's Guide</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recipes &amp; AI</a>
+      <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab</a>
       <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Calculations</a>
       <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Water volumes</a>
       <a class="nav-item" href="#water-treatment"><i class="fas fa-vial"></i>Water treatment &amp; pH</a>
@@ -497,6 +498,34 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
           <li><strong>Deleting a recipe with brews</strong> — if brews still use the recipe, you are asked whether to delete the recipe <b>together with those brews and their tasting notes</b>, or to cancel. A recipe that brews of another brewery use cannot be deleted.</li>
         </ul>
         <div class="callout tip"><i class="fas fa-print"></i><div>Every recipe has a <b>print view</b> — a clean brew-day sheet you can print or save as PDF, with the water volumes, strike temperature, warnings and water treatment.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="flavour-lab" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-flask-vial"></i> Brewer's Guide</div>
+        <h2>Flavour Lab <span class="role-badge brewer">Brewer</span></h2>
+        <p>Flavour Lab suggests spices, yeasts and hops that <b>share aroma compounds</b> with a recipe. Ingredients with the same aroma compounds strengthen each other: coriander and a linalool-rich hop both smell floral of linalool. Open it from the menu (<b>Brewery → Flavour Lab</b>) or with <b>Open in Flavour Lab</b> in the recipe editor.</p>
+        <h3>From a recipe</h3>
+        <ul class="doc-list">
+          <li><strong>Aroma profile</strong> — a bar per aroma family (citrus terpenes, floral terpenes, clove phenols…), with the ingredients that contribute. <b>As a table</b> shows the same figures as text.</li>
+          <li><strong>Suggestions</strong> — tabs Spices, Yeast and Hops, each with a top 5 and a score from 0 to 100. The <b>bridge compounds</b> say why a suggestion fits; "same aroma family" means the compounds differ but smell alike (eugenol in clove, 4-vinylguaiacol of a POF+ yeast).</li>
+          <li><strong>Dose and timing</strong> — for spices the dose for your batch, the form and when to add it; hops are added as aroma hop at flame-out.</li>
+          <li><strong>Preview</strong> — point at or tap a card: the profile shows what it adds as a striped part.</li>
+          <li><strong>Add to recipe</strong> — adds a spice (under Miscellaneous), an aroma hop, or replaces the yeast after asking. Admins and brewmasters can do this.</li>
+          <li><strong>Filter</strong> — leave out POF+ yeasts, hide a tab, or stop suggesting an ingredient (the eye button).</li>
+        </ul>
+        <h3>From a spice</h3>
+        <p>Choose <b>From a spice</b> and a spice: you get yeasts and hops that go with it, and <b>Start a new recipe</b> opens the recipe editor with the spice and your choice.</p>
+        <h3>Names Flavour Lab does not know</h3>
+        <p>Ingredients that are not in the knowledge base are named above the profile and do not count. With <b>Link</b> you link such a name to an ingredient of the knowledge base, or leave it out on purpose. A link applies to the whole brewery and to all its recipes. Admins, brewmasters and brewers can link.</p>
+        <h3>Limits</h3>
+        <ul class="doc-list">
+          <li>Flavour Lab uses a <b>simplified model</b>: the intensity of each aroma compound per ingredient (0–5), how much is lost in the boil or fermentation, and the similarity between the recipe and a suggestion. The result in your beer may differ.</li>
+          <li>The knowledge base holds about 40 spices, 46 hops, 18 yeasts and 10 malt types. Every value has a source (literature, supplier data or an own estimate, marked as such). Yeast and malt values are estimates.</li>
+          <li>Yeasts make esters and phenols that malt and hops hardly contain: yeast scores are often low ("weak").</li>
+          <li>Heat (chili) and bitterness are not taken into account.</li>
+        </ul>
       </div>
     </section>
 
@@ -906,6 +935,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
     <div class="nav-section">
       <div class="nav-section-label">Voor brouwers</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recepten &amp; AI</a>
+      <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab</a>
       <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Berekeningen</a>
       <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Watervolumes</a>
       <a class="nav-item" href="#water-treatment"><i class="fas fa-vial"></i>Waterbehandeling &amp; pH</a>
@@ -1071,6 +1101,34 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
           <li><strong>Een recept met brouwsels verwijderen</strong> — steunen er nog brouwsels op het recept, dan vraagt de app of je het recept <b>samen met die brouwsels en hun proefnotities</b> wil verwijderen, of wil annuleren. Een recept dat brouwsels van een andere brouwerij gebruiken, kan je niet verwijderen.</li>
         </ul>
         <div class="callout tip"><i class="fas fa-print"></i><div>Elk recept heeft een <b>afdrukweergave</b> — een overzichtelijk brouwdagblad om af te drukken of als pdf te bewaren, met de watervolumes, inmaischtemperatuur, waarschuwingen en waterbehandeling.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="flavour-lab" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-flask-vial"></i> Brouwersgids</div>
+        <h2>Flavour Lab <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Flavour Lab stelt kruiden, gisten en hoppen voor die <b>aromastoffen delen</b> met een recept. Ingrediënten met dezelfde aromastoffen versterken elkaar: koriander en een linaloolrijke hop ruiken allebei bloemig naar linalool. Je opent het via het menu (<b>Brouwerij → Flavour Lab</b>) of met <b>Open in Flavour Lab</b> in de recepteditor.</p>
+        <h3>Vanuit een recept</h3>
+        <ul class="doc-list">
+          <li><strong>Aromaprofiel</strong> — een staaf per aromafamilie (citrusterpenen, bloemige terpenen, kruidige fenolen…), met de ingrediënten die bijdragen. <b>Als tabel</b> toont dezelfde cijfers als tekst.</li>
+          <li><strong>Suggesties</strong> — tabbladen Kruiden, Gist en Hop, elk met een top 5 en een score van 0 tot 100. De <b>brugstoffen</b> vertellen waarom een suggestie past; "dezelfde aromafamilie" betekent dat de stoffen verschillen maar gelijkaardig ruiken (eugenol in kruidnagel, 4-vinylguaiacol van een POF+-gist).</li>
+          <li><strong>Dosis en moment</strong> — voor kruiden de dosis voor je batch, de vorm en wanneer je het toevoegt; hoppen komen erbij als aromahop bij vlamuit.</li>
+          <li><strong>Voorbeeld</strong> — wijs een kaart aan of tik erop: het profiel toont gestreept wat ze toevoegt.</li>
+          <li><strong>Toevoegen aan recept</strong> — voegt een kruid toe (onder Diversen), een aromahop, of vervangt na bevestiging de gist. Beheerders en brouwmeesters kunnen dit.</li>
+          <li><strong>Filter</strong> — POF+-gisten weglaten, een tabblad verbergen, of een ingrediënt niet meer voorstellen (de oogknop).</li>
+        </ul>
+        <h3>Vanuit een kruid</h3>
+        <p>Kies <b>Vanuit kruid</b> en een kruid: je krijgt gisten en hoppen die erbij passen, en <b>Nieuw recept starten</b> opent de recepteditor met het kruid en je keuze.</p>
+        <h3>Namen die Flavour Lab niet kent</h3>
+        <p>Ingrediënten die niet in de kennisbank staan, worden boven het profiel vermeld en tellen niet mee. Met <b>Koppelen</b> koppel je zo'n naam aan een ingrediënt uit de kennisbank, of laat je hem bewust weg. Een koppeling geldt voor de hele brouwerij en voor al haar recepten. Beheerders, brouwmeesters en brouwers kunnen koppelen.</p>
+        <h3>Beperkingen</h3>
+        <ul class="doc-list">
+          <li>Flavour Lab rekent met een <b>vereenvoudigd model</b>: de intensiteit van elke aromastof per ingrediënt (0–5), hoeveel er verloren gaat bij het koken of de gisting, en de gelijkenis tussen het recept en een suggestie. Het resultaat in je bier kan afwijken.</li>
+          <li>De kennisbank bevat ongeveer 40 kruiden, 46 hoppen, 18 gisten en 10 mouttypes. Elke waarde heeft een bron (literatuur, leveranciersdata of een eigen inschatting, als dusdanig aangeduid). De waarden voor gist en mout zijn inschattingen.</li>
+          <li>Gisten maken esters en fenolen die mout en hop nauwelijks bevatten: scores van gisten zijn vaak laag ("zwak").</li>
+          <li>Pikantheid (chili) en bitterheid tellen niet mee.</li>
+        </ul>
       </div>
     </section>
 
@@ -1480,6 +1538,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
     <div class="nav-section">
       <div class="nav-section-label">Pour les brasseurs</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recettes &amp; IA</a>
+      <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab</a>
       <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Calculs</a>
       <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Volumes d'eau</a>
       <a class="nav-item" href="#water-treatment"><i class="fas fa-vial"></i>Traitement de l'eau &amp; pH</a>
@@ -1645,6 +1704,34 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
           <li><strong>Supprimer une recette avec des brassins</strong> — si des brassins dépendent encore de la recette, l'application demande si vous voulez supprimer la recette <b>avec ces brassins et leurs notes de dégustation</b>, ou annuler. Une recette utilisée par les brassins d'une autre brasserie ne peut pas être supprimée.</li>
         </ul>
         <div class="callout tip"><i class="fas fa-print"></i><div>Chaque recette a une <b>vue imprimable</b> — une fiche de brassage claire à imprimer ou à enregistrer en PDF, avec les volumes d'eau, la température d'empâtage, les avertissements et le traitement de l'eau.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="flavour-lab" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-flask-vial"></i> Guide du brasseur</div>
+        <h2>Flavour Lab <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Flavour Lab propose des épices, levures et houblons qui <b>partagent des composés aromatiques</b> avec une recette. Les ingrédients aux mêmes composés se renforcent : la coriandre et un houblon riche en linalol sentent tous deux le floral du linalol. Ouvrez-le depuis le menu (<b>Brasserie → Flavour Lab</b>) ou avec <b>Ouvrir dans Flavour Lab</b> dans l'éditeur de recette.</p>
+        <h3>Depuis une recette</h3>
+        <ul class="doc-list">
+          <li><strong>Profil aromatique</strong> — une barre par famille aromatique (terpènes d'agrumes, terpènes floraux, phénols épicés…), avec les ingrédients qui y contribuent. <b>En tableau</b> montre les mêmes chiffres en texte.</li>
+          <li><strong>Suggestions</strong> — onglets Épices, Levure et Houblon, chacun avec un top 5 et un score de 0 à 100. Les <b>composés communs</b> expliquent pourquoi une suggestion convient ; « même famille aromatique » signifie que les composés diffèrent mais sentent pareil (eugénol du clou de girofle, 4-vinylgaïacol d'une levure POF+).</li>
+          <li><strong>Dose et moment</strong> — pour les épices, la dose pour votre lot, la forme et le moment d'ajout ; les houblons sont ajoutés comme houblon aromatique en fin d'ébullition.</li>
+          <li><strong>Aperçu</strong> — survolez ou touchez une carte : le profil montre en hachuré ce qu'elle ajoute.</li>
+          <li><strong>Ajouter à la recette</strong> — ajoute une épice (sous Divers), un houblon aromatique, ou remplace la levure après confirmation. Réservé aux administrateurs et maîtres brasseurs.</li>
+          <li><strong>Filtre</strong> — exclure les levures POF+, masquer un onglet ou ne plus proposer un ingrédient (bouton œil).</li>
+        </ul>
+        <h3>Depuis une épice</h3>
+        <p>Choisissez <b>Depuis une épice</b> et une épice : vous obtenez les levures et houblons qui s'y accordent, et <b>Nouvelle recette</b> ouvre l'éditeur avec l'épice et votre choix.</p>
+        <h3>Noms inconnus de Flavour Lab</h3>
+        <p>Les ingrédients absents de la base de connaissances sont cités au-dessus du profil et ne comptent pas. Avec <b>Associer</b>, vous liez un tel nom à un ingrédient de la base, ou vous l'écartez volontairement. L'association vaut pour toute la brasserie et toutes ses recettes. Administrateurs, maîtres brasseurs et brasseurs peuvent associer.</p>
+        <h3>Limites</h3>
+        <ul class="doc-list">
+          <li>Flavour Lab utilise un <b>modèle simplifié</b> : l'intensité de chaque composé par ingrédient (0–5), la perte à l'ébullition ou à la fermentation, et la ressemblance entre la recette et une suggestion. Le résultat dans votre bière peut différer.</li>
+          <li>La base contient environ 40 épices, 46 houblons, 18 levures et 10 types de malt. Chaque valeur a une source (littérature, données fournisseur ou estimation propre, indiquée comme telle). Les valeurs des levures et malts sont des estimations.</li>
+          <li>Les levures produisent des esters et phénols que le malt et le houblon contiennent à peine : leurs scores sont souvent bas (« faible »).</li>
+          <li>Le piquant (piment) et l'amertume ne sont pas pris en compte.</li>
+        </ul>
       </div>
     </section>
 
