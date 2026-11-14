@@ -5,6 +5,7 @@ import { Language } from '../services/i18n';
 import BrewerySettings from './BrewerySettings';
 import { canViewStock } from '../services/permissions';
 import NewPasswordForm from './NewPasswordForm';
+import InstallApp from './InstallApp';
 import { authService } from '../services/authService';
 
 const Settings: React.FC = () => {
@@ -202,6 +203,8 @@ const Settings: React.FC = () => {
             </div>
           </div>
           )}
+
+          <InstallApp />
 
           {/* Language Preferences */}
           <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-8">

@@ -79,7 +79,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       {showMore && (
         <div className="fixed inset-0 z-[140] lg:hidden">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowMore(false)}></div>
-          <div className="absolute bottom-[var(--bottomnav-h)] left-0 right-0 bg-[var(--color-bg)] rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[75vh] overflow-y-auto border-t border-[var(--color-border)]">
+          <div className="absolute bottom-[calc(var(--bottomnav-h)+var(--safe-bottom))] left-0 right-0 bg-[var(--color-bg)] rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[75vh] overflow-y-auto border-t border-[var(--color-border)]">
             <div className="w-10 h-1 bg-[var(--color-border-strong)] rounded-full mx-auto my-3"></div>
             <div className="px-4 pb-8 space-y-1">
               {moreSections.map(section => (
@@ -122,7 +122,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         </div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 h-[var(--bottomnav-h)] bg-[var(--color-bg)] border-t border-[var(--color-border)] flex z-[150] lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 h-[calc(var(--bottomnav-h)+var(--safe-bottom))] pb-[var(--safe-bottom)] bg-[var(--color-bg)] border-t border-[var(--color-border)] flex z-[150] lg:hidden">
         {tabs.map((tab) => {
           const gated = isGated(tab);
           return (
