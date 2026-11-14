@@ -1643,7 +1643,7 @@ const AppContent: React.FC = () => {
 
             {!user && <InfoBanner />}
 
-            <main className="flex-1 p-4 md:p-8 pb-32 lg:pb-8 max-w-7xl mx-auto w-full print:p-0 print:pb-0">
+            <main className="flex-1 p-4 md:p-8 pb-[calc(8rem+var(--safe-bottom))] lg:pb-8 max-w-7xl mx-auto w-full print:p-0 print:pb-0">
             <Suspense fallback={<ScreenLoading />}>
               {importStatus !== 'idle' && (
                 <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
