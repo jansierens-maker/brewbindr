@@ -56,7 +56,7 @@ test.describe('Flavour Lab', () => {
   test('witbier: koriander voorgesteld en toegevoegd aan het recept', { tag: '@writes' }, async ({ page }) => {
     test.setTimeout(90000);
     const name = `E2E flavour ${Date.now()}`;
-    page.on('dialog', async (dialog: Dialog) => { await dialog.accept(); });
+    page.on('dialog', async (dialog: Dialog) => { console.log(`[dialog] ${dialog.message()}`); await dialog.accept(); });
 
     await login(page);
     try {
@@ -86,6 +86,9 @@ test.describe('Flavour Lab', () => {
 
       // Add to recipe: stored, and no longer suggested
       await coriander.getByRole('button', { name: ADD }).click();
+      // Shown when stored ("… is now in …")
+      await expect(page.locator('main [role=status]').filter({ hasText: name })).toHaveCount(1, { timeout: 15000 })
+        .catch(async (e) => { console.log('[flavour-lab] status:', await page.locator('main [role=status]').allInnerTexts()); throw e; });
       await expect(cards.filter({ has: page.getByRole('heading', { name: CORIANDER }) })).toHaveCount(0, { timeout: 15000 });
 
       // The recipe now holds the spice as MISC
