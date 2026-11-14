@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseBeerXml } from '../../services/beerXmlService';
 import { exportToBeerXml } from '../../services/beerXmlExportService';
+import { calculateRecipeStats } from '../../services/calculations';
 import { isSameWater, waterAgentEntry, withWaterLinks } from '../../services/beerXmlWater';
 import { LibraryIngredient } from '../../types';
 
@@ -75,6 +76,63 @@ describe('exportToBeerXml', () => {
     expect(again.ingredients.hops.map(h => [h.use, h.form])).toEqual([
       ['boil', 'pellet'], ['whirlpool', 'leaf'], ['first_wort', 'pellet'],
     ]);
+  });
+});
+
+describe('exportToBeerXml: a complete recipe', () => {
+  const original = parseBeerXml(xml).recipes[0];
+  original.notes = 'Brew notes & "quotes"';
+  original.ingredients.cultures = [
+    { name: 'London Ale', type: 'ale', form: 'liquid', attenuation: 73 },
+    { name: 'SafLager W-34/70', type: 'lager', form: 'dry', attenuation: 83, amount: { unit: 'grams', value: 11.5 } },
+  ];
+  original.ingredients.miscellaneous = [{ name: 'Irish Moss', type: 'fining', use: 'boil', amount: { unit: 'grams', value: 5 }, time: { unit: 'minutes', value: 15 } }];
+  original.mash = {
+    name: 'Step mash', grain_temp: 18, sparge_temp: 78, ph: 5.4, notes: 'Stir well',
+    steps: [
+      { name: 'Eiwitrust', type: 'infusion', temperature: 52, duration: 10, infuse_amount: 15 },
+      { name: 'Versuikering', type: 'temperature', step_temp: 66.5, step_time: 60, ramp_time: 10 },
+      { name: 'Uitmaischen', type: 'temperature', temperature: 78, duration: 10, end_temp: 78 },
+    ],
+  };
+  const out = exportToBeerXml(original);
+  const again = parseBeerXml(out).recipes[0];
+
+  it('keeps the yeasts', () => {
+    expect(again.ingredients.cultures.map(c => [c.name, c.type, c.form, c.attenuation])).toEqual([
+      ['London Ale', 'ale', 'liquid', 73],
+      ['SafLager W-34/70', 'lager', 'dry', 83],
+    ]);
+  });
+
+  it('keeps the mash schedule', () => {
+    const steps = again.mash!.steps.map(st => [st.name, st.type, st.temperature ?? st.step_temp, st.duration ?? st.step_time, st.infuse_amount, st.ramp_time, st.end_temp]);
+    expect(steps).toEqual([
+      ['Eiwitrust', 'infusion', 52, 10, 15, undefined, undefined],
+      ['Versuikering', 'temperature', 66.5, 60, undefined, 10, undefined],
+      ['Uitmaischen', 'temperature', 78, 10, undefined, undefined, 78],
+    ]);
+    expect(again.mash).toMatchObject({ name: 'Step mash', grain_temp: 18, sparge_temp: 78, ph: 5.4, notes: 'Stir well' });
+  });
+
+  it('keeps the notes and the misc, in the standard MISCS container', () => {
+    expect(again.notes).toBe('Brew notes & "quotes"');
+    expect(out).toContain('<MISCS>');
+    expect(out).not.toContain('MISCELLANEOUS');
+    expect(again.ingredients.miscellaneous?.map(m => m.name)).toEqual(['Irish Moss']);
+  });
+
+  it('writes the calculated values (OG, FG, ABV, IBU, colour in SRM)', () => {
+    const stats = calculateRecipeStats(original);
+    expect(again.specifications).toEqual({
+      og: { value: Number(stats.og.toFixed(3)) },
+      fg: { value: Number(stats.fg.toFixed(3)) },
+      abv: { value: Number(stats.abv.toFixed(1)) },
+      ibu: { value: stats.ibu },
+      color: { value: Number(stats.color.toFixed(1)) },
+    });
+    expect(again.specifications?.og?.value).toBeGreaterThan(1.03);
+    expect(again.specifications?.ibu?.value).toBeGreaterThan(0);
   });
 });
 
