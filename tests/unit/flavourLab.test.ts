@@ -186,6 +186,17 @@ describe('suggestions', () => {
     expect(yeasts[0].bridges.length).toBeGreaterThan(0);
   });
 
+  it('starts from a hop or a yeast too, and matches spices with each other', () => {
+    const fromCitra = ingredientProfile(kb, kbIngredient(kb, 'citra')!);
+    expect(suggest(kb, fromCitra.vector, 'spice', fromCitra.ingredientIds)[0].ingredient.id).toBe('coriander');
+    const fromWb06 = ingredientProfile(kb, kbIngredient(kb, 'wb06')!);
+    expect(suggest(kb, fromWb06.vector, 'spice', fromWb06.ingredientIds).map(s => s.ingredient.id)).toContain('clove');
+    const fromCoriander = ingredientProfile(kb, kbIngredient(kb, 'coriander')!);
+    const spices = suggest(kb, fromCoriander.vector, 'spice', fromCoriander.ingredientIds);
+    expect(spices.map(s => s.ingredient.id)).not.toContain('coriander');
+    expect(spices[0].bridges.map(b => b.compound_id)).toContain('linalool');
+  });
+
   it('gives exactly the same result twice (AC-10)', () => {
     const a = recipeSuggestions(kb, recipeProfile(saison, kb), { lang: 'fr' });
     const b = recipeSuggestions(kb, recipeProfile(saison, kb), { lang: 'fr' });

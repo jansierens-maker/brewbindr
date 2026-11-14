@@ -73,7 +73,10 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
 
   const recipe = recipes.find(r => r.id === recipeId);
   const sortedRecipes = useMemo(() => [...recipes].sort((a, b) => a.name.localeCompare(b.name)), [recipes]);
-  const spices = useMemo(() => (kb?.ingredients ?? []).filter(i => i.category === 'spice').sort((a, b) => ingredientName(a, fl).localeCompare(ingredientName(b, fl))), [kb, fl]);
+  // Flow B starts from a spice, a hop or a yeast
+  const startOptions = useMemo(() => (['spice', 'hop', 'yeast'] as const).map(cat => ({
+    cat, items: (kb?.ingredients ?? []).filter(i => i.category === cat).sort((a, b) => ingredientName(a, fl).localeCompare(ingredientName(b, fl))),
+  })), [kb, fl]);
   const startIngredient = kb && startId ? kbIngredient(kb, startId) : undefined;
 
   const profile = useMemo(() => {
@@ -87,7 +90,7 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
     const opts = { lang: fl, noPof: filters.noPof, exclude: new Set(filters.excluded) };
     if (mode === 'ingredient') {
       return {
-        spice: [] as Suggestion[],
+        spice: suggest(kb, profile.vector, 'spice', profile.ingredientIds, opts),
         yeast: suggest(kb, profile.vector, 'yeast', profile.ingredientIds, { ...opts, minScore: 0 }),
         hop: suggest(kb, profile.vector, 'hop', profile.ingredientIds, opts),
       };
@@ -95,7 +98,8 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
     return recipeSuggestions(kb, profile, opts);
   }, [kb, profile, mode, fl, filters]);
 
-  const visibleTabs = TABS.filter(x => !filters.hiddenTabs.includes(x) && !(mode === 'ingredient' && x === 'spice'));
+  // From a yeast, other yeasts are no addition: a recipe has one yeast
+  const visibleTabs = TABS.filter(x => !filters.hiddenTabs.includes(x) && !(mode === 'ingredient' && x === 'yeast' && startIngredient?.category === 'yeast'));
   const activeTab: Tab | undefined = visibleTabs.includes(tab) ? tab : visibleTabs[0];
   useEffect(() => { setPreview(null); }, [activeTab, recipeId, mode, startId]);
   useEffect(() => { setMessage(''); }, [recipeId, mode]);
@@ -139,14 +143,17 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
 
   const startRecipe = (s: Suggestion) => {
     if (!startIngredient) return;
+    const both = [startIngredient, s.ingredient];
+    const of = (cat: FlavourIngredient['category']) => both.filter(i => i.category === cat);
     const base: Recipe = {
       name: `${ingredientName(startIngredient, fl)} – ${ingredientName(s.ingredient, fl)}`,
       type: 'all_grain', author: '', batch_size: { unit: 'liters', value: 20 }, efficiency: { brewhouse: 72 },
       boil_time: { unit: 'minutes', value: 60 },
       ingredients: {
-        fermentables: [], hops: s.ingredient.category === 'hop' ? [hopAsAroma(s.ingredient, fl, 20)] : [],
-        cultures: s.ingredient.category === 'yeast' ? [yeastAsCulture(s.ingredient, fl)] : [],
-        miscellaneous: [spiceAsMisc(startIngredient, fl, 20)],
+        fermentables: [],
+        hops: of('hop').map(i => hopAsAroma(i, fl, 20)),
+        cultures: of('yeast').slice(0, 1).map(i => yeastAsCulture(i, fl)),
+        miscellaneous: of('spice').map(i => spiceAsMisc(i, fl, 20)),
       },
     };
     onStartRecipe(base);
@@ -186,10 +193,14 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
           </div>
         ) : (
           <div className="flex-1 min-w-0">
-            <label htmlFor="fl-start" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{tr('fl_choose_spice')}</label>
+            <label htmlFor="fl-start" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{tr('fl_choose_ingredient')}</label>
             <select id="fl-start" name="fl_start" value={startId} onChange={e => setStartId(e.target.value)}
               className="w-full p-3 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-bold">
-              {spices.map(i => <option key={i.id} value={i.id}>{ingredientName(i, fl)}</option>)}
+              {startOptions.map(g => (
+                <optgroup key={g.cat} label={tr(TAB_LABEL[g.cat])}>
+                  {g.items.map(i => <option key={i.id} value={i.id}>{ingredientName(i, fl)}</option>)}
+                </optgroup>
+              ))}
             </select>
           </div>
         )}
