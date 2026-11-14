@@ -1,0 +1,86 @@
+# Weekly backup of the production database, encrypted
+# A full dump (roles, schema, data incl. accounts) is made with the Supabase CLI, packed and
+# encrypted with AES-256 (gpg, passphrase in the BACKUP_PASSPHRASE secret) and kept as a
+# workflow artifact for 90 days. The repository is public, so artifacts can be downloaded by
+# any GitHub user: only the encrypted file ever leaves the runner, and without the passphrase
+# the workflow stops instead of storing anything. How to restore: docs/backups.md.
+#
+# Secrets:
+#   SUPABASE_ACCESS_TOKEN  Supabase personal access token (already used by the Database workflow)
+#   SUPABASE_DB_PASSWORD   database password of the production project (idem)
+#   BACKUP_PASSPHRASE      long random passphrase; keep a copy in your password manager
+name: Backup
+
+on:
+  schedule:
+    - cron: '17 3 * * 1' # Mondays 03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_PROJECT_ID: tgbeaombwskioefhunxf
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check the secrets
+        run: |
+          missing=""
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing="$missing SUPABASE_ACCESS_TOKEN"
+          [ -n "$SUPABASE_DB_PASSWORD" ] || missing="$missing SUPABASE_DB_PASSWORD"
+          [ -n "$BACKUP_PASSPHRASE" ] || missing="$missing BACKUP_PASSPHRASE"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secret(s):$missing. Nothing is stored without encryption."
+            exit 1
+          fi
+          if [ "${#BACKUP_PASSPHRASE}" -lt 20 ]; then
+            echo "::error::BACKUP_PASSPHRASE is too short (use at least 20 characters)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 3.0.0 # same as the Database workflow
+
+      - name: Dump the production database
+        run: |
+          mkdir -p "$RUNNER_TEMP/dump"
+          cd "$RUNNER_TEMP/dump"
+          supabase db dump --remote="$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" --role-only -f roles.sql
+          supabase db dump --remote="$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" -f schema.sql
+          supabase db dump --remote="$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" --data-only --use-copy -f data.sql
+          ls -l
+          # An empty dump means something went wrong
+          [ -s schema.sql ] && [ -s data.sql ]
+
+      - name: Encrypt
+        run: |
+          stamp=$(date -u +%Y-%m-%d)
+          echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          tar -C "$RUNNER_TEMP/dump" -czf - roles.sql schema.sql data.sql \
+            | gpg --batch --yes --symmetric --cipher-algo AES256 --pinentry-mode loopback \
+                  --passphrase-fd 3 -o "$RUNNER_TEMP/brewbindr-db-$stamp.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE"
+          # The plain dump never leaves the runner
+          rm -rf "$RUNNER_TEMP/dump"
+          ls -l "$RUNNER_TEMP"/brewbindr-db-*.gpg
+
+      - name: Keep the encrypted backup
+        uses: actions/upload-artifact@v7
+        with:
+          name: brewbindr-db-${{ env.STAMP }}
+          path: ${{ runner.temp }}/brewbindr-db-${{ env.STAMP }}.tar.gz.gpg
+          retention-days: 90
+          if-no-files-found: error
+          compression-level: 0
