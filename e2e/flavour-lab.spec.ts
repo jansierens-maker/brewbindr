@@ -81,7 +81,8 @@ test.describe('Flavour Lab', () => {
       const rank = await cards.evaluateAll((els) => els.findIndex(el => /coriand|korian/i.test(el.querySelector('h4')?.textContent ?? '')));
       expect(rank).toBeGreaterThanOrEqual(0);
       expect(rank).toBeLessThan(3);
-      await expect(coriander.getByText('linalool', { exact: true })).toBeVisible();
+      // Bridge chips read "linalool" plus a hidden descriptor for screen readers
+      await expect(coriander.locator('li').filter({ hasText: /^linalool\b/ })).toHaveCount(1);
 
       // Add to recipe: stored, and no longer suggested
       await coriander.getByRole('button', { name: ADD }).click();
