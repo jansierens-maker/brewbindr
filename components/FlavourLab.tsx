@@ -5,7 +5,7 @@ import {
   FlavourKb, FlavourMapping, FlavourCategory, FlavourIngredient, FlavourLang, Suggestion, Bridge,
   recipeProfile, recipeSuggestions, ingredientProfile, suggest, familyBars, ingredientName, familyName,
   compoundDescriptor, ingredientNotes, kbCompound, kbIngredient, candidateGrams, candidateStage,
-  addToRecipe, FAMILY_KEY, spiceAsMisc, hopAsAroma, yeastAsCulture,
+  addToRecipe, FAMILY_KEY, maltAsFermentable, spiceAsMisc, hopAsAroma, yeastAsCulture,
 } from '../services/flavourLab';
 import { MIN_SCORE } from '../services/flavourConfig';
 import { flavourLabService } from '../services/flavourLabService';
@@ -30,6 +30,7 @@ interface Props {
 type Tab = 'spice' | 'yeast' | 'hop';
 const TABS: Tab[] = ['spice', 'yeast', 'hop'];
 const TAB_LABEL: Record<Tab, string> = { spice: 'fl_tab_spice', yeast: 'fl_tab_yeast', hop: 'fl_tab_hop' };
+const KIND_LABEL: Record<FlavourCategory, string> = { spice: 'fl_kind_spice', hop: 'fl_kind_hop', yeast: 'fl_kind_yeast', malt: 'fl_kind_malt' };
 const CATEGORY_LABEL: Record<FlavourCategory, string> = { spice: 'fl_cat_spice', hop: 'fl_cat_hop', yeast: 'fl_cat_yeast', malt: 'fl_cat_malt' };
 const EXCLUDE_KEY = 'brewbindr.flavourLab.exclude';
 
@@ -52,6 +53,7 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
   const [mappings, setMappings] = useState<FlavourMapping[]>([]);
   const [mode, setMode] = useState<'recipe' | 'ingredient'>('recipe');
   const [recipeId, setRecipeId] = useState<string>(initialRecipeId || recipes[0]?.id || '');
+  const [startCat, setStartCat] = useState<FlavourCategory>('spice');
   const [startId, setStartId] = useState<string>('');
   const [tab, setTab] = useState<Tab>('spice');
   const [preview, setPreview] = useState<Suggestion | null>(null);
@@ -73,10 +75,14 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
 
   const recipe = recipes.find(r => r.id === recipeId);
   const sortedRecipes = useMemo(() => [...recipes].sort((a, b) => a.name.localeCompare(b.name)), [recipes]);
-  // Flow B starts from a spice, a hop or a yeast
-  const startOptions = useMemo(() => (['spice', 'hop', 'yeast'] as const).map(cat => ({
-    cat, items: (kb?.ingredients ?? []).filter(i => i.category === cat).sort((a, b) => ingredientName(a, fl).localeCompare(ingredientName(b, fl))),
-  })), [kb, fl]);
+  // Flow B: first the kind (spice, hop, yeast, malt), then the ingredient
+  const startItems = useMemo(() => (kb?.ingredients ?? []).filter(i => i.category === startCat)
+    .sort((a, b) => ingredientName(a, fl).localeCompare(ingredientName(b, fl))), [kb, fl, startCat]);
+  const chooseStartCat = (cat: FlavourCategory) => {
+    setStartCat(cat);
+    const first = (kb?.ingredients ?? []).filter(i => i.category === cat).sort((a, b) => ingredientName(a, fl).localeCompare(ingredientName(b, fl)))[0];
+    setStartId(first?.id ?? '');
+  };
   const startIngredient = kb && startId ? kbIngredient(kb, startId) : undefined;
 
   const profile = useMemo(() => {
@@ -150,7 +156,7 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
       type: 'all_grain', author: '', batch_size: { unit: 'liters', value: 20 }, efficiency: { brewhouse: 72 },
       boil_time: { unit: 'minutes', value: 60 },
       ingredients: {
-        fermentables: [],
+        fermentables: of('malt').map(i => maltAsFermentable(i, fl)),
         hops: of('hop').map(i => hopAsAroma(i, fl, 20)),
         cultures: of('yeast').slice(0, 1).map(i => yeastAsCulture(i, fl)),
         miscellaneous: of('spice').map(i => spiceAsMisc(i, fl, 20)),
@@ -192,16 +198,26 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
             </select>
           </div>
         ) : (
-          <div className="flex-1 min-w-0">
-            <label htmlFor="fl-start" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{tr('fl_choose_ingredient')}</label>
-            <select id="fl-start" name="fl_start" value={startId} onChange={e => setStartId(e.target.value)}
-              className="w-full p-3 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-bold">
-              {startOptions.map(g => (
-                <optgroup key={g.cat} label={tr(TAB_LABEL[g.cat])}>
-                  {g.items.map(i => <option key={i.id} value={i.id}>{ingredientName(i, fl)}</option>)}
-                </optgroup>
-              ))}
-            </select>
+          <div className="flex-1 min-w-0 space-y-3">
+            <fieldset>
+              <legend className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{tr('fl_choose_kind')}</legend>
+              <div className="flex flex-wrap gap-2">
+                {(['spice', 'hop', 'yeast', 'malt'] as const).map(cat => (
+                  <label key={cat} htmlFor={`fl-kind-${cat}`}
+                    className={`cursor-pointer px-4 py-2 rounded-[var(--radius-sm)] border text-xs font-black uppercase tracking-widest ${startCat === cat ? 'border-[var(--color-accent)] bg-[var(--color-accent-light)] text-[var(--color-text)]' : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)]'}`}>
+                    <input id={`fl-kind-${cat}`} name="fl_kind" type="radio" className="sr-only" checked={startCat === cat} onChange={() => chooseStartCat(cat)} />
+                    {tr(KIND_LABEL[cat])}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div>
+              <label htmlFor="fl-start" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{tr(KIND_LABEL[startCat])}</label>
+              <select id="fl-start" name="fl_start" value={startId} onChange={e => setStartId(e.target.value)}
+                className="w-full p-3 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-bold">
+                {startItems.map(i => <option key={i.id} value={i.id}>{ingredientName(i, fl)}</option>)}
+              </select>
+            </div>
           </div>
         )}
         <details className="sm:w-72 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-bg)] p-3">

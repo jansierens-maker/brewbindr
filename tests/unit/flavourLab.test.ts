@@ -3,7 +3,7 @@ import kbJson from '../../data/flavour-lab.json';
 import {
   FlavourKb, FlavourIngredient, nameKey, matchName, hopStage, miscStage, recipeProfile, recipeSuggestions,
   familyBars, ingredientContributions, kbIngredient, candidateGrams, addToRecipe, suggest, ingredientProfile,
-  FAMILY_KEY,
+  FAMILY_KEY, maltAsFermentable,
 } from '../../services/flavourLab';
 import type { Recipe } from '../../types';
 
@@ -195,6 +195,12 @@ describe('suggestions', () => {
     const spices = suggest(kb, fromCoriander.vector, 'spice', fromCoriander.ingredientIds);
     expect(spices.map(s => s.ingredient.id)).not.toContain('coriander');
     expect(spices[0].bridges.map(b => b.compound_id)).toContain('linalool');
+  });
+
+  it('starts from a malt: roasted malts go with coffee and cacao', () => {
+    const p = ingredientProfile(kb, kbIngredient(kb, 'malt_chocolate')!);
+    expect(suggest(kb, p.vector, 'spice', p.ingredientIds).slice(0, 2).map(s => s.ingredient.id).sort()).toEqual(['cacao_nibs', 'coffee']);
+    expect(maltAsFermentable(kbIngredient(kb, 'malt_chocolate')!, 'nl')).toMatchObject({ name: 'Chocolademout', type: 'grain', color: { value: 350 } });
   });
 
   it('gives exactly the same result twice (AC-10)', () => {

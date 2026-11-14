@@ -6,7 +6,7 @@
  * vector, and its score is the cosine similarity with the recipe, 0–100. The bridge compounds
  * are the compounds that make up most of the dot product.
  */
-import type { Culture, Hop, Misc, Recipe } from '../types';
+import type { Culture, Fermentable, Hop, Misc, Recipe } from '../types';
 import {
   FlavourStage, Volatility, RETENTION, MAX_WEIGHT, MIN_SCORE, TOP_N, MAX_BRIDGES, MIN_BRIDGE_SHARE, MIN_FAMILY_BRIDGE_SHARE,
   LONG_BOIL_MIN, SHORT_BOIL_MIN, STAGE_TO_MISC, FAMILY_WEIGHT, POTENCY_WEIGHT, YEAST_WEIGHT,
@@ -473,6 +473,19 @@ export const hopAsAroma = (i: FlavourIngredient, lang: FlavourLang, batchL: numb
 export const yeastAsCulture = (i: FlavourIngredient, lang: FlavourLang): Culture => ({
   name: ingredientName(i, lang), type: 'ale', form: 'dry', amount: { unit: 'grams', value: 11 }, attenuation: 78,
 });
+
+/** Typical colour (SRM) and amount for 20 L of each malt type, to start a recipe with it. */
+const MALT_START: Record<string, { srm: number; kg: number }> = {
+  malt_pils: { srm: 1.7, kg: 4 }, malt_pale: { srm: 3, kg: 4 }, malt_vienna: { srm: 4, kg: 4 }, malt_munich: { srm: 9, kg: 4 },
+  malt_wheat: { srm: 2, kg: 2 }, malt_biscuit: { srm: 25, kg: 0.4 }, malt_crystal: { srm: 60, kg: 0.4 },
+  malt_chocolate: { srm: 350, kg: 0.2 }, malt_roasted_barley: { srm: 500, kg: 0.2 }, malt_black: { srm: 500, kg: 0.1 },
+};
+
+/** A malt as fermentable, with a typical colour and amount for 20 L. */
+export const maltAsFermentable = (i: FlavourIngredient, lang: FlavourLang): Fermentable => {
+  const m = MALT_START[i.id] ?? { srm: 4, kg: 1 };
+  return { name: ingredientName(i, lang), type: 'grain', amount: { unit: 'kilograms', value: m.kg }, color: { value: m.srm } };
+};
 
 /** The recipe with a suggestion added; a yeast replaces the recipe's yeasts. */
 export const addToRecipe = (recipe: Recipe, i: FlavourIngredient, lang: FlavourLang): Recipe => {
