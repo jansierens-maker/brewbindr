@@ -7,8 +7,9 @@ import {
   pitchRate, cellsNeeded, liquidViability, starterGrowth, starterFor, DRY_CELLS_PER_GRAM,
   waterPlan, resolveEquipment, defaultEquipment,
   roundTo, roundByUnit, normalizeRecipe, normalizeLibraryItem, formatBrewNumber, formatStockAmount, srmToEbc,
+  effectiveEfficiency, efficiencyMismatch, adaptToEfficiency,
 } from '../../services/calculations';
-import type { Recipe } from '../../types';
+import type { Recipe, LibraryIngredient } from '../../types';
 
 // Reference recipe: 5 kg pale malt (potential 1.037, 3 SRM), 20 L, 75 % efficiency,
 // 30 g hops at 5 % alpha boiled 60 min, yeast with 75 % attenuation.
@@ -520,5 +521,43 @@ describe('ABV formulas', () => {
     expect(calculateABV(1.056, 1.010, false)).toBeCloseTo(6.19, 2);
     expect(calculateABV(1.056, 1.010, false, 0, 1, 'simple')).toBeCloseTo(6.04, 2);
     expect(calculateABV(1.056, 1.010, false, 0, 1, 'hall')).toBeCloseTo(calculateABV(1.056, 1.010, false), 10);
+  });
+});
+
+describe('installation efficiency', () => {
+  const recipe = (eff: number): Recipe => ({
+    name: 'Punk', type: 'all_grain', author: '', batch_size: { unit: 'liters', value: 20 }, efficiency: { brewhouse: eff },
+    boil_time: { unit: 'minutes', value: 60 },
+    ingredients: {
+      fermentables: [
+        { name: 'Extra Pale', type: 'grain', amount: { unit: 'kilograms', value: 5.3 }, yield: { potential: { value: 1.037 } } },
+        { name: 'Dextrose', type: 'sugar', amount: { unit: 'kilograms', value: 0.2 }, yield: { potential: { value: 1.046 } } },
+      ],
+      hops: [], cultures: [{ name: 'US-05', type: 'ale', form: 'dry', attenuation: 82 }],
+    },
+  });
+  const brewie = { id: 'e1', name: 'Brewie', type: 'equipment', efficiency: 65 } as LibraryIngredient;
+
+  it('calculates with the installation’s efficiency, else the recipe’s', () => {
+    expect(effectiveEfficiency(recipe(70), brewie)).toBe(65);
+    expect(effectiveEfficiency(recipe(70), undefined)).toBe(70);
+    expect(effectiveEfficiency(recipe(0), undefined)).toBe(75);
+    expect(calculateRecipeStats(recipe(70), undefined, brewie).og).toBeCloseTo(calculateRecipeStats(recipe(65)).og, 6);
+  });
+
+  it('warns when the recipe was designed for another efficiency', () => {
+    expect(efficiencyMismatch(recipe(70), brewie)).toEqual({ design: 70, actual: 65, installation: 'Brewie' });
+    expect(efficiencyMismatch(recipe(65.4), brewie)).toBeUndefined();
+    expect(efficiencyMismatch(recipe(70), undefined)).toBeUndefined();
+  });
+
+  it('adapts the mashed malt so the OG stays as designed', () => {
+    const designed = calculateRecipeStats(recipe(70)).og;
+    const adapted = adaptToEfficiency(recipe(70), 65);
+    expect(adapted.efficiency.brewhouse).toBe(65);
+    expect(adapted.ingredients.fermentables[0].amount.value).toBeCloseTo(5.708, 3);
+    expect(adapted.ingredients.fermentables[1].amount.value).toBe(0.2); // sugar gives all its extract
+    expect(calculateRecipeStats(adapted, undefined, brewie).og).toBeCloseTo(designed, 3);
+    expect(efficiencyMismatch(adapted, brewie)).toBeUndefined();
   });
 });

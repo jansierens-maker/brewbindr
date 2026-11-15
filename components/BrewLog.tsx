@@ -3,12 +3,13 @@ import { stageOf, versionOf } from '../services/lifecycle';
 import { StageBadge } from './RecipeLifecycle';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, BrewLogEntry, LibraryIngredient } from '../types';
-import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure, resolveEquipment, ownInstallations, initialBrewWaterChem } from '../services/calculations';
+import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure, resolveEquipment, ownInstallations, initialBrewWaterChem, efficiencyMismatch, adaptToEfficiency } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canManageBrews } from '../services/permissions';
 import { scaleRecipe, scaleWaterChem, suggestScale } from '../services/scaling';
 import ScaleSuggestionBanner from './ScaleSuggestionBanner';
+import EfficiencyBanner from './EfficiencyBanner';
 import GravityInput from './GravityInput';
 import YeastPitch from './YeastPitch';
 import WaterPlanCard from './WaterPlanCard';
@@ -131,6 +132,19 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
   const currentStats = useMemo(() => {
     return calculateRecipeStats(brewRecipe, entry.measurements.measured_alpha, equipment, { abvFormula: preferences.abvFormula });
   }, [brewRecipe, entry.measurements.measured_alpha, equipment]);
+
+  // The brew's installation gets another efficiency than the recipe was designed for
+  const effMismatch = efficiencyMismatch(recipe, equipment);
+  const applyEfficiency = () => {
+    if (!effMismatch) return;
+    // Only this brew's malt changes; the recipe stays as it is
+    const adapted = adaptToEfficiency({ ...brewRecipe, efficiency: { brewhouse: effMismatch.design } }, effMismatch.actual);
+    setEntry(prev => ({ ...prev, ingredients: adapted.ingredients }));
+  };
+  const effDesignOg = useMemo(
+    () => (effMismatch && equipment ? calculateRecipeStats(recipe, undefined, { ...equipment, efficiency: effMismatch.design }).og : undefined),
+    [recipe, equipment, effMismatch?.design],
+  );
 
   // Bitterness of the recipe against this brew (other alpha acids, other amounts) (#167)
   const recipeIbu = useMemo(() => calculateRecipeStats(recipe, undefined, equipment).ibuExact, [recipe, equipment]);
@@ -293,6 +307,10 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
                 equipmentBatchL={equipment.batch_size}
                 onApply={canEdit ? applyBrewScale : undefined}
               />
+            )}
+            {effMismatch && effDesignOg !== undefined && Math.abs(effDesignOg - currentStats.og) >= 0.002 && (
+              <EfficiencyBanner design={effMismatch.design} actual={effMismatch.actual} installation={effMismatch.installation}
+                designOg={effDesignOg} actualOg={currentStats.og} onApply={canEdit && entry.status === 'brewing' ? applyEfficiency : undefined} />
             )}
             {entry.scale && (
               <div role="status" className="p-4 rounded-xl border bg-stone-50 border-stone-200 flex flex-col sm:flex-row sm:items-center gap-3">

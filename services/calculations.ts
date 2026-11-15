@@ -607,10 +607,51 @@ export const waterPlan = (recipe: Recipe, equipment: LibraryIngredient, og?: num
   };
 };
 
+/**
+ * Brewhouse efficiency (%) used in the calculation: the installation's when it has one, otherwise
+ * the recipe's (the efficiency the recipe was designed for), otherwise 75 %.
+ */
+export const effectiveEfficiency = (recipe: Pick<Recipe, 'efficiency'>, equipment?: Pick<LibraryIngredient, 'efficiency'>): number =>
+  (equipment?.efficiency && equipment.efficiency > 0 ? equipment.efficiency : recipe.efficiency?.brewhouse) || 75;
+
+/**
+ * The recipe was designed for another efficiency than the installation gets: with the same malt,
+ * the OG differs. Undefined when they agree (within 1 %) or one of them is unknown.
+ */
+export const efficiencyMismatch = (recipe: Pick<Recipe, 'efficiency'>, equipment?: Pick<LibraryIngredient, 'efficiency' | 'name'>) => {
+  const design = recipe.efficiency?.brewhouse || 0;
+  const actual = equipment?.efficiency || 0;
+  if (design <= 0 || actual <= 0 || Math.abs(design - actual) < 1) return undefined;
+  return { design, actual, installation: equipment?.name ?? '' };
+};
+
+/**
+ * The recipe adapted to an installation's efficiency: the mashed fermentables × design / actual
+ * (sugars and extracts give all their extract and stay), so the OG stays as designed; the
+ * recipe's efficiency becomes the installation's.
+ */
+export const adaptToEfficiency = (recipe: Recipe, actual: number): Recipe => {
+  const design = recipe.efficiency?.brewhouse || 0;
+  if (design <= 0 || actual <= 0) return recipe;
+  const factor = design / actual;
+  return {
+    ...recipe,
+    efficiency: { brewhouse: actual },
+    ingredients: {
+      ...recipe.ingredients,
+      fermentables: recipe.ingredients.fermentables.map(f => isMashed(f.type) && f.amount
+        ? { ...f, amount: { ...f.amount, value: roundByUnit(f.amount.value * factor, f.amount.unit) } }
+        : f),
+    },
+  };
+};
+
 export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<string, number>, equipment?: LibraryIngredient, opts: { abvFormula?: AbvFormula } = {}) => {
   const batchUnit = normalizeUnit(recipe.batch_size?.unit);
   const batchSizeL = batchUnit === 'liters' ? (recipe.batch_size?.value || 0) : (recipe.batch_size?.value || 0) * 3.78541;
-  const efficiency = (recipe.efficiency?.brewhouse || 75) / 100;
+  // The installation's efficiency: what it really gets out of the malt (the recipe's own
+  // efficiency is what it was designed for, see efficiencyMismatch)
+  const efficiency = effectiveEfficiency(recipe, equipment) / 100;
   const boilTime = recipe.boil_time?.value || 60;
 
   const fermentables = recipe.ingredients?.fermentables ?? [];

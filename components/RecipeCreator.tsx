@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, calculateABV, resolveEquipment, defaultEquipment as breweryDefaultEquipment, ownInstallations, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
+import { calculateRecipeStats, calculateABV, efficiencyMismatch, adaptToEfficiency, resolveEquipment, defaultEquipment as breweryDefaultEquipment, ownInstallations, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canEditRecipe, canManageRecipes } from '../services/permissions';
@@ -10,6 +10,7 @@ import ScaleSuggestionBanner from './ScaleSuggestionBanner';
 import { scaleRecipe, suggestScale } from '../services/scaling';
 import WaterChemistryCard from './WaterChemistryCard';
 import { LifecyclePanel } from './RecipeLifecycle';
+import EfficiencyBanner from './EfficiencyBanner';
 import { RecipeStage, needsNewVersion } from '../services/lifecycle';
 import { IngredientKind, newIngredient, fromLibraryItem, replaceIngredient, addIngredient as addIngredientTo } from '../services/ingredientEdit';
 
@@ -95,6 +96,12 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
     setRecipe(prev => scaleRecipe(prev, scaleSuggestion.factor));
   };
   const stats = useMemo(() => calculateRecipeStats(recipe, undefined, equipment, { abvFormula: preferences.abvFormula }), [recipe, equipment, preferences.abvFormula]);
+  // The installation gets another efficiency than the recipe was designed for: the OG differs
+  const mismatch = efficiencyMismatch(recipe, equipment);
+  const designOg = useMemo(
+    () => (mismatch && equipment ? calculateRecipeStats(recipe, undefined, { ...equipment, efficiency: mismatch.design }).og : undefined),
+    [recipe, equipment, mismatch?.design],
+  );
 
   const handleAiAnalyze = async () => {
     setIsAnalyzing(true);
@@ -362,6 +369,10 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
 
       {/* Main Form Section */}
       <section className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-10">
+        {mismatch && designOg !== undefined && Math.abs(designOg - stats.og) >= 0.002 && (
+          <EfficiencyBanner design={mismatch.design} actual={mismatch.actual} installation={mismatch.installation}
+            designOg={designOg} actualOg={stats.og} onApply={canEdit ? () => setRecipe(r => adaptToEfficiency(r, mismatch.actual)) : undefined} />
+        )}
         {storedRecipe?.id && storedRecipe.status !== 'approved' && onChangeStage && (
           <LifecyclePanel recipe={storedRecipe} canChange={canEdit} onChangeStage={onChangeStage} nameOf={nameOf} />
         )}
@@ -398,7 +409,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           </div>
           <div>
             <div className="flex items-center gap-1.5 mb-1">
-              <label htmlFor="efficiency" className="text-xs font-bold text-stone-400 uppercase">{t('efficiency')}</label>
+              <label htmlFor="efficiency" className="text-xs font-bold text-stone-400 uppercase">{t('efficiency_design')}</label>
               <div className="group relative">
                 <i className="fas fa-info-circle text-[10px] text-stone-300" title={t('efficiency_info')}></i>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-stone-800 text-white text-[9px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
@@ -410,6 +421,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <input id="efficiency" name="efficiency" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold border-amber-200/50 focus:border-amber-500 transition-colors" value={recipe.efficiency.brewhouse} onChange={e => setRecipe({...recipe, efficiency: {brewhouse: parseFloat(e.target.value) || 0}})} />
               <span className="text-xs font-bold text-amber-600">%</span>
             </div>
+            {equipment?.efficiency ? (
+              <p className="text-[10px] text-stone-400 font-bold mt-1">{t('efficiency_used').replace('{name}', equipment.name).replace('{pct}', String(equipment.efficiency))}</p>
+            ) : null}
           </div>
           <div>
             <label htmlFor="boil_time" className="text-xs font-bold text-stone-400 uppercase">{t('boil_time')}</label>
