@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Logo } from './Logo';
+import { PhaseBadge } from './PhaseBadge';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { breweryService } from '../services/breweryService';
@@ -90,6 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className="p-[17px_20px_13px] border-b border-[var(--color-border)] flex items-center gap-2.5 flex-shrink-0 hover:bg-[var(--color-bg-subtle)] transition-colors text-left"
       >
         <Logo />
+        <PhaseBadge phase="beta" />
       </button>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -117,6 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <i className={`fas ${item.icon}`}></i>
                       </span>
                       <span className="flex-1 truncate">{item.label}</span>
+                      {item.phase && <PhaseBadge phase={item.phase} />}
                       {gated && <i className="fas fa-lock text-[10px] text-[var(--color-text-xmuted)] ml-auto"></i>}
                     </button>
                     {gated && (
