@@ -77,6 +77,11 @@ describe('exportToBeerXml', () => {
       ['boil', 'pellet'], ['whirlpool', 'leaf'], ['first_wort', 'pellet'],
     ]);
   });
+
+  it('keeps the recipe target', () => {
+    const original = { ...parseBeerXml(xml).recipes[0], target: { og: 1.056, fg: 1.01 } };
+    expect(parseBeerXml(exportToBeerXml(original)).recipes[0].target).toEqual({ og: 1.056, fg: 1.01 });
+  });
 });
 
 describe('exportToBeerXml: a complete recipe', () => {

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, calculateABV, efficiencyMismatch, adaptToEfficiency, resolveEquipment, defaultEquipment as breweryDefaultEquipment, ownInstallations, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
+import { calculateRecipeStats, calculateABV, withTarget, efficiencyMismatch, adaptToEfficiency, resolveEquipment, defaultEquipment as breweryDefaultEquipment, ownInstallations, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canEditRecipe, canManageRecipes } from '../services/permissions';
@@ -11,6 +11,7 @@ import { scaleRecipe, suggestScale } from '../services/scaling';
 import WaterChemistryCard from './WaterChemistryCard';
 import { LifecyclePanel } from './RecipeLifecycle';
 import EfficiencyBanner from './EfficiencyBanner';
+import TargetGravityInput from './TargetGravityInput';
 import { RecipeStage, needsNewVersion } from '../services/lifecycle';
 import { IngredientKind, newIngredient, fromLibraryItem, replaceIngredient, addIngredient as addIngredientTo } from '../services/ingredientEdit';
 
@@ -321,7 +322,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.abv_min}-{selectedStyleGuideline.abv_max}%</p>
           )}
           {recipe.target?.og && recipe.target?.fg && (
-            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('target_from_file')}: {formatBrewNumber(calculateABV(recipe.target.og, recipe.target.fg, false, 0, 1, preferences.abvFormula), 'abv', lang)}%</p>
+            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('recipe_target')}: {formatBrewNumber(calculateABV(recipe.target.og, recipe.target.fg, false, 0, 1, preferences.abvFormula), 'abv', lang)}%</p>
           )}
         </div>
         <div className="flex flex-col">
@@ -359,7 +360,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           </p>
           {gravityUnit === 'both' && <p className="text-[10px] text-stone-400 font-bold mt-1">{formatGravity(stats.og, lang, 'plato')}</p>}
           {recipe.target?.og && (
-            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('target_from_file')}: {formatGravity(recipe.target.og, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}{recipe.target.fg ? ` → ${formatGravity(recipe.target.fg, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}` : ''}</p>
+            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('recipe_target')}: {formatGravity(recipe.target.og, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}{recipe.target.fg ? ` → ${formatGravity(recipe.target.fg, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}` : ''}</p>
           )}
           {selectedStyleGuideline?.og_min !== undefined && (
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {formatGravity(selectedStyleGuideline.og_min, lang, gravityUnit === 'plato' ? 'plato' : 'sg')} – {formatGravity(selectedStyleGuideline.og_max, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}</p>
@@ -431,6 +432,21 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <input id="boil_time" name="boil_time" type="number" className="flex-1 p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.boil_time.value} onChange={e => setRecipe({...recipe, boil_time: {...recipe.boil_time, value: parseFloat(e.target.value) || 0}})} />
               <span className="text-xs font-bold text-stone-400">min</span>
             </div>
+          </div>
+        </div>
+
+        {/* The recipe's own target: what the brewer aims for (filled from an imported file) */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end -mt-4">
+          <TargetGravityInput id="target_og" name="target_og" label={t('target_og')} value={recipe.target?.og}
+            onChange={og => setRecipe(r => withTarget(r, { og }))} />
+          <TargetGravityInput id="target_fg" name="target_fg" label={t('target_fg')} value={recipe.target?.fg}
+            onChange={fg => setRecipe(r => withTarget(r, { fg }))} />
+          <div className="md:col-span-2 pb-3">
+            {recipe.target?.og && recipe.target?.fg && recipe.target.fg < recipe.target.og ? (
+              <p className="text-sm font-bold text-stone-600">{t('target_abv_value')}: {formatBrewNumber(calculateABV(recipe.target.og, recipe.target.fg, false, 0, 1, preferences.abvFormula), 'abv', lang)}%</p>
+            ) : (
+              <p className="text-[10px] text-stone-400 font-bold">{t('target_hint')}</p>
+            )}
           </div>
         </div>
 

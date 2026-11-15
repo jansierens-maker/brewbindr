@@ -189,6 +189,10 @@ export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [
 
   if (recipe.notes) xmlParts.push(`    <NOTES>${sanitize(recipe.notes)}</NOTES>`);
 
+  // The recipe's target (read back as the target on import)
+  if (recipe.target?.og) xmlParts.push(`    <OG>${recipe.target.og.toFixed(3)}</OG>`);
+  if (recipe.target?.fg) xmlParts.push(`    <FG>${recipe.target.fg.toFixed(3)}</FG>`);
+
   // Calculated values, as BrewBindr shows them (with the recipe's installation)
   const stats = calculateRecipeStats(recipe, undefined, resolveEquipment(recipe, library));
   xmlParts.push(`    <EST_OG>${stats.og.toFixed(3)}</EST_OG>`);
