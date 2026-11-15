@@ -1,5 +1,5 @@
 
-import { Recipe, UserPreferences, LibraryIngredient, MashStep, MashProfile } from "../types";
+import { Recipe, UserPreferences, LibraryIngredient, MashStep, MashProfile, AbvFormula } from "../types";
 
 export const srmToEbc = (srm: number) => srm * 1.97;
 export const ebcToSrm = (ebc: number) => ebc / 1.97;
@@ -218,11 +218,13 @@ export const formatStockAmount = (amount: number | undefined, unit: string | und
 /** ABV added per g/L of priming sugar (sucrose): about 0.51 g ethanol per g sugar, 0.789 g/ml. */
 export const PRIMING_ABV_PER_G_PER_L = 0.065;
 
-export const calculateABV = (og: number | undefined, fg: number | undefined, isBottled: boolean, sugarG: number = 0, volumeL: number = 1): number => {
+export const calculateABV = (og: number | undefined, fg: number | undefined, isBottled: boolean, sugarG: number = 0, volumeL: number = 1, formula: AbvFormula = 'hall'): number => {
   if (!og || !fg || og <= fg) return 0;
-  // "Alternate" formula (Hall): accurate over the whole range. The simple
-  // (OG - FG) x 131.25 underestimates more and more as beers get stronger.
-  let abv = (76.08 * (og - fg) / (1.775 - og)) * (fg / 0.794);
+  // Default: the "alternate" formula (Hall), accurate over the whole range. The simplified
+  // (OG - FG) x 131.25, used by most brewing software, underestimates more as beers get stronger.
+  let abv = formula === 'simple'
+    ? (og - fg) * 131.25
+    : (76.08 * (og - fg) / (1.775 - og)) * (fg / 0.794);
   if (isBottled && sugarG > 0 && volumeL > 0) {
     const sugarPerLiter = sugarG / volumeL;
     abv += (sugarPerLiter * PRIMING_ABV_PER_G_PER_L);
@@ -605,7 +607,7 @@ export const waterPlan = (recipe: Recipe, equipment: LibraryIngredient, og?: num
   };
 };
 
-export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<string, number>, equipment?: LibraryIngredient) => {
+export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<string, number>, equipment?: LibraryIngredient, opts: { abvFormula?: AbvFormula } = {}) => {
   const batchUnit = normalizeUnit(recipe.batch_size?.unit);
   const batchSizeL = batchUnit === 'liters' ? (recipe.batch_size?.value || 0) : (recipe.batch_size?.value || 0) * 3.78541;
   const efficiency = (recipe.efficiency?.brewhouse || 75) / 100;
@@ -657,7 +659,7 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
   const attenuation = Math.max(0, Math.min(100, yeastAttenuation + mashAdjustment)) / 100;
 
   const fg = 1 + ((maltPoints * (1 - attenuation) + unfermentablePoints) / 1000);
-  const abv = calculateABV(og, fg, false);
+  const abv = calculateABV(og, fg, false, 0, 1, opts.abvFormula);
 
   let mcu = 0;
   fermentables.forEach(f => {

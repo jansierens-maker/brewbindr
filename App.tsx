@@ -905,6 +905,11 @@ const AppContent: React.FC = () => {
   const startImportFlow = (result: BeerXmlImportResult) => {
     const queue: ImportItem[] = [];
     importWaterLinks.current = {};
+    // A recipe without a usable efficiency gets the one of the brewery's (default) installation
+    const installations = ownInstallations(deduplicatedLibrary);
+    const installation = installations.find(e => e.is_default) ?? (installations.length === 1 ? installations[0] : undefined);
+    const defaultEfficiency = installation?.efficiency || 75;
+    result = { ...result, recipes: result.recipes.map(r => (r.efficiency?.brewhouse ? r : { ...r, efficiency: { brewhouse: defaultEfficiency } })) };
     // A recipe's water profiles first, so the recipe can be saved with their ids
     result.recipes.forEach(r => {
       (result.recipeWaters ?? []).filter(w => w.recipeId === r.id)

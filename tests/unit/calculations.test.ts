@@ -514,3 +514,11 @@ describe('recipe stats follow water set by hand', () => {
     expect(calculateRecipeStats({ ...reference(), water: { mash_l: 14 } }).og).toBeCloseTo(calculateRecipeStats(reference()).og, 6);
   });
 });
+
+describe('ABV formulas', () => {
+  it('uses the accurate formula by default and the simplified one on request', () => {
+    expect(calculateABV(1.056, 1.010, false)).toBeCloseTo(6.19, 2);
+    expect(calculateABV(1.056, 1.010, false, 0, 1, 'simple')).toBeCloseTo(6.04, 2);
+    expect(calculateABV(1.056, 1.010, false, 0, 1, 'hall')).toBeCloseTo(calculateABV(1.056, 1.010, false), 10);
+  });
+});

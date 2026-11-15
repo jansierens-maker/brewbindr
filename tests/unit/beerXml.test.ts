@@ -280,3 +280,38 @@ describe('BeerXML water round trip', () => {
     expect(back.recipeWaters[0]).toMatchObject({ role: 'target', water: { name: 'Tripel', water_kind: 'target', calcium: 65 } });
   });
 });
+
+// BrewDog DIY Dog files put the attenuation in EFFICIENCY (82.14 = (1.056 − 1.010) / 0.056)
+const diyDog = `<?xml version="1.0" encoding="ISO-8859-1"?>
+<RECIPES><RECIPE>
+  <NAME>PUNK IPA 2007 - 2010</NAME><TYPE>All Grain</TYPE><BREWER>BREWDOG</BREWER>
+  <BATCH_SIZE>20</BATCH_SIZE><BOIL_SIZE>25</BOIL_SIZE><BOIL_TIME>60</BOIL_TIME>
+  <EFFICIENCY>82.14</EFFICIENCY><OG>1.056</OG><FG>1.010</FG>
+  <FERMENTABLES><FERMENTABLE><NAME>Extra Pale</NAME><TYPE>Grain</TYPE><AMOUNT>5.30</AMOUNT><YIELD>82.00</YIELD><COLOR>2</COLOR></FERMENTABLE></FERMENTABLES>
+  <YEASTS><YEAST><NAME>Wyeast 1056 - American Ale</NAME><TYPE>Ale</TYPE><FORM>Liquid</FORM><AMOUNT>0.035</AMOUNT></YEAST></YEASTS>
+  <MASH><NAME>Mash</NAME><MASH_STEPS><MASH_STEP><NAME>Mash step</NAME><TYPE>Temperature</TYPE><STEP_TEMP>65</STEP_TEMP><STEP_TIME>75</STEP_TIME></MASH_STEP></MASH_STEPS></MASH>
+</RECIPE></RECIPES>`;
+
+describe('BeerXML import: OG, FG and an efficiency that is the attenuation', () => {
+  it('reads the OG and FG as target, and the attenuation as the yeast’s', () => {
+    const r = parseBeerXml(diyDog).recipes[0];
+    expect(r.target).toEqual({ og: 1.056, fg: 1.01 });
+    expect(r.ingredients.cultures[0].attenuation).toBe(82.1);
+    // Not an efficiency: left to the app (the brewery's installation)
+    expect(r.efficiency.brewhouse).toBe(0);
+  });
+
+  it('keeps a real efficiency and a yeast’s own attenuation', () => {
+    const r = parseBeerXml(diyDog.replace('<EFFICIENCY>82.14', '<EFFICIENCY>72').replace('<AMOUNT>0.035</AMOUNT>', '<AMOUNT>0.035</AMOUNT><ATTENUATION>77</ATTENUATION>')).recipes[0];
+    expect(r.efficiency.brewhouse).toBe(72);
+    expect(r.ingredients.cultures[0].attenuation).toBe(77);
+  });
+
+  it('then gives about the published values with 70 % efficiency', () => {
+    const r = parseBeerXml(diyDog).recipes[0];
+    const stats = calculateRecipeStats({ ...r, efficiency: { brewhouse: 70 } }, undefined, undefined, { abvFormula: 'simple' });
+    expect(stats.og).toBeCloseTo(1.057, 3);
+    expect(stats.abv).toBeGreaterThan(5.9);
+    expect(stats.abv).toBeLessThan(6.4);
+  });
+});
