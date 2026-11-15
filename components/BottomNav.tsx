@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PhaseBadge } from './PhaseBadge';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { navSections, isNavItemActive, NavItem } from './navItems';
@@ -100,6 +101,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                           <i className={`fas ${item.icon}`} aria-hidden="true"></i>
                         </span>
                         <span className="flex-1 text-left">{item.label}</span>
+                        {item.phase && <PhaseBadge phase={item.phase} />}
                         {gated && <i className="fas fa-lock text-xs text-[var(--color-text-xmuted)]" aria-hidden="true"></i>}
                       </button>
                     );

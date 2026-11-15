@@ -9,6 +9,7 @@ import {
 } from '../services/flavourLab';
 import { MIN_SCORE } from '../services/flavourConfig';
 import { flavourLabService } from '../services/flavourLabService';
+import { PhaseBadge } from './PhaseBadge';
 
 interface Props {
   /** Recipes to choose from (the brewery's own) */
@@ -174,8 +175,8 @@ const FlavourLab: React.FC<Props> = ({ recipes, initialRecipeId, breweryId, user
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{t('nav_section_brewery')}</p>
-          <h2 className="text-4xl font-black text-[var(--color-text)]">{tr('nav_flavour_lab')}</h2>
-          <p className="text-sm text-[var(--color-text-muted)] mt-2 max-w-2xl">{tr('fl_intro')}</p>
+          <h2 className="text-4xl font-black text-[var(--color-text)] flex items-center gap-3">{tr('nav_flavour_lab')} <PhaseBadge phase="alpha" className="text-[11px] px-2 py-1" /></h2>
+          <p className="text-sm text-[var(--color-text-muted)] mt-2 max-w-2xl">{tr('fl_intro')} {tr('fl_alpha_note')}</p>
         </div>
         <div role="radiogroup" aria-label={tr('fl_mode_label')} className="inline-flex rounded-[var(--radius-sm)] border border-[var(--color-border)] p-1 bg-[var(--color-bg-subtle)] self-start">
           {(['recipe', 'ingredient'] as const).map(m => (

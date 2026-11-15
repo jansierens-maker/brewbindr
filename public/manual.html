@@ -97,6 +97,7 @@ body {
   letter-spacing: .06em; padding: 1.5px 6px; border-radius: 99px;
 }
 .badge-mini.admin { background: var(--color-purple-light); color: var(--color-purple); }
+.badge-mini.alpha { background: var(--color-purple-light); color: var(--color-purple); }
 
 .sidebar-progress {
   border-top: 1px solid var(--color-border); padding: 12px 16px;
@@ -190,6 +191,8 @@ a { color: var(--color-accent-dark); font-weight: 600; }
 .role-badge.brewer { background: var(--color-accent-light); color: var(--color-accent-dark); }
 .role-badge.admin { background: var(--color-purple-light); color: var(--color-purple); }
 .role-badge.all { background: var(--color-blue-light); color: var(--color-blue); }
+.role-badge.alpha { background: var(--color-purple-light); color: var(--color-purple); }
+.phase-note { margin-top: 14px; font-size: 13px; opacity: .92; }
 
 /* Callouts */
 .callout {
@@ -333,7 +336,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <div class="nav-section-label">Brewer's Guide</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recipes &amp; AI</a>
       <a class="nav-item" href="#lifecycle"><i class="fas fa-route"></i>Recipe lifecycle</a>
-      <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab</a>
+      <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab<span class="badge-mini alpha">Alpha</span></a>
       <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Calculations</a>
       <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Water volumes</a>
       <a class="nav-item" href="#water-treatment"><i class="fas fa-vial"></i>Water treatment &amp; pH</a>
@@ -392,12 +395,14 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
       <h1>From grain to glass,<br>everything in one binder.</h1>
       <p>BrewBindr is a brewing companion for creating recipes, planning water and yeast, logging brew days, tracking fermentation, managing stock, and recording tasting notes — with AI assistance where it counts.</p>
       <div class="hero-chips">
+        <span class="chip"><i class="fas fa-flask"></i> Beta</span>
         <span class="chip"><i class="fas fa-wand-magic-sparkles"></i> AI recipe generation</span>
         <span class="chip"><i class="fas fa-droplet"></i> Water &amp; mash pH</span>
         <span class="chip"><i class="fas fa-file-code"></i> BeerXML import/export</span>
         <span class="chip"><i class="fas fa-users"></i> Team breweries</span>
         <span class="chip"><i class="fas fa-globe"></i> EN · NL · FR</span>
       </div>
+      <p class="phase-note"><b>Beta:</b> everything works, but features and screens may still change. Make a backup now and then.</p>
     </div>
 
     <div class="search-empty" id="searchEmpty">No sections match your search. Try a different term.</div>
@@ -530,7 +535,8 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
     <section class="doc" id="flavour-lab" data-audience="brewer">
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-flask-vial"></i> Brewer's Guide</div>
-        <h2>Flavour Lab <span class="role-badge brewer">Brewer</span></h2>
+        <h2>Flavour Lab <span class="role-badge alpha">Alpha</span> <span class="role-badge brewer">Brewer</span></h2>
+        <p><b>Alpha:</b> Flavour Lab is experimental, a step before beta. The knowledge base and the scoring model are still being tuned, so suggestions may change.</p>
         <p>Flavour Lab suggests spices, yeasts and hops that <b>share aroma compounds</b> with a recipe. Ingredients with the same aroma compounds strengthen each other: coriander and a linalool-rich hop both smell floral of linalool. Open it from the menu (<b>Brewery → Flavour Lab</b>) or with <b>Open in Flavour Lab</b> in the recipe editor.</p>
         <h3>From a recipe</h3>
         <ul class="doc-list">
@@ -962,7 +968,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <div class="nav-section-label">Voor brouwers</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recepten &amp; AI</a>
       <a class="nav-item" href="#lifecycle"><i class="fas fa-route"></i>Levenscyclus</a>
-      <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab</a>
+      <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab<span class="badge-mini alpha">Alfa</span></a>
       <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Berekeningen</a>
       <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Watervolumes</a>
       <a class="nav-item" href="#water-treatment"><i class="fas fa-vial"></i>Waterbehandeling &amp; pH</a>
@@ -1021,12 +1027,14 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <h1>Van graan tot glas,<br>alles in één map.</h1>
       <p>BrewBindr helpt je recepten maken, water en gist plannen, brouwdagen bijhouden, de vergisting opvolgen, je voorraad beheren en proefnotities noteren — met AI waar het helpt.</p>
       <div class="hero-chips">
+        <span class="chip"><i class="fas fa-flask"></i> Bèta</span>
         <span class="chip"><i class="fas fa-wand-magic-sparkles"></i> Recepten met AI</span>
         <span class="chip"><i class="fas fa-droplet"></i> Water &amp; maisch-pH</span>
         <span class="chip"><i class="fas fa-file-code"></i> BeerXML-import/export</span>
         <span class="chip"><i class="fas fa-users"></i> Brouwen in team</span>
         <span class="chip"><i class="fas fa-globe"></i> EN · NL · FR</span>
       </div>
+      <p class="phase-note"><b>Bèta:</b> alles werkt, maar functies en schermen kunnen nog veranderen. Maak geregeld een back-up.</p>
     </div>
 
     <div class="search-empty" id="searchEmpty">Geen hoofdstukken gevonden. Probeer een ander woord.</div>
@@ -1159,7 +1167,8 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
     <section class="doc" id="flavour-lab" data-audience="brewer">
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-flask-vial"></i> Brouwersgids</div>
-        <h2>Flavour Lab <span class="role-badge brewer">Brouwer</span></h2>
+        <h2>Flavour Lab <span class="role-badge alpha">Alfa</span> <span class="role-badge brewer">Brouwer</span></h2>
+        <p><b>Alfa:</b> Flavour Lab is experimenteel, een stap vóór bèta. De kennisbank en het rekenmodel worden nog bijgesteld, dus suggesties kunnen veranderen.</p>
         <p>Flavour Lab stelt kruiden, gisten en hoppen voor die <b>aromastoffen delen</b> met een recept. Ingrediënten met dezelfde aromastoffen versterken elkaar: koriander en een linaloolrijke hop ruiken allebei bloemig naar linalool. Je opent het via het menu (<b>Brouwerij → Flavour Lab</b>) of met <b>Open in Flavour Lab</b> in de recepteditor.</p>
         <h3>Vanuit een recept</h3>
         <ul class="doc-list">
@@ -1591,7 +1600,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <div class="nav-section-label">Pour les brasseurs</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recettes &amp; IA</a>
       <a class="nav-item" href="#lifecycle"><i class="fas fa-route"></i>Cycle de vie</a>
-      <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab</a>
+      <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab<span class="badge-mini alpha">Alpha</span></a>
       <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Calculs</a>
       <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Volumes d'eau</a>
       <a class="nav-item" href="#water-treatment"><i class="fas fa-vial"></i>Traitement de l'eau &amp; pH</a>
@@ -1650,12 +1659,14 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
       <h1>Du grain au verre,<br>tout dans un classeur.</h1>
       <p>BrewBindr vous aide à créer des recettes, planifier l'eau et la levure, suivre vos jours de brassage et la fermentation, gérer votre stock et noter vos dégustations — avec l'IA là où elle aide.</p>
       <div class="hero-chips">
+        <span class="chip"><i class="fas fa-flask"></i> Bêta</span>
         <span class="chip"><i class="fas fa-wand-magic-sparkles"></i> Recettes avec l'IA</span>
         <span class="chip"><i class="fas fa-droplet"></i> Eau &amp; pH de maische</span>
         <span class="chip"><i class="fas fa-file-code"></i> Import/export BeerXML</span>
         <span class="chip"><i class="fas fa-users"></i> Brasser en équipe</span>
         <span class="chip"><i class="fas fa-globe"></i> EN · NL · FR</span>
       </div>
+      <p class="phase-note"><b>Bêta :</b> tout fonctionne, mais les fonctions et écrans peuvent encore changer. Faites régulièrement une sauvegarde.</p>
     </div>
 
     <div class="search-empty" id="searchEmpty">Aucun chapitre trouvé. Essayez un autre mot.</div>
@@ -1788,7 +1799,8 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
     <section class="doc" id="flavour-lab" data-audience="brewer">
       <div class="card">
         <div class="section-eyebrow"><i class="fas fa-flask-vial"></i> Guide du brasseur</div>
-        <h2>Flavour Lab <span class="role-badge brewer">Brasseur</span></h2>
+        <h2>Flavour Lab <span class="role-badge alpha">Alpha</span> <span class="role-badge brewer">Brasseur</span></h2>
+        <p><b>Alpha :</b> Flavour Lab est expérimental, une étape avant la bêta. La base de connaissances et le modèle de calcul sont encore ajustés : les suggestions peuvent changer.</p>
         <p>Flavour Lab propose des épices, levures et houblons qui <b>partagent des composés aromatiques</b> avec une recette. Les ingrédients aux mêmes composés se renforcent : la coriandre et un houblon riche en linalol sentent tous deux le floral du linalol. Ouvrez-le depuis le menu (<b>Brasserie → Flavour Lab</b>) ou avec <b>Ouvrir dans Flavour Lab</b> dans l'éditeur de recette.</p>
         <h3>Depuis une recette</h3>
         <ul class="doc-list">

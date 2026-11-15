@@ -1,4 +1,5 @@
 import React from 'react';
+import { PhaseBadge } from './PhaseBadge';
 import { useTranslation } from '../App';
 
 interface TopbarProps {
@@ -31,6 +32,8 @@ export const Topbar: React.FC<TopbarProps> = ({
       <h2 className="font-[var(--font-display)] text-lg md:text-xl font-bold flex-1 text-[var(--color-text)] truncate">
         {title}
       </h2>
+      {/* On phones the sidebar with the logo is hidden: show the phase here */}
+      <PhaseBadge phase="beta" className="lg:hidden" />
 
       <div className="flex items-center gap-1.5 md:gap-2">
         {/* Status Indicator & Refresh */}
