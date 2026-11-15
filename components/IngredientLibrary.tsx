@@ -1,5 +1,7 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
+import SearchBox from './SearchBox';
+import { matchesQuery, ingredientSearchText } from '../services/search';
 import { LibraryIngredient, MashStep } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -77,6 +79,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   type Filter = 'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style' | 'equipment' | 'water';
   const filters: Filter[] = section === 'ingredients' ? ['fermentable', 'hop', 'culture', 'misc'] : [section];
   const [filter, setFilter] = useState<Filter>(filters[0]);
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   // Installations and water profiles are managed under Brewing Installation; here only
   // their public library (browse, add to your own)
   const readOnlyType = filter === 'equipment' || filter === 'water';
@@ -256,8 +260,10 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             ((!i.user_id || i.user_id === user?.id) || (profile?.brewery_id && i.brewery_id === profile.brewery_id))
           )
     ))
+    // A new, still empty item stays visible while searching
+    .filter(i => i.id === unsavedNewId || i.id === editingId || matchesQuery(ingredientSearchText(i), deferredQuery))
     .sort((a, b) => a.name.localeCompare(b.name)),
-  [ingredients, filter, libraryView, user?.id, profile?.brewery_id]);
+  [ingredients, filter, libraryView, user?.id, profile?.brewery_id, deferredQuery, unsavedNewId, editingId]);
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {itemToDelete && (
@@ -315,6 +321,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
           <p className="text-[var(--color-text-xmuted)] text-xs font-bold">
             {visibleIngredients.length} {t('items_in_collection')}
           </p>
+          <SearchBox id={`library_search_${section}`} label={t('search_library')} value={query} onChange={setQuery} className="mt-3 w-full md:w-80" />
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">

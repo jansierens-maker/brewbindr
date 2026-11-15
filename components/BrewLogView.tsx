@@ -1,5 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useDeferredValue, useState } from 'react';
+import SearchBox from './SearchBox';
+import { matchesQuery, brewSearchText } from '../services/search';
 import { BrewLogEntry, Recipe, TastingNote } from '../types';
 import { getSRMColor, calculateABV, formatGravity } from '../services/calculations';
 import { useTranslation } from '../App';
@@ -32,11 +34,18 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   // Filter by phase (tabs, as they were on Recipes); bottled here means all bottled brews
   const [phase, setPhase] = useState<BrewPhase | 'all'>('all');
-  const sortedLogs = [...logs]
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
+  const numbers = batchNumbers(logs);
+  const found = (l: BrewLogEntry) => {
+    const n = numbers.get(l.id);
+    return matchesQuery(brewSearchText(l, recipes.find(r => r.id === l.recipeId), n ? t('batch_label').replace('{n}', String(n)) : undefined), deferredQuery);
+  };
+  const searched = logs.filter(found);
+  const sortedLogs = searched
     .filter(l => phase === 'all' || l.status === phase)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  const countOf = (p: BrewPhase) => logs.filter(l => l.status === p).length;
-  const numbers = batchNumbers(logs);
+  const countOf = (p: BrewPhase) => searched.filter(l => l.status === p).length;
 
   if (logs.length === 0) {
     return (
@@ -59,9 +68,10 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
         <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{t('history_title')}</h2>
         <p className="text-[var(--color-text-muted)] font-medium mt-1">{t('history_subtitle')}</p>
       </div>
+      <SearchBox id="brew_search" label={t('search_brews')} value={query} onChange={setQuery} className="max-w-xl" />
       <div role="tablist" aria-label={t('nav_brews')} className="flex border-b border-[var(--color-border)] gap-8 overflow-x-auto custom-scrollbar">
         {(['all', ...BREW_PHASES] as const).map(p => {
-          const count = p === 'all' ? logs.length : countOf(p);
+          const count = p === 'all' ? searched.length : countOf(p);
           return (
             <button key={p} type="button" role="tab" id={`brews-tab-${p}`} aria-selected={phase === p} aria-controls="brews-list" onClick={() => setPhase(p)}
               className={`pb-4 text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${phase === p ? 'text-[var(--color-text)]' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}>
@@ -71,7 +81,7 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
           );
         })}
       </div>
-      {sortedLogs.length === 0 && <p className="text-[var(--color-text-muted)] font-bold">{t('no_brews_with_status')}</p>}
+      {sortedLogs.length === 0 && <p role="status" className="text-[var(--color-text-muted)] font-bold">{deferredQuery.trim() ? t('search_no_results').replace('{q}', deferredQuery.trim()) : t('no_brews_with_status')}</p>}
       <div id="brews-list" role="tabpanel" aria-labelledby={`brews-tab-${phase}`} className="grid grid-cols-1 gap-6">
         {sortedLogs.map(log => {
           const recipe = recipes.find(r => r.id === log.recipeId);

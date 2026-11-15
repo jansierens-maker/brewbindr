@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, useMemo, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, createContext, useContext, useMemo, useRef, lazy, Suspense, useDeferredValue } from 'react';
 const RecipeCreator = lazy(() => import('./components/RecipeCreator'));
 import Bubbles from './components/Bubbles';
 const BrewLog = lazy(() => import('./components/BrewLog'));
@@ -18,6 +18,8 @@ import NewPasswordForm from './components/NewPasswordForm';
 import { authService } from './services/authService';
 import { copyRecipe } from './services/recipeCopy';
 import { RecipeStage, ARCHIVED, RECIPE_STAGES, stageOf, moveToStage, brewStart, needsNewVersion, newVersion, otherProductionVersions, freshLifecycle, contentChanged } from './services/lifecycle';
+import { matchesQuery, recipeSearchText } from './services/search';
+import SearchBox from './components/SearchBox';
 import { applyStockChange } from './services/stock';
 const Settings = lazy(() => import('./components/Settings'));
 const HelpView = lazy(() => import('./components/HelpView'));
@@ -167,6 +169,8 @@ const AppContent: React.FC = () => {
   const [recipeTab, setRecipeTab] = useState<'all' | 'brewable'>('all');
   // Lifecycle filter of the brewery's recipes: the active stages, one stage, or the archive
   const [stageFilter, setStageFilter] = useState<'active' | 'archived' | RecipeStage>('active');
+  const [recipeQuery, setRecipeQuery] = useState('');
+  const deferredRecipeQuery = useDeferredValue(recipeQuery);
   const [teamCount, setTeamCount] = useState(1);
   const [members, setMembers] = useState<Taster[]>([]);
   // Tasting note being edited, and the batch the tasting notes screen opens on
@@ -216,8 +220,9 @@ const AppContent: React.FC = () => {
         if (stageFilter === 'archived') return ARCHIVED.includes(stage);
         return stage === stageFilter;
       })
+      .filter(({ recipe: r }) => matchesQuery(recipeSearchText(r), deferredRecipeQuery))
       .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name));
-  }, [recipes, libraryView, user?.id, profile?.brewery_id, recipeTab, preferences.enableStockManagement, preferences.abvFormula, library, stageFilter]);
+  }, [recipes, libraryView, user?.id, profile?.brewery_id, recipeTab, preferences.enableStockManagement, preferences.abvFormula, library, stageFilter, deferredRecipeQuery]);
 
   // How many of the brewery's recipes are in each stage (for the filter)
   const stageCounts = useMemo(() => {
@@ -1852,6 +1857,7 @@ const AppContent: React.FC = () => {
                       )}
                     </>
                   )}
+                  <SearchBox id="recipe_search" label={t('search_recipes')} value={recipeQuery} onChange={setRecipeQuery} className="max-w-xl" />
                   {libraryView === 'personal' && (
                     <div role="group" aria-label={t('lc_filter_label')} className="flex flex-wrap gap-2">
                       {(['active', ...RECIPE_STAGES.filter(s => !ARCHIVED.includes(s)), 'archived'] as const).map(f => (
@@ -1862,6 +1868,9 @@ const AppContent: React.FC = () => {
                         </button>
                       ))}
                     </div>
+                  )}
+                  {deferredRecipeQuery.trim() && processedRecipes.length === 0 && (
+                    <p role="status" className="text-[var(--color-text-muted)] font-bold">{t('search_no_results').replace('{q}', deferredRecipeQuery.trim())}</p>
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       <>
