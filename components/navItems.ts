@@ -27,6 +27,7 @@ export const navSections = (
   { id: 'brewery', label: t('nav_section_brewery'), items: [
     { id: 'dashboard', label: t('nav_dashboard'), icon: 'fa-gauge-high', view: 'dashboard' },
     { id: 'recipes-personal', label: t('nav_recipes'), icon: 'fa-flask', view: 'recipes', libView: 'personal' },
+    { id: 'flavour_lab', label: t('nav_flavour_lab'), icon: 'fa-flask-vial', view: 'flavour_lab' },
     { id: 'library-personal', label: t('ingredients_header'), icon: 'fa-seedling', view: 'library', libView: 'personal' },
     { id: 'voorraad', label: t('nav_stock'), icon: 'fa-boxes-stacked', view: 'voorraad', hideIf: !opts.stock },
     { id: 'own_mash', label: t('nav_lib_mash'), icon: 'fa-layer-group', view: 'own_mash' },

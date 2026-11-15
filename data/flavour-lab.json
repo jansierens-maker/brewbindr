@@ -1,0 +1,6674 @@
+{
+ "version": "2026-11-14",
+ "families": [
+  {
+   "id": "citrus_terpene",
+   "name_nl": "Citrusterpenen",
+   "name_fr": "Terpènes d'agrumes",
+   "name_en": "Citrus terpenes",
+   "color": "#F59E0B",
+   "sort": 1
+  },
+  {
+   "id": "floral_terpene",
+   "name_nl": "Bloemige terpenen",
+   "name_fr": "Terpènes floraux",
+   "name_en": "Floral terpenes",
+   "color": "#7C3AED",
+   "sort": 2
+  },
+  {
+   "id": "resinous_terpene",
+   "name_nl": "Harsige terpenen",
+   "name_fr": "Terpènes résineux",
+   "name_en": "Resinous terpenes",
+   "color": "#10B981",
+   "sort": 3
+  },
+  {
+   "id": "woody_spicy",
+   "name_nl": "Houtig-kruidige terpenen",
+   "name_fr": "Terpènes boisés-épicés",
+   "name_en": "Woody-spicy terpenes",
+   "color": "#92400E",
+   "sort": 4
+  },
+  {
+   "id": "clove_phenol",
+   "name_nl": "Kruidige fenolen (kruidnagel)",
+   "name_fr": "Phénols épicés (clou de girofle)",
+   "name_en": "Spicy phenols (clove)",
+   "color": "#B45309",
+   "sort": 5
+  },
+  {
+   "id": "anise",
+   "name_nl": "Anijs",
+   "name_fr": "Anis",
+   "name_en": "Anise",
+   "color": "#64748B",
+   "sort": 6
+  },
+  {
+   "id": "cinnamon",
+   "name_nl": "Kaneel",
+   "name_fr": "Cannelle",
+   "name_en": "Cinnamon",
+   "color": "#C2410C",
+   "sort": 7
+  },
+  {
+   "id": "fruity_ester",
+   "name_nl": "Fruitige esters",
+   "name_fr": "Esters fruités",
+   "name_en": "Fruity esters",
+   "color": "#EC4899",
+   "sort": 8
+  },
+  {
+   "id": "sweet_vanilla",
+   "name_nl": "Zoet-vanille",
+   "name_fr": "Vanillé-sucré",
+   "name_en": "Sweet vanilla",
+   "color": "#EAB308",
+   "sort": 9
+  },
+  {
+   "id": "camphor_mint",
+   "name_nl": "Kamfer-munt",
+   "name_fr": "Camphre-menthe",
+   "name_en": "Camphor-mint",
+   "color": "#06B6D4",
+   "sort": 10
+  },
+  {
+   "id": "roasted",
+   "name_nl": "Geroosterd",
+   "name_fr": "Torréfié",
+   "name_en": "Roasted",
+   "color": "#0F1B2D",
+   "sort": 11
+  },
+  {
+   "id": "caramel_bread",
+   "name_nl": "Karamel en brood",
+   "name_fr": "Caramel et pain",
+   "name_en": "Caramel and bread",
+   "color": "#D97706",
+   "sort": 12
+  },
+  {
+   "id": "green",
+   "name_nl": "Groen",
+   "name_fr": "Vert",
+   "name_en": "Green",
+   "color": "#65A30D",
+   "sort": 13
+  }
+ ],
+ "compounds": [
+  {
+   "id": "limonene",
+   "name": "limoneen",
+   "family_id": "citrus_terpene",
+   "volatility": "high",
+   "descriptor_nl": "sinaasappel, citrus",
+   "descriptor_fr": "orange, agrumes",
+   "descriptor_en": "orange, citrus",
+   "aroma_active": false
+  },
+  {
+   "id": "citral",
+   "name": "citral (geraniaal + neraal)",
+   "family_id": "citrus_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "citroen, citroengras",
+   "descriptor_fr": "citron, citronnelle",
+   "descriptor_en": "lemon, lemongrass",
+   "aroma_active": true
+  },
+  {
+   "id": "gamma_terpinene",
+   "name": "γ-terpineen",
+   "family_id": "citrus_terpene",
+   "volatility": "high",
+   "descriptor_nl": "citrus, kruidig, limoen",
+   "descriptor_fr": "agrumes, épicé, citron vert",
+   "descriptor_en": "citrus, herbal, lime",
+   "aroma_active": false
+  },
+  {
+   "id": "nootkatone",
+   "name": "nootkaton",
+   "family_id": "citrus_terpene",
+   "volatility": "low",
+   "descriptor_nl": "grapefruit",
+   "descriptor_fr": "pamplemousse",
+   "descriptor_en": "grapefruit",
+   "aroma_active": true
+  },
+  {
+   "id": "linalool",
+   "name": "linalool",
+   "family_id": "floral_terpene",
+   "volatility": "high",
+   "descriptor_nl": "bloemig, lavendel, citrus",
+   "descriptor_fr": "floral, lavande, agrumes",
+   "descriptor_en": "floral, lavender, citrus",
+   "aroma_active": true
+  },
+  {
+   "id": "geraniol",
+   "name": "geraniol",
+   "family_id": "floral_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "roos, geranium",
+   "descriptor_fr": "rose, géranium",
+   "descriptor_en": "rose, geranium",
+   "aroma_active": true
+  },
+  {
+   "id": "citronellol",
+   "name": "citronellol",
+   "family_id": "floral_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "roos, citrus",
+   "descriptor_fr": "rose, agrumes",
+   "descriptor_en": "rose, citrus",
+   "aroma_active": true
+  },
+  {
+   "id": "nerol",
+   "name": "nerol",
+   "family_id": "floral_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "zoete roos, neroli",
+   "descriptor_fr": "rose douce, néroli",
+   "descriptor_en": "sweet rose, neroli",
+   "aroma_active": true
+  },
+  {
+   "id": "linalyl_acetate",
+   "name": "linalylacetaat",
+   "family_id": "floral_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "bergamot, lavendel",
+   "descriptor_fr": "bergamote, lavande",
+   "descriptor_en": "bergamot, lavender",
+   "aroma_active": false
+  },
+  {
+   "id": "geranyl_acetate",
+   "name": "geranylacetaat",
+   "family_id": "floral_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "fruitige roos",
+   "descriptor_fr": "rose fruitée",
+   "descriptor_en": "fruity rose",
+   "aroma_active": false
+  },
+  {
+   "id": "terpinyl_acetate",
+   "name": "α-terpinylacetaat",
+   "family_id": "floral_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "zoet, kruidig, bergamot",
+   "descriptor_fr": "doux, épicé, bergamote",
+   "descriptor_en": "sweet, herbal, bergamot",
+   "aroma_active": false
+  },
+  {
+   "id": "phenylethanol",
+   "name": "2-fenylethanol",
+   "family_id": "floral_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "roos, honing",
+   "descriptor_fr": "rose, miel",
+   "descriptor_en": "rose, honey",
+   "aroma_active": false
+  },
+  {
+   "id": "bisabolol_oxides",
+   "name": "bisabololoxiden",
+   "family_id": "floral_terpene",
+   "volatility": "low",
+   "descriptor_nl": "zoet, kamille",
+   "descriptor_fr": "doux, camomille",
+   "descriptor_en": "sweet, chamomile",
+   "aroma_active": false
+  },
+  {
+   "id": "myrcene",
+   "name": "myrceen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "harsig, groen, balsamico",
+   "descriptor_fr": "résineux, vert, balsamique",
+   "descriptor_en": "resinous, green, balsamic",
+   "aroma_active": false
+  },
+  {
+   "id": "alpha_pinene",
+   "name": "α-pineen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "den, hars",
+   "descriptor_fr": "pin, résine",
+   "descriptor_en": "pine, resin",
+   "aroma_active": false
+  },
+  {
+   "id": "beta_pinene",
+   "name": "β-pineen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "den, houtig",
+   "descriptor_fr": "pin, boisé",
+   "descriptor_en": "pine, woody",
+   "aroma_active": false
+  },
+  {
+   "id": "sabinene",
+   "name": "sabineen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "peperig, houtig",
+   "descriptor_fr": "poivré, boisé",
+   "descriptor_en": "peppery, woody",
+   "aroma_active": false
+  },
+  {
+   "id": "camphene",
+   "name": "camfeen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "kamferachtig, den",
+   "descriptor_fr": "camphré, pin",
+   "descriptor_en": "camphoraceous, pine",
+   "aroma_active": false
+  },
+  {
+   "id": "alpha_phellandrene",
+   "name": "α-phellandreen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "peperig, munt, citrus",
+   "descriptor_fr": "poivré, menthe, agrumes",
+   "descriptor_en": "peppery, minty, citrus",
+   "aroma_active": false
+  },
+  {
+   "id": "delta3_carene",
+   "name": "δ-3-careen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "zoet, harsig",
+   "descriptor_fr": "doux, résineux",
+   "descriptor_en": "sweet, resinous",
+   "aroma_active": false
+  },
+  {
+   "id": "p_cymene",
+   "name": "p-cymeen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "citrus, houtig",
+   "descriptor_fr": "agrumes, boisé",
+   "descriptor_en": "citrus, woody",
+   "aroma_active": false
+  },
+  {
+   "id": "terpinen4ol",
+   "name": "terpinen-4-ol",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "aards, peperig, houtig",
+   "descriptor_fr": "terreux, poivré, boisé",
+   "descriptor_en": "earthy, peppery, woody",
+   "aroma_active": false
+  },
+  {
+   "id": "humulene",
+   "name": "α-humuleen",
+   "family_id": "woody_spicy",
+   "volatility": "high",
+   "descriptor_nl": "houtig, kruidig, edele hop",
+   "descriptor_fr": "boisé, épicé, houblon noble",
+   "descriptor_en": "woody, spicy, noble hop",
+   "aroma_active": false
+  },
+  {
+   "id": "caryophyllene",
+   "name": "β-caryofylleen",
+   "family_id": "woody_spicy",
+   "volatility": "high",
+   "descriptor_nl": "peperig, houtig, kruidnagel",
+   "descriptor_fr": "poivré, boisé, girofle",
+   "descriptor_en": "peppery, woody, clove",
+   "aroma_active": false
+  },
+  {
+   "id": "farnesene",
+   "name": "β-farneseen",
+   "family_id": "woody_spicy",
+   "volatility": "high",
+   "descriptor_nl": "groen, houtig, appel",
+   "descriptor_fr": "vert, boisé, pomme",
+   "descriptor_en": "green, woody, apple",
+   "aroma_active": false
+  },
+  {
+   "id": "zingiberene",
+   "name": "zingibereen",
+   "family_id": "woody_spicy",
+   "volatility": "high",
+   "descriptor_nl": "gember, kruidig",
+   "descriptor_fr": "gingembre, épicé",
+   "descriptor_en": "ginger, spicy",
+   "aroma_active": false
+  },
+  {
+   "id": "ar_curcumene",
+   "name": "ar-curcumeen",
+   "family_id": "woody_spicy",
+   "volatility": "high",
+   "descriptor_nl": "kruidig, houtig",
+   "descriptor_fr": "épicé, boisé",
+   "descriptor_en": "spicy, woody",
+   "aroma_active": false
+  },
+  {
+   "id": "turmerones",
+   "name": "turmeronen",
+   "family_id": "woody_spicy",
+   "volatility": "low",
+   "descriptor_nl": "kurkuma, aards",
+   "descriptor_fr": "curcuma, terreux",
+   "descriptor_en": "turmeric, earthy",
+   "aroma_active": false
+  },
+  {
+   "id": "cuminaldehyde",
+   "name": "cuminaldehyde",
+   "family_id": "woody_spicy",
+   "volatility": "medium",
+   "descriptor_nl": "komijn, aards",
+   "descriptor_fr": "cumin, terreux",
+   "descriptor_en": "cumin, earthy",
+   "aroma_active": false
+  },
+  {
+   "id": "myristicin",
+   "name": "myristicine",
+   "family_id": "woody_spicy",
+   "volatility": "low",
+   "descriptor_nl": "nootmuskaat, warm",
+   "descriptor_fr": "muscade, chaud",
+   "descriptor_en": "nutmeg, warm",
+   "aroma_active": false
+  },
+  {
+   "id": "eugenol",
+   "name": "eugenol",
+   "family_id": "clove_phenol",
+   "volatility": "medium",
+   "descriptor_nl": "kruidnagel",
+   "descriptor_fr": "clou de girofle",
+   "descriptor_en": "clove",
+   "aroma_active": false
+  },
+  {
+   "id": "vinylguaiacol",
+   "name": "4-vinylguaiacol",
+   "family_id": "clove_phenol",
+   "volatility": "medium",
+   "descriptor_nl": "kruidnagel, peperig (gist)",
+   "descriptor_fr": "girofle, poivré (levure)",
+   "descriptor_en": "clove, peppery (yeast)",
+   "aroma_active": true
+  },
+  {
+   "id": "thymol",
+   "name": "thymol",
+   "family_id": "clove_phenol",
+   "volatility": "medium",
+   "descriptor_nl": "tijm, medicinaal",
+   "descriptor_fr": "thym, médicinal",
+   "descriptor_en": "thyme, medicinal",
+   "aroma_active": false
+  },
+  {
+   "id": "anethole",
+   "name": "anethol",
+   "family_id": "anise",
+   "volatility": "medium",
+   "descriptor_nl": "anijs, zoethout",
+   "descriptor_fr": "anis, réglisse",
+   "descriptor_en": "anise, liquorice",
+   "aroma_active": false
+  },
+  {
+   "id": "estragole",
+   "name": "estragol",
+   "family_id": "anise",
+   "volatility": "medium",
+   "descriptor_nl": "dragon, anijs",
+   "descriptor_fr": "estragon, anis",
+   "descriptor_en": "tarragon, anise",
+   "aroma_active": false
+  },
+  {
+   "id": "cinnamaldehyde",
+   "name": "kaneelaldehyde",
+   "family_id": "cinnamon",
+   "volatility": "medium",
+   "descriptor_nl": "kaneel",
+   "descriptor_fr": "cannelle",
+   "descriptor_en": "cinnamon",
+   "aroma_active": false
+  },
+  {
+   "id": "isoamyl_acetate",
+   "name": "isoamylacetaat",
+   "family_id": "fruity_ester",
+   "volatility": "high",
+   "descriptor_nl": "banaan, peer",
+   "descriptor_fr": "banane, poire",
+   "descriptor_en": "banana, pear",
+   "aroma_active": true
+  },
+  {
+   "id": "ethyl_hexanoate",
+   "name": "ethylhexanoaat",
+   "family_id": "fruity_ester",
+   "volatility": "high",
+   "descriptor_nl": "appel, ananas, tropisch",
+   "descriptor_fr": "pomme, ananas, tropical",
+   "descriptor_en": "apple, pineapple, tropical",
+   "aroma_active": true
+  },
+  {
+   "id": "hop_isobutyrates",
+   "name": "hop-isobutyraten (o.a. 2-methylbutylisobutyraat)",
+   "family_id": "fruity_ester",
+   "volatility": "high",
+   "descriptor_nl": "fruitig, abrikoos, appel",
+   "descriptor_fr": "fruité, abricot, pomme",
+   "descriptor_en": "fruity, apricot, apple",
+   "aroma_active": true
+  },
+  {
+   "id": "vanillin",
+   "name": "vanilline",
+   "family_id": "sweet_vanilla",
+   "volatility": "low",
+   "descriptor_nl": "vanille",
+   "descriptor_fr": "vanille",
+   "descriptor_en": "vanilla",
+   "aroma_active": true
+  },
+  {
+   "id": "cineole",
+   "name": "1,8-cineol (eucalyptol)",
+   "family_id": "camphor_mint",
+   "volatility": "high",
+   "descriptor_nl": "eucalyptus, fris",
+   "descriptor_fr": "eucalyptus, frais",
+   "descriptor_en": "eucalyptus, fresh",
+   "aroma_active": false
+  },
+  {
+   "id": "camphor",
+   "name": "kamfer",
+   "family_id": "camphor_mint",
+   "volatility": "high",
+   "descriptor_nl": "kamfer, koel",
+   "descriptor_fr": "camphre, frais",
+   "descriptor_en": "camphor, cooling",
+   "aroma_active": false
+  },
+  {
+   "id": "menthol",
+   "name": "menthol",
+   "family_id": "camphor_mint",
+   "volatility": "high",
+   "descriptor_nl": "pepermunt, koel",
+   "descriptor_fr": "menthe poivrée, frais",
+   "descriptor_en": "peppermint, cooling",
+   "aroma_active": false
+  },
+  {
+   "id": "menthone",
+   "name": "menthon",
+   "family_id": "camphor_mint",
+   "volatility": "high",
+   "descriptor_nl": "munt, kruidig",
+   "descriptor_fr": "menthe, herbacé",
+   "descriptor_en": "mint, herbal",
+   "aroma_active": false
+  },
+  {
+   "id": "fenchone",
+   "name": "fenchon",
+   "family_id": "camphor_mint",
+   "volatility": "high",
+   "descriptor_nl": "kamferachtig, venkel",
+   "descriptor_fr": "camphré, fenouil",
+   "descriptor_en": "camphoraceous, fennel",
+   "aroma_active": false
+  },
+  {
+   "id": "pyrazines",
+   "name": "alkylpyrazinen",
+   "family_id": "roasted",
+   "volatility": "high",
+   "descriptor_nl": "geroosterd, koffie, cacao",
+   "descriptor_fr": "torréfié, café, cacao",
+   "descriptor_en": "roasted, coffee, cocoa",
+   "aroma_active": false
+  },
+  {
+   "id": "maltol",
+   "name": "maltol",
+   "family_id": "caramel_bread",
+   "volatility": "low",
+   "descriptor_nl": "karamel, gebakken",
+   "descriptor_fr": "caramel, cuit",
+   "descriptor_en": "caramel, baked",
+   "aroma_active": false
+  },
+  {
+   "id": "furaneol",
+   "name": "furaneol (HDMF)",
+   "family_id": "caramel_bread",
+   "volatility": "medium",
+   "descriptor_nl": "karamel, aardbei",
+   "descriptor_fr": "caramel, fraise",
+   "descriptor_en": "caramel, strawberry",
+   "aroma_active": false
+  },
+  {
+   "id": "methylbutanal",
+   "name": "3-methylbutanal",
+   "family_id": "caramel_bread",
+   "volatility": "high",
+   "descriptor_nl": "moutig, brood",
+   "descriptor_fr": "malté, pain",
+   "descriptor_en": "malty, bread",
+   "aroma_active": false
+  },
+  {
+   "id": "citronellal",
+   "name": "citronellal",
+   "family_id": "citrus_terpene",
+   "volatility": "high",
+   "descriptor_nl": "citronella, citrus",
+   "descriptor_fr": "citronnelle, agrumes",
+   "descriptor_en": "citronella, citrus",
+   "aroma_active": true
+  },
+  {
+   "id": "farnesol",
+   "name": "farnesol",
+   "family_id": "floral_terpene",
+   "volatility": "low",
+   "descriptor_nl": "zacht bloemig, lindebloesem",
+   "descriptor_fr": "floral doux, tilleul",
+   "descriptor_en": "soft floral, linden",
+   "aroma_active": false
+  },
+  {
+   "id": "beta_phellandrene",
+   "name": "β-phellandreen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "munt, terpentijn, citrus",
+   "descriptor_fr": "menthe, térébenthine, agrumes",
+   "descriptor_en": "minty, turpentine, citrus",
+   "aroma_active": false
+  },
+  {
+   "id": "terpinolene",
+   "name": "terpinoleen",
+   "family_id": "resinous_terpene",
+   "volatility": "high",
+   "descriptor_nl": "zoet, den, citrus",
+   "descriptor_fr": "doux, pin, agrumes",
+   "descriptor_en": "sweet, pine, citrus",
+   "aroma_active": false
+  },
+  {
+   "id": "sesquiphellandrene",
+   "name": "β-sesquiphellandreen",
+   "family_id": "woody_spicy",
+   "volatility": "high",
+   "descriptor_nl": "kruidig, houtig (gember)",
+   "descriptor_fr": "épicé, boisé (gingembre)",
+   "descriptor_en": "spicy, woody (ginger)",
+   "aroma_active": false
+  },
+  {
+   "id": "caryophyllene_oxide",
+   "name": "caryofylleenoxide",
+   "family_id": "woody_spicy",
+   "volatility": "low",
+   "descriptor_nl": "houtig, kruidig, droog",
+   "descriptor_fr": "boisé, épicé, sec",
+   "descriptor_en": "woody, spicy, dry",
+   "aroma_active": false
+  },
+  {
+   "id": "menthadienal",
+   "name": "p-mentha-1,4-dien-7-al",
+   "family_id": "woody_spicy",
+   "volatility": "medium",
+   "descriptor_nl": "komijn, kruidig",
+   "descriptor_fr": "cumin, épicé",
+   "descriptor_en": "cumin, spicy",
+   "aroma_active": false
+  },
+  {
+   "id": "chamazulene",
+   "name": "chamazuleen",
+   "family_id": "woody_spicy",
+   "volatility": "high",
+   "descriptor_nl": "zoet, kruidig (kamille)",
+   "descriptor_fr": "doux, épicé (camomille)",
+   "descriptor_en": "sweet, herbal (chamomile)",
+   "aroma_active": false
+  },
+  {
+   "id": "methyl_eugenol",
+   "name": "methyleugenol",
+   "family_id": "clove_phenol",
+   "volatility": "medium",
+   "descriptor_nl": "kruidnagel, laurier",
+   "descriptor_fr": "girofle, laurier",
+   "descriptor_en": "clove, bay",
+   "aroma_active": false
+  },
+  {
+   "id": "menthyl_acetate",
+   "name": "menthylacetaat",
+   "family_id": "camphor_mint",
+   "volatility": "medium",
+   "descriptor_nl": "zachte munt, fruitig",
+   "descriptor_fr": "menthe douce, fruité",
+   "descriptor_en": "mild mint, fruity",
+   "aroma_active": false
+  },
+  {
+   "id": "alpha_terpineol",
+   "name": "α-terpineol",
+   "family_id": "floral_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "seringen, den",
+   "descriptor_fr": "lilas, pin",
+   "descriptor_en": "lilac, pine",
+   "aroma_active": false
+  },
+  {
+   "id": "rose_oxide",
+   "name": "cis-roosoxide",
+   "family_id": "floral_terpene",
+   "volatility": "high",
+   "descriptor_nl": "roos, lychee",
+   "descriptor_fr": "rose, litchi",
+   "descriptor_en": "rose, lychee",
+   "aroma_active": true
+  },
+  {
+   "id": "hotrienol",
+   "name": "hotrienol",
+   "family_id": "floral_terpene",
+   "volatility": "high",
+   "descriptor_nl": "vlierbloesem, hyacint",
+   "descriptor_fr": "sureau, jacinthe",
+   "descriptor_en": "elderflower, hyacinth",
+   "aroma_active": false
+  },
+  {
+   "id": "phenylacetaldehyde",
+   "name": "fenylaceetaldehyde",
+   "family_id": "floral_terpene",
+   "volatility": "high",
+   "descriptor_nl": "honing, hyacint",
+   "descriptor_fr": "miel, jacinthe",
+   "descriptor_en": "honey, hyacinth",
+   "aroma_active": true
+  },
+  {
+   "id": "nerolidol",
+   "name": "nerolidol",
+   "family_id": "floral_terpene",
+   "volatility": "low",
+   "descriptor_nl": "houtig, bloemig",
+   "descriptor_fr": "boisé, floral",
+   "descriptor_en": "woody, floral",
+   "aroma_active": false
+  },
+  {
+   "id": "nonanal",
+   "name": "nonanal",
+   "family_id": "citrus_terpene",
+   "volatility": "high",
+   "descriptor_nl": "citrus, wasachtig",
+   "descriptor_fr": "agrumes, cireux",
+   "descriptor_en": "citrus, waxy",
+   "aroma_active": true
+  },
+  {
+   "id": "damascenone",
+   "name": "β-damascenon",
+   "family_id": "fruity_ester",
+   "volatility": "low",
+   "descriptor_nl": "gekookte appel, honing",
+   "descriptor_fr": "pomme cuite, miel",
+   "descriptor_en": "cooked apple, honey",
+   "aroma_active": true
+  },
+  {
+   "id": "gamma_nonalactone",
+   "name": "γ-nonalacton",
+   "family_id": "sweet_vanilla",
+   "volatility": "medium",
+   "descriptor_nl": "kokos, zoet",
+   "descriptor_fr": "noix de coco, doux",
+   "descriptor_en": "coconut, sweet",
+   "aroma_active": true
+  },
+  {
+   "id": "carvacrol",
+   "name": "carvacrol",
+   "family_id": "clove_phenol",
+   "volatility": "medium",
+   "descriptor_nl": "oregano, kruidig",
+   "descriptor_fr": "origan, épicé",
+   "descriptor_en": "oregano, spicy",
+   "aroma_active": false
+  },
+  {
+   "id": "delta_cadinene",
+   "name": "δ-cadineen",
+   "family_id": "woody_spicy",
+   "volatility": "high",
+   "descriptor_nl": "houtig, droog",
+   "descriptor_fr": "boisé, sec",
+   "descriptor_en": "woody, dry",
+   "aroma_active": false
+  },
+  {
+   "id": "borneol",
+   "name": "borneol",
+   "family_id": "camphor_mint",
+   "volatility": "high",
+   "descriptor_nl": "kamfer, aards",
+   "descriptor_fr": "camphre, terreux",
+   "descriptor_en": "camphor, earthy",
+   "aroma_active": false
+  },
+  {
+   "id": "bornyl_acetate",
+   "name": "bornylacetaat",
+   "family_id": "resinous_terpene",
+   "volatility": "medium",
+   "descriptor_nl": "dennennaald, balsamico",
+   "descriptor_fr": "aiguille de pin, balsamique",
+   "descriptor_en": "pine needle, balsamic",
+   "aroma_active": false
+  },
+  {
+   "id": "acetylpyrroline",
+   "name": "2-acetyl-1-pyrroline",
+   "family_id": "roasted",
+   "volatility": "high",
+   "descriptor_nl": "popcorn, broodkorst",
+   "descriptor_fr": "pop-corn, croûte de pain",
+   "descriptor_en": "popcorn, bread crust",
+   "aroma_active": true
+  },
+  {
+   "id": "furfurylthiol",
+   "name": "2-furfurylthiol",
+   "family_id": "roasted",
+   "volatility": "high",
+   "descriptor_nl": "koffie, geroosterd",
+   "descriptor_fr": "café, torréfié",
+   "descriptor_en": "coffee, roasted",
+   "aroma_active": true
+  },
+  {
+   "id": "guaiacol",
+   "name": "guaiacol",
+   "family_id": "roasted",
+   "volatility": "high",
+   "descriptor_nl": "rokerig, fenolisch",
+   "descriptor_fr": "fumé, phénolique",
+   "descriptor_en": "smoky, phenolic",
+   "aroma_active": true
+  },
+  {
+   "id": "ibmp",
+   "name": "2-isobutyl-3-methoxypyrazine",
+   "family_id": "green",
+   "volatility": "medium",
+   "descriptor_nl": "groene paprika, aards",
+   "descriptor_fr": "poivron vert, terreux",
+   "descriptor_en": "green bell pepper, earthy",
+   "aroma_active": true
+  },
+  {
+   "id": "hexenal",
+   "name": "(Z)-3-hexenal",
+   "family_id": "green",
+   "volatility": "high",
+   "descriptor_nl": "vers gemaaid gras",
+   "descriptor_fr": "herbe coupée",
+   "descriptor_en": "cut grass",
+   "aroma_active": true
+  },
+  {
+   "id": "hexanal",
+   "name": "hexanal",
+   "family_id": "green",
+   "volatility": "high",
+   "descriptor_nl": "groen, grasachtig",
+   "descriptor_fr": "vert, herbacé",
+   "descriptor_en": "green, grassy",
+   "aroma_active": false
+  },
+  {
+   "id": "nonadienal",
+   "name": "(E,Z)-2,6-nonadienal",
+   "family_id": "green",
+   "volatility": "high",
+   "descriptor_nl": "komkommer",
+   "descriptor_fr": "concombre",
+   "descriptor_en": "cucumber",
+   "aroma_active": true
+  }
+ ],
+ "ingredients": [
+  {
+   "id": "coriander",
+   "category": "spice",
+   "name_nl": "Koriander",
+   "name_fr": "Coriandre",
+   "name_en": "Coriander",
+   "aliases": [
+    "coriander",
+    "coriander seed",
+    "coriandre",
+    "koriander",
+    "korianderzaad",
+    "koriandre"
+   ],
+   "dose_min_g_per_l": 0.3,
+   "dose_max_g_per_l": 1.5,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "orange_sweet",
+   "category": "spice",
+   "name_nl": "Zoete sinaasappelschil",
+   "name_fr": "Écorce d'orange douce",
+   "name_en": "Sweet orange peel",
+   "aliases": [
+    "orange peel",
+    "orange zest",
+    "sinaasappelschil",
+    "sinaasappelzeste",
+    "sweet orange peel",
+    "écorce d'orange douce"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": "boil_short",
+   "form": "zest",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "orange_bitter",
+   "category": "spice",
+   "name_nl": "Bittere sinaasappelschil (curaçao)",
+   "name_fr": "Écorce d'orange amère (curaçao)",
+   "name_en": "Bitter orange peel (curaçao)",
+   "aliases": [
+    "bitter orange",
+    "bitter orange peel",
+    "curacao",
+    "curaçao",
+    "pomerans",
+    "écorce d'orange amère"
+   ],
+   "dose_min_g_per_l": 0.3,
+   "dose_max_g_per_l": 1.5,
+   "preferred_stage": "boil_short",
+   "form": "zest",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lemon",
+   "category": "spice",
+   "name_nl": "Citroenschil",
+   "name_fr": "Zeste de citron",
+   "name_en": "Lemon peel",
+   "aliases": [
+    "citroen",
+    "lemon peel",
+    "lemon zest",
+    "zeste de citron"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": "boil_short",
+   "form": "zest",
+   "yeast_pof": null,
+   "notes_nl": "Alleen de gele schil, zonder het witte vlies.",
+   "notes_fr": "Uniquement le zeste jaune, sans la peau blanche.",
+   "notes_en": "Yellow zest only, without the white pith."
+  },
+  {
+   "id": "grapefruit",
+   "category": "spice",
+   "name_nl": "Grapefruitschil",
+   "name_fr": "Zeste de pamplemousse",
+   "name_en": "Grapefruit peel",
+   "aliases": [
+    "grapefruit",
+    "grapefruit peel",
+    "zeste de pamplemousse"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": "boil_short",
+   "form": "zest",
+   "yeast_pof": null,
+   "notes_nl": "Alleen de schil, zonder het witte vlies.",
+   "notes_fr": "Uniquement le zeste, sans la peau blanche.",
+   "notes_en": "Zest only, without the white pith."
+  },
+  {
+   "id": "ginger",
+   "category": "spice",
+   "name_nl": "Gember",
+   "name_fr": "Gingembre",
+   "name_en": "Ginger",
+   "aliases": [
+    "gember",
+    "gingembre",
+    "ginger"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 3,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "cardamom",
+   "category": "spice",
+   "name_nl": "Kardemom",
+   "name_fr": "Cardamome",
+   "name_en": "Cardamom",
+   "aliases": [
+    "cardamom",
+    "cardamome"
+   ],
+   "dose_min_g_per_l": 0.05,
+   "dose_max_g_per_l": 0.3,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "cinnamon",
+   "category": "spice",
+   "name_nl": "Kaneel",
+   "name_fr": "Cannelle",
+   "name_en": "Cinnamon",
+   "aliases": [
+    "cannelle",
+    "Ceylon kaneel",
+    "cinnamon"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "clove",
+   "category": "spice",
+   "name_nl": "Kruidnagel",
+   "name_fr": "Clou de girofle",
+   "name_en": "Clove",
+   "aliases": [
+    "clou de girofle",
+    "clove"
+   ],
+   "dose_min_g_per_l": 0.02,
+   "dose_max_g_per_l": 0.1,
+   "preferred_stage": "boil_short",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "star_anise",
+   "category": "spice",
+   "name_nl": "Steranijs",
+   "name_fr": "Badiane (anis étoilé)",
+   "name_en": "Star anise",
+   "aliases": [
+    "anis étoilé",
+    "badiane",
+    "star anise"
+   ],
+   "dose_min_g_per_l": 0.05,
+   "dose_max_g_per_l": 0.3,
+   "preferred_stage": "boil_short",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": "Alleen Chinese steranijs (Illicium verum); Japanse steranijs is giftig.",
+   "notes_fr": "Uniquement la badiane de Chine (Illicium verum) ; la badiane du Japon est toxique.",
+   "notes_en": "Only Chinese star anise (Illicium verum); Japanese star anise is poisonous."
+  },
+  {
+   "id": "aniseed",
+   "category": "spice",
+   "name_nl": "Anijszaad",
+   "name_fr": "Anis vert",
+   "name_en": "Aniseed",
+   "aliases": [
+    "anis vert",
+    "aniseed"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "fennel",
+   "category": "spice",
+   "name_nl": "Venkelzaad",
+   "name_fr": "Graines de fenouil",
+   "name_en": "Fennel seed",
+   "aliases": [
+    "fennel seed",
+    "graines de fenouil"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "cumin",
+   "category": "spice",
+   "name_nl": "Komijn",
+   "name_fr": "Cumin",
+   "name_en": "Cumin",
+   "aliases": [
+    "cumin",
+    "komijnzaad"
+   ],
+   "dose_min_g_per_l": 0.05,
+   "dose_max_g_per_l": 0.3,
+   "preferred_stage": "boil_short",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "black_pepper",
+   "category": "spice",
+   "name_nl": "Zwarte peper",
+   "name_fr": "Poivre noir",
+   "name_en": "Black pepper",
+   "aliases": [
+    "black pepper",
+    "poivre noir"
+   ],
+   "dose_min_g_per_l": 0.05,
+   "dose_max_g_per_l": 0.3,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "pink_pepper",
+   "category": "spice",
+   "name_nl": "Roze peper",
+   "name_fr": "Baies roses",
+   "name_en": "Pink peppercorn",
+   "aliases": [
+    "baies roses",
+    "pink peppercorn",
+    "Schinus"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "grains_of_paradise",
+   "category": "spice",
+   "name_nl": "Paradijskorrels",
+   "name_fr": "Maniguette",
+   "name_en": "Grains of paradise",
+   "aliases": [
+    "Aframomum melegueta",
+    "grains of paradise",
+    "maniguette"
+   ],
+   "dose_min_g_per_l": 0.05,
+   "dose_max_g_per_l": 0.3,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "juniper",
+   "category": "spice",
+   "name_nl": "Jeneverbes",
+   "name_fr": "Baies de genièvre",
+   "name_en": "Juniper berries",
+   "aliases": [
+    "baies de genièvre",
+    "juniper berry"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 3,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lavender",
+   "category": "spice",
+   "name_nl": "Lavendel",
+   "name_fr": "Lavande",
+   "name_en": "Lavender",
+   "aliases": [
+    "lavande",
+    "lavender"
+   ],
+   "dose_min_g_per_l": 0.05,
+   "dose_max_g_per_l": 0.3,
+   "preferred_stage": "whirlpool",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "chamomile",
+   "category": "spice",
+   "name_nl": "Kamille",
+   "name_fr": "Camomille",
+   "name_en": "Chamomile",
+   "aliases": [
+    "camomille",
+    "chamomile",
+    "Matricaria"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": "whirlpool",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lemongrass",
+   "category": "spice",
+   "name_nl": "Citroengras",
+   "name_fr": "Citronnelle",
+   "name_en": "Lemongrass",
+   "aliases": [
+    "citronnelle",
+    "lemongrass"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "bay_leaf",
+   "category": "spice",
+   "name_nl": "Laurier",
+   "name_fr": "Laurier",
+   "name_en": "Bay leaf",
+   "aliases": [
+    "bay leaf",
+    "laurier"
+   ],
+   "dose_min_g_per_l": 0.05,
+   "dose_max_g_per_l": 0.2,
+   "preferred_stage": "boil_short",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "rosemary",
+   "category": "spice",
+   "name_nl": "Rozemarijn",
+   "name_fr": "Romarin",
+   "name_en": "Rosemary",
+   "aliases": [
+    "romarin",
+    "rosemary"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "boil_short",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "sage",
+   "category": "spice",
+   "name_nl": "Salie",
+   "name_fr": "Sauge",
+   "name_en": "Sage",
+   "aliases": [
+    "sage",
+    "sauge"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "boil_short",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "thyme",
+   "category": "spice",
+   "name_nl": "Tijm",
+   "name_fr": "Thym",
+   "name_en": "Thyme",
+   "aliases": [
+    "thym",
+    "thyme"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "boil_short",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "peppermint",
+   "category": "spice",
+   "name_nl": "Munt (pepermunt)",
+   "name_fr": "Menthe poivrée",
+   "name_en": "Peppermint",
+   "aliases": [
+    "menthe",
+    "menthe poivrée",
+    "mint",
+    "munt",
+    "peppermint"
+   ],
+   "dose_min_g_per_l": 0.2,
+   "dose_max_g_per_l": 1,
+   "preferred_stage": "whirlpool",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": "In bier met munt gelden maxima voor pulegon en menthofuran (EU 1334/2008); bij een normale dosis blijf je ruim onder.",
+   "notes_fr": "Les boissons alcoolisées à la menthe ont des teneurs maximales en pulégone et menthofurane (UE 1334/2008) ; à dose normale, on reste bien en dessous.",
+   "notes_en": "Alcoholic drinks with mint have maximum levels of pulegone and menthofuran (EU 1334/2008); a normal dose stays well below them."
+  },
+  {
+   "id": "turmeric",
+   "category": "spice",
+   "name_nl": "Kurkuma",
+   "name_fr": "Curcuma",
+   "name_en": "Turmeric",
+   "aliases": [
+    "curcuma",
+    "geelwortel",
+    "turmeric"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "nutmeg",
+   "category": "spice",
+   "name_nl": "Nootmuskaat",
+   "name_fr": "Muscade",
+   "name_en": "Nutmeg",
+   "aliases": [
+    "muscade",
+    "nutmeg"
+   ],
+   "dose_min_g_per_l": 0.02,
+   "dose_max_g_per_l": 0.1,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "mace",
+   "category": "spice",
+   "name_nl": "Foelie",
+   "name_fr": "Macis",
+   "name_en": "Mace",
+   "aliases": [
+    "mace",
+    "macis"
+   ],
+   "dose_min_g_per_l": 0.02,
+   "dose_max_g_per_l": 0.1,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "rose",
+   "category": "spice",
+   "name_nl": "Roos (gedroogde blaadjes)",
+   "name_fr": "Pétales de rose",
+   "name_en": "Rose petals",
+   "aliases": [
+    "pétales de rose",
+    "rose petals"
+   ],
+   "dose_min_g_per_l": 0.2,
+   "dose_max_g_per_l": 1,
+   "preferred_stage": "whirlpool",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "vanilla",
+   "category": "spice",
+   "name_nl": "Vanille",
+   "name_fr": "Vanille",
+   "name_en": "Vanilla",
+   "aliases": [
+    "gousse de vanille",
+    "vanilla bean",
+    "vanille",
+    "vanillestokje"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "secondary",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": "Opengesneden peul in de lagering, één tot twee weken.",
+   "notes_fr": "Gousse fendue en garde, une à deux semaines.",
+   "notes_en": "Split pod in conditioning, one to two weeks."
+  },
+  {
+   "id": "ariana",
+   "category": "hop",
+   "name_nl": "Ariana",
+   "name_fr": "Ariana",
+   "name_en": "Ariana",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "callista",
+   "category": "hop",
+   "name_nl": "Callista",
+   "name_fr": "Callista",
+   "name_en": "Callista",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "comet",
+   "category": "hop",
+   "name_nl": "Comet",
+   "name_fr": "Comet",
+   "name_en": "Comet",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "hallertau_blanc",
+   "category": "hop",
+   "name_nl": "Hallertau Blanc",
+   "name_fr": "Hallertau Blanc",
+   "name_en": "Hallertau Blanc",
+   "aliases": [
+    "Hallertauer Blanc"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "hallertau_magnum",
+   "category": "hop",
+   "name_nl": "Hallertauer Magnum",
+   "name_fr": "Hallertauer Magnum",
+   "name_en": "Hallertauer Magnum",
+   "aliases": [
+    "HMG",
+    "Magnum"
+   ],
+   "dose_min_g_per_l": 0.3,
+   "dose_max_g_per_l": 1.5,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "hallertau_mittelfrueh",
+   "category": "hop",
+   "name_nl": "Hallertau Mittelfrüh",
+   "name_fr": "Hallertau Mittelfrüh",
+   "name_en": "Hallertau Mittelfrüh",
+   "aliases": [
+    "Hallertau Mittelfrueh",
+    "Hallertauer",
+    "Hallertauer MF",
+    "Hallertauer Mittelfrüh",
+    "HMF"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "hallertau_tradition",
+   "category": "hop",
+   "name_nl": "Hallertauer Tradition",
+   "name_fr": "Hallertauer Tradition",
+   "name_en": "Hallertauer Tradition",
+   "aliases": [
+    "HTR",
+    "Tradition"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "herkules",
+   "category": "hop",
+   "name_nl": "Herkules",
+   "name_fr": "Herkules",
+   "name_en": "Herkules",
+   "aliases": [
+    "Hercules",
+    "HKS"
+   ],
+   "dose_min_g_per_l": 0.3,
+   "dose_max_g_per_l": 1.5,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "huell_melon",
+   "category": "hop",
+   "name_nl": "Huell Melon",
+   "name_fr": "Huell Melon",
+   "name_en": "Huell Melon",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "mandarina_bavaria",
+   "category": "hop",
+   "name_nl": "Mandarina Bavaria",
+   "name_fr": "Mandarina Bavaria",
+   "name_en": "Mandarina Bavaria",
+   "aliases": [
+    "Mandarina"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "perle",
+   "category": "hop",
+   "name_nl": "Perle",
+   "name_fr": "Perle",
+   "name_en": "Perle",
+   "aliases": [
+    "Hallertauer Perle"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "spalter_select",
+   "category": "hop",
+   "name_nl": "Spalter Select",
+   "name_fr": "Spalter Select",
+   "name_en": "Spalter Select",
+   "aliases": [
+    "Select"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "tango",
+   "category": "hop",
+   "name_nl": "Tango",
+   "name_fr": "Tango",
+   "name_en": "Tango",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "tettnanger",
+   "category": "hop",
+   "name_nl": "Tettnanger",
+   "name_fr": "Tettnanger",
+   "name_en": "Tettnanger",
+   "aliases": [
+    "Tettnang",
+    "Tettnanger Tettnanger"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "titan",
+   "category": "hop",
+   "name_nl": "Titan",
+   "name_fr": "Titan",
+   "name_en": "Titan",
+   "aliases": [],
+   "dose_min_g_per_l": 0.3,
+   "dose_max_g_per_l": 1.5,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "aurora",
+   "category": "hop",
+   "name_nl": "Aurora",
+   "name_fr": "Aurora",
+   "name_en": "Aurora",
+   "aliases": [
+    "Styrian Aurora",
+    "Super Styrian"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "celeia",
+   "category": "hop",
+   "name_nl": "Celeia",
+   "name_fr": "Celeia",
+   "name_en": "Celeia",
+   "aliases": [
+    "Styrian Celeia"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "saaz",
+   "category": "hop",
+   "name_nl": "Saaz",
+   "name_fr": "Saaz",
+   "name_en": "Saaz",
+   "aliases": [
+    "Saazer",
+    "Zatec",
+    "Žatec",
+    "Žatecký poloraný červeňák"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "cascade",
+   "category": "hop",
+   "name_nl": "Cascade",
+   "name_fr": "Cascade",
+   "name_en": "Cascade",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "centennial",
+   "category": "hop",
+   "name_nl": "Centennial",
+   "name_fr": "Centennial",
+   "name_en": "Centennial",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "chinook",
+   "category": "hop",
+   "name_nl": "Chinook",
+   "name_fr": "Chinook",
+   "name_en": "Chinook",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "citra",
+   "category": "hop",
+   "name_nl": "Citra",
+   "name_fr": "Citra",
+   "name_en": "Citra",
+   "aliases": [
+    "HBC 394"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "columbus",
+   "category": "hop",
+   "name_nl": "Columbus",
+   "name_fr": "Columbus",
+   "name_en": "Columbus",
+   "aliases": [
+    "CTZ",
+    "Tomahawk",
+    "Zeus"
+   ],
+   "dose_min_g_per_l": 0.3,
+   "dose_max_g_per_l": 1.5,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "ekuanot",
+   "category": "hop",
+   "name_nl": "Ekuanot",
+   "name_fr": "Ekuanot",
+   "name_en": "Ekuanot",
+   "aliases": [
+    "Equinox",
+    "HBC 366"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "mosaic",
+   "category": "hop",
+   "name_nl": "Mosaic",
+   "name_fr": "Mosaic",
+   "name_en": "Mosaic",
+   "aliases": [
+    "HBC 369"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "sabro",
+   "category": "hop",
+   "name_nl": "Sabro",
+   "name_fr": "Sabro",
+   "name_en": "Sabro",
+   "aliases": [
+    "HBC 438"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "talus",
+   "category": "hop",
+   "name_nl": "Talus",
+   "name_fr": "Talus",
+   "name_en": "Talus",
+   "aliases": [
+    "HBC 692"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "eclipse",
+   "category": "hop",
+   "name_nl": "Eclipse",
+   "name_fr": "Eclipse",
+   "name_en": "Eclipse",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "ella",
+   "category": "hop",
+   "name_nl": "Ella",
+   "name_fr": "Ella",
+   "name_en": "Ella",
+   "aliases": [
+    "Stella"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "enigma",
+   "category": "hop",
+   "name_nl": "Enigma",
+   "name_fr": "Enigma",
+   "name_en": "Enigma",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "galaxy",
+   "category": "hop",
+   "name_nl": "Galaxy",
+   "name_fr": "Galaxy",
+   "name_en": "Galaxy",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "topaz",
+   "category": "hop",
+   "name_nl": "Topaz",
+   "name_fr": "Topaz",
+   "name_en": "Topaz",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "vic_secret",
+   "category": "hop",
+   "name_nl": "Vic Secret",
+   "name_fr": "Vic Secret",
+   "name_en": "Vic Secret",
+   "aliases": [],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "loral",
+   "category": "hop",
+   "name_nl": "Loral",
+   "name_fr": "Loral",
+   "name_en": "Loral",
+   "aliases": [
+    "HBC 291"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "simcoe",
+   "category": "hop",
+   "name_nl": "Simcoe",
+   "name_fr": "Simcoe",
+   "name_en": "Simcoe",
+   "aliases": [
+    "YCR 14"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "amarillo",
+   "category": "hop",
+   "name_nl": "Amarillo",
+   "name_fr": "Amarillo",
+   "name_en": "Amarillo",
+   "aliases": [
+    "VGXP01"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "willamette",
+   "category": "hop",
+   "name_nl": "Willamette",
+   "name_fr": "Willamette",
+   "name_en": "Willamette",
+   "aliases": [],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "northern_brewer",
+   "category": "hop",
+   "name_nl": "Northern Brewer (US)",
+   "name_fr": "Northern Brewer (US)",
+   "name_en": "Northern Brewer (US)",
+   "aliases": [
+    "Northern Brewer"
+   ],
+   "dose_min_g_per_l": 0.3,
+   "dose_max_g_per_l": 1.5,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "mt_hood",
+   "category": "hop",
+   "name_nl": "Mt. Hood",
+   "name_fr": "Mt. Hood",
+   "name_en": "Mt. Hood",
+   "aliases": [
+    "Mount Hood"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "crystal",
+   "category": "hop",
+   "name_nl": "Crystal",
+   "name_fr": "Crystal",
+   "name_en": "Crystal",
+   "aliases": [],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "ekg",
+   "category": "hop",
+   "name_nl": "East Kent Goldings",
+   "name_fr": "East Kent Goldings",
+   "name_en": "East Kent Goldings",
+   "aliases": [
+    "EKG",
+    "Goldings",
+    "Kent Golding"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "fuggle",
+   "category": "hop",
+   "name_nl": "Fuggle",
+   "name_fr": "Fuggle",
+   "name_en": "Fuggle",
+   "aliases": [
+    "Fuggles"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "savinjski_golding",
+   "category": "hop",
+   "name_nl": "Savinjski Golding",
+   "name_fr": "Savinjski Golding",
+   "name_en": "Savinjski Golding",
+   "aliases": [
+    "Styrian Golding",
+    "Styrian Goldings"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "challenger",
+   "category": "hop",
+   "name_nl": "Challenger",
+   "name_fr": "Challenger",
+   "name_en": "Challenger",
+   "aliases": [],
+   "dose_min_g_per_l": 0.3,
+   "dose_max_g_per_l": 1.5,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "nelson_sauvin",
+   "category": "hop",
+   "name_nl": "Nelson Sauvin",
+   "name_fr": "Nelson Sauvin",
+   "name_en": "Nelson Sauvin",
+   "aliases": [
+    "Nelson"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "motueka",
+   "category": "hop",
+   "name_nl": "Motueka",
+   "name_fr": "Motueka",
+   "name_en": "Motueka",
+   "aliases": [
+    "B Saaz"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 6,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "wb06",
+   "category": "yeast",
+   "name_nl": "SafAle WB-06",
+   "name_fr": "SafAle WB-06",
+   "name_en": "SafAle WB-06",
+   "aliases": [
+    "Fermentis WB06",
+    "WB-06"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": true,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "t58",
+   "category": "yeast",
+   "name_nl": "SafAle T-58",
+   "name_fr": "SafAle T-58",
+   "name_en": "SafAle T-58",
+   "aliases": [
+    "Fermentis T58",
+    "T-58"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": true,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "be134",
+   "category": "yeast",
+   "name_nl": "SafAle BE-134",
+   "name_fr": "SafAle BE-134",
+   "name_en": "SafAle BE-134",
+   "aliases": [
+    "BE-134"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": true,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_wit",
+   "category": "yeast",
+   "name_nl": "LalBrew Wit",
+   "name_fr": "LalBrew Wit",
+   "name_en": "LalBrew Wit",
+   "aliases": [
+    "Belgian Wit",
+    "Lallemand Wit",
+    "wit"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": true,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_abbaye",
+   "category": "yeast",
+   "name_nl": "LalBrew Abbaye",
+   "name_fr": "LalBrew Abbaye",
+   "name_en": "LalBrew Abbaye",
+   "aliases": [
+    "Lallemand Abbaye"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": true,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_farmhouse",
+   "category": "yeast",
+   "name_nl": "LalBrew Farmhouse",
+   "name_fr": "LalBrew Farmhouse",
+   "name_en": "LalBrew Farmhouse",
+   "aliases": [
+    "Lallemand Farmhouse"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": true,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_belle",
+   "category": "yeast",
+   "name_nl": "LalBrew Belle Saison",
+   "name_fr": "LalBrew Belle Saison",
+   "name_en": "LalBrew Belle Saison",
+   "aliases": [
+    "Belle Saison"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": true,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_munich",
+   "category": "yeast",
+   "name_nl": "LalBrew Munich Classic",
+   "name_fr": "LalBrew Munich Classic",
+   "name_en": "LalBrew Munich Classic",
+   "aliases": [
+    "Munich Classic"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": true,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "us05",
+   "category": "yeast",
+   "name_nl": "SafAle US-05",
+   "name_fr": "SafAle US-05",
+   "name_en": "SafAle US-05",
+   "aliases": [
+    "Fermentis US05",
+    "US-05"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_nottingham",
+   "category": "yeast",
+   "name_nl": "LalBrew Nottingham",
+   "name_fr": "LalBrew Nottingham",
+   "name_en": "LalBrew Nottingham",
+   "aliases": [
+    "Nottingham"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_bry97",
+   "category": "yeast",
+   "name_nl": "LalBrew BRY-97",
+   "name_fr": "LalBrew BRY-97",
+   "name_en": "LalBrew BRY-97",
+   "aliases": [
+    "BRY-97",
+    "West Coast"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_diamond",
+   "category": "yeast",
+   "name_nl": "LalBrew Diamond",
+   "name_fr": "LalBrew Diamond",
+   "name_en": "LalBrew Diamond",
+   "aliases": [
+    "Diamond Lager"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_verdant",
+   "category": "yeast",
+   "name_nl": "LalBrew Verdant IPA",
+   "name_fr": "LalBrew Verdant IPA",
+   "name_en": "LalBrew Verdant IPA",
+   "aliases": [
+    "Verdant"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_ne",
+   "category": "yeast",
+   "name_nl": "LalBrew New England",
+   "name_fr": "LalBrew New England",
+   "name_en": "LalBrew New England",
+   "aliases": [
+    "New England"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_voss",
+   "category": "yeast",
+   "name_nl": "LalBrew Voss Kveik",
+   "name_fr": "LalBrew Voss Kveik",
+   "name_en": "LalBrew Voss Kveik",
+   "aliases": [
+    "Voss",
+    "Voss Kveik"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_london",
+   "category": "yeast",
+   "name_nl": "LalBrew London",
+   "name_fr": "LalBrew London",
+   "name_en": "LalBrew London",
+   "aliases": [
+    "London ESB"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_windsor",
+   "category": "yeast",
+   "name_nl": "LalBrew Windsor",
+   "name_fr": "LalBrew Windsor",
+   "name_en": "LalBrew Windsor",
+   "aliases": [
+    "Windsor"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lb_koln",
+   "category": "yeast",
+   "name_nl": "LalBrew Köln",
+   "name_fr": "LalBrew Köln",
+   "name_en": "LalBrew Köln",
+   "aliases": [
+    "Kolsch",
+    "Köln",
+    "Kölsch"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": false,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_pils",
+   "category": "malt",
+   "name_nl": "Pilsmout",
+   "name_fr": "Malt pils",
+   "name_en": "Pilsner malt",
+   "aliases": [
+    "malt pils",
+    "pils",
+    "pils malt",
+    "pilsener malt",
+    "pilsner",
+    "pilsner malt"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_pale",
+   "category": "malt",
+   "name_nl": "Pale ale-mout",
+   "name_fr": "Malt pale ale",
+   "name_en": "Pale ale malt",
+   "aliases": [
+    "golden promise",
+    "malt pale",
+    "maris otter",
+    "pale ale",
+    "pale ale malt",
+    "pale malt"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_vienna",
+   "category": "malt",
+   "name_nl": "Weense mout",
+   "name_fr": "Malt de Vienne",
+   "name_en": "Vienna malt",
+   "aliases": [
+    "malt de Vienne",
+    "vienna",
+    "Vienna malt",
+    "weense mout"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_munich",
+   "category": "malt",
+   "name_nl": "Münchener mout",
+   "name_fr": "Malt munich",
+   "name_en": "Munich malt",
+   "aliases": [
+    "malt munich",
+    "munchener",
+    "munich",
+    "munich dark",
+    "munich light",
+    "Munich malt"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_wheat",
+   "category": "malt",
+   "name_nl": "Tarwemout",
+   "name_fr": "Malt de blé",
+   "name_en": "Wheat malt",
+   "aliases": [
+    "malt de blé",
+    "tarwe",
+    "weizenmalz",
+    "wheat",
+    "wheat malt",
+    "wheat malt light"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_biscuit",
+   "category": "malt",
+   "name_nl": "Biscuit-/amberkleurige mout",
+   "name_fr": "Malt biscuit / ambré",
+   "name_en": "Biscuit / amber malt",
+   "aliases": [
+    "amber",
+    "amber malt",
+    "aromatic",
+    "biscuit",
+    "biscuit malt",
+    "malt ambré",
+    "melanoidin"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_crystal",
+   "category": "malt",
+   "name_nl": "Karamelmout (crystal)",
+   "name_fr": "Malt caramel (crystal)",
+   "name_en": "Crystal / caramel malt",
+   "aliases": [
+    "cara",
+    "carahell",
+    "caramalt",
+    "caramel",
+    "caramel malt",
+    "CaraMunich",
+    "caramunich",
+    "caravienne",
+    "crystal",
+    "crystal malt",
+    "malt caramel",
+    "special b"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_chocolate",
+   "category": "malt",
+   "name_nl": "Chocolademout",
+   "name_fr": "Malt chocolat",
+   "name_en": "Chocolate malt",
+   "aliases": [
+    "chocolade",
+    "chocolate",
+    "chocolate malt",
+    "malt chocolat"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_roasted_barley",
+   "category": "malt",
+   "name_nl": "Gebrande gerst",
+   "name_fr": "Orge torréfiée",
+   "name_en": "Roasted barley",
+   "aliases": [
+    "gebrande gerst",
+    "orge torréfiée",
+    "roasted barley"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "malt_black",
+   "category": "malt",
+   "name_nl": "Zwarte mout",
+   "name_fr": "Malt noir",
+   "name_en": "Black malt",
+   "aliases": [
+    "black malt",
+    "black patent",
+    "carafa",
+    "malt noir"
+   ],
+   "dose_min_g_per_l": null,
+   "dose_max_g_per_l": null,
+   "preferred_stage": null,
+   "form": null,
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "allspice",
+   "category": "spice",
+   "name_nl": "Piment",
+   "name_fr": "Piment de la Jamaïque",
+   "name_en": "Allspice",
+   "aliases": [
+    "allspice",
+    "jamaicapeper",
+    "piment de la Jamaïque"
+   ],
+   "dose_min_g_per_l": 0.05,
+   "dose_max_g_per_l": 0.3,
+   "preferred_stage": "boil_short",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "licorice",
+   "category": "spice",
+   "name_nl": "Zoethoutwortel",
+   "name_fr": "Racine de réglisse",
+   "name_en": "Liquorice root",
+   "aliases": [
+    "Glycyrrhiza",
+    "licorice",
+    "liquorice root",
+    "réglisse"
+   ],
+   "dose_min_g_per_l": 0.2,
+   "dose_max_g_per_l": 1,
+   "preferred_stage": "boil_long",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": "Vanaf 100 mg/L glycyrrhizine moet \"bevat zoethout\" op het etiket (EU 1169/2011).",
+   "notes_fr": "À partir de 100 mg/L de glycyrrhizine, l'étiquette doit mentionner « contient de la réglisse » (UE 1169/2011).",
+   "notes_en": "From 100 mg/L glycyrrhizin the label must say \"contains liquorice\" (EU 1169/2011)."
+  },
+  {
+   "id": "elderflower",
+   "category": "spice",
+   "name_nl": "Vlierbloesem",
+   "name_fr": "Fleur de sureau",
+   "name_en": "Elderflower",
+   "aliases": [
+    "elderflower",
+    "fleur de sureau",
+    "Sambucus nigra"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": "whirlpool",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "spruce",
+   "category": "spice",
+   "name_nl": "Sparrentoppen",
+   "name_fr": "Bourgeons d'épicéa",
+   "name_en": "Spruce tips",
+   "aliases": [
+    "bourgeons d'épicéa",
+    "Picea abies",
+    "spruce",
+    "spruce tips"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 8,
+   "preferred_stage": "boil_short",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "lime",
+   "category": "spice",
+   "name_nl": "Limoenschil",
+   "name_fr": "Zeste de citron vert",
+   "name_en": "Lime peel",
+   "aliases": [
+    "lime zest",
+    "Persian lime",
+    "zeste de citron vert"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": "boil_short",
+   "form": "zest",
+   "yeast_pof": null,
+   "notes_nl": "Alleen de groene schil, zonder het witte vlies.",
+   "notes_fr": "Uniquement le zeste vert, sans la peau blanche.",
+   "notes_en": "Green zest only, without the white pith."
+  },
+  {
+   "id": "kaffir_lime",
+   "category": "spice",
+   "name_nl": "Kaffirlimoenblad",
+   "name_fr": "Feuille de combava",
+   "name_en": "Kaffir lime leaf",
+   "aliases": [
+    "Citrus hystrix",
+    "combava",
+    "kaffir lime leaf",
+    "makrut"
+   ],
+   "dose_min_g_per_l": 0.1,
+   "dose_max_g_per_l": 0.5,
+   "preferred_stage": "whirlpool",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "yuzu",
+   "category": "spice",
+   "name_nl": "Yuzuschil",
+   "name_fr": "Zeste de yuzu",
+   "name_en": "Yuzu peel",
+   "aliases": [
+    "Citrus junos",
+    "yuzu",
+    "yuzu zest"
+   ],
+   "dose_min_g_per_l": 0.3,
+   "dose_max_g_per_l": 1.5,
+   "preferred_stage": "boil_short",
+   "form": "zest",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "sweet_gale",
+   "category": "spice",
+   "name_nl": "Wilde gagel",
+   "name_fr": "Piment royal (myrique)",
+   "name_en": "Sweet gale",
+   "aliases": [
+    "bog myrtle",
+    "gagel",
+    "Myrica gale",
+    "piment royal",
+    "sweet gale"
+   ],
+   "dose_min_g_per_l": 0.5,
+   "dose_max_g_per_l": 2,
+   "preferred_stage": "boil_long",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "cacao_nibs",
+   "category": "spice",
+   "name_nl": "Cacaonibs",
+   "name_fr": "Éclats de fèves de cacao",
+   "name_en": "Cacao nibs",
+   "aliases": [
+    "cacao",
+    "cacao nibs",
+    "cocoa",
+    "cocoa nibs",
+    "éclats de fèves de cacao"
+   ],
+   "dose_min_g_per_l": 3,
+   "dose_max_g_per_l": 10,
+   "preferred_stage": "secondary",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "coffee",
+   "category": "spice",
+   "name_nl": "Koffie (bonen)",
+   "name_fr": "Café (grains)",
+   "name_en": "Coffee beans",
+   "aliases": [
+    "café",
+    "coffee",
+    "coffee beans",
+    "cold brew",
+    "koffie"
+   ],
+   "dose_min_g_per_l": 1,
+   "dose_max_g_per_l": 5,
+   "preferred_stage": "secondary",
+   "form": "crushed",
+   "yeast_pof": null,
+   "notes_nl": null,
+   "notes_fr": null,
+   "notes_en": null
+  },
+  {
+   "id": "jalapeno",
+   "category": "spice",
+   "name_nl": "Jalapeño",
+   "name_fr": "Jalapeño",
+   "name_en": "Jalapeño",
+   "aliases": [
+    "chili",
+    "jalapeño",
+    "piment jalapeño"
+   ],
+   "dose_min_g_per_l": 2,
+   "dose_max_g_per_l": 10,
+   "preferred_stage": "secondary",
+   "form": "whole",
+   "yeast_pof": null,
+   "notes_nl": "Flavour Lab rekent alleen met het aroma, niet met hoe pikant het is.",
+   "notes_fr": "Flavour Lab ne tient compte que de l'arôme, pas du piquant.",
+   "notes_en": "Flavour Lab counts the aroma only, not the heat."
+  }
+ ],
+ "links": [
+  {
+   "ingredient_id": "coriander",
+   "compound_id": "linalool",
+   "intensity": 5,
+   "source_id": "lawrence1980cor"
+  },
+  {
+   "ingredient_id": "coriander",
+   "compound_id": "gamma_terpinene",
+   "intensity": 2,
+   "source_id": "lawrence1980cor"
+  },
+  {
+   "ingredient_id": "coriander",
+   "compound_id": "camphor",
+   "intensity": 2,
+   "source_id": "lawrence1980cor"
+  },
+  {
+   "ingredient_id": "coriander",
+   "compound_id": "alpha_pinene",
+   "intensity": 2,
+   "source_id": "lawrence1980cor"
+  },
+  {
+   "ingredient_id": "coriander",
+   "compound_id": "geranyl_acetate",
+   "intensity": 1,
+   "source_id": "lawrence1980cor"
+  },
+  {
+   "ingredient_id": "coriander",
+   "compound_id": "limonene",
+   "intensity": 1,
+   "source_id": "lawrence1980cor"
+  },
+  {
+   "ingredient_id": "coriander",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "lawrence1980cor"
+  },
+  {
+   "ingredient_id": "orange_sweet",
+   "compound_id": "limonene",
+   "intensity": 5,
+   "source_id": "supelco776"
+  },
+  {
+   "ingredient_id": "orange_sweet",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "supelco776"
+  },
+  {
+   "ingredient_id": "orange_sweet",
+   "compound_id": "linalool",
+   "intensity": 1,
+   "source_id": "supelco776"
+  },
+  {
+   "ingredient_id": "orange_bitter",
+   "compound_id": "limonene",
+   "intensity": 5,
+   "source_id": "dugo1993"
+  },
+  {
+   "ingredient_id": "orange_bitter",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "dugo1993"
+  },
+  {
+   "ingredient_id": "orange_bitter",
+   "compound_id": "linalool",
+   "intensity": 1,
+   "source_id": "dugo1993"
+  },
+  {
+   "ingredient_id": "lemon",
+   "compound_id": "limonene",
+   "intensity": 5,
+   "source_id": "dugo1983"
+  },
+  {
+   "ingredient_id": "lemon",
+   "compound_id": "beta_pinene",
+   "intensity": 3,
+   "source_id": "dugo1983"
+  },
+  {
+   "ingredient_id": "lemon",
+   "compound_id": "gamma_terpinene",
+   "intensity": 2,
+   "source_id": "dugo1983"
+  },
+  {
+   "ingredient_id": "lemon",
+   "compound_id": "alpha_pinene",
+   "intensity": 1,
+   "source_id": "dugo1983"
+  },
+  {
+   "ingredient_id": "lemon",
+   "compound_id": "citral",
+   "intensity": 4,
+   "source_id": "dugo1983"
+  },
+  {
+   "ingredient_id": "lemon",
+   "compound_id": "sabinene",
+   "intensity": 1,
+   "source_id": "dugo1983"
+  },
+  {
+   "ingredient_id": "lemon",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "dugo1983"
+  },
+  {
+   "ingredient_id": "grapefruit",
+   "compound_id": "limonene",
+   "intensity": 5,
+   "source_id": "boelens1991"
+  },
+  {
+   "ingredient_id": "grapefruit",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "boelens1991"
+  },
+  {
+   "ingredient_id": "grapefruit",
+   "compound_id": "nootkatone",
+   "intensity": 2,
+   "source_id": "boelens1991"
+  },
+  {
+   "ingredient_id": "ginger",
+   "compound_id": "zingiberene",
+   "intensity": 4,
+   "source_id": "lawrence1988gin"
+  },
+  {
+   "ingredient_id": "ginger",
+   "compound_id": "sesquiphellandrene",
+   "intensity": 2,
+   "source_id": "lawrence1988gin"
+  },
+  {
+   "ingredient_id": "ginger",
+   "compound_id": "camphene",
+   "intensity": 2,
+   "source_id": "lawrence1988gin"
+  },
+  {
+   "ingredient_id": "ginger",
+   "compound_id": "ar_curcumene",
+   "intensity": 2,
+   "source_id": "lawrence1988gin"
+  },
+  {
+   "ingredient_id": "ginger",
+   "compound_id": "beta_phellandrene",
+   "intensity": 2,
+   "source_id": "lawrence1988gin"
+  },
+  {
+   "ingredient_id": "ginger",
+   "compound_id": "limonene",
+   "intensity": 2,
+   "source_id": "lawrence1988gin"
+  },
+  {
+   "ingredient_id": "ginger",
+   "compound_id": "alpha_pinene",
+   "intensity": 1,
+   "source_id": "lawrence1988gin"
+  },
+  {
+   "ingredient_id": "ginger",
+   "compound_id": "citronellol",
+   "intensity": 4,
+   "source_id": "lawrence1988gin"
+  },
+  {
+   "ingredient_id": "cardamom",
+   "compound_id": "terpinyl_acetate",
+   "intensity": 5,
+   "source_id": "bernhard1971"
+  },
+  {
+   "ingredient_id": "cardamom",
+   "compound_id": "cineole",
+   "intensity": 4,
+   "source_id": "bernhard1971"
+  },
+  {
+   "ingredient_id": "cardamom",
+   "compound_id": "linalyl_acetate",
+   "intensity": 2,
+   "source_id": "bernhard1971"
+  },
+  {
+   "ingredient_id": "cardamom",
+   "compound_id": "sabinene",
+   "intensity": 2,
+   "source_id": "bernhard1971"
+  },
+  {
+   "ingredient_id": "cardamom",
+   "compound_id": "linalool",
+   "intensity": 4,
+   "source_id": "bernhard1971"
+  },
+  {
+   "ingredient_id": "cardamom",
+   "compound_id": "limonene",
+   "intensity": 1,
+   "source_id": "bernhard1971"
+  },
+  {
+   "ingredient_id": "cardamom",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "bernhard1971"
+  },
+  {
+   "ingredient_id": "cardamom",
+   "compound_id": "alpha_pinene",
+   "intensity": 1,
+   "source_id": "bernhard1971"
+  },
+  {
+   "ingredient_id": "cinnamon",
+   "compound_id": "cinnamaldehyde",
+   "intensity": 5,
+   "source_id": "jirovetz1998"
+  },
+  {
+   "ingredient_id": "cinnamon",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "jirovetz1998"
+  },
+  {
+   "ingredient_id": "cinnamon",
+   "compound_id": "eugenol",
+   "intensity": 2,
+   "source_id": "jirovetz1998"
+  },
+  {
+   "ingredient_id": "cinnamon",
+   "compound_id": "limonene",
+   "intensity": 2,
+   "source_id": "jirovetz1998"
+  },
+  {
+   "ingredient_id": "cinnamon",
+   "compound_id": "linalool",
+   "intensity": 4,
+   "source_id": "jirovetz1998"
+  },
+  {
+   "ingredient_id": "clove",
+   "compound_id": "eugenol",
+   "intensity": 5,
+   "source_id": "viudamartos2007"
+  },
+  {
+   "ingredient_id": "clove",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "viudamartos2007"
+  },
+  {
+   "ingredient_id": "clove",
+   "compound_id": "humulene",
+   "intensity": 2,
+   "source_id": "viudamartos2007"
+  },
+  {
+   "ingredient_id": "star_anise",
+   "compound_id": "anethole",
+   "intensity": 5,
+   "source_id": "maack1982"
+  },
+  {
+   "ingredient_id": "star_anise",
+   "compound_id": "linalool",
+   "intensity": 3,
+   "source_id": "maack1982"
+  },
+  {
+   "ingredient_id": "aniseed",
+   "compound_id": "anethole",
+   "intensity": 5,
+   "source_id": "lawrence1980ani"
+  },
+  {
+   "ingredient_id": "aniseed",
+   "compound_id": "estragole",
+   "intensity": 1,
+   "source_id": "lawrence1980ani"
+  },
+  {
+   "ingredient_id": "fennel",
+   "compound_id": "anethole",
+   "intensity": 5,
+   "source_id": "ashokkumar2021"
+  },
+  {
+   "ingredient_id": "fennel",
+   "compound_id": "estragole",
+   "intensity": 3,
+   "source_id": "ashokkumar2021"
+  },
+  {
+   "ingredient_id": "fennel",
+   "compound_id": "fenchone",
+   "intensity": 3,
+   "source_id": "ashokkumar2021"
+  },
+  {
+   "ingredient_id": "fennel",
+   "compound_id": "limonene",
+   "intensity": 2,
+   "source_id": "ashokkumar2021"
+  },
+  {
+   "ingredient_id": "cumin",
+   "compound_id": "menthadienal",
+   "intensity": 4,
+   "source_id": "ashokkumar2021"
+  },
+  {
+   "ingredient_id": "cumin",
+   "compound_id": "cuminaldehyde",
+   "intensity": 4,
+   "source_id": "ashokkumar2021"
+  },
+  {
+   "ingredient_id": "cumin",
+   "compound_id": "beta_pinene",
+   "intensity": 3,
+   "source_id": "ashokkumar2021"
+  },
+  {
+   "ingredient_id": "cumin",
+   "compound_id": "gamma_terpinene",
+   "intensity": 3,
+   "source_id": "ashokkumar2021"
+  },
+  {
+   "ingredient_id": "black_pepper",
+   "compound_id": "sabinene",
+   "intensity": 4,
+   "source_id": "wrolstad"
+  },
+  {
+   "ingredient_id": "black_pepper",
+   "compound_id": "alpha_pinene",
+   "intensity": 3,
+   "source_id": "wrolstad"
+  },
+  {
+   "ingredient_id": "black_pepper",
+   "compound_id": "limonene",
+   "intensity": 3,
+   "source_id": "wrolstad"
+  },
+  {
+   "ingredient_id": "black_pepper",
+   "compound_id": "delta3_carene",
+   "intensity": 3,
+   "source_id": "wrolstad"
+  },
+  {
+   "ingredient_id": "black_pepper",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "wrolstad"
+  },
+  {
+   "ingredient_id": "black_pepper",
+   "compound_id": "humulene",
+   "intensity": 1,
+   "source_id": "wrolstad"
+  },
+  {
+   "ingredient_id": "pink_pepper",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "lawrence1984pp"
+  },
+  {
+   "ingredient_id": "pink_pepper",
+   "compound_id": "p_cymene",
+   "intensity": 2,
+   "source_id": "lawrence1984pp"
+  },
+  {
+   "ingredient_id": "pink_pepper",
+   "compound_id": "alpha_phellandrene",
+   "intensity": 2,
+   "source_id": "lawrence1984pp"
+  },
+  {
+   "ingredient_id": "pink_pepper",
+   "compound_id": "limonene",
+   "intensity": 2,
+   "source_id": "lawrence1984pp"
+  },
+  {
+   "ingredient_id": "pink_pepper",
+   "compound_id": "beta_phellandrene",
+   "intensity": 2,
+   "source_id": "lawrence1984pp"
+  },
+  {
+   "ingredient_id": "pink_pepper",
+   "compound_id": "alpha_pinene",
+   "intensity": 1,
+   "source_id": "lawrence1984pp"
+  },
+  {
+   "ingredient_id": "pink_pepper",
+   "compound_id": "humulene",
+   "intensity": 1,
+   "source_id": "lawrence1984pp"
+  },
+  {
+   "ingredient_id": "grains_of_paradise",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "menut1991"
+  },
+  {
+   "ingredient_id": "grains_of_paradise",
+   "compound_id": "caryophyllene_oxide",
+   "intensity": 3,
+   "source_id": "menut1991"
+  },
+  {
+   "ingredient_id": "grains_of_paradise",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "menut1991"
+  },
+  {
+   "ingredient_id": "grains_of_paradise",
+   "compound_id": "linalool",
+   "intensity": 5,
+   "source_id": "menut1991"
+  },
+  {
+   "ingredient_id": "juniper",
+   "compound_id": "alpha_pinene",
+   "intensity": 4,
+   "source_id": "depascual1976"
+  },
+  {
+   "ingredient_id": "juniper",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "depascual1976"
+  },
+  {
+   "ingredient_id": "juniper",
+   "compound_id": "terpinen4ol",
+   "intensity": 3,
+   "source_id": "depascual1976"
+  },
+  {
+   "ingredient_id": "juniper",
+   "compound_id": "limonene",
+   "intensity": 2,
+   "source_id": "depascual1976"
+  },
+  {
+   "ingredient_id": "juniper",
+   "compound_id": "terpinolene",
+   "intensity": 2,
+   "source_id": "depascual1976"
+  },
+  {
+   "ingredient_id": "juniper",
+   "compound_id": "citronellal",
+   "intensity": 3,
+   "source_id": "depascual1976"
+  },
+  {
+   "ingredient_id": "lavender",
+   "compound_id": "linalool",
+   "intensity": 5,
+   "source_id": "formacek1982"
+  },
+  {
+   "ingredient_id": "lavender",
+   "compound_id": "linalyl_acetate",
+   "intensity": 4,
+   "source_id": "formacek1982"
+  },
+  {
+   "ingredient_id": "lavender",
+   "compound_id": "terpinen4ol",
+   "intensity": 2,
+   "source_id": "formacek1982"
+  },
+  {
+   "ingredient_id": "lavender",
+   "compound_id": "cineole",
+   "intensity": 2,
+   "source_id": "formacek1982"
+  },
+  {
+   "ingredient_id": "lavender",
+   "compound_id": "camphor",
+   "intensity": 2,
+   "source_id": "formacek1982"
+  },
+  {
+   "ingredient_id": "lavender",
+   "compound_id": "caryophyllene",
+   "intensity": 1,
+   "source_id": "formacek1982"
+  },
+  {
+   "ingredient_id": "lavender",
+   "compound_id": "limonene",
+   "intensity": 1,
+   "source_id": "formacek1982"
+  },
+  {
+   "ingredient_id": "chamomile",
+   "compound_id": "bisabolol_oxides",
+   "intensity": 5,
+   "source_id": "brunke1992"
+  },
+  {
+   "ingredient_id": "chamomile",
+   "compound_id": "chamazulene",
+   "intensity": 4,
+   "source_id": "brunke1992"
+  },
+  {
+   "ingredient_id": "chamomile",
+   "compound_id": "farnesene",
+   "intensity": 1,
+   "source_id": "brunke1992"
+  },
+  {
+   "ingredient_id": "lemongrass",
+   "compound_id": "citral",
+   "intensity": 5,
+   "source_id": "mohammad1981"
+  },
+  {
+   "ingredient_id": "lemongrass",
+   "compound_id": "farnesol",
+   "intensity": 2,
+   "source_id": "mohammad1981"
+  },
+  {
+   "ingredient_id": "lemongrass",
+   "compound_id": "geraniol",
+   "intensity": 3,
+   "source_id": "mohammad1981"
+  },
+  {
+   "ingredient_id": "bay_leaf",
+   "compound_id": "cineole",
+   "intensity": 5,
+   "source_id": "akgul1989"
+  },
+  {
+   "ingredient_id": "bay_leaf",
+   "compound_id": "terpinyl_acetate",
+   "intensity": 3,
+   "source_id": "akgul1989"
+  },
+  {
+   "ingredient_id": "bay_leaf",
+   "compound_id": "sabinene",
+   "intensity": 2,
+   "source_id": "akgul1989"
+  },
+  {
+   "ingredient_id": "bay_leaf",
+   "compound_id": "alpha_pinene",
+   "intensity": 2,
+   "source_id": "akgul1989"
+  },
+  {
+   "ingredient_id": "bay_leaf",
+   "compound_id": "methyl_eugenol",
+   "intensity": 2,
+   "source_id": "akgul1989"
+  },
+  {
+   "ingredient_id": "bay_leaf",
+   "compound_id": "linalool",
+   "intensity": 4,
+   "source_id": "akgul1989"
+  },
+  {
+   "ingredient_id": "bay_leaf",
+   "compound_id": "eugenol",
+   "intensity": 1,
+   "source_id": "akgul1989"
+  },
+  {
+   "ingredient_id": "rosemary",
+   "compound_id": "alpha_pinene",
+   "intensity": 4,
+   "source_id": "viudamartos2007"
+  },
+  {
+   "ingredient_id": "rosemary",
+   "compound_id": "camphor",
+   "intensity": 3,
+   "source_id": "viudamartos2007"
+  },
+  {
+   "ingredient_id": "rosemary",
+   "compound_id": "beta_pinene",
+   "intensity": 3,
+   "source_id": "viudamartos2007"
+  },
+  {
+   "ingredient_id": "sage",
+   "compound_id": "camphor",
+   "intensity": 4,
+   "source_id": "viudamartos2007"
+  },
+  {
+   "ingredient_id": "sage",
+   "compound_id": "cineole",
+   "intensity": 4,
+   "source_id": "viudamartos2007"
+  },
+  {
+   "ingredient_id": "sage",
+   "compound_id": "camphene",
+   "intensity": 2,
+   "source_id": "viudamartos2007"
+  },
+  {
+   "ingredient_id": "thyme",
+   "compound_id": "thymol",
+   "intensity": 4,
+   "source_id": "piccaglia1991"
+  },
+  {
+   "ingredient_id": "thyme",
+   "compound_id": "p_cymene",
+   "intensity": 4,
+   "source_id": "piccaglia1991"
+  },
+  {
+   "ingredient_id": "thyme",
+   "compound_id": "gamma_terpinene",
+   "intensity": 3,
+   "source_id": "piccaglia1991"
+  },
+  {
+   "ingredient_id": "thyme",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "piccaglia1991"
+  },
+  {
+   "ingredient_id": "thyme",
+   "compound_id": "linalool",
+   "intensity": 4,
+   "source_id": "piccaglia1991"
+  },
+  {
+   "ingredient_id": "thyme",
+   "compound_id": "cineole",
+   "intensity": 1,
+   "source_id": "piccaglia1991"
+  },
+  {
+   "ingredient_id": "thyme",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "piccaglia1991"
+  },
+  {
+   "ingredient_id": "peppermint",
+   "compound_id": "menthol",
+   "intensity": 5,
+   "source_id": "lawrence1980mint"
+  },
+  {
+   "ingredient_id": "peppermint",
+   "compound_id": "menthone",
+   "intensity": 4,
+   "source_id": "lawrence1980mint"
+  },
+  {
+   "ingredient_id": "peppermint",
+   "compound_id": "menthyl_acetate",
+   "intensity": 2,
+   "source_id": "lawrence1980mint"
+  },
+  {
+   "ingredient_id": "peppermint",
+   "compound_id": "cineole",
+   "intensity": 1,
+   "source_id": "lawrence1980mint"
+  },
+  {
+   "ingredient_id": "peppermint",
+   "compound_id": "limonene",
+   "intensity": 1,
+   "source_id": "lawrence1980mint"
+  },
+  {
+   "ingredient_id": "turmeric",
+   "compound_id": "turmerones",
+   "intensity": 5,
+   "source_id": "lawrence1982tur"
+  },
+  {
+   "ingredient_id": "turmeric",
+   "compound_id": "alpha_phellandrene",
+   "intensity": 1,
+   "source_id": "lawrence1982tur"
+  },
+  {
+   "ingredient_id": "turmeric",
+   "compound_id": "caryophyllene",
+   "intensity": 1,
+   "source_id": "lawrence1982tur"
+  },
+  {
+   "ingredient_id": "turmeric",
+   "compound_id": "ar_curcumene",
+   "intensity": 1,
+   "source_id": "lawrence1982tur"
+  },
+  {
+   "ingredient_id": "turmeric",
+   "compound_id": "farnesene",
+   "intensity": 1,
+   "source_id": "lawrence1982tur"
+  },
+  {
+   "ingredient_id": "nutmeg",
+   "compound_id": "sabinene",
+   "intensity": 5,
+   "source_id": "baldry1976"
+  },
+  {
+   "ingredient_id": "nutmeg",
+   "compound_id": "alpha_pinene",
+   "intensity": 3,
+   "source_id": "baldry1976"
+  },
+  {
+   "ingredient_id": "nutmeg",
+   "compound_id": "beta_pinene",
+   "intensity": 2,
+   "source_id": "baldry1976"
+  },
+  {
+   "ingredient_id": "nutmeg",
+   "compound_id": "terpinen4ol",
+   "intensity": 2,
+   "source_id": "baldry1976"
+  },
+  {
+   "ingredient_id": "nutmeg",
+   "compound_id": "limonene",
+   "intensity": 2,
+   "source_id": "baldry1976"
+  },
+  {
+   "ingredient_id": "nutmeg",
+   "compound_id": "cineole",
+   "intensity": 2,
+   "source_id": "baldry1976"
+  },
+  {
+   "ingredient_id": "nutmeg",
+   "compound_id": "gamma_terpinene",
+   "intensity": 2,
+   "source_id": "baldry1976"
+  },
+  {
+   "ingredient_id": "nutmeg",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "baldry1976"
+  },
+  {
+   "ingredient_id": "mace",
+   "compound_id": "alpha_pinene",
+   "intensity": 4,
+   "source_id": "forest1972"
+  },
+  {
+   "ingredient_id": "mace",
+   "compound_id": "sabinene",
+   "intensity": 3,
+   "source_id": "forest1972"
+  },
+  {
+   "ingredient_id": "mace",
+   "compound_id": "beta_pinene",
+   "intensity": 3,
+   "source_id": "forest1972"
+  },
+  {
+   "ingredient_id": "mace",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "forest1972"
+  },
+  {
+   "ingredient_id": "mace",
+   "compound_id": "limonene",
+   "intensity": 2,
+   "source_id": "forest1972"
+  },
+  {
+   "ingredient_id": "mace",
+   "compound_id": "terpinen4ol",
+   "intensity": 2,
+   "source_id": "forest1972"
+  },
+  {
+   "ingredient_id": "mace",
+   "compound_id": "myristicin",
+   "intensity": 2,
+   "source_id": "forest1972"
+  },
+  {
+   "ingredient_id": "rose",
+   "compound_id": "citronellol",
+   "intensity": 5,
+   "source_id": "boelens1997"
+  },
+  {
+   "ingredient_id": "rose",
+   "compound_id": "geraniol",
+   "intensity": 5,
+   "source_id": "boelens1997"
+  },
+  {
+   "ingredient_id": "rose",
+   "compound_id": "nerol",
+   "intensity": 5,
+   "source_id": "boelens1997"
+  },
+  {
+   "ingredient_id": "rose",
+   "compound_id": "linalool",
+   "intensity": 4,
+   "source_id": "boelens1997"
+  },
+  {
+   "ingredient_id": "rose",
+   "compound_id": "phenylethanol",
+   "intensity": 1,
+   "source_id": "boelens1997"
+  },
+  {
+   "ingredient_id": "rose",
+   "compound_id": "methyl_eugenol",
+   "intensity": 1,
+   "source_id": "boelens1997"
+  },
+  {
+   "ingredient_id": "rose",
+   "compound_id": "eugenol",
+   "intensity": 1,
+   "source_id": "boelens1997"
+  },
+  {
+   "ingredient_id": "vanilla",
+   "compound_id": "vanillin",
+   "intensity": 5,
+   "source_id": "cai2019"
+  },
+  {
+   "ingredient_id": "ariana",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ariana",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ariana",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ariana",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ariana",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ariana",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "callista",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "callista",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "callista",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "callista",
+   "compound_id": "linalool",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "callista",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "comet",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "comet",
+   "compound_id": "humulene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "comet",
+   "compound_id": "caryophyllene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "comet",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "comet",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "comet",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_blanc",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_blanc",
+   "compound_id": "humulene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_blanc",
+   "compound_id": "caryophyllene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_blanc",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_blanc",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_blanc",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_magnum",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_magnum",
+   "compound_id": "humulene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_magnum",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_magnum",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_magnum",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_magnum",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_mittelfrueh",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_mittelfrueh",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_mittelfrueh",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_mittelfrueh",
+   "compound_id": "farnesene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_mittelfrueh",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_mittelfrueh",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_mittelfrueh",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_tradition",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_tradition",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_tradition",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_tradition",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "hallertau_tradition",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "herkules",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "herkules",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "herkules",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "herkules",
+   "compound_id": "linalool",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "herkules",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "herkules",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "huell_melon",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "huell_melon",
+   "compound_id": "caryophyllene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "huell_melon",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "huell_melon",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "huell_melon",
+   "compound_id": "geraniol",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "huell_melon",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mandarina_bavaria",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mandarina_bavaria",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mandarina_bavaria",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mandarina_bavaria",
+   "compound_id": "farnesene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mandarina_bavaria",
+   "compound_id": "linalool",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mandarina_bavaria",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mandarina_bavaria",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "perle",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "perle",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "perle",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "spalter_select",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "spalter_select",
+   "compound_id": "humulene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "spalter_select",
+   "compound_id": "caryophyllene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "spalter_select",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "spalter_select",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "spalter_select",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tango",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tango",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tango",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tango",
+   "compound_id": "farnesene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tango",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tango",
+   "compound_id": "geraniol",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tango",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tettnanger",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tettnanger",
+   "compound_id": "caryophyllene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tettnanger",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tettnanger",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "tettnanger",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "titan",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "titan",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "titan",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "titan",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "titan",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "titan",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "aurora",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "aurora",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "aurora",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "aurora",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "aurora",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "aurora",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "celeia",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "celeia",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "celeia",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "celeia",
+   "compound_id": "farnesene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "celeia",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "saaz",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "saaz",
+   "compound_id": "humulene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "saaz",
+   "compound_id": "caryophyllene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "saaz",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "saaz",
+   "compound_id": "linalool",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "saaz",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "cascade",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "cascade",
+   "compound_id": "humulene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "cascade",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "cascade",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "cascade",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "cascade",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "centennial",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "centennial",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "centennial",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "centennial",
+   "compound_id": "linalool",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "centennial",
+   "compound_id": "geraniol",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "chinook",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "chinook",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "chinook",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "chinook",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "chinook",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "citra",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "citra",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "citra",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "citra",
+   "compound_id": "linalool",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "citra",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "columbus",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "columbus",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "columbus",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "columbus",
+   "compound_id": "farnesene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "columbus",
+   "compound_id": "linalool",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "columbus",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ekuanot",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ekuanot",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ekuanot",
+   "compound_id": "caryophyllene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ekuanot",
+   "compound_id": "farnesene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mosaic",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mosaic",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mosaic",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mosaic",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mosaic",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "mosaic",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "sabro",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "sabro",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "sabro",
+   "compound_id": "caryophyllene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "sabro",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "sabro",
+   "compound_id": "geraniol",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "talus",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "talus",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "talus",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "talus",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "talus",
+   "compound_id": "geraniol",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "talus",
+   "compound_id": "hop_isobutyrates",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "eclipse",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "eclipse",
+   "compound_id": "humulene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "eclipse",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "eclipse",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "eclipse",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ella",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ella",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ella",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ella",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "ella",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "enigma",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "enigma",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "enigma",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "enigma",
+   "compound_id": "farnesene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "enigma",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "enigma",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "galaxy",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "galaxy",
+   "compound_id": "humulene",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "galaxy",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "galaxy",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "galaxy",
+   "compound_id": "linalool",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "galaxy",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "topaz",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "topaz",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "topaz",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "topaz",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "topaz",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "vic_secret",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "vic_secret",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "vic_secret",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "vic_secret",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "vic_secret",
+   "compound_id": "geraniol",
+   "intensity": 1,
+   "source_id": "bh2022"
+  },
+  {
+   "ingredient_id": "loral",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "bh2021"
+  },
+  {
+   "ingredient_id": "loral",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "bh2021"
+  },
+  {
+   "ingredient_id": "loral",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "bh2021"
+  },
+  {
+   "ingredient_id": "loral",
+   "compound_id": "linalool",
+   "intensity": 3,
+   "source_id": "bh2021"
+  },
+  {
+   "ingredient_id": "loral",
+   "compound_id": "geraniol",
+   "intensity": 2,
+   "source_id": "bh2021"
+  },
+  {
+   "ingredient_id": "simcoe",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "simcoe",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "simcoe",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "amarillo",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "amarillo",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "amarillo",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "amarillo",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "willamette",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "willamette",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "willamette",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "willamette",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "northern_brewer",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "northern_brewer",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "northern_brewer",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "mt_hood",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "mt_hood",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "mt_hood",
+   "compound_id": "caryophyllene",
+   "intensity": 3,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "crystal",
+   "compound_id": "myrcene",
+   "intensity": 5,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "crystal",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "crystal",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "hga"
+  },
+  {
+   "ingredient_id": "ekg",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "ekg",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "fuggle",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "fuggle",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "fuggle",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "savinjski_golding",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "savinjski_golding",
+   "compound_id": "humulene",
+   "intensity": 3,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "savinjski_golding",
+   "compound_id": "farnesene",
+   "intensity": 1,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "challenger",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "challenger",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "faram"
+  },
+  {
+   "ingredient_id": "nelson_sauvin",
+   "compound_id": "myrcene",
+   "intensity": 3,
+   "source_id": "hopsconnect"
+  },
+  {
+   "ingredient_id": "nelson_sauvin",
+   "compound_id": "humulene",
+   "intensity": 4,
+   "source_id": "hopsconnect"
+  },
+  {
+   "ingredient_id": "nelson_sauvin",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "hopsconnect"
+  },
+  {
+   "ingredient_id": "motueka",
+   "compound_id": "myrcene",
+   "intensity": 4,
+   "source_id": "hopsconnect"
+  },
+  {
+   "ingredient_id": "motueka",
+   "compound_id": "humulene",
+   "intensity": 1,
+   "source_id": "hopsconnect"
+  },
+  {
+   "ingredient_id": "motueka",
+   "compound_id": "caryophyllene",
+   "intensity": 1,
+   "source_id": "hopsconnect"
+  },
+  {
+   "ingredient_id": "motueka",
+   "compound_id": "farnesene",
+   "intensity": 2,
+   "source_id": "hopsconnect"
+  },
+  {
+   "ingredient_id": "wb06",
+   "compound_id": "vinylguaiacol",
+   "intensity": 4,
+   "source_id": "kumar2023"
+  },
+  {
+   "ingredient_id": "wb06",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 3,
+   "source_id": "fm_wb06"
+  },
+  {
+   "ingredient_id": "wb06",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 2,
+   "source_id": "roberts2023"
+  },
+  {
+   "ingredient_id": "t58",
+   "compound_id": "vinylguaiacol",
+   "intensity": 3,
+   "source_id": "fm_t58"
+  },
+  {
+   "ingredient_id": "t58",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 3,
+   "source_id": "fm_t58"
+  },
+  {
+   "ingredient_id": "t58",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 2,
+   "source_id": "fm_t58"
+  },
+  {
+   "ingredient_id": "be134",
+   "compound_id": "vinylguaiacol",
+   "intensity": 3,
+   "source_id": "fm_be134"
+  },
+  {
+   "ingredient_id": "be134",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 2,
+   "source_id": "fm_be134"
+  },
+  {
+   "ingredient_id": "be134",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 2,
+   "source_id": "fm_be134"
+  },
+  {
+   "ingredient_id": "be134",
+   "compound_id": "phenylethanol",
+   "intensity": 2,
+   "source_id": "fm_be134"
+  },
+  {
+   "ingredient_id": "lb_wit",
+   "compound_id": "vinylguaiacol",
+   "intensity": 3,
+   "source_id": "ll_wit"
+  },
+  {
+   "ingredient_id": "lb_wit",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 2,
+   "source_id": "ll_wit"
+  },
+  {
+   "ingredient_id": "lb_abbaye",
+   "compound_id": "vinylguaiacol",
+   "intensity": 2,
+   "source_id": "ll_abbaye"
+  },
+  {
+   "ingredient_id": "lb_abbaye",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 3,
+   "source_id": "ll_abbaye"
+  },
+  {
+   "ingredient_id": "lb_abbaye",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 2,
+   "source_id": "ll_abbaye"
+  },
+  {
+   "ingredient_id": "lb_farmhouse",
+   "compound_id": "vinylguaiacol",
+   "intensity": 3,
+   "source_id": "ll_farmhouse"
+  },
+  {
+   "ingredient_id": "lb_farmhouse",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 2,
+   "source_id": "ll_farmhouse"
+  },
+  {
+   "ingredient_id": "lb_farmhouse",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 2,
+   "source_id": "ll_farmhouse"
+  },
+  {
+   "ingredient_id": "lb_belle",
+   "compound_id": "vinylguaiacol",
+   "intensity": 4,
+   "source_id": "ll_belle"
+  },
+  {
+   "ingredient_id": "lb_belle",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 1,
+   "source_id": "ll_belle"
+  },
+  {
+   "ingredient_id": "lb_belle",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 1,
+   "source_id": "ll_belle"
+  },
+  {
+   "ingredient_id": "lb_munich",
+   "compound_id": "vinylguaiacol",
+   "intensity": 4,
+   "source_id": "ll_munich"
+  },
+  {
+   "ingredient_id": "lb_munich",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 4,
+   "source_id": "ll_munich"
+  },
+  {
+   "ingredient_id": "us05",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 1,
+   "source_id": "fm_range"
+  },
+  {
+   "ingredient_id": "us05",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 1,
+   "source_id": "roberts2023"
+  },
+  {
+   "ingredient_id": "lb_nottingham",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 1,
+   "source_id": "ll_nott"
+  },
+  {
+   "ingredient_id": "lb_nottingham",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 1,
+   "source_id": "ll_nott"
+  },
+  {
+   "ingredient_id": "lb_bry97",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 1,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_diamond",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 1,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_verdant",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 2,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_verdant",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 3,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_ne",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 2,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_ne",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 3,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_voss",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 1,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_voss",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 2,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_london",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 3,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_london",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 2,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_windsor",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 3,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_windsor",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 2,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_koln",
+   "compound_id": "isoamyl_acetate",
+   "intensity": 2,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "lb_koln",
+   "compound_id": "ethyl_hexanoate",
+   "intensity": 1,
+   "source_id": "ll_bifold"
+  },
+  {
+   "ingredient_id": "malt_pils",
+   "compound_id": "methylbutanal",
+   "intensity": 1,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_pale",
+   "compound_id": "methylbutanal",
+   "intensity": 2,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_pale",
+   "compound_id": "maltol",
+   "intensity": 1,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_vienna",
+   "compound_id": "methylbutanal",
+   "intensity": 2,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_vienna",
+   "compound_id": "maltol",
+   "intensity": 1,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_vienna",
+   "compound_id": "furaneol",
+   "intensity": 1,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_munich",
+   "compound_id": "methylbutanal",
+   "intensity": 3,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_munich",
+   "compound_id": "maltol",
+   "intensity": 2,
+   "source_id": "rogner2021"
+  },
+  {
+   "ingredient_id": "malt_munich",
+   "compound_id": "furaneol",
+   "intensity": 2,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_wheat",
+   "compound_id": "methylbutanal",
+   "intensity": 1,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_biscuit",
+   "compound_id": "methylbutanal",
+   "intensity": 3,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_biscuit",
+   "compound_id": "pyrazines",
+   "intensity": 2,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_biscuit",
+   "compound_id": "acetylpyrroline",
+   "intensity": 2,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_biscuit",
+   "compound_id": "maltol",
+   "intensity": 2,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_crystal",
+   "compound_id": "furaneol",
+   "intensity": 4,
+   "source_id": "fechir2021"
+  },
+  {
+   "ingredient_id": "malt_crystal",
+   "compound_id": "damascenone",
+   "intensity": 3,
+   "source_id": "fechir2021"
+  },
+  {
+   "ingredient_id": "malt_crystal",
+   "compound_id": "acetylpyrroline",
+   "intensity": 3,
+   "source_id": "fechir2021"
+  },
+  {
+   "ingredient_id": "malt_crystal",
+   "compound_id": "pyrazines",
+   "intensity": 2,
+   "source_id": "fechir2021"
+  },
+  {
+   "ingredient_id": "malt_crystal",
+   "compound_id": "methylbutanal",
+   "intensity": 3,
+   "source_id": "fickert1998"
+  },
+  {
+   "ingredient_id": "malt_crystal",
+   "compound_id": "vanillin",
+   "intensity": 2,
+   "source_id": "fickert1998"
+  },
+  {
+   "ingredient_id": "malt_crystal",
+   "compound_id": "maltol",
+   "intensity": 3,
+   "source_id": "rogner2021"
+  },
+  {
+   "ingredient_id": "malt_chocolate",
+   "compound_id": "pyrazines",
+   "intensity": 4,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_chocolate",
+   "compound_id": "guaiacol",
+   "intensity": 2,
+   "source_id": "fechir2021"
+  },
+  {
+   "ingredient_id": "malt_chocolate",
+   "compound_id": "maltol",
+   "intensity": 2,
+   "source_id": "rogner2021"
+  },
+  {
+   "ingredient_id": "malt_roasted_barley",
+   "compound_id": "pyrazines",
+   "intensity": 5,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_roasted_barley",
+   "compound_id": "guaiacol",
+   "intensity": 3,
+   "source_id": "fechir2021"
+  },
+  {
+   "ingredient_id": "malt_black",
+   "compound_id": "pyrazines",
+   "intensity": 4,
+   "source_id": "own"
+  },
+  {
+   "ingredient_id": "malt_black",
+   "compound_id": "guaiacol",
+   "intensity": 3,
+   "source_id": "fechir2021"
+  },
+  {
+   "ingredient_id": "allspice",
+   "compound_id": "eugenol",
+   "intensity": 5,
+   "source_id": "nabney1972"
+  },
+  {
+   "ingredient_id": "allspice",
+   "compound_id": "methyl_eugenol",
+   "intensity": 2,
+   "source_id": "nabney1972"
+  },
+  {
+   "ingredient_id": "allspice",
+   "compound_id": "caryophyllene",
+   "intensity": 2,
+   "source_id": "nabney1972"
+  },
+  {
+   "ingredient_id": "allspice",
+   "compound_id": "alpha_terpineol",
+   "intensity": 1,
+   "source_id": "nabney1972"
+  },
+  {
+   "ingredient_id": "allspice",
+   "compound_id": "cineole",
+   "intensity": 1,
+   "source_id": "nabney1972"
+  },
+  {
+   "ingredient_id": "allspice",
+   "compound_id": "p_cymene",
+   "intensity": 1,
+   "source_id": "nabney1972"
+  },
+  {
+   "ingredient_id": "allspice",
+   "compound_id": "alpha_phellandrene",
+   "intensity": 1,
+   "source_id": "nabney1972"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "gamma_nonalactone",
+   "intensity": 3,
+   "source_id": "wagner2016"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "furaneol",
+   "intensity": 3,
+   "source_id": "wagner2016"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "vanillin",
+   "intensity": 3,
+   "source_id": "wagner2016"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "linalool",
+   "intensity": 2,
+   "source_id": "wagner2016"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "carvacrol",
+   "intensity": 2,
+   "source_id": "wagner2016"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "nonadienal",
+   "intensity": 2,
+   "source_id": "wagner2016"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "anethole",
+   "intensity": 3,
+   "source_id": "chemworld2016"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "estragole",
+   "intensity": 2,
+   "source_id": "chemworld2016"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "eugenol",
+   "intensity": 2,
+   "source_id": "chemworld2016"
+  },
+  {
+   "ingredient_id": "licorice",
+   "compound_id": "cineole",
+   "intensity": 2,
+   "source_id": "chemworld2016"
+  },
+  {
+   "ingredient_id": "elderflower",
+   "compound_id": "rose_oxide",
+   "intensity": 4,
+   "source_id": "jorgensen2000"
+  },
+  {
+   "ingredient_id": "elderflower",
+   "compound_id": "hotrienol",
+   "intensity": 3,
+   "source_id": "jorgensen2000"
+  },
+  {
+   "ingredient_id": "elderflower",
+   "compound_id": "linalool",
+   "intensity": 3,
+   "source_id": "jorgensen2000"
+  },
+  {
+   "ingredient_id": "elderflower",
+   "compound_id": "alpha_terpineol",
+   "intensity": 2,
+   "source_id": "jorgensen2000"
+  },
+  {
+   "ingredient_id": "elderflower",
+   "compound_id": "nonanal",
+   "intensity": 2,
+   "source_id": "jorgensen2000"
+  },
+  {
+   "ingredient_id": "elderflower",
+   "compound_id": "damascenone",
+   "intensity": 2,
+   "source_id": "jorgensen2000"
+  },
+  {
+   "ingredient_id": "elderflower",
+   "compound_id": "hexanal",
+   "intensity": 1,
+   "source_id": "jorgensen2000"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "bornyl_acetate",
+   "intensity": 4,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "camphene",
+   "intensity": 4,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "delta3_carene",
+   "intensity": 3,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "alpha_pinene",
+   "intensity": 3,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "limonene",
+   "intensity": 2,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "beta_phellandrene",
+   "intensity": 2,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "beta_pinene",
+   "intensity": 1,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "borneol",
+   "intensity": 1,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "caryophyllene",
+   "intensity": 1,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "spruce",
+   "compound_id": "terpinolene",
+   "intensity": 1,
+   "source_id": "orav1998"
+  },
+  {
+   "ingredient_id": "lime",
+   "compound_id": "limonene",
+   "intensity": 5,
+   "source_id": "haro1985"
+  },
+  {
+   "ingredient_id": "lime",
+   "compound_id": "gamma_terpinene",
+   "intensity": 3,
+   "source_id": "haro1985"
+  },
+  {
+   "ingredient_id": "lime",
+   "compound_id": "beta_pinene",
+   "intensity": 3,
+   "source_id": "haro1985"
+  },
+  {
+   "ingredient_id": "lime",
+   "compound_id": "citral",
+   "intensity": 4,
+   "source_id": "haro1985"
+  },
+  {
+   "ingredient_id": "lime",
+   "compound_id": "sabinene",
+   "intensity": 1,
+   "source_id": "haro1985"
+  },
+  {
+   "ingredient_id": "lime",
+   "compound_id": "alpha_pinene",
+   "intensity": 1,
+   "source_id": "haro1985"
+  },
+  {
+   "ingredient_id": "lime",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "haro1985"
+  },
+  {
+   "ingredient_id": "kaffir_lime",
+   "compound_id": "citronellal",
+   "intensity": 5,
+   "source_id": "moreuil1973"
+  },
+  {
+   "ingredient_id": "kaffir_lime",
+   "compound_id": "sabinene",
+   "intensity": 2,
+   "source_id": "moreuil1973"
+  },
+  {
+   "ingredient_id": "kaffir_lime",
+   "compound_id": "linalool",
+   "intensity": 4,
+   "source_id": "moreuil1973"
+  },
+  {
+   "ingredient_id": "kaffir_lime",
+   "compound_id": "beta_pinene",
+   "intensity": 1,
+   "source_id": "moreuil1973"
+  },
+  {
+   "ingredient_id": "kaffir_lime",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "moreuil1973"
+  },
+  {
+   "ingredient_id": "kaffir_lime",
+   "compound_id": "gamma_terpinene",
+   "intensity": 1,
+   "source_id": "moreuil1973"
+  },
+  {
+   "ingredient_id": "yuzu",
+   "compound_id": "limonene",
+   "intensity": 5,
+   "source_id": "njoroge1994"
+  },
+  {
+   "ingredient_id": "yuzu",
+   "compound_id": "gamma_terpinene",
+   "intensity": 2,
+   "source_id": "njoroge1994"
+  },
+  {
+   "ingredient_id": "yuzu",
+   "compound_id": "myrcene",
+   "intensity": 1,
+   "source_id": "njoroge1994"
+  },
+  {
+   "ingredient_id": "yuzu",
+   "compound_id": "alpha_pinene",
+   "intensity": 1,
+   "source_id": "njoroge1994"
+  },
+  {
+   "ingredient_id": "yuzu",
+   "compound_id": "linalool",
+   "intensity": 3,
+   "source_id": "njoroge1994"
+  },
+  {
+   "ingredient_id": "sweet_gale",
+   "compound_id": "alpha_pinene",
+   "intensity": 4,
+   "source_id": "loziene2023"
+  },
+  {
+   "ingredient_id": "sweet_gale",
+   "compound_id": "limonene",
+   "intensity": 3,
+   "source_id": "loziene2023"
+  },
+  {
+   "ingredient_id": "sweet_gale",
+   "compound_id": "cineole",
+   "intensity": 3,
+   "source_id": "loziene2023"
+  },
+  {
+   "ingredient_id": "sweet_gale",
+   "compound_id": "delta_cadinene",
+   "intensity": 2,
+   "source_id": "loziene2023"
+  },
+  {
+   "ingredient_id": "sweet_gale",
+   "compound_id": "nerolidol",
+   "intensity": 2,
+   "source_id": "loziene2023"
+  },
+  {
+   "ingredient_id": "cacao_nibs",
+   "compound_id": "methylbutanal",
+   "intensity": 4,
+   "source_id": "frauendorfer2006"
+  },
+  {
+   "ingredient_id": "cacao_nibs",
+   "compound_id": "pyrazines",
+   "intensity": 4,
+   "source_id": "frauendorfer2006"
+  },
+  {
+   "ingredient_id": "cacao_nibs",
+   "compound_id": "furaneol",
+   "intensity": 3,
+   "source_id": "frauendorfer2006"
+  },
+  {
+   "ingredient_id": "cacao_nibs",
+   "compound_id": "phenylacetaldehyde",
+   "intensity": 3,
+   "source_id": "frauendorfer2006"
+  },
+  {
+   "ingredient_id": "coffee",
+   "compound_id": "furfurylthiol",
+   "intensity": 5,
+   "source_id": "grosch_coffee"
+  },
+  {
+   "ingredient_id": "coffee",
+   "compound_id": "pyrazines",
+   "intensity": 4,
+   "source_id": "grosch_coffee"
+  },
+  {
+   "ingredient_id": "coffee",
+   "compound_id": "guaiacol",
+   "intensity": 3,
+   "source_id": "grosch_coffee"
+  },
+  {
+   "ingredient_id": "coffee",
+   "compound_id": "damascenone",
+   "intensity": 3,
+   "source_id": "grosch_coffee"
+  },
+  {
+   "ingredient_id": "coffee",
+   "compound_id": "furaneol",
+   "intensity": 3,
+   "source_id": "grosch_coffee"
+  },
+  {
+   "ingredient_id": "coffee",
+   "compound_id": "vinylguaiacol",
+   "intensity": 2,
+   "source_id": "grosch_coffee"
+  },
+  {
+   "ingredient_id": "coffee",
+   "compound_id": "vanillin",
+   "intensity": 2,
+   "source_id": "grosch_coffee"
+  },
+  {
+   "ingredient_id": "jalapeno",
+   "compound_id": "ibmp",
+   "intensity": 5,
+   "source_id": "azcarate2010"
+  },
+  {
+   "ingredient_id": "jalapeno",
+   "compound_id": "hexenal",
+   "intensity": 3,
+   "source_id": "azcarate2010"
+  },
+  {
+   "ingredient_id": "jalapeno",
+   "compound_id": "hexanal",
+   "intensity": 2,
+   "source_id": "azcarate2010"
+  },
+  {
+   "ingredient_id": "jalapeno",
+   "compound_id": "nonadienal",
+   "intensity": 2,
+   "source_id": "azcarate2010"
+  }
+ ],
+ "sources": [
+  {
+   "id": "lawrence1980cor",
+   "title": "Lawrence B.M. (1980) Perfumer & Flavorist 5(4):6–16 – korianderzaadolie",
+   "url": "https://scent.vn/en/pages/oil/coriander-fruit-1-1018",
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "supelco776",
+   "title": "Supelco Bulletin 776 (1978) – zoete sinaasappelolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "dugo1993",
+   "title": "Dugo G. et al. (1993) Flavour and Fragrance Journal 8:25–33 – bittere sinaasappelolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "dugo1983",
+   "title": "Dugo G. et al. (1983) Essenze Derivati Agrumari 53:173–217 – citroenolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "boelens1991",
+   "title": "Boelens M.H. (1991) Perfumer & Flavorist 16:17–34 – grapefruitolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "lawrence1988gin",
+   "title": "Lawrence B.M. (1988) Perfumer & Flavorist 13:69–74 – gemberolie (India)",
+   "url": "https://scent.vn/en/pages/oil/ginger-india-1-301",
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "bernhard1971",
+   "title": "Bernhard R.A. et al. (1971) Phytochemistry 10:177–184 – kardemomolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "jirovetz1998",
+   "title": "Jirovetz L. et al. (1998) – kaneelolie, zoals geciteerd door scent.vn",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "REVIEW: scent.vn citeert een studie over bladolie (Kameroen) bij een bastolie-samenstelling"
+  },
+  {
+   "id": "viudamartos2007",
+   "title": "Viuda-Martos M. et al. (2007) Acta Chimica Slovenica 54:921–926 – kruidnagel, rozemarijn, salie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "maack1982",
+   "title": "Maack et al. (1982) Annales des Falsifications et de l'Expertise Chimique 75:357–367 – steranijsolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "lawrence1980ani",
+   "title": "Lawrence B.M. (1980) Perfumer & Flavorist 5:10–16 – anijsolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "ashokkumar2021",
+   "title": "Ashokkumar K. et al. (2021) National Academy Science Letters 44(6):503–506 – venkel en komijn",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "wrolstad",
+   "title": "Wrolstad R.E. et al. (1965/1971) Journal of Food Science – zwarte peperolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; exacte publicatie en URL aanvullen"
+  },
+  {
+   "id": "lawrence1984pp",
+   "title": "Lawrence B.M. (1984) Perfumer & Flavorist 8(5) – Schinus-olie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "REVIEW: plantendeel niet vermeld"
+  },
+  {
+   "id": "menut1991",
+   "title": "Menut C. et al. (1991) Flavour and Fragrance Journal 6:183–186 – Aframomum melegueta",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "depascual1976",
+   "title": "De Pascual Teresa J. et al. (1976) Anales de Química 72:657–660 – jeneverbesolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "formacek1982",
+   "title": "Formácek V. & Kubeczka K.-H. (1982) Essential Oils Analysis by Capillary Gas Chromatography and Carbon-13 NMR Spectroscopy (Wiley)",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn"
+  },
+  {
+   "id": "brunke1992",
+   "title": "Brunke E.-J. et al. (1992) Dragoco Report 1:3–31 – kamilleolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "mohammad1981",
+   "title": "Mohammad et al. (1981) Perfumer & Flavorist 6(2):29–31 – citroengrasolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "akgul1989",
+   "title": "Akgül A. et al. (1989) Journal of Essential Oil Research 1:277–280 – laurierolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "piccaglia1991",
+   "title": "Piccaglia R. & Marotti M. (1991) Flavour and Fragrance Journal 6:241–244 – tijmolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "lawrence1980mint",
+   "title": "Lawrence B.M. (1980) Perfumer & Flavorist 5:6–17 – pepermuntolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "lawrence1982tur",
+   "title": "Lawrence B.M. (1982) Perfumer & Flavorist 7(1):45 – kurkumaolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "baldry1976",
+   "title": "Baldry J. et al. (1976) International Flavours and Food Additives 7:28–30 – nootmuskaatolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "forest1972",
+   "title": "Forrest J.E. et al. (1972) Journal of Chromatography 69:115–121 – foelieolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; auteursnaam en URL controleren"
+  },
+  {
+   "id": "boelens1997",
+   "title": "Boelens M.H. & Boelens H. (1997) Perfumer & Flavorist 22:31–35 – rozenolie",
+   "url": null,
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "via scent.vn; pagina-URL aanvullen"
+  },
+  {
+   "id": "cai2019",
+   "title": "Cai Y. et al. (2019) Molecules 24(15):2781 – vanilline in gecuratteerde vanillepeulen",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6696495/",
+   "type": "literatuur",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "bh2022",
+   "title": "BarthHaas Hop Harvest Guide 2022",
+   "url": "https://www.barthhaas.com/fileadmin/user_upload/01-barthhaas-2022/Downloads/Reports_Broschures/Hop_Harvest_Guide/English/BarthHaas_Hop_Harvest_Guide_2022.pdf",
+   "type": "producentgids (hopolie)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "bh2021",
+   "title": "BarthHaas Hop Harvest Guide 2021",
+   "url": null,
+   "type": "producentgids (hopolie)",
+   "accessed_on": "2026-11-14",
+   "note": "URL aanvullen"
+  },
+  {
+   "id": "hga",
+   "title": "Hop Growers of America – Variety Manual (update maart 2011)",
+   "url": "https://static1.squarespace.com/static/54130deae4b00794c96d9ac7/t/541461afe4b0c99c6b1d2d40/1410621871282/HGA+Variety+Manual+-+English+(updated+March+2011).pdf",
+   "type": "telersgids (hopolie)",
+   "accessed_on": "2026-11-14",
+   "note": "geen linalool/geraniol"
+  },
+  {
+   "id": "faram",
+   "title": "Charles Faram – rassenfiches",
+   "url": null,
+   "type": "handelaar (hopolie)",
+   "accessed_on": "2026-11-14",
+   "note": "geen linalool; URL aanvullen"
+  },
+  {
+   "id": "hopsconnect",
+   "title": "Hops Connect – rassenfiches (PDF)",
+   "url": null,
+   "type": "handelaar (hopolie)",
+   "accessed_on": "2026-11-14",
+   "note": "geen linalool; URL aanvullen"
+  },
+  {
+   "id": "fm_wb06",
+   "title": "Fermentis – SafAle WB-06 productpagina",
+   "url": "https://fermentis.com/en/product/safale-wb-06/",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "fm_t58",
+   "title": "Fermentis – SafAle T-58 specificatieblad",
+   "url": "https://rahrbsg.ca/wp-content/uploads/2021/12/SPEC-Fermentis-SafAle-T-58-030118.pdf",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "fm_be134",
+   "title": "Fermentis – SafAle BE-134 specificatieblad",
+   "url": "https://rahrbsg.ca/wp-content/uploads/2021/12/SPEC-Fermentis-SafAle-BE-134-030118.pdf",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "fm_range",
+   "title": "Fermentis – Masterfile brewing range 2023",
+   "url": "https://www.castlemalting.com/Certificates/Masterfile_Gamme_Brewing_Fermentis_2023.pdf",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "ll_wit",
+   "title": "Lallemand – LalBrew Wit TDS",
+   "url": "https://cdn.shopify.com/s/files/1/0323/8825/1780/files/Wit_TDS_ENG_Print_A4_LalBrew.pdf",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "ll_abbaye",
+   "title": "Lallemand – LalBrew Abbaye TDS",
+   "url": "https://cdn.shopify.com/s/files/1/0323/8825/1780/files/Abbaye_TDS_ENG_Print_A4_LalBrew.pdf",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "ll_farmhouse",
+   "title": "Lallemand – LalBrew Farmhouse TDS",
+   "url": "https://cdn.shopify.com/s/files/1/0323/8825/1780/files/Farmhouse_TDS_ENGPrint_A4_LalBrew.pdf",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "ll_belle",
+   "title": "Lallemand – LalBrew Belle Saison TDS",
+   "url": "https://files.scottlab.com/uploads/BELLE%20SAISON%20TDS.pdf",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "ll_munich",
+   "title": "Lallemand – LalBrew Munich Classic TDS",
+   "url": "https://files.scottlab.com/uploads/MUNICH%20TDS.pdf",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "ll_nott",
+   "title": "Lallemand – LalBrew Nottingham TDS",
+   "url": "https://cdn.shopify.com/s/files/1/0323/8825/1780/files/Nottingham_TDS_ENG_Print_A4_LalBrew.pdf",
+   "type": "producent (datasheet)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "ll_bifold",
+   "title": "Lallemand – LalBrew brewing yeast range (bifold, aug. 2020)",
+   "url": "https://doemens.org/uploads/2021/02/bifold_lps_lalbrew_eng_a3_aug2020.pdf",
+   "type": "producent (overzicht)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "own",
+   "title": "BrewBindr – eigen inschatting (ter review)",
+   "url": null,
+   "type": "eigen inschatting",
+   "accessed_on": "2026-11-14",
+   "note": "geen meetwaarden; intensiteit afgeleid uit de omschrijving"
+  },
+  {
+   "id": "rogner2021",
+   "title": "Rögner N.S., Mall V., Steinhaus M. (2021) Eur Food Res Technol 247:1263–1275 – odoranten in vloeibare moutextracten",
+   "url": "https://link.springer.com/article/10.1007/s00217-021-03707-z",
+   "type": "literatuur (aroma-analyse)",
+   "accessed_on": "2026-11-14",
+   "note": "moutextracten: maltol hoger bij donker, HDMF bij licht"
+  },
+  {
+   "id": "fickert1998",
+   "title": "Fickert B. & Schieberle P. (1998) Nahrung 42(6):371–375 – sleutelodoranten in karamelmout (caramalt)",
+   "url": "https://doi.org/10.1002/(sici)1521-3803(199812)42:06<371::aid-food371>3.0.co;2-v",
+   "type": "literatuur (aroma-analyse)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "fechir2021",
+   "title": "Féchir M. et al. (2021) J. Agric. Food Chem. 69(29):8190–8199 – bijdrage van speciale moutsoorten aan het aroma van lager",
+   "url": "https://doi.org/10.1021/acs.jafc.1c01846",
+   "type": "literatuur (aroma-analyse)",
+   "accessed_on": "2026-11-14",
+   "note": "karamelmout: damascenon, 2-acetyl-1-pyrroline, pyrazine, HDMF; gebrande mout: guaiacol"
+  },
+  {
+   "id": "kumar2023",
+   "title": "Kumar A. et al. (2023) Foods 12(5):1064 – invloed van giststam op hoparoma en vluchtige stoffen (o.a. US-05, BE-256, WB-06)",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10000826/",
+   "type": "literatuur (meting, relatief)",
+   "accessed_on": "2026-11-14",
+   "note": "WB-06: significant meer 4-VG en ethylhexanoaat; US-05, BE-256: sporen 4-VG"
+  },
+  {
+   "id": "roberts2023",
+   "title": "Roberts R. et al. (2023) J. Mass Spectrom. 58(10):e4959 – esters en hogere alcoholen tijdens de vergisting (US-05, WB-06)",
+   "url": "https://openpub.fmach.it/retrieve/c283e271-ec27-4b8c-bc1b-6a8dd17add17/2023%20JMS%20Biasioli.pdf",
+   "type": "literatuur (meting)",
+   "accessed_on": "2026-11-14",
+   "note": "ethylhexanoaat einde vergisting: WB-06 77 ppbv, US-05 45 ppbv"
+  },
+  {
+   "id": "nabney1972",
+   "title": "Nabney J. & Robinson F.V. (1972) Flavour Industry 3:50–51 – pimentbesolie",
+   "url": "https://scent.vn/en/pages/oil/pimento-allspice-1-602",
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "chemworld2016",
+   "title": "Chemistry World (2016) – Secret of liquorice's unique smell unravelled",
+   "url": "https://chemistryworld.com/news/secret-of-liquorices-unique-smell-unravelled/2500020.article",
+   "type": "vakpers",
+   "accessed_on": "2026-11-14",
+   "note": "noemt anethol, estragol, eugenol, cineol"
+  },
+  {
+   "id": "wagner2016",
+   "title": "Wagner J., Granvogl M., Schieberle P. (2016) J. Agric. Food Chem. 64(44):8388–8396 – sleutelaromastoffen in zoethout",
+   "url": "https://doi.org/10.1021/acs.jafc.6b03676",
+   "type": "literatuur (aroma-analyse)",
+   "accessed_on": "2026-11-14",
+   "note": "geen percentages; FD-factoren en OAV"
+  },
+  {
+   "id": "jorgensen2000",
+   "title": "Jørgensen U. et al. (2000) J. Agric. Food Chem. 48(6):2376–2383 – aromastoffen in vlierbloesemdrank",
+   "url": "https://doi.org/10.1021/jf000005f",
+   "type": "literatuur (aroma-analyse)",
+   "accessed_on": "2026-11-14",
+   "note": "geen concentraties in de samenvatting"
+  },
+  {
+   "id": "orav1998",
+   "title": "Orav A., Kailas T., Koel M. (1998) Journal of Essential Oil Research 10:387–393 – naaldolie Picea abies (Estland)",
+   "url": "https://scent.vn/en/pages/oil/picea-abies-estonia-fir-needle-2905",
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "naalden, geen jonge scheuten"
+  },
+  {
+   "id": "haro1985",
+   "title": "Haro L. & Faas W.E. (1985) Perfumer & Flavorist 10:67–72 – Key- en Perzische limoenolie (koudgeperst)",
+   "url": "https://scent.vn/en/pages/oil/lime-persian-1-390",
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "moreuil1973",
+   "title": "Moreuil C. & Huet R. (1973) Fruits 28:703–708 – combava (Madagaskar), bladolie",
+   "url": "https://scent.vn/en/pages/oil/swangi-citrus-hystrix-leaf-madagascar-1795",
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": null
+  },
+  {
+   "id": "njoroge1994",
+   "title": "Njoroge S.M. et al. (1994) Flavour and Fragrance Journal 9:159–166 – vluchtige componenten van Japanse yuzu- en citroenolie",
+   "url": "https://scent.vn/en/pages/oil/yuzu-japan-3-1672",
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "scent.vn geeft ook JAFC 44:550–556 (1996)"
+  },
+  {
+   "id": "loziene2023",
+   "title": "Ložienė K. et al. (2023) Plants 12(5):1050 – essentiële olie van Myrica gale (Litouwen)",
+   "url": "https://mdpi.com/2223-7747/12/5/1050",
+   "type": "literatuur (oliesamenstelling)",
+   "accessed_on": "2026-11-14",
+   "note": "tabelwaarden niet uitgelezen"
+  },
+  {
+   "id": "frauendorfer2006",
+   "title": "Frauendorfer F. & Schieberle P. (2006) J. Agric. Food Chem. 54(15):5521–5529 – sleutelaromastoffen in cacaopoeder",
+   "url": "https://doi.org/10.1021/jf060728k",
+   "type": "literatuur (aroma-analyse)",
+   "accessed_on": "2026-11-14",
+   "note": "cacaopoeder, geen nibs"
+  },
+  {
+   "id": "grosch_coffee",
+   "title": "Grosch W.; Blank I. et al. – sleutelaromastoffen van gebrande koffie (samengevat door Coffee Research Institute)",
+   "url": "https://coffeeresearch.org/science/aromamain.htm",
+   "type": "secundaire bron (aroma-analyse)",
+   "accessed_on": "2026-11-14",
+   "note": "originele publicaties aanvullen"
+  },
+  {
+   "id": "azcarate2010",
+   "title": "Azcarate C. & Barringer S.A. (2010) Journal of Food Science – vluchtige stoffen in jalapeño (SIFT-MS)",
+   "url": "https://pubmed.ncbi.nlm.nih.gov/21535582/",
+   "type": "literatuur (aroma-analyse)",
+   "accessed_on": "2026-11-14",
+   "note": "volume/pagina's aanvullen"
+  }
+ ]
+}
