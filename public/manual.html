@@ -332,6 +332,7 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
     <div class="nav-section">
       <div class="nav-section-label">Brewer's Guide</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recipes &amp; AI</a>
+      <a class="nav-item" href="#lifecycle"><i class="fas fa-route"></i>Recipe lifecycle</a>
       <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab</a>
       <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Calculations</a>
       <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Water volumes</a>
@@ -498,6 +499,31 @@ details .details-body { padding: 0 16px 14px; font-size: 13.5px; }
           <li><strong>Deleting a recipe with brews</strong> — if brews still use the recipe, you are asked whether to delete the recipe <b>together with those brews and their tasting notes</b>, or to cancel. A recipe that brews of another brewery use cannot be deleted.</li>
         </ul>
         <div class="callout tip"><i class="fas fa-print"></i><div>Every recipe has a <b>print view</b> — a clean brew-day sheet you can print or save as PDF, with the water volumes, strike temperature, warnings and water treatment.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="lifecycle" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-route"></i> Brewer's Guide</div>
+        <h2>Recipe lifecycle <span class="role-badge brewer">Brewer</span></h2>
+        <p>Every recipe of your brewery has a <b>stage</b>. New and imported recipes start as an <b>Idea</b>. The stage is shown on the recipe card, the buttons above the list filter on it, and the recipe editor shows it at the top with its history (date, who, note).</p>
+        <ul class="doc-list">
+          <li><strong>Idea</strong> — concept, not brewed yet. → Lab or Rejected.</li>
+          <li><strong>Lab</strong> — small test batches; the recipe still changes. → Pilot, Production or Rejected.</li>
+          <li><strong>Pilot</strong> — first full-size batch, to test scaling up (can be skipped). → Production, back to Lab, or Rejected.</li>
+          <li><strong>Production</strong> — fixed recipe, brewed again and again. → Paused or Retired.</li>
+          <li><strong>Paused</strong> — good recipe, not brewed for now (season, ingredient not available). → Production or Retired.</li>
+          <li><strong>Rejected</strong> — did not make it to production; a reason is required. → Idea again.</li>
+          <li><strong>Retired</strong> — was in production, no longer brewed; a reason is required. Kept for the history. → Production again.</li>
+        </ul>
+        <h3>Brewing and versions</h3>
+        <ul class="doc-list">
+          <li>You brew from Lab, Pilot and Production. Brewing an idea moves it to Lab first; a paused recipe goes back to Production; rejected and retired recipes are not brewed.</li>
+          <li>Every brew remembers the stage and version of its recipe, so you see lab, pilot and production batches apart.</li>
+          <li>A recipe in <b>Production</b> (or Paused) is not changed in place: saving a change makes a <b>new version</b> ("Tripel v2") that starts in Lab. When the new version goes to Production, the app offers to retire the old one.</li>
+          <li>The <b>Archive</b> filter shows rejected and retired recipes. A copy starts again as an idea.</li>
+          <li>Brewery admins and brewmasters change the stage. The lifecycle is separate from publishing in the public library.</li>
+        </ul>
       </div>
     </section>
 
@@ -935,6 +961,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
     <div class="nav-section">
       <div class="nav-section-label">Voor brouwers</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recepten &amp; AI</a>
+      <a class="nav-item" href="#lifecycle"><i class="fas fa-route"></i>Levenscyclus</a>
       <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab</a>
       <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Berekeningen</a>
       <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Watervolumes</a>
@@ -1101,6 +1128,31 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
           <li><strong>Een recept met brouwsels verwijderen</strong> — steunen er nog brouwsels op het recept, dan vraagt de app of je het recept <b>samen met die brouwsels en hun proefnotities</b> wil verwijderen, of wil annuleren. Een recept dat brouwsels van een andere brouwerij gebruiken, kan je niet verwijderen.</li>
         </ul>
         <div class="callout tip"><i class="fas fa-print"></i><div>Elk recept heeft een <b>afdrukweergave</b> — een overzichtelijk brouwdagblad om af te drukken of als pdf te bewaren, met de watervolumes, inmaischtemperatuur, waarschuwingen en waterbehandeling.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="lifecycle" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-route"></i> Brouwersgids</div>
+        <h2>Levenscyclus van recepten <span class="role-badge brewer">Brouwer</span></h2>
+        <p>Elk recept van je brouwerij heeft een <b>stap</b>. Nieuwe en geïmporteerde recepten beginnen als <b>Idee</b>. De stap staat op de receptkaart, de knoppen boven de lijst filteren erop, en de recepteditor toont hem bovenaan met de historiek (datum, wie, notitie).</p>
+        <ul class="doc-list">
+          <li><strong>Idee</strong> — concept, nog niet gebrouwen. → Lab of Afgekeurd.</li>
+          <li><strong>Lab</strong> — proefbrouwsels op kleine schaal; het recept verandert nog. → Pilot, Productie of Afgekeurd.</li>
+          <li><strong>Pilot</strong> — eerste brouwsel op volle grootte, om de schaalvergroting te testen (mag je overslaan). → Productie, terug naar Lab, of Afgekeurd.</li>
+          <li><strong>Productie</strong> — vast recept dat herhaald gebrouwen wordt. → Gepauzeerd of Uitgefaseerd.</li>
+          <li><strong>Gepauzeerd</strong> — goed recept dat tijdelijk niet gebrouwen wordt (seizoen, ingrediënt niet beschikbaar). → Productie of Uitgefaseerd.</li>
+          <li><strong>Afgekeurd</strong> — haalde de productie niet; een reden is verplicht. → opnieuw Idee.</li>
+          <li><strong>Uitgefaseerd</strong> — was in productie, wordt niet meer gebrouwen; een reden is verplicht. Bewaard voor de historiek. → opnieuw Productie.</li>
+        </ul>
+        <h3>Brouwen en versies</h3>
+        <ul class="doc-list">
+          <li>Je brouwt vanuit Lab, Pilot en Productie. Een idee brouwen zet het eerst naar Lab; een gepauzeerd recept gaat terug naar Productie; afgekeurde en uitgefaseerde recepten brouw je niet.</li>
+          <li>Elk brouwsel onthoudt de stap en versie van zijn recept, zodat je lab-, pilot- en productiebatches apart ziet.</li>
+          <li>Een recept in <b>Productie</b> (of Gepauzeerd) wijzig je niet ter plaatse: een wijziging bewaren maakt een <b>nieuwe versie</b> ("Tripel v2") die in Lab begint. Gaat de nieuwe versie naar Productie, dan stelt de app voor de oude uit te faseren.</li>
+          <li>De filter <b>Archief</b> toont afgekeurde en uitgefaseerde recepten. Een kopie begint opnieuw als idee.</li>
+          <li>Beheerders en brouwmeesters wijzigen de stap. De levenscyclus staat los van publiceren in de publieke bibliotheek.</li>
+        </ul>
       </div>
     </section>
 
@@ -1538,6 +1590,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
     <div class="nav-section">
       <div class="nav-section-label">Pour les brasseurs</div>
       <a class="nav-item" href="#recipes"><i class="fas fa-wand-magic-sparkles"></i>Recettes &amp; IA</a>
+      <a class="nav-item" href="#lifecycle"><i class="fas fa-route"></i>Cycle de vie</a>
       <a class="nav-item" href="#flavour-lab"><i class="fas fa-flask-vial"></i>Flavour Lab</a>
       <a class="nav-item" href="#calculations"><i class="fas fa-calculator"></i>Calculs</a>
       <a class="nav-item" href="#water"><i class="fas fa-droplet"></i>Volumes d'eau</a>
@@ -1704,6 +1757,31 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
           <li><strong>Supprimer une recette avec des brassins</strong> — si des brassins dépendent encore de la recette, l'application demande si vous voulez supprimer la recette <b>avec ces brassins et leurs notes de dégustation</b>, ou annuler. Une recette utilisée par les brassins d'une autre brasserie ne peut pas être supprimée.</li>
         </ul>
         <div class="callout tip"><i class="fas fa-print"></i><div>Chaque recette a une <b>vue imprimable</b> — une fiche de brassage claire à imprimer ou à enregistrer en PDF, avec les volumes d'eau, la température d'empâtage, les avertissements et le traitement de l'eau.</div></div>
+      </div>
+    </section>
+
+    <section class="doc" id="lifecycle" data-audience="brewer">
+      <div class="card">
+        <div class="section-eyebrow"><i class="fas fa-route"></i> Guide du brasseur</div>
+        <h2>Cycle de vie des recettes <span class="role-badge brewer">Brasseur</span></h2>
+        <p>Chaque recette de votre brasserie a une <b>étape</b>. Les recettes nouvelles et importées commencent comme <b>Idée</b>. L'étape figure sur la carte de la recette, les boutons au-dessus de la liste filtrent dessus, et l'éditeur l'affiche en haut avec l'historique (date, qui, note).</p>
+        <ul class="doc-list">
+          <li><strong>Idée</strong> — concept, pas encore brassé. → Labo ou Rejetée.</li>
+          <li><strong>Labo</strong> — brassins d'essai à petite échelle ; la recette évolue encore. → Pilote, Production ou Rejetée.</li>
+          <li><strong>Pilote</strong> — premier brassin à pleine taille, pour tester le passage à l'échelle (facultatif). → Production, retour au Labo, ou Rejetée.</li>
+          <li><strong>Production</strong> — recette fixe, brassée régulièrement. → En pause ou Retirée.</li>
+          <li><strong>En pause</strong> — bonne recette temporairement non brassée (saison, ingrédient indisponible). → Production ou Retirée.</li>
+          <li><strong>Rejetée</strong> — n'a pas atteint la production ; une raison est obligatoire. → de nouveau Idée.</li>
+          <li><strong>Retirée</strong> — était en production, ne l'est plus ; une raison est obligatoire. Conservée pour l'historique. → de nouveau Production.</li>
+        </ul>
+        <h3>Brasser et versions</h3>
+        <ul class="doc-list">
+          <li>On brasse depuis Labo, Pilote et Production. Brasser une idée la fait d'abord passer en Labo ; une recette en pause repasse en Production ; les recettes rejetées et retirées ne se brassent pas.</li>
+          <li>Chaque brassin retient l'étape et la version de sa recette : vous distinguez les lots de labo, pilote et production.</li>
+          <li>Une recette en <b>Production</b> (ou En pause) ne se modifie pas sur place : enregistrer une modification crée une <b>nouvelle version</b> (« Tripel v2 ») qui commence en Labo. Quand elle passe en Production, l'app propose de retirer l'ancienne.</li>
+          <li>Le filtre <b>Archives</b> montre les recettes rejetées et retirées. Une copie recommence comme idée.</li>
+          <li>Les administrateurs et maîtres brasseurs changent l'étape. Le cycle de vie est indépendant de la publication dans la bibliothèque publique.</li>
+        </ul>
       </div>
     </section>
 

@@ -17,6 +17,7 @@ import EquipmentPickerDialog from './components/EquipmentPickerDialog';
 import NewPasswordForm from './components/NewPasswordForm';
 import { authService } from './services/authService';
 import { copyRecipe } from './services/recipeCopy';
+import { RecipeStage, ARCHIVED, RECIPE_STAGES, stageOf, moveToStage, brewStart, needsNewVersion, newVersion, otherProductionVersions, freshLifecycle, contentChanged } from './services/lifecycle';
 import { applyStockChange } from './services/stock';
 const Settings = lazy(() => import('./components/Settings'));
 const HelpView = lazy(() => import('./components/HelpView'));
@@ -26,6 +27,7 @@ import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { BottomNav } from './components/BottomNav';
 import { InfoBanner } from './components/InfoBanner';
+import { StageBadge } from './components/RecipeLifecycle';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
 import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment, ownInstallations } from './services/calculations';
@@ -163,6 +165,8 @@ const AppContent: React.FC = () => {
   const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
   const [showBrewableOnly, setShowBrewableOnly] = useState(false);
   const [recipeTab, setRecipeTab] = useState<'all' | 'brewable'>('all');
+  // Lifecycle filter of the brewery's recipes: the active stages, one stage, or the archive
+  const [stageFilter, setStageFilter] = useState<'active' | 'archived' | RecipeStage>('active');
   const [teamCount, setTeamCount] = useState(1);
   const [members, setMembers] = useState<Taster[]>([]);
   // Tasting note being edited, and the batch the tasting notes screen opens on
@@ -203,8 +207,28 @@ const AppContent: React.FC = () => {
         if (recipeTab === 'brewable' && preferences.enableStockManagement) return stock.isBrewable;
         return true;
       })
+      .filter(({ recipe: r }) => {
+        if (libraryView === 'public') return true;
+        const stage = stageOf(r);
+        if (stageFilter === 'active') return !ARCHIVED.includes(stage);
+        if (stageFilter === 'archived') return ARCHIVED.includes(stage);
+        return stage === stageFilter;
+      })
       .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name));
-  }, [recipes, libraryView, user?.id, profile?.brewery_id, recipeTab, preferences.enableStockManagement, library]);
+  }, [recipes, libraryView, user?.id, profile?.brewery_id, recipeTab, preferences.enableStockManagement, library, stageFilter]);
+
+  // How many of the brewery's recipes are in each stage (for the filter)
+  const stageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of recipes) {
+      const isOwner = (!r.user_id || r.user_id === user?.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id);
+      if (!isOwner || !(r.status === 'private' || r.status === 'submitted')) continue;
+      const s = stageOf(r);
+      counts[s] = (counts[s] ?? 0) + 1;
+      counts[ARCHIVED.includes(s) ? 'archived' : 'active'] = (counts[ARCHIVED.includes(s) ? 'archived' : 'active'] ?? 0) + 1;
+    }
+    return counts;
+  }, [recipes, user?.id, profile?.brewery_id]);
 
 
   useEffect(() => {
@@ -678,15 +702,61 @@ const AppContent: React.FC = () => {
     return true;
   };
 
-  const handleSaveRecipe = async (recipe: Recipe) => {
-    if (!(await storeRecipe(recipe, selectedRecipe))) return;
+  const handleSaveRecipe = async (edited: Recipe) => {
+    const stored = selectedRecipe?.id ? recipes.find(r => r.id === selectedRecipe.id) ?? selectedRecipe : null;
+    // The stage is changed apart from the editor: keep the stored one
+    const recipe: Recipe = stored ? { ...edited, lifecycle: stored.lifecycle, version: stored.version, version_of: stored.version_of } : edited;
+    if (stored && needsNewVersion(stored) && contentChanged(recipe, stored)) {
+      // A production recipe stays as it is: the change becomes a new version, in lab
+      if (!confirm(t('lc_new_version_confirm'))) return;
+      const next = newVersion(recipe, stored, recipes, { takenNames: privateRecipeNames(recipes, profile?.brewery_id, user?.id), by: user?.id });
+      if (!(await storeRecipe(next, null))) return;
+      alert(t('lc_new_version_made').replace('{name}', next.name));
+    } else if (!(await storeRecipe(recipe, selectedRecipe))) return;
     setSelectedRecipe(null);
     setView('recipes');
   };
 
-  /** Flavour Lab changes a stored recipe and stays on its screen. */
-  const handleFlavourSaveRecipe = async (recipe: Recipe) =>
-    storeRecipe(recipe, recipes.find(r => r.id === recipe.id) ?? null);
+  /**
+   * Moves a stored recipe to another stage (with a note), and saves it. Going to production
+   * offers to retire the other version that is in production.
+   */
+  const handleChangeStage = async (recipeId: string, to: RecipeStage, note?: string): Promise<boolean> => {
+    const stored = recipes.find(r => r.id === recipeId);
+    if (!stored) return false;
+    let moved: Recipe;
+    try {
+      moved = moveToStage(stored, to, { by: user?.id, note });
+    } catch (err: any) {
+      alert(err?.message || String(err));
+      return false;
+    }
+    if (!(await storeRecipe(moved, stored))) return false;
+    if (selectedRecipe?.id === recipeId) setSelectedRecipe(moved);
+    if (to === 'production') {
+      for (const old of otherProductionVersions(moved, recipes)) {
+        if (!confirm(t('lc_retire_old').replace('{old}', old.name).replace('{new}', moved.name))) continue;
+        await storeRecipe(moveToStage(old, 'retired', { by: user?.id, note: t('lc_replaced_by').replace('{name}', moved.name) }), old);
+      }
+    }
+    return true;
+  };
+
+  /**
+   * Flavour Lab changes a stored recipe and stays on its screen. A production recipe gets a new
+   * version (in lab), which Flavour Lab then shows.
+   */
+  const handleFlavourSaveRecipe = async (recipe: Recipe) => {
+    const stored = recipes.find(r => r.id === recipe.id) ?? null;
+    if (stored && needsNewVersion(stored)) {
+      if (!confirm(t('lc_new_version_confirm'))) return false;
+      const next = newVersion(recipe, stored, recipes, { takenNames: privateRecipeNames(recipes, profile?.brewery_id, user?.id), by: user?.id });
+      if (!(await storeRecipe(next, null))) return false;
+      setFlavourRecipeId(next.id);
+      return true;
+    }
+    return storeRecipe(recipe, stored);
+  };
 
   /**
    * Deletes a recipe after asking. When brews use it, the question offers to delete
@@ -761,7 +831,15 @@ const AppContent: React.FC = () => {
    * Start a brew. With several installations, ask which one the brew is made on, unless
    * the brewery has a default and the recipe uses that one (or names none).
    */
-  const startBrew = (recipe: Recipe) => {
+  const startBrew = async (recipe: Recipe) => {
+    // Lifecycle: an idea goes to lab first, a paused recipe back to production; rejected and retired recipes are not brewed
+    const check = brewStart(recipe);
+    if (check.kind === 'blocked') { alert(t('lc_brew_blocked').replace('{stage}', t(`lc_stage_${stageOf(recipe)}` as any))); return; }
+    if (check.kind === 'move') {
+      if (!confirm(t('lc_brew_move').replace('{stage}', t(`lc_stage_${check.to}` as any)))) return;
+      if (!(await handleChangeStage(recipe.id!, check.to))) return;
+      recipe = moveToStage(recipe, check.to, { by: user?.id });
+    }
     const installations = ownInstallations(deduplicatedLibrary);
     if (installations.length <= 1) return openNewBrew(recipe);
     const def = installations.find(e => e.is_default);
@@ -895,8 +973,9 @@ const AppContent: React.FC = () => {
     }
     
     if (exactMatches.length > 0) {
-      // Exactly the same data, ignore it (a recipe's water: link the existing one)
-      linkImportedWater(next, exactMatches[0].id);
+      // Exactly the same data, ignore it (a recipe's water: link the existing one, the copy the
+      // ingredient lists show when the brewery has several with that name)
+      linkImportedWater(next, (exactMatches.find(m => deduplicatedLibrary.some(d => d.id === m.id)) ?? exactMatches[0]).id);
       const nextSummary = { ...summary, ignored: summary.ignored + 1 };
       setImportSummary(nextSummary);
       const nextQ = currentQueue.slice(1);
@@ -1042,7 +1121,8 @@ const AppContent: React.FC = () => {
       nextSummary.ignored += 1;
       // Ignored: a recipe's water links to the existing profile with that name
       if (currentDuplicate.type === 'library') {
-        const existing = findPrivateIngredient(library, currentDuplicate.data.name, currentDuplicate.data.type, profile?.brewery_id, user?.id);
+        const shown = deduplicatedLibrary.find(l => l.type === currentDuplicate.data.type && nameKey(l.name) === nameKey(currentDuplicate.data.name) && l.status === 'private');
+        const existing = shown ?? findPrivateIngredient(library, currentDuplicate.data.name, currentDuplicate.data.type, profile?.brewery_id, user?.id);
         linkImportedWater(currentDuplicate, existing?.id);
       }
     }
@@ -1194,7 +1274,7 @@ const AppContent: React.FC = () => {
 
     const newRecipeId = crypto.randomUUID();
     const updatedRecipe: Recipe = {
-      ...syncedRecipe,
+      ...freshLifecycle(syncedRecipe),
       id: newRecipeId,
       name: uniqueName(syncedRecipe.name, privateRecipeNames(recipes, profile?.brewery_id, user?.id)),
       user_id: user?.id,
@@ -1759,6 +1839,17 @@ const AppContent: React.FC = () => {
                       )}
                     </>
                   )}
+                  {libraryView === 'personal' && (
+                    <div role="group" aria-label={t('lc_filter_label')} className="flex flex-wrap gap-2">
+                      {(['active', ...RECIPE_STAGES.filter(s => !ARCHIVED.includes(s)), 'archived'] as const).map(f => (
+                        <button key={f} type="button" onClick={() => setStageFilter(f)} aria-pressed={stageFilter === f}
+                          className={`px-3 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest ${stageFilter === f ? 'border-[var(--color-accent)] bg-[var(--color-accent-light)] text-[var(--color-text)]' : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}>
+                          {t(f === 'active' ? 'lc_filter_active' : f === 'archived' ? 'lc_filter_archived' : `lc_stage_${f}` as any)}
+                          <span className="ml-1.5 tabular-nums text-[var(--color-text-xmuted)]">{stageCounts[f] ?? 0}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       <>
                         {libraryView === 'personal' && recipeManager && (
@@ -1785,6 +1876,7 @@ const AppContent: React.FC = () => {
                             <h3 className="text-xl font-bold mb-1 pr-16 truncate group-hover:text-amber-800 transition-colors">{r.name}</h3>
 
                             <div className="flex flex-wrap items-center gap-2 mb-2">
+                              {libraryView === 'personal' && <StageBadge stage={stageOf(r)} version={r.version} />}
                               {libraryView === 'personal' && r.status === 'submitted' && (
                                 <div className="flex items-center gap-1.5">
                                   <i className="fas fa-clock text-amber-500 text-[10px]" ></i>
@@ -1958,6 +2050,9 @@ const AppContent: React.FC = () => {
                   onSubmitToPublic={publisher ? handleRecipeSubmitToPublic : undefined}
                   onDelete={handleDeleteRecipe}
                   onOpenFlavourLab={user ? (r => { setFlavourRecipeId(r.id); setView('flavour_lab'); }) : undefined}
+                  storedRecipe={selectedRecipe?.id ? recipes.find(r => r.id === selectedRecipe.id) : undefined}
+                  onChangeStage={handleChangeStage}
+                  nameOf={id => memberName(tasters.find(m => m.id === id)) || ''}
                   library={deduplicatedLibrary}
                 />
               )}
