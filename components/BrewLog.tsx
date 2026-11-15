@@ -141,9 +141,9 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
     const adapted = adaptToEfficiency({ ...brewRecipe, efficiency: { brewhouse: effMismatch.design } }, effMismatch.actual);
     setEntry(prev => ({ ...prev, ingredients: adapted.ingredients }));
   };
-  const effDesignOg = useMemo(
-    () => (effMismatch && equipment ? calculateRecipeStats(recipe, undefined, { ...equipment, efficiency: effMismatch.design }).og : undefined),
-    [recipe, equipment, effMismatch?.design],
+  const effDesign = useMemo(
+    () => (effMismatch && equipment ? calculateRecipeStats(recipe, undefined, { ...equipment, efficiency: effMismatch.design }, { abvFormula: preferences.abvFormula }) : undefined),
+    [recipe, equipment, effMismatch?.design, preferences.abvFormula],
   );
 
   // Bitterness of the recipe against this brew (other alpha acids, other amounts) (#167)
@@ -308,9 +308,9 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
                 onApply={canEdit ? applyBrewScale : undefined}
               />
             )}
-            {effMismatch && effDesignOg !== undefined && Math.abs(effDesignOg - currentStats.og) >= 0.002 && (
+            {effMismatch && effDesign && Math.abs(effDesign.og - currentStats.og) >= 0.002 && (
               <EfficiencyBanner design={effMismatch.design} actual={effMismatch.actual} installation={effMismatch.installation}
-                designOg={effDesignOg} actualOg={currentStats.og} onApply={canEdit && entry.status === 'brewing' ? applyEfficiency : undefined} />
+                designStats={effDesign} actualStats={currentStats} onApply={canEdit && entry.status === 'brewing' ? applyEfficiency : undefined} />
             )}
             {entry.scale && (
               <div role="status" className="p-4 rounded-xl border bg-stone-50 border-stone-200 flex flex-col sm:flex-row sm:items-center gap-3">
