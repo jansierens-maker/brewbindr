@@ -7,7 +7,7 @@ import {
   pitchRate, cellsNeeded, liquidViability, starterGrowth, starterFor, DRY_CELLS_PER_GRAM,
   waterPlan, resolveEquipment, defaultEquipment,
   roundTo, roundByUnit, normalizeRecipe, normalizeLibraryItem, formatBrewNumber, formatStockAmount, srmToEbc,
-  effectiveEfficiency, efficiencyMismatch, adaptToEfficiency, hasSpecs, calculatedSpecs,
+  effectiveEfficiency, efficiencyMismatch, adaptToEfficiency, hasSpecs, calculatedSpecs, withTarget,
 } from '../../services/calculations';
 import type { Recipe, LibraryIngredient } from '../../types';
 
@@ -570,5 +570,16 @@ describe('recipe values for the overview', () => {
     const stats = calculateRecipeStats(r);
     expect(s).toEqual({ og: { value: stats.og }, fg: { value: stats.fg }, abv: { value: stats.abv }, ibu: { value: stats.ibu }, color: { value: stats.color } });
     expect(hasSpecs({ specifications: s })).toBe(true);
+  });
+});
+
+describe('recipe target', () => {
+  it('sets, changes and clears the target OG and FG', () => {
+    const r = reference();
+    const a = withTarget(r, { og: 1.056 });
+    expect(a.target).toEqual({ og: 1.056 });
+    expect(withTarget(a, { fg: 1.01 }).target).toEqual({ og: 1.056, fg: 1.01 });
+    expect('target' in withTarget(a, { og: undefined })).toBe(false);
+    expect(withTarget(r, { ibu: 45, color: 0 }).target).toEqual({ ibu: 45 });
   });
 });

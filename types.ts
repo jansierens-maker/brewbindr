@@ -212,7 +212,8 @@ export interface Recipe {
     brewhouse: number;
   };
   /** OG and FG the recipe aims at, from an imported file (to compare with the calculation) */
-  target?: { og?: number; fg?: number };
+  /** What the recipe aims for: OG/FG as SG, IBU, colour in SRM */
+  target?: { og?: number; fg?: number; ibu?: number; color?: number };
   /** Lifecycle stage and its history (absent: idea). Not used for public recipes. */
   lifecycle?: RecipeLifecycle;
   /** Version number (absent: 1) and the id of the first version, for versions of a production recipe */

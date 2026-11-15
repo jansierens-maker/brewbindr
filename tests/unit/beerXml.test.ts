@@ -77,6 +77,15 @@ describe('exportToBeerXml', () => {
       ['boil', 'pellet'], ['whirlpool', 'leaf'], ['first_wort', 'pellet'],
     ]);
   });
+
+  it('keeps the recipe target', () => {
+    const original = { ...parseBeerXml(xml).recipes[0], target: { og: 1.056, fg: 1.01, ibu: 45, color: 4.1 } };
+    expect(parseBeerXml(exportToBeerXml(original)).recipes[0].target).toEqual({ og: 1.056, fg: 1.01, ibu: 45, color: 4.1 });
+  });
+
+  it('takes the IBU and colour of another program as the target', () => {
+    expect(parseBeerXml(xml).recipes[0].target).toMatchObject({ og: 1.053, ibu: 35 });
+  });
 });
 
 describe('exportToBeerXml: a complete recipe', () => {

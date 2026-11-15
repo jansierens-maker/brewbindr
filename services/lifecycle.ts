@@ -118,7 +118,7 @@ export const freshLifecycle = (recipe: Recipe): Recipe => {
   return rest;
 };
 
-const CONTENT_KEYS = ['name', 'type', 'notes', 'batch_size', 'boil_time', 'efficiency', 'style', 'ingredients', 'mash', 'equipmentId', 'water', 'water_chem'] as const;
+const CONTENT_KEYS = ['name', 'type', 'notes', 'batch_size', 'boil_time', 'efficiency', 'style', 'ingredients', 'mash', 'equipmentId', 'water', 'water_chem', 'target'] as const;
 
 /** Leaves out what carries no content: undefined, null, empty strings, arrays and objects. */
 const compact = (v: unknown): unknown => {

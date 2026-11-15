@@ -646,6 +646,16 @@ export const adaptToEfficiency = (recipe: Recipe, actual: number): Recipe => {
   };
 };
 
+/** The recipe with its target changed (an empty value removes it; no target left: none). */
+export const withTarget = (recipe: Recipe, change: NonNullable<Recipe['target']>): Recipe => {
+  const next: Record<string, number | undefined> = { ...recipe.target, ...change };
+  // A gravity is above 1, IBU and colour above 0
+  const valid = (k: string, v: number | undefined) => v !== undefined && !isNaN(v) && v > (k === 'og' || k === 'fg' ? 1 : 0);
+  const target = Object.fromEntries(Object.entries(next).filter(([k, v]) => valid(k, v))) as Recipe['target'];
+  const { target: _old, ...rest } = recipe;
+  return target && Object.keys(target).length ? { ...rest, target } : rest;
+};
+
 export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<string, number>, equipment?: LibraryIngredient, opts: { abvFormula?: AbvFormula } = {}) => {
   const batchUnit = normalizeUnit(recipe.batch_size?.unit);
   const batchSizeL = batchUnit === 'liters' ? (recipe.batch_size?.value || 0) : (recipe.batch_size?.value || 0) * 3.78541;
