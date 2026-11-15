@@ -9,6 +9,8 @@ import WaterPlanCard from './WaterPlanCard';
 import ScaleSuggestionBanner from './ScaleSuggestionBanner';
 import { scaleRecipe, suggestScale } from '../services/scaling';
 import WaterChemistryCard from './WaterChemistryCard';
+import { LifecyclePanel } from './RecipeLifecycle';
+import { RecipeStage, needsNewVersion } from '../services/lifecycle';
 import { IngredientKind, newIngredient, fromLibraryItem, replaceIngredient, addIngredient as addIngredientTo } from '../services/ingredientEdit';
 
 interface RecipeCreatorProps {
@@ -19,11 +21,15 @@ interface RecipeCreatorProps {
   onCopy?: (recipe: Recipe) => void;
   /** Open the stored recipe in Flavour Lab */
   onOpenFlavourLab?: (recipe: Recipe) => void;
+  /** The recipe as stored (its lifecycle is changed apart from the editor) */
+  storedRecipe?: Recipe;
+  onChangeStage?: (recipeId: string, to: RecipeStage, note?: string) => Promise<boolean>;
+  nameOf?: (userId: string) => string;
   initialRecipe?: Recipe;
   library: LibraryIngredient[];
 }
 
-const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, onCopy, onOpenFlavourLab, initialRecipe, library }) => {
+const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic, onDelete, onCopy, onOpenFlavourLab, storedRecipe, onChangeStage, nameOf, initialRecipe, library }) => {
   const { t, lang } = useTranslation();
   const { preferences, user, profile, breweryRole, isAdmin } = useUser();
   const gravityUnit = preferences.gravityUnit ?? 'sg';
@@ -350,6 +356,12 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
 
       {/* Main Form Section */}
       <section className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-10">
+        {storedRecipe?.id && storedRecipe.status !== 'approved' && onChangeStage && (
+          <LifecyclePanel recipe={storedRecipe} canChange={canEdit} onChangeStage={onChangeStage} nameOf={nameOf} />
+        )}
+        {storedRecipe?.id && needsNewVersion(storedRecipe) && canEdit && (
+          <p className="text-xs text-stone-500 -mt-6"><i className="fas fa-code-branch mr-1" aria-hidden="true"></i>{t('lc_versioned_hint')}</p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2">
             <label htmlFor="recipe_name" className="text-xs font-bold text-stone-400 uppercase">{t('recipe_name')}</label>

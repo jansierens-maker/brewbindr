@@ -5,6 +5,7 @@ export interface BeerJSON {
 }
 
 import { Language } from './services/i18n';
+import type { RecipeLifecycle, RecipeStage } from './services/lifecycle';
 
 export type ItemStatus = 'private' | 'submitted' | 'approved';
 
@@ -206,6 +207,11 @@ export interface Recipe {
   efficiency: {
     brewhouse: number;
   };
+  /** Lifecycle stage and its history (absent: idea). Not used for public recipes. */
+  lifecycle?: RecipeLifecycle;
+  /** Version number (absent: 1) and the id of the first version, for versions of a production recipe */
+  version?: number;
+  version_of?: string;
   boil_time: {
     unit: 'minutes';
     value: number;
@@ -274,6 +280,9 @@ export interface BrewLogEntry {
   status: 'brewing' | 'fermenting' | 'lagering' | 'bottled';
   /** Brewed at another size than the recipe: every amount × factor (the recipe itself is unchanged) */
   scale?: { factor: number; batch_l: number };
+  /** Stage and version of the recipe when the brew was started (lab, pilot or production batch) */
+  recipe_stage?: RecipeStage;
+  recipe_version?: number;
   /** Installation this brew is made on (otherwise the recipe's, or the brewery default) */
   equipmentId?: string;
   /** Water treatment actually used (starts as the recipe's); absent in older brews: the recipe's */

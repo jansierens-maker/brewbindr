@@ -1,4 +1,6 @@
 
+import { stageOf, versionOf } from '../services/lifecycle';
+import { StageBadge } from './RecipeLifecycle';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, BrewLogEntry, LibraryIngredient } from '../types';
 import { calculateABV, calculatePrimingSugar, calculateRecipeStats, formatBrewNumber, kegPressure, resolveEquipment, ownInstallations, initialBrewWaterChem } from '../services/calculations';
@@ -40,6 +42,8 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
     id: crypto.randomUUID(),
     recipeId: baseRecipe.id || 'unassigned',
     ...(initialEquipmentId ? { equipmentId: initialEquipmentId } : {}),
+    // Lab, pilot or production batch (public recipes have no lifecycle)
+    ...(baseRecipe.status !== 'approved' ? { recipe_stage: stageOf(baseRecipe), recipe_version: versionOf(baseRecipe) } : {}),
     // The water starts as the recipe's and records what is actually used
     water_chem: initialBrewWaterChem(baseRecipe, library),
     // The ingredients start as the recipe's and record what is actually used (#166)
@@ -241,7 +245,10 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
       
       {/* Which beer this is: the recipe's name */}
       <div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{t('page_brew_session')}</p>
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('page_brew_session')}</p>
+          {entry.recipe_stage && <StageBadge stage={entry.recipe_stage} version={entry.recipe_version} />}
+        </div>
         <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)] break-words">{recipe.name || t('unknown_recipe')}{batchNumber ? <span className="text-[var(--color-text-muted)]"> – {t('batch_label').replace('{n}', String(batchNumber))}</span> : null}</h2>
       </div>
 
