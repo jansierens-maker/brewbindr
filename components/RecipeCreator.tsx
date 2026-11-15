@@ -98,10 +98,11 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
   const stats = useMemo(() => calculateRecipeStats(recipe, undefined, equipment, { abvFormula: preferences.abvFormula }), [recipe, equipment, preferences.abvFormula]);
   // The installation gets another efficiency than the recipe was designed for: the OG differs
   const mismatch = efficiencyMismatch(recipe, equipment);
-  const designOg = useMemo(
-    () => (mismatch && equipment ? calculateRecipeStats(recipe, undefined, { ...equipment, efficiency: mismatch.design }).og : undefined),
-    [recipe, equipment, mismatch?.design],
+  const design = useMemo(
+    () => (mismatch && equipment ? calculateRecipeStats(recipe, undefined, { ...equipment, efficiency: mismatch.design }, { abvFormula: preferences.abvFormula }) : undefined),
+    [recipe, equipment, mismatch?.design, preferences.abvFormula],
   );
+  const showDesign = !!design && Math.abs(design.og - stats.og) >= 0.002;
 
   const handleAiAnalyze = async () => {
     setIsAnalyzing(true);
@@ -313,19 +314,22 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
       {/* Target Stats Section */}
       <section className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl grid grid-cols-2 lg:grid-cols-4 gap-8 sticky top-24 z-40 border border-stone-800">
         <div className="flex flex-col">
-          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('target_abv')}</p>
+          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('est_abv')}</p>
           <p className={`text-4xl font-black ${getStatColor(stats.abv, selectedStyleGuideline?.abv_min, selectedStyleGuideline?.abv_max)}`}>
             {formatBrewNumber(stats.abv, 'abv', lang)}%
           </p>
           {selectedStyleGuideline?.abv_min !== undefined && (
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.abv_min}-{selectedStyleGuideline.abv_max}%</p>
           )}
+          {showDesign && design && mismatch && (
+            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('design_value').replace('{pct}', String(mismatch.design))}: {formatBrewNumber(design.abv, 'abv', lang)}%</p>
+          )}
           {recipe.target?.og && recipe.target?.fg && (
             <p className="text-[10px] text-stone-400 font-bold mt-1">{t('target_from_file')}: {formatBrewNumber(calculateABV(recipe.target.og, recipe.target.fg, false, 0, 1, preferences.abvFormula), 'abv', lang)}%</p>
           )}
         </div>
         <div className="flex flex-col">
-          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('target_ibu')}</p>
+          <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('est_ibu')}</p>
           <p className={`text-4xl font-black ${getStatColor(stats.ibu, selectedStyleGuideline?.ibu_min, selectedStyleGuideline?.ibu_max)}`}>
             {stats.ibu}
           </p>
@@ -358,6 +362,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             {formatGravity(stats.og, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}
           </p>
           {gravityUnit === 'both' && <p className="text-[10px] text-stone-400 font-bold mt-1">{formatGravity(stats.og, lang, 'plato')}</p>}
+          {showDesign && design && mismatch && (
+            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('design_value').replace('{pct}', String(mismatch.design))}: {formatGravity(design.og, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}</p>
+          )}
           {recipe.target?.og && (
             <p className="text-[10px] text-stone-400 font-bold mt-1">{t('target_from_file')}: {formatGravity(recipe.target.og, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}{recipe.target.fg ? ` → ${formatGravity(recipe.target.fg, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}` : ''}</p>
           )}
@@ -369,9 +376,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
 
       {/* Main Form Section */}
       <section className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm space-y-10">
-        {mismatch && designOg !== undefined && Math.abs(designOg - stats.og) >= 0.002 && (
+        {showDesign && mismatch && design && (
           <EfficiencyBanner design={mismatch.design} actual={mismatch.actual} installation={mismatch.installation}
-            designOg={designOg} actualOg={stats.og} onApply={canEdit ? () => setRecipe(r => adaptToEfficiency(r, mismatch.actual)) : undefined} />
+            designStats={design} actualStats={stats} onApply={canEdit ? () => setRecipe(r => adaptToEfficiency(r, mismatch.actual)) : undefined} />
         )}
         {storedRecipe?.id && storedRecipe.status !== 'approved' && onChangeStage && (
           <LifecyclePanel recipe={storedRecipe} canChange={canEdit} onChangeStage={onChangeStage} nameOf={nameOf} />

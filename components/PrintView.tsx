@@ -87,7 +87,7 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingN
           <p className="text-xl font-black">{formatBrewNumber(abv, 'abv', lang, preferences)}%</p>
         </div>
         <div className="border-2 border-stone-900 p-3 rounded-lg">
-          <p className="text-[9px] font-black uppercase text-stone-400 mb-1">{t('target_ibu')}</p>
+          <p className="text-[9px] font-black uppercase text-stone-400 mb-1">{t('est_ibu')}</p>
           <p className="text-xl font-black">{recipe.specifications?.ibu?.value || '-'}</p>
         </div>
       </div>
