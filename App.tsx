@@ -973,8 +973,9 @@ const AppContent: React.FC = () => {
     }
     
     if (exactMatches.length > 0) {
-      // Exactly the same data, ignore it (a recipe's water: link the existing one)
-      linkImportedWater(next, exactMatches[0].id);
+      // Exactly the same data, ignore it (a recipe's water: link the existing one, the copy the
+      // ingredient lists show when the brewery has several with that name)
+      linkImportedWater(next, (exactMatches.find(m => deduplicatedLibrary.some(d => d.id === m.id)) ?? exactMatches[0]).id);
       const nextSummary = { ...summary, ignored: summary.ignored + 1 };
       setImportSummary(nextSummary);
       const nextQ = currentQueue.slice(1);
@@ -1120,7 +1121,8 @@ const AppContent: React.FC = () => {
       nextSummary.ignored += 1;
       // Ignored: a recipe's water links to the existing profile with that name
       if (currentDuplicate.type === 'library') {
-        const existing = findPrivateIngredient(library, currentDuplicate.data.name, currentDuplicate.data.type, profile?.brewery_id, user?.id);
+        const shown = deduplicatedLibrary.find(l => l.type === currentDuplicate.data.type && nameKey(l.name) === nameKey(currentDuplicate.data.name) && l.status === 'private');
+        const existing = shown ?? findPrivateIngredient(library, currentDuplicate.data.name, currentDuplicate.data.type, profile?.brewery_id, user?.id);
         linkImportedWater(currentDuplicate, existing?.id);
       }
     }

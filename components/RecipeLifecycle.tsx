@@ -47,10 +47,14 @@ export const LifecyclePanel: React.FC<PanelProps> = ({ recipe, canChange, onChan
 
   const confirmMove = async () => {
     if (!target || !recipe.id) return;
+    const moving = target;
     setBusy(true);
-    const ok = await onChangeStage(recipe.id, target, note);
+    setTarget(null);
+    setNote('');
+    const ok = await onChangeStage(recipe.id, moving, note);
     setBusy(false);
-    if (ok) { setTarget(null); setNote(''); }
+    // Failed: open the form again with the note
+    if (!ok) { setTarget(moving); setNote(note); }
   };
 
   return (
@@ -63,7 +67,7 @@ export const LifecyclePanel: React.FC<PanelProps> = ({ recipe, canChange, onChan
         {canChange && (
           <div className="flex flex-wrap gap-2">
             {TRANSITIONS[stage].map(to => (
-              <button key={to} type="button" onClick={() => { setTarget(to); setNote(''); }} aria-pressed={target === to}
+              <button key={to} type="button" disabled={busy} onClick={() => { setTarget(to); setNote(''); }} aria-pressed={target === to}
                 className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest ${target === to ? 'border-amber-500 bg-amber-50 text-stone-900' : 'border-stone-200 bg-white text-stone-600 hover:text-stone-900'}`}>
                 {tr('lc_move_to').replace('{stage}', tr(`lc_stage_${to}`))}
               </button>
