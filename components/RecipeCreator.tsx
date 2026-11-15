@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, calculateABV, withTarget, efficiencyMismatch, adaptToEfficiency, resolveEquipment, defaultEquipment as breweryDefaultEquipment, ownInstallations, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
+import { calculateRecipeStats, calculateABV, withTarget, efficiencyMismatch, adaptToEfficiency, resolveEquipment, defaultEquipment as breweryDefaultEquipment, ownInstallations, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, ebcToSrm, roundTo, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canEditRecipe, canManageRecipes } from '../services/permissions';
@@ -338,6 +338,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               BU:GU {formatBrewNumber(buGuRatio(stats.ibu, stats.og), 'default', lang)}
             </p>
           )}
+          {recipe.target?.ibu !== undefined && (
+            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('recipe_target')}: {Math.round(recipe.target.ibu)}</p>
+          )}
         </div>
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('color')} ({preferences.colorScale.toUpperCase()})</p>
@@ -347,6 +350,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             </p>
             <div className="w-10 h-6 rounded border border-stone-700 shadow-inner" style={{ backgroundColor: getSRMColor(stats.color) }}></div>
           </div>
+          {recipe.target?.color !== undefined && (
+            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('recipe_target')}: {formatBrewNumber(recipe.target.color, 'color', lang, preferences)}</p>
+          )}
           {selectedStyleGuideline?.color_min !== undefined && (
             <p className="text-[10px] text-stone-500 font-bold mt-1">
               Range: {preferences.colorScale === 'ebc' ? Math.round(srmToEbc(selectedStyleGuideline.color_min || 0)) : selectedStyleGuideline.color_min}-{preferences.colorScale === 'ebc' ? Math.round(srmToEbc(selectedStyleGuideline.color_max || 0)) : selectedStyleGuideline.color_max} {preferences.colorScale.toUpperCase()}
@@ -441,7 +447,21 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             onChange={og => setRecipe(r => withTarget(r, { og }))} />
           <TargetGravityInput id="target_fg" name="target_fg" label={t('target_fg')} value={recipe.target?.fg}
             onChange={fg => setRecipe(r => withTarget(r, { fg }))} />
-          <div className="md:col-span-2 pb-3">
+          <div>
+            <label htmlFor="target_ibu" className="text-xs font-bold text-stone-400 uppercase">{t('target_ibu_label')}</label>
+            <input id="target_ibu" name="target_ibu" type="number" min={0} max={200} step={1} className="w-full p-3 bg-stone-50 border rounded-xl font-bold"
+              value={recipe.target?.ibu ?? ''} onChange={e => setRecipe(r => withTarget(r, { ibu: e.target.value === '' ? undefined : parseFloat(e.target.value) }))} />
+          </div>
+          <div>
+            <label htmlFor="target_color" className="text-xs font-bold text-stone-400 uppercase">{t('target_color_label')} ({preferences.colorScale.toUpperCase()})</label>
+            <input id="target_color" name="target_color" type="number" min={0} max={preferences.colorScale === 'ebc' ? 300 : 150} step={0.1} className="w-full p-3 bg-stone-50 border rounded-xl font-bold"
+              value={recipe.target?.color === undefined ? '' : roundTo(preferences.colorScale === 'ebc' ? srmToEbc(recipe.target.color) : recipe.target.color, 1)}
+              onChange={e => {
+                const v = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                setRecipe(r => withTarget(r, { color: v === undefined ? undefined : preferences.colorScale === 'ebc' ? ebcToSrm(v) : v }));
+              }} />
+          </div>
+          <div className="md:col-span-4 -mt-3">
             {recipe.target?.og && recipe.target?.fg && recipe.target.fg < recipe.target.og ? (
               <p className="text-sm font-bold text-stone-600">{t('target_abv_value')}: {formatBrewNumber(calculateABV(recipe.target.og, recipe.target.fg, false, 0, 1, preferences.abvFormula), 'abv', lang)}%</p>
             ) : (

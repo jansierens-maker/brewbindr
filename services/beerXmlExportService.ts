@@ -192,6 +192,9 @@ export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [
   // The recipe's target (read back as the target on import)
   if (recipe.target?.og) xmlParts.push(`    <OG>${recipe.target.og.toFixed(3)}</OG>`);
   if (recipe.target?.fg) xmlParts.push(`    <FG>${recipe.target.fg.toFixed(3)}</FG>`);
+  // BeerXML has no target IBU or colour: BrewBindr tags (other programs ignore them)
+  if (recipe.target?.ibu) xmlParts.push(`    <TARGET_IBU>${recipe.target.ibu}</TARGET_IBU>`);
+  if (recipe.target?.color) xmlParts.push(`    <TARGET_COLOR>${recipe.target.color.toFixed(1)}</TARGET_COLOR>`);
 
   // Calculated values, as BrewBindr shows them (with the recipe's installation)
   const stats = calculateRecipeStats(recipe, undefined, resolveEquipment(recipe, library));

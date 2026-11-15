@@ -580,5 +580,6 @@ describe('recipe target', () => {
     expect(a.target).toEqual({ og: 1.056 });
     expect(withTarget(a, { fg: 1.01 }).target).toEqual({ og: 1.056, fg: 1.01 });
     expect('target' in withTarget(a, { og: undefined })).toBe(false);
+    expect(withTarget(r, { ibu: 45, color: 0 }).target).toEqual({ ibu: 45 });
   });
 });

@@ -286,6 +286,8 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
     // OG and FG the recipe aims at (measured or estimated by the program that made the file)
     const targetOg = ownNum(r, "OG") || ownNum(r, "EST_OG");
     const targetFg = ownNum(r, "FG") || ownNum(r, "EST_FG");
+    const targetIbu = ownNum(r, "TARGET_IBU") || ownNum(r, "IBU");
+    const targetColor = ownNum(r, "TARGET_COLOR") || ownNum(r, "EST_COLOR");
     const fileAttenuation = apparentAttenuation(targetOg, targetFg);
     // Some files (BrewDog's DIY Dog) put the attenuation in EFFICIENCY: then it is not the efficiency
     const fileEfficiency = ownNum(r, "EFFICIENCY");
@@ -359,7 +361,12 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
       batch_size: { unit: "liters", value: ownNum(r, "BATCH_SIZE") },
       // 0: not known (the app takes the brewery's installation)
       efficiency: { brewhouse: efficiencyIsAttenuation ? 0 : fileEfficiency },
-      ...(targetOg > 1 ? { target: { og: targetOg, ...(targetFg > 0 && targetFg < targetOg ? { fg: targetFg } : {}) } } : {}),
+      ...(targetOg > 1 || targetIbu > 0 || targetColor > 0 ? { target: {
+        ...(targetOg > 1 ? { og: Math.round(targetOg * 1000) / 1000 } : {}),
+        ...(targetOg > 1 && targetFg > 1 && targetFg < targetOg ? { fg: Math.round(targetFg * 1000) / 1000 } : {}),
+        ...(targetIbu > 0 ? { ibu: Math.round(targetIbu) } : {}),
+        ...(targetColor > 0 ? { color: Math.round(targetColor * 10) / 10 } : {}),
+      } } : {}),
       boil_time: { unit: "minutes", value: ownNum(r, "BOIL_TIME") },
       ingredients: { 
         fermentables: recipeFermentables, 
