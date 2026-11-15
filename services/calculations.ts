@@ -761,6 +761,16 @@ export const calculateRecipeStats = (recipe: Recipe, alphaOverrides?: Record<str
   };
 };
 
+/** Whether a recipe carries calculated values (OG, ABV, …) for the overview. */
+export const hasSpecs = (recipe: Pick<Recipe, 'specifications'>) => (recipe.specifications?.og?.value ?? 0) > 1;
+
+/** The recipe's values as the app calculates them, in the shape stored on the recipe. */
+export const calculatedSpecs = (recipe: Recipe, equipment?: LibraryIngredient, opts: { abvFormula?: AbvFormula } = {}): NonNullable<Recipe['specifications']> => {
+  const s = calculateRecipeStats(recipe, undefined, equipment, opts);
+  return { og: { value: s.og }, fg: { value: s.fg }, abv: { value: s.abv }, ibu: { value: s.ibu }, color: { value: s.color } };
+};
+
+
 export const checkRecipeStock = (recipe: Recipe, library: LibraryIngredient[]) => {
   const missing: string[] = [];
   const insufficient: string[] = [];

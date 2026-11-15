@@ -30,7 +30,7 @@ import { InfoBanner } from './components/InfoBanner';
 import { StageBadge } from './components/RecipeLifecycle';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
-import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment, ownInstallations } from './services/calculations';
+import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment, ownInstallations, hasSpecs, calculatedSpecs } from './services/calculations';
 import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes, canPublish } from './services/permissions';
 import { Taster, batchNumbers, memberName } from './services/tasting';
 import { URL_IMPORT_ENABLED } from './services/features';
@@ -201,7 +201,9 @@ const AppContent: React.FC = () => {
       })
       .map(r => {
         const stock = checkRecipeStock(r, library);
-        return { recipe: r, stock };
+        // Recipes imported without values (older imports, files without EST_OG) are calculated here
+        const specs = hasSpecs(r) ? r.specifications : calculatedSpecs(r, resolveEquipment(r, library), { abvFormula: preferences.abvFormula });
+        return { recipe: r, stock, specs };
       })
       .filter(({ stock }) => {
         if (recipeTab === 'brewable' && preferences.enableStockManagement) return stock.isBrewable;
@@ -215,7 +217,7 @@ const AppContent: React.FC = () => {
         return stage === stageFilter;
       })
       .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name));
-  }, [recipes, libraryView, user?.id, profile?.brewery_id, recipeTab, preferences.enableStockManagement, library, stageFilter]);
+  }, [recipes, libraryView, user?.id, profile?.brewery_id, recipeTab, preferences.enableStockManagement, preferences.abvFormula, library, stageFilter]);
 
   // How many of the brewery's recipes are in each stage (for the filter)
   const stageCounts = useMemo(() => {
@@ -909,7 +911,13 @@ const AppContent: React.FC = () => {
     const installations = ownInstallations(deduplicatedLibrary);
     const installation = installations.find(e => e.is_default) ?? (installations.length === 1 ? installations[0] : undefined);
     const defaultEfficiency = installation?.efficiency || 75;
-    result = { ...result, recipes: result.recipes.map(r => (r.efficiency?.brewhouse ? r : { ...r, efficiency: { brewhouse: defaultEfficiency } })) };
+    // and its values (OG, ABV, IBU, colour) calculated by the app, for the recipe overview
+    result = {
+      ...result,
+      recipes: result.recipes
+        .map(r => (r.efficiency?.brewhouse ? r : { ...r, efficiency: { brewhouse: defaultEfficiency } }))
+        .map(r => ({ ...r, specifications: calculatedSpecs(r, resolveEquipment(r, deduplicatedLibrary), { abvFormula: preferences.abvFormula }) })),
+    };
     // A recipe's water profiles first, so the recipe can be saved with their ids
     result.recipes.forEach(r => {
       (result.recipeWaters ?? []).filter(w => w.recipeId === r.id)
@@ -1871,9 +1879,9 @@ const AppContent: React.FC = () => {
                             </div>
                           </button>
                         )}
-                        {processedRecipes.map(({ recipe: r, stock }) => (
+                        {processedRecipes.map(({ recipe: r, stock, specs }) => (
                           <div key={r.id} className="bg-[var(--color-bg)] rounded-[var(--radius)] border border-[var(--color-border)] p-6 hover:shadow-[var(--shadow)] transition-all group relative flex flex-col pt-8" >
-                            <div className="absolute top-0 left-0 right-0 h-[5px]" style={{ backgroundColor: getSRMColor(r.specifications?.color?.value || 0) }}></div>
+                            <div className="absolute top-0 left-0 right-0 h-[5px]" style={{ backgroundColor: getSRMColor(specs?.color?.value || 0) }}></div>
                             <div className="absolute top-4 right-4 flex gap-2">
                               <button onClick={() => handlePrintRecipe(r)} title={t('print_recipe')} className="text-stone-300 hover:text-stone-900 transition-colors"> <i className="fas fa-print text-lg"></i> </button>
                               <button onClick={() => handleExportRecipeBeerXml(r)} title={t('export_beerxml')} aria-label={t('export_beerxml')} className="text-stone-300 hover:text-amber-600 transition-colors"> <i className="fas fa-file-export text-lg" aria-hidden="true"></i> </button>
@@ -1916,9 +1924,9 @@ const AppContent: React.FC = () => {
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
                               <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">{t('batch_short')}</p><p className="font-bold text-xs">{formatBrewNumber(r.batch_size.value, 'vol', lang, preferences, r.batch_size.unit)} {preferences.units === 'imperial' ? 'Gal' : 'L'}</p></div>
-                              <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">ABV</p><p className="font-bold text-xs">{formatBrewNumber(r.specifications?.abv?.value, 'abv', lang, preferences)}%</p></div>
-                              <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">IBU</p><p className="font-bold text-xs">{r.specifications?.ibu?.value}</p></div>
-                              <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">OG</p><p className="font-bold text-xs">{formatGravity(r.specifications?.og?.value, lang, preferences.gravityUnit === 'plato' ? 'plato' : 'sg')}</p></div>
+                              <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">ABV</p><p className="font-bold text-xs">{formatBrewNumber(specs?.abv?.value, 'abv', lang, preferences)}%</p></div>
+                              <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">IBU</p><p className="font-bold text-xs">{specs?.ibu?.value}</p></div>
+                              <div className="bg-stone-50 rounded-xl p-2 text-center"><p className="text-[8px] font-black text-stone-400 uppercase">OG</p><p className="font-bold text-xs">{formatGravity(specs?.og?.value, lang, preferences.gravityUnit === 'plato' ? 'plato' : 'sg')}</p></div>
                             </div>
                             <div className="flex flex-col gap-2 mt-auto">
                               <div className="flex gap-2">
