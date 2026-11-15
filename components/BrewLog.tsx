@@ -129,7 +129,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
 
   // Calculate dynamic stats based on current overrides in the log
   const currentStats = useMemo(() => {
-    return calculateRecipeStats(brewRecipe, entry.measurements.measured_alpha, equipment);
+    return calculateRecipeStats(brewRecipe, entry.measurements.measured_alpha, equipment, { abvFormula: preferences.abvFormula });
   }, [brewRecipe, entry.measurements.measured_alpha, equipment]);
 
   // Bitterness of the recipe against this brew (other alpha acids, other amounts) (#167)
@@ -154,9 +154,10 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
       entry.measurements.actual_fg, 
       includePriming, 
       entry.bottling?.sugar_amount, 
-      entry.bottling?.bottling_volume || entry.measurements.actual_volume || recipe.batch_size.value
+      entry.bottling?.bottling_volume || entry.measurements.actual_volume || recipe.batch_size.value,
+      preferences.abvFormula
     );
-  }, [entry.measurements, entry.status, entry.bottling, recipe, activeTab]);
+  }, [entry.measurements, entry.status, entry.bottling, recipe, activeTab, preferences.abvFormula]);
 
   useEffect(() => {
     if (entry.bottling) {

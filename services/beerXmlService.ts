@@ -29,6 +29,16 @@ export interface BeerXmlImportResult {
   recipeWaters: RecipeWater[];
 }
 
+/** Apparent attenuation (%) from OG and FG; undefined when they do not make sense. */
+export const apparentAttenuation = (og: number, fg: number): number | undefined =>
+  og > 1 && fg > 0.98 && fg < og ? ((og - fg) / (og - 1)) * 100 : undefined;
+
+/** True when a file's EFFICIENCY is in fact the attenuation that follows from its OG and FG. */
+export const efficiencyLooksLikeAttenuation = (efficiency: number, og: number, fg: number): boolean => {
+  const att = apparentAttenuation(og, fg);
+  return !!att && efficiency > 0 && Math.abs(efficiency - att) < 0.5;
+};
+
 export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlString, "text/xml");
@@ -273,15 +283,25 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
     }
 
     // Parse Cultures within recipe
+    // OG and FG the recipe aims at (measured or estimated by the program that made the file)
+    const targetOg = ownNum(r, "OG") || ownNum(r, "EST_OG");
+    const targetFg = ownNum(r, "FG") || ownNum(r, "EST_FG");
+    const fileAttenuation = apparentAttenuation(targetOg, targetFg);
+    // Some files (BrewDog's DIY Dog) put the attenuation in EFFICIENCY: then it is not the efficiency
+    const fileEfficiency = ownNum(r, "EFFICIENCY");
+    const efficiencyIsAttenuation = efficiencyLooksLikeAttenuation(fileEfficiency, targetOg, targetFg);
+
     const recipeCultures: Culture[] = [];
     const yNodes = r.getElementsByTagName("YEAST");
     for (let j = 0; j < yNodes.length; j++) {
       const y = yNodes[j];
+      const own = getNum(y, "ATTENUATION");
       recipeCultures.push({
         name: getVal(y, "NAME"),
         type: (getVal(y, "TYPE").toLowerCase() as any) || "ale",
         form: (getVal(y, "FORM").toLowerCase() as any) || "dry",
-        attenuation: getNum(y, "ATTENUATION") || 75
+        // Without its own attenuation the yeast gets the one that follows from the file's OG and FG
+        attenuation: own || (fileAttenuation ? Math.round(fileAttenuation * 10) / 10 : 75)
       });
     }
 
@@ -337,7 +357,9 @@ export const parseBeerXml = (xmlString: string): BeerXmlImportResult => {
       author: ownVal(r, "BREWER"),
       notes: ownVal(r, "NOTES"),
       batch_size: { unit: "liters", value: ownNum(r, "BATCH_SIZE") },
-      efficiency: { brewhouse: ownNum(r, "EFFICIENCY") },
+      // 0: not known (the app takes the brewery's installation)
+      efficiency: { brewhouse: efficiencyIsAttenuation ? 0 : fileEfficiency },
+      ...(targetOg > 1 ? { target: { og: targetOg, ...(targetFg > 0 && targetFg < targetOg ? { fg: targetFg } : {}) } } : {}),
       boil_time: { unit: "minutes", value: ownNum(r, "BOIL_TIME") },
       ingredients: { 
         fermentables: recipeFermentables, 

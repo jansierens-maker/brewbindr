@@ -9,6 +9,8 @@ import type { RecipeLifecycle, RecipeStage } from './services/lifecycle';
 
 export type ItemStatus = 'private' | 'submitted' | 'approved';
 
+export type AbvFormula = 'hall' | 'simple';
+
 export interface UserPreferences {
   units: 'metric' | 'imperial';
   colorScale: 'srm' | 'ebc';
@@ -17,6 +19,8 @@ export interface UserPreferences {
   bottled_period: 'week' | 'month' | 'year' | 'all';
   gravityUnit?: 'sg' | 'plato' | 'both'; // how densities are shown and entered (default SG)
   refractometerWcf?: number; // wort correction factor of the refractometer (default 1.04)
+  /** ABV formula: 'hall' (accurate, default) or 'simple' ((OG − FG) × 131.25) */
+  abvFormula?: AbvFormula;
 }
 
 export type BreweryRole = 'admin' | 'brewmaster' | 'brewer' | 'taster';
@@ -207,6 +211,8 @@ export interface Recipe {
   efficiency: {
     brewhouse: number;
   };
+  /** OG and FG the recipe aims at, from an imported file (to compare with the calculation) */
+  target?: { og?: number; fg?: number };
   /** Lifecycle stage and its history (absent: idea). Not used for public recipes. */
   lifecycle?: RecipeLifecycle;
   /** Version number (absent: 1) and the id of the first version, for versions of a production recipe */

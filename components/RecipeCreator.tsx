@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { calculateRecipeStats, resolveEquipment, defaultEquipment as breweryDefaultEquipment, ownInstallations, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
+import { calculateRecipeStats, calculateABV, resolveEquipment, defaultEquipment as breweryDefaultEquipment, ownInstallations, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canEditRecipe, canManageRecipes } from '../services/permissions';
@@ -94,7 +94,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
     if (!scaleSuggestion || !confirm(t('scale_confirm_recipe'))) return;
     setRecipe(prev => scaleRecipe(prev, scaleSuggestion.factor));
   };
-  const stats = useMemo(() => calculateRecipeStats(recipe, undefined, equipment), [recipe, equipment]);
+  const stats = useMemo(() => calculateRecipeStats(recipe, undefined, equipment, { abvFormula: preferences.abvFormula }), [recipe, equipment, preferences.abvFormula]);
 
   const handleAiAnalyze = async () => {
     setIsAnalyzing(true);
@@ -313,6 +313,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           {selectedStyleGuideline?.abv_min !== undefined && (
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {selectedStyleGuideline.abv_min}-{selectedStyleGuideline.abv_max}%</p>
           )}
+          {recipe.target?.og && recipe.target?.fg && (
+            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('target_from_file')}: {formatBrewNumber(calculateABV(recipe.target.og, recipe.target.fg, false, 0, 1, preferences.abvFormula), 'abv', lang)}%</p>
+          )}
         </div>
         <div className="flex flex-col">
           <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-1">{t('target_ibu')}</p>
@@ -348,6 +351,9 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             {formatGravity(stats.og, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}
           </p>
           {gravityUnit === 'both' && <p className="text-[10px] text-stone-400 font-bold mt-1">{formatGravity(stats.og, lang, 'plato')}</p>}
+          {recipe.target?.og && (
+            <p className="text-[10px] text-stone-400 font-bold mt-1">{t('target_from_file')}: {formatGravity(recipe.target.og, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}{recipe.target.fg ? ` → ${formatGravity(recipe.target.fg, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}` : ''}</p>
+          )}
           {selectedStyleGuideline?.og_min !== undefined && (
             <p className="text-[10px] text-stone-500 font-bold mt-1">Range: {formatGravity(selectedStyleGuideline.og_min, lang, gravityUnit === 'plato' ? 'plato' : 'sg')} – {formatGravity(selectedStyleGuideline.og_max, lang, gravityUnit === 'plato' ? 'plato' : 'sg')}</p>
           )}

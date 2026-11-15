@@ -53,7 +53,7 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingN
   const hasTreatment = !!(chem && (usedSalts.length > 0 || chem.dilution_pct || chem.lactic_ml));
 
   const abv = log 
-    ? calculateABV(log.measurements.actual_og, log.measurements.actual_fg, log.status === 'bottled', (log.bottling?.method === 'keg' ? 0 : log.bottling?.sugar_amount), log.bottling?.bottling_volume || log.measurements.actual_volume)
+    ? calculateABV(log.measurements.actual_og, log.measurements.actual_fg, log.status === 'bottled', (log.bottling?.method === 'keg' ? 0 : log.bottling?.sugar_amount), log.bottling?.bottling_volume || log.measurements.actual_volume, preferences.abvFormula)
     : recipe.specifications?.abv?.value;
 
   return (

@@ -149,6 +149,30 @@ const Settings: React.FC = () => {
                 </div>
               </div>
 
+              <div className="space-y-4">
+                <p id="abv_formula_label" className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('abv_formula_label')}</p>
+                <div role="radiogroup" aria-labelledby="abv_formula_label" className="grid grid-cols-2 gap-3">
+                  {(['hall', 'simple'] as const).map(f => (
+                    <button
+                      key={f}
+                      type="button"
+                      role="radio"
+                      aria-checked={(preferences.abvFormula ?? 'hall') === f}
+                      onClick={() => updatePreferences({ abvFormula: f })}
+                      className={`py-4 px-3 rounded-2xl font-black text-xs uppercase tracking-widest border-2 transition-all ${
+                        (preferences.abvFormula ?? 'hall') === f
+                          ? 'bg-amber-50 border-amber-500 text-amber-600 shadow-sm'
+                          : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200'
+                      }`}
+                    >
+                      {t(f === 'hall' ? 'abv_formula_hall' : 'abv_formula_simple')}
+                      <span className="block mt-1 normal-case tracking-normal font-bold text-[10px] text-stone-400">{f === 'hall' ? '76,08 · (OG − FG) / (1,775 − OG) · FG / 0,794' : '(OG − FG) × 131,25'}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-stone-500">{t('abv_formula_hint')}</p>
+              </div>
+
               <div className="space-y-2">
                 <label htmlFor="refractometer_wcf" className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('refractometer_wcf')}</label>
                 <input
