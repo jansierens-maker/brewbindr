@@ -7,7 +7,7 @@ import {
   pitchRate, cellsNeeded, liquidViability, starterGrowth, starterFor, DRY_CELLS_PER_GRAM,
   waterPlan, resolveEquipment, defaultEquipment,
   roundTo, roundByUnit, normalizeRecipe, normalizeLibraryItem, formatBrewNumber, formatStockAmount, srmToEbc,
-  effectiveEfficiency, efficiencyMismatch, adaptToEfficiency,
+  effectiveEfficiency, efficiencyMismatch, adaptToEfficiency, hasSpecs, calculatedSpecs,
 } from '../../services/calculations';
 import type { Recipe, LibraryIngredient } from '../../types';
 
@@ -559,5 +559,16 @@ describe('installation efficiency', () => {
     expect(adapted.ingredients.fermentables[1].amount.value).toBe(0.2); // sugar gives all its extract
     expect(calculateRecipeStats(adapted, undefined, brewie).og).toBeCloseTo(designed, 3);
     expect(efficiencyMismatch(adapted, brewie)).toBeUndefined();
+  });
+});
+
+describe('recipe values for the overview', () => {
+  it('calculates OG, ABV, IBU and colour when a recipe has none', () => {
+    const r = reference({ specifications: { og: { value: 0 }, fg: { value: 0 }, abv: { value: 0 }, ibu: { value: 0 }, color: { value: 0 } } });
+    expect(hasSpecs(r)).toBe(false);
+    const s = calculatedSpecs(r);
+    const stats = calculateRecipeStats(r);
+    expect(s).toEqual({ og: { value: stats.og }, fg: { value: stats.fg }, abv: { value: stats.abv }, ibu: { value: stats.ibu }, color: { value: stats.color } });
+    expect(hasSpecs({ specifications: s })).toBe(true);
   });
 });
