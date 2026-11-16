@@ -32,7 +32,7 @@ import { InfoBanner } from './components/InfoBanner';
 import { StageBadge } from './components/RecipeLifecycle';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient, View } from './types';
-import { initialRoute } from './services/routes';
+import { initialRoute, needsLookup, type Match, type Params } from './services/routes';
 import { useUrlSync } from './services/useUrlSync';
 import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment, ownInstallations, hasSpecs, calculatedSpecs } from './services/calculations';
 import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes, canPublish } from './services/permissions';
@@ -135,7 +135,7 @@ const AppContent: React.FC = () => {
   const lang = preferences.language;
   // The screen of the URL the app was opened on (a refresh or a shared link)
   const openedOn = useRef(initialRoute(window.location.pathname));
-  const [view, setView] = useState<View>(openedOn.current.view);
+  const [view, setView] = useState<View>(openedOn.current.route.view);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [brewLogs, setBrewLogs] = useState<BrewLogEntry[]>([]);
   const [tastingNotes, setTastingNotes] = useState<TastingNote[]>([]);
@@ -143,7 +143,9 @@ const AppContent: React.FC = () => {
   
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   // Recipe opened in Flavour Lab from the recipe editor
-  const [flavourRecipeId, setFlavourRecipeId] = useState<string | undefined>(undefined);
+  const [flavourRecipeId, setFlavourRecipeId] = useState<string | undefined>(
+    openedOn.current.route.view === 'flavour_lab' ? openedOn.current.params.recipeId : undefined,
+  );
   const [selectedBrewLog, setSelectedBrewLog] = useState<BrewLogEntry | null>(null);
   /** Recipe waiting for the choice of installation before its brew starts */
   const [brewPickRecipe, setBrewPickRecipe] = useState<Recipe | null>(null);
@@ -159,8 +161,7 @@ const AppContent: React.FC = () => {
   const [rlsStatus, setRlsStatus] = useState<{ enabled: boolean, reason?: string } | null>(null);
   const [allowLocalStorage, setAllowLocalStorage] = useState(true);
   const [importStatus, setImportStatus] = useState<ImportStatus | 'complete'>('idle');
-  const [libraryView, setLibraryView] = useState<'personal' | 'public'>(openedOn.current.lib ?? 'personal');
-  const { redirect } = useUrlSync(view, libraryView, setView, setLibraryView);
+  const [libraryView, setLibraryView] = useState<'personal' | 'public'>(openedOn.current.route.lib ?? 'personal');
   const [importQueue, setImportQueue] = useState<ImportItem[]>([]);
   // Water profiles saved during an import, per imported recipe: linked to its water treatment
   const importWaterLinks = useRef<Record<string, Partial<Record<WaterRole, string>>>>({});
@@ -180,6 +181,29 @@ const AppContent: React.FC = () => {
   // Tasting note being edited, and the batch the tasting notes screen opens on
   const [selectedNote, setSelectedNote] = useState<TastingNote | null>(null);
   const [notesBatch, setNotesBatch] = useState<string | undefined>(undefined);
+
+  // URL per screen. The recipe, brew or note of a URL (opened on a link, or reached with
+  // back/forward) is looked up once the data has loaded; until then the URL is left alone.
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [pendingLookup, setPendingLookup] = useState<Match | null>(needsLookup(openedOn.current) ? openedOn.current : null);
+  const screenParams = useMemo<Params>(() => {
+    switch (view) {
+      case 'create': return { recipeId: selectedRecipe?.id };
+      case 'log': return selectedBrewLog?.id ? { brewId: selectedBrewLog.id } : { recipeId: selectedRecipe?.id };
+      case 'tasting': return { brewId: selectedBrewLog?.id, noteId: selectedBrewLog?.id ? selectedNote?.id : undefined };
+      case 'flavour_lab': return { recipeId: flavourRecipeId };
+      default: return {};
+    }
+  }, [view, selectedRecipe?.id, selectedBrewLog?.id, selectedNote?.id, flavourRecipeId]);
+  const handleUrlNavigate = (match: Match) => {
+    const { route, params } = match;
+    setView(route.view);
+    if (route.lib) setLibraryView(route.lib);
+    if (route.view === 'flavour_lab') setFlavourRecipeId(params.recipeId);
+    if (route.view === 'create' && !params.recipeId) setSelectedRecipe(null);
+    setPendingLookup(needsLookup(match) ? match : null);
+  };
+  const { redirect } = useUrlSync({ view, libraryView, params: screenParams }, !!pendingLookup, handleUrlNavigate, setView, setLibraryView);
   const [syncError, setSyncError] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
@@ -341,7 +365,7 @@ const AppContent: React.FC = () => {
       const appStart = libraryViewFor.current === null;
       libraryViewFor.current = user?.id ?? 'guest';
       // App opened on a link to the brewery's own items or the public library: keep that choice
-      const link = openedOn.current;
+      const link = openedOn.current.route;
       if (appStart && link.path !== '/' && link.lib && (user || link.public)) return;
       // A redirect, so the URL is replaced instead of adding a step to the history
       redirect(undefined, user ? 'personal' : 'public');
@@ -398,9 +422,35 @@ const AppContent: React.FC = () => {
   // Screens that need a recipe or brew chosen first (e.g. reached with back/forward after
   // that choice was cleared): back to the list they are opened from
   useEffect(() => {
+    if (pendingLookup) return;
     if (view === 'log' && !selectedRecipe) redirect('brouwlogboek');
     else if (view === 'tasting' && !(selectedRecipe && selectedBrewLog)) redirect('proefnotities');
-  }, [view, selectedRecipe, selectedBrewLog, redirect]);
+  }, [view, selectedRecipe, selectedBrewLog, pendingLookup, redirect]);
+
+  // The recipe, brew or tasting note of the URL: shown once found in the data; when it is
+  // not there (deleted, or not visible to this user), back to the list of that screen
+  useEffect(() => {
+    if (!pendingLookup) return;
+    const { route, params } = pendingLookup;
+    // Another screen was chosen meanwhile (e.g. a guest sent to the public recipes)
+    if (route.view !== view) { setPendingLookup(null); return; }
+    const log = params.brewId ? brewLogs.find(l => l.id === params.brewId) : undefined;
+    const recipe = recipes.find(r => r.id === (log ? log.recipeId : params.recipeId));
+    const note = params.noteId ? tastingNotes.find(n => n.id === params.noteId && n.brewLogId === params.brewId) : undefined;
+    const found = !!recipe && (!params.brewId || !!log) && (!params.noteId || !!note);
+    if (found) {
+      setSelectedRecipe(recipe);
+      if (route.view === 'log' || route.view === 'tasting') setSelectedBrewLog(log ?? null);
+      if (route.view === 'log' && !log) setNewBrewEquipmentId(undefined);
+      if (route.view === 'tasting') { setSelectedNote(note ?? null); setTastingReturnView('brouwlogboek'); }
+      setPendingLookup(null);
+    } else if (dataLoaded) {
+      setPendingLookup(null);
+      if (route.view === 'create') redirect('recipes');
+      else if (route.view === 'tasting') redirect('proefnotities');
+      else redirect('brouwlogboek');
+    }
+  }, [pendingLookup, view, recipes, brewLogs, tastingNotes, dataLoaded, redirect]);
 
   useEffect(() => {
     if (profile?.brewery_id) {
@@ -562,7 +612,7 @@ const AppContent: React.FC = () => {
 
         if (previousIdentity !== identity) {
           // App opened on a link to a screen (not the start page): stay there if allowed
-          const deepLink = previousIdentity === null && openedOn.current.path !== '/' ? openedOn.current : null;
+          const deepLink = previousIdentity === null && openedOn.current.route.path !== '/' ? openedOn.current.route : null;
           if (deepLink && (user || deepLink.public)) {
             // Keep the screen of the link
           } else if (user) {
@@ -614,6 +664,8 @@ const AppContent: React.FC = () => {
       }
 
       if (cancelled) return;
+      // The recipe, brew or note of a link can now be looked up (or found missing)
+      setDataLoaded(true);
 
       if (isAdmin) {
         const pending = await supabaseService.fetchPendingSubmissions();
@@ -2089,7 +2141,10 @@ const AppContent: React.FC = () => {
               {view === 'log' && selectedRecipe && (
                 <BrewLog recipe={selectedRecipe} batchNumberFor={log => batchNumbers(brewLogs.some(l => l.id === log.id) ? brewLogs : [...brewLogs, log]).get(log.id)} initialLog={selectedBrewLog || undefined} onUpdate={handleUpdateBrewLog} onSaveAndExit={handleSaveAndExitBrewLog} initialEquipmentId={selectedBrewLog ? undefined : newBrewEquipmentId} library={deduplicatedLibrary} />
               )}
-              {view === 'create' && (
+              {/* The recipe, brew or note of the URL is still being looked up */}
+              {pendingLookup && <ScreenLoading />}
+
+              {view === 'create' && !pendingLookup && (
                 <RecipeCreator
                   key={selectedRecipe?.id || 'new'}
                   initialRecipe={selectedRecipe || undefined}
