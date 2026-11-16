@@ -8,6 +8,7 @@ const Dashboard = lazy(() => import('./components/Dashboard'));
 const FlavourLab = lazy(() => import('./components/FlavourLab'));
 const TastingNotesView = lazy(() => import('./components/TastingNotesView'));
 const IngredientLibrary = lazy(() => import('./components/IngredientLibrary'));
+const GlobalSearch = lazy(() => import('./components/GlobalSearch'));
 import type { LibrarySection } from './components/IngredientLibrary';
 const PrintView = lazy(() => import('./components/PrintView'));
 const AdminView = lazy(() => import('./components/AdminView'));
@@ -493,6 +494,40 @@ const AppContent: React.FC = () => {
   const brewManager = canManageBrews({ isAdmin, breweryRole: profile?.brewery_role ?? null });
   // Recipes, library, stock and imports: brewery admins and brewmasters (see the RLS policies)
   const recipeManager = canManageRecipes({ isAdmin, breweryRole: profile?.brewery_role ?? null });
+
+  // Search over everything (Ctrl+K or ⌘K, or "/" outside a text field)
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const [libraryJump, setLibraryJump] = useState<{ query: string; type: string; n: number } | null>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+      if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); setGlobalSearchOpen(true); }
+      else if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); setGlobalSearchOpen(true); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  // The search from Ctrl+K applies once: leaving the library forgets it
+  useEffect(() => { if (view !== 'library' && view !== 'library_styles') setLibraryJump(null); }, [view]);
+  const isOwnItem = (i: { status?: string; user_id?: string; brewery_id?: string }) =>
+    !!user && i.status !== 'approved' && ((!!profile?.brewery_id && i.brewery_id === profile.brewery_id) || i.user_id === user.id);
+  const openFromSearch = {
+    recipe: (r: Recipe) => {
+      if (isOwnItem(r)) { setLibraryView('personal'); setSelectedRecipe(r); setView('create'); }
+      else { setLibraryView('public'); setRecipeQuery(r.name); setView('recipes'); }
+    },
+    brew: (log: BrewLogEntry) => {
+      const recipe = recipes.find(r => r.id === log.recipeId);
+      if (brewManager && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); }
+      else setView('brouwlogboek');
+    },
+    ingredient: (item: LibraryIngredient) => {
+      setLibraryView(isOwnItem(item) ? 'personal' : 'public');
+      setLibraryJump({ query: item.name, type: item.type, n: Date.now() });
+      setView(item.type === 'style' ? 'library_styles' : 'library');
+    },
+  };
   const libraryManager = canManageLibrary({ isAdmin, breweryRole: profile?.brewery_role ?? null });
   const publisher = canPublish({ isAdmin, breweryRole: profile?.brewery_role ?? null });
 
@@ -1817,7 +1852,15 @@ const AppContent: React.FC = () => {
               onOpenSyncDetails={handleOpenSyncDetails}
               onNewRecipe={() => { setSelectedRecipe(null); setView('create'); }}
               onAuth={() => handleAuthRedirect('signin')}
+              onSearch={() => setGlobalSearchOpen(true)}
             />
+            {globalSearchOpen && (
+              <Suspense fallback={null}>
+                <GlobalSearch open={globalSearchOpen} onClose={() => setGlobalSearchOpen(false)}
+                  recipes={recipes} logs={brewLogs} library={library} isOwn={isOwnItem}
+                  onOpenRecipe={openFromSearch.recipe} onOpenBrew={openFromSearch.brew} onOpenIngredient={openFromSearch.ingredient} />
+              </Suspense>
+            )}
 
             {!user && <InfoBanner />}
 
@@ -2195,7 +2238,9 @@ const AppContent: React.FC = () => {
                     </div>
                   </div>
                 <IngredientLibrary
-                  key={librarySection}
+                  key={`${librarySection}-${libraryJump?.n ?? 0}`}
+                  initialQuery={libraryJump?.query}
+                  initialType={libraryJump?.type}
                   section={librarySection}
                   ingredients={library}
                   libraryView={publicOnlySection ? 'public' : libraryView}

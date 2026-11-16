@@ -35,6 +35,9 @@ interface LibraryProps {
   onReplace?: (ingredients: LibraryIngredient[]) => void;
   /** The brewery's recipes, to filter on items used or not used */
   recipes?: Recipe[];
+  /** Open with this search (and type tab), e.g. from the global search */
+  initialQuery?: string;
+  initialType?: string;
 }
 
 const IngredientLibrary: React.FC<LibraryProps> = ({ 
@@ -43,7 +46,9 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   libraryView,
   onUpdate,
   onReplace,
-  recipes = []
+  recipes = [],
+  initialQuery = '',
+  initialType
 }) => {
   const { t, lang } = useTranslation();
   const { user, preferences, profile, breweryRole, isAdmin } = useUser();
@@ -83,8 +88,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   const canSubmit = canPublish({ breweryRole, isAdmin });
   type Filter = 'fermentable' | 'hop' | 'culture' | 'misc' | 'mash_profile' | 'style' | 'equipment' | 'water';
   const filters: Filter[] = section === 'ingredients' ? ['fermentable', 'hop', 'culture', 'misc'] : [section];
-  const [filter, setFilter] = useState<Filter>(filters[0]);
-  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<Filter>(filters.includes(initialType as Filter) ? initialType as Filter : filters[0]);
+  const [query, setQuery] = useState(initialQuery);
   const [ingFilters, setIngFilters] = useState<IngredientFilters>({});
   const [ingSort, setIngSort] = useState<IngredientSort>('name');
   const deferredQuery = useDeferredValue(query);

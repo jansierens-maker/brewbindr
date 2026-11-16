@@ -12,6 +12,8 @@ interface TopbarProps {
   onOpenSyncDetails?: () => void;
   onNewRecipe?: () => void;
   onAuth?: () => void;
+  /** Opens the search over everything (Ctrl+K) */
+  onSearch?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -23,9 +25,11 @@ export const Topbar: React.FC<TopbarProps> = ({
   onShowHelp,
   onOpenSyncDetails,
   onNewRecipe,
-  onAuth
+  onAuth,
+  onSearch
 }) => {
   const { t } = useTranslation();
+  const shortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : 'Ctrl K';
 
   return (
     <header className="bg-[var(--color-bg)] border-b border-[var(--color-border)] px-4 md:px-7 h-[var(--topbar-h)] flex items-center gap-2 md:gap-3.5 sticky top-0 z-50 shadow-sm md:shadow-none">
@@ -60,6 +64,15 @@ export const Topbar: React.FC<TopbarProps> = ({
             <i className="fas fa-sync-alt text-[10px] md:text-xs"></i>
           </button>
         </div>
+
+        {onSearch && (
+          <button type="button" onClick={onSearch} aria-label={t('global_search_title')} title={`${t('global_search_title')} (${shortcut})`}
+            className="w-8 h-8 md:w-auto md:h-9 md:px-3 flex items-center justify-center gap-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)] md:border md:border-[var(--color-border)] transition-all">
+            <i className="fas fa-search text-sm" aria-hidden="true"></i>
+            <span className="hidden md:inline text-xs font-semibold">{t('global_search_short')}</span>
+            <kbd className="hidden lg:inline text-[10px] font-bold text-[var(--color-text-xmuted)] border border-[var(--color-border)] rounded px-1">{shortcut}</kbd>
+          </button>
+        )}
 
         {/* Help Button */}
         <button
