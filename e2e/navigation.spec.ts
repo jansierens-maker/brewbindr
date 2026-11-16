@@ -59,3 +59,13 @@ test.describe('URLs per screen', () => {
     await expect(page).not.toHaveURL(/\/tasting$/);
   });
 });
+
+test('a guest on the start page gets the public recipes without an extra history step', async ({ page }) => {
+  await page.goto('/help');
+  await page.waitForLoadState('networkidle');
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await expect(page).toHaveURL(/\/library\/recipes$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/help$/);
+});

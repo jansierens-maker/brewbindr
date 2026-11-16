@@ -334,12 +334,20 @@ const AppContent: React.FC = () => {
     return { syncedRecipe, newIngredients, updatedLib };
   };
 
+  // Who the library view was last chosen for ('guest' or a user id)
+  const libraryViewFor = useRef<string | null>(null);
   useEffect(() => {
     if (!authLoading) {
-      setLibraryView(user ? 'personal' : 'public');
+      const appStart = libraryViewFor.current === null;
+      libraryViewFor.current = user?.id ?? 'guest';
+      // App opened on a link to the brewery's own items or the public library: keep that choice
+      const link = openedOn.current;
+      if (appStart && link.path !== '/' && link.lib && (user || link.public)) return;
+      // A redirect, so the URL is replaced instead of adding a step to the history
+      redirect(undefined, user ? 'personal' : 'public');
     }
     // user?.id (not user): the user object is replaced on every token refresh
-  }, [user?.id, authLoading]);
+  }, [user?.id, authLoading, redirect]);
 
   // Who the start screen was last chosen for ('guest' or a user id). The start
   // screen is only set when this changes (app start, login, logout), so loading

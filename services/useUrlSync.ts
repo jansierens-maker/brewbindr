@@ -52,10 +52,12 @@ export function useUrlSync(
 
   /**
    * Go to a screen without adding a step to the history (the start screen, a guard).
+   * Without a screen: stay on the current one, only switching the library view.
    * Only marks the URL for replacing when the screen really changes, so the next
    * ordinary click still adds a step.
    */
-  const redirect = useCallback((to: View, lib?: LibraryView) => {
+  const redirect = useCallback((to?: View, lib?: LibraryView) => {
+    to = to ?? latest.current.view;
     const nextLib = lib ?? latest.current.libraryView;
     if (to === latest.current.view && nextLib === latest.current.libraryView) return;
     const route = fromPath(window.location.pathname);
