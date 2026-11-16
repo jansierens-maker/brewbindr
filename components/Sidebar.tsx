@@ -85,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="w-[var(--sidebar-w)] bg-[var(--color-bg)] border-r border-[var(--color-border)] flex flex-col fixed top-0 left-0 bottom-0 z-[100] overflow-y-auto">
+    <aside className="w-[var(--sidebar-w)] bg-[var(--color-bg)] border-r border-[var(--color-border)] flex flex-col fixed top-0 left-0 bottom-0 z-[100] overflow-y-auto overflow-x-hidden">
       <button
         onClick={handleLogoClick}
         className="p-[17px_20px_13px] border-b border-[var(--color-border)] flex items-center gap-2.5 flex-shrink-0 hover:bg-[var(--color-bg-subtle)] transition-colors text-left"
@@ -94,7 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <PhaseBadge phase="beta" />
       </button>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
         {navItems.map((section) => (
           <div key={section.section} className="p-[12px_12px_2px]">
             {section.section && (
@@ -106,9 +106,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {section.items.filter(item => !item.hideIf).map((item) => {
                 const gated = isGated(item);
                 return (
-                  <div key={item.id} className="relative group/tooltip">
+                  <div key={item.id}>
                     <button
                       onClick={() => handleNavClick(item)}
+                      title={gated ? t('sign_in_for_access') : undefined}
                       className={`w-full flex items-center gap-2.5 p-[7px_10px] rounded-[var(--radius-sm)] text-[13.5px] font-medium transition-colors cursor-pointer text-left ${
                         isActive(item)
                           ? 'bg-[var(--color-accent-light)] text-[var(--color-accent-dark)] font-semibold'
@@ -122,12 +123,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {item.phase && <PhaseBadge phase={item.phase} />}
                       {gated && <i className="fas fa-lock text-[10px] text-[var(--color-text-xmuted)] ml-auto"></i>}
                     </button>
-                    {gated && (
-                      <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-stone-800 text-white text-[10px] font-bold rounded shadow-lg whitespace-nowrap pointer-events-none opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-[110]">
-                        {t('sign_in_for_access')}
-                        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-stone-800"></div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
