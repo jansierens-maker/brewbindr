@@ -1,8 +1,9 @@
 
 import React, { useDeferredValue, useState } from 'react';
-import SearchBox from './SearchBox';
+import ListToolbar, { FilterChip, FilterSelect } from './ListToolbar';
+import { BrewFilters, BrewSort, BREW_SORTS, brewMatches, brewYear, sortBrews } from '../services/filters';
 import { matchesQuery, brewSearchText } from '../services/search';
-import { BrewLogEntry, Recipe, TastingNote } from '../types';
+import { BrewLogEntry, LibraryIngredient, Recipe, TastingNote } from '../types';
 import { getSRMColor, calculateABV, formatGravity } from '../services/calculations';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -26,9 +27,11 @@ interface BrewLogViewProps {
   /** Brewery admins, brewmasters and brewers open and update brews; tasters do not */
   canManageBrews: boolean;
   onPrintReport?: (log: BrewLogEntry) => void;
+  /** The brewery's installations, to filter on */
+  installations?: LibraryIngredient[];
 }
 
-const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, onEditLog, onAddTasting, onViewNotes, onToggleFinished, canAddNotes, canManageBrews, onPrintReport }) => {
+const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, onEditLog, onAddTasting, onViewNotes, onToggleFinished, canAddNotes, canManageBrews, onPrintReport, installations = [] }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
@@ -41,10 +44,23 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
     const n = numbers.get(l.id);
     return matchesQuery(brewSearchText(l, recipes.find(r => r.id === l.recipeId), n ? t('batch_label').replace('{n}', String(n)) : undefined), deferredQuery);
   };
-  const searched = logs.filter(found);
-  const sortedLogs = searched
-    .filter(l => phase === 'all' || l.status === phase)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const [filters, setFilters] = useState<BrewFilters>({});
+  const [sort, setSort] = useState<BrewSort>('newest');
+  const recipeOf = (l: BrewLogEntry) => recipes.find(r => r.id === l.recipeId);
+  const noteCount = (l: BrewLogEntry) => tastingNotes.filter(n => n.brewLogId === l.id).length;
+  const searched = logs.filter(l => found(l) && brewMatches(l, recipeOf(l), filters, noteCount(l)));
+  const sortedLogs = sortBrews(searched.filter(l => phase === 'all' || l.status === phase), sort, l => recipeOf(l)?.name ?? '');
+  // Choices that occur in the brews
+  const years = [...new Set(logs.map(brewYear).filter(y => !isNaN(y)))].sort((a, b) => b - a);
+  const brewedRecipes = recipes.filter(r => logs.some(l => l.recipeId === r.id)).sort((a, b) => a.name.localeCompare(b.name));
+  const set = (patch: Partial<BrewFilters>) => setFilters(f => ({ ...f, ...patch }));
+  const chips: FilterChip[] = [
+    ...(filters.year !== undefined ? [{ key: 'year', label: String(filters.year), onRemove: () => set({ year: undefined }) }] : []),
+    ...(filters.recipeId ? [{ key: 'recipe', label: recipes.find(r => r.id === filters.recipeId)?.name ?? t('filters_recipe'), onRemove: () => set({ recipeId: undefined }) }] : []),
+    ...(filters.equipmentId ? [{ key: 'eq', label: installations.find(e => e.id === filters.equipmentId)?.name ?? t('filters_installation'), onRemove: () => set({ equipmentId: undefined }) }] : []),
+    ...(filters.finished ? [{ key: 'fin', label: t(filters.finished === 'open' ? 'filters_finished_open' : 'filters_finished_yes'), onRemove: () => set({ finished: undefined }) }] : []),
+    ...(filters.notes ? [{ key: 'notes', label: t(filters.notes === 'with' ? 'filters_notes_with' : 'filters_notes_without'), onRemove: () => set({ notes: undefined }) }] : []),
+  ];
   const countOf = (p: BrewPhase) => searched.filter(l => l.status === p).length;
 
   if (logs.length === 0) {
@@ -68,7 +84,26 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
         <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{t('history_title')}</h2>
         <p className="text-[var(--color-text-muted)] font-medium mt-1">{t('history_subtitle')}</p>
       </div>
-      <SearchBox id="brew_search" label={t('search_brews')} value={query} onChange={setQuery} className="max-w-xl" />
+      <ListToolbar
+        search={{ id: 'brew_search', label: t('search_brews'), value: query, onChange: setQuery }}
+        sort={{ id: 'brew_sort', value: sort, onChange: v => setSort(v as BrewSort), options: BREW_SORTS.map(v => ({ value: v, label: t(`sort_brew_${v}` as any) })) }}
+        chips={chips} onClearAll={() => setFilters({})}
+      >
+        <FilterSelect id="filter_year" label={t('filters_year')} anyLabel={t('filters_any')} value={filters.year !== undefined ? String(filters.year) : ''}
+          options={years.map(y => ({ value: String(y), label: String(y) }))} onChange={v => set({ year: v ? Number(v) : undefined })} />
+        <FilterSelect id="filter_recipe" label={t('filters_recipe')} anyLabel={t('filters_any')} value={filters.recipeId ?? ''}
+          options={brewedRecipes.map(r => ({ value: r.id ?? '', label: r.name }))} onChange={v => set({ recipeId: v || undefined })} />
+        {installations.length > 1 && (
+          <FilterSelect id="filter_installation" label={t('filters_installation')} anyLabel={t('filters_any')} value={filters.equipmentId ?? ''}
+            options={installations.map(e => ({ value: e.id, label: e.name }))} onChange={v => set({ equipmentId: v || undefined })} />
+        )}
+        <FilterSelect id="filter_finished" label={t('filters_finished')} anyLabel={t('filters_any')} value={filters.finished ?? ''}
+          options={[{ value: 'open', label: t('filters_finished_open') }, { value: 'finished', label: t('filters_finished_yes') }]}
+          onChange={v => set({ finished: (v || undefined) as BrewFilters['finished'] })} />
+        <FilterSelect id="filter_notes" label={t('filters_notes')} anyLabel={t('filters_any')} value={filters.notes ?? ''}
+          options={[{ value: 'with', label: t('filters_notes_with') }, { value: 'without', label: t('filters_notes_without') }]}
+          onChange={v => set({ notes: (v || undefined) as BrewFilters['notes'] })} />
+      </ListToolbar>
       <div role="tablist" aria-label={t('nav_brews')} className="flex border-b border-[var(--color-border)] gap-8 overflow-x-auto custom-scrollbar">
         {(['all', ...BREW_PHASES] as const).map(p => {
           const count = p === 'all' ? searched.length : countOf(p);
@@ -81,7 +116,7 @@ const BrewLogView: React.FC<BrewLogViewProps> = ({ logs, recipes, tastingNotes, 
           );
         })}
       </div>
-      {sortedLogs.length === 0 && <p role="status" className="text-[var(--color-text-muted)] font-bold">{deferredQuery.trim() ? t('search_no_results').replace('{q}', deferredQuery.trim()) : t('no_brews_with_status')}</p>}
+      {sortedLogs.length === 0 && <p role="status" className="text-[var(--color-text-muted)] font-bold">{deferredQuery.trim() ? t('search_no_results').replace('{q}', deferredQuery.trim()) : chips.length ? t('filters_no_results') : t('no_brews_with_status')}</p>}
       <div id="brews-list" role="tabpanel" aria-labelledby={`brews-tab-${phase}`} className="grid grid-cols-1 gap-6">
         {sortedLogs.map(log => {
           const recipe = recipes.find(r => r.id === log.recipeId);

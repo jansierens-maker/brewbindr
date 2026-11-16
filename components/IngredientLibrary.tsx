@@ -1,8 +1,10 @@
 
 import React, { useState, useMemo, useDeferredValue } from 'react';
-import SearchBox from './SearchBox';
+import ListToolbar, { FilterChip, FilterRange, FilterSelect, rangeText } from './ListToolbar';
+import { IngredientFilters, IngredientSort, ingredientMatches, rangeField, sortIngredients, usedInRecipes } from '../services/filters';
+import { ebcToSrm, srmToEbc, roundTo } from '../services/calculations';
 import { matchesQuery, ingredientSearchText } from '../services/search';
-import { LibraryIngredient, MashStep } from '../types';
+import { LibraryIngredient, MashStep, Recipe } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { canManageLibrary, canPublish } from '../services/permissions';
@@ -31,6 +33,8 @@ interface LibraryProps {
   onUpdate: (ingredients: LibraryIngredient[]) => void;
   /** Replace the local list after a database change, without saving anything */
   onReplace?: (ingredients: LibraryIngredient[]) => void;
+  /** The brewery's recipes, to filter on items used or not used */
+  recipes?: Recipe[];
 }
 
 const IngredientLibrary: React.FC<LibraryProps> = ({ 
@@ -38,7 +42,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   ingredients, 
   libraryView,
   onUpdate,
-  onReplace
+  onReplace,
+  recipes = []
 }) => {
   const { t, lang } = useTranslation();
   const { user, preferences, profile, breweryRole, isAdmin } = useUser();
@@ -80,6 +85,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   const filters: Filter[] = section === 'ingredients' ? ['fermentable', 'hop', 'culture', 'misc'] : [section];
   const [filter, setFilter] = useState<Filter>(filters[0]);
   const [query, setQuery] = useState('');
+  const [ingFilters, setIngFilters] = useState<IngredientFilters>({});
+  const [ingSort, setIngSort] = useState<IngredientSort>('name');
   const deferredQuery = useDeferredValue(query);
   // Installations and water profiles are managed under Brewing Installation; here only
   // their public library (browse, add to your own)
@@ -249,6 +256,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
   };
 
 
+  const used = useMemo(() => usedInRecipes(recipes), [recipes]);
   // ⚡ Bolt: filter and sort once per data/filter change instead of three times
   // on every render (renders happen on each keystroke while editing an item)
   const visibleIngredients = useMemo(() => ingredients
@@ -261,9 +269,27 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
           )
     ))
     // A new, still empty item stays visible while searching
-    .filter(i => i.id === unsavedNewId || i.id === editingId || matchesQuery(ingredientSearchText(i), deferredQuery))
-    .sort((a, b) => a.name.localeCompare(b.name)),
-  [ingredients, filter, libraryView, user?.id, profile?.brewery_id, deferredQuery, unsavedNewId, editingId]);
+    .filter(i => i.id === unsavedNewId || i.id === editingId || (matchesQuery(ingredientSearchText(i), deferredQuery) && ingredientMatches(i, ingFilters, used))),
+  [ingredients, filter, libraryView, user?.id, profile?.brewery_id, deferredQuery, unsavedNewId, editingId, ingFilters, used]);
+  const sortedIngredients = useMemo(() => sortIngredients(visibleIngredients, ingSort), [visibleIngredients, ingSort]);
+
+  // Filters: stock (own items), use in recipes, and the type's own number
+  const field = rangeField(filter);
+  const ebc = preferences.colorScale === 'ebc';
+  const fieldLabel = field === 'color' ? t('color') : field === 'alpha' ? t('filters_alpha') : field === 'attenuation' ? t('filters_attenuation') : '';
+  const fieldUnit = field === 'color' ? preferences.colorScale.toUpperCase() : '%';
+  const toShown = (v?: number) => (v === undefined ? undefined : field === 'color' && ebc ? roundTo(srmToEbc(v), 0) : v);
+  const fromShown = (v?: number) => (v === undefined ? undefined : field === 'color' && ebc ? ebcToSrm(v) : v);
+  const showStock = preferences.enableStockManagement && libraryView === 'personal' && ['fermentable', 'hop', 'culture', 'misc'].includes(filter);
+  const showUsage = libraryView === 'personal' && filter !== 'equipment' && filter !== 'water';
+  const setF = (patch: Partial<IngredientFilters>) => setIngFilters(f => ({ ...f, ...patch }));
+  const ingChips: FilterChip[] = [
+    ...(showStock && ingFilters.stock ? [{ key: 'stock', label: t(ingFilters.stock === 'in' ? 'filters_in_stock' : 'filters_out_of_stock'), onRemove: () => setF({ stock: undefined }) }] : []),
+    ...(showUsage && ingFilters.usage ? [{ key: 'usage', label: t(ingFilters.usage === 'used' ? 'filters_used' : 'filters_unused'), onRemove: () => setF({ usage: undefined }) }] : []),
+    ...(field && (ingFilters.min !== undefined || ingFilters.max !== undefined)
+      ? [{ key: 'range', label: `${fieldLabel} ${rangeText(toShown(ingFilters.min), toShown(ingFilters.max))} ${fieldUnit}`, onRemove: () => setF({ min: undefined, max: undefined }) }] : []),
+  ];
+  const hasFilters = showStock || showUsage || !!field;
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {itemToDelete && (
@@ -301,7 +327,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             {filters.map(f => (
               <button 
                 key={f}
-                onClick={() => { setFilter(f); cancelEditing(); setSelectedIds([]); }}
+                onClick={() => { setFilter(f); cancelEditing(); setSelectedIds([]); setIngFilters(x => ({ ...x, min: undefined, max: undefined })); setIngSort('name'); }}
                 className={`px-5 py-2.5 rounded-[var(--radius-sm)] font-bold text-xs transition-all ${filter === f ? 'bg-[var(--color-accent)] text-white shadow-lg' : 'text-[var(--color-text-xmuted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-muted)]'}`}
               >
                 {filterLabel(f)}
@@ -310,6 +336,35 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
           </div>
         </div>
       </div>}
+
+      <ListToolbar
+        search={{ id: `library_search_${section}`, label: t('search_library'), value: query, onChange: setQuery }}
+        sort={field ? { id: `library_sort_${section}`, value: ingSort, onChange: v => setIngSort(v as IngredientSort), options: [
+          { value: 'name', label: t('sort_ing_name') },
+          { value: 'value_asc', label: t('sort_ing_value_asc').replace('{f}', fieldLabel) },
+          { value: 'value_desc', label: t('sort_ing_value_desc').replace('{f}', fieldLabel) },
+        ] } : undefined}
+        chips={ingChips} onClearAll={() => setIngFilters({})}
+      >
+        {hasFilters ? (
+          <>
+            {showStock && (
+              <FilterSelect id={`filter_stock_${section}`} label={t('filters_stock')} anyLabel={t('filters_any')} value={ingFilters.stock ?? ''}
+                options={[{ value: 'in', label: t('filters_in_stock') }, { value: 'out', label: t('filters_out_of_stock') }]}
+                onChange={v => setF({ stock: (v || undefined) as IngredientFilters['stock'] })} />
+            )}
+            {showUsage && (
+              <FilterSelect id={`filter_usage_${section}`} label={t('filters_usage')} anyLabel={t('filters_any')} value={ingFilters.usage ?? ''}
+                options={[{ value: 'used', label: t('filters_used') }, { value: 'unused', label: t('filters_unused') }]}
+                onChange={v => setF({ usage: (v || undefined) as IngredientFilters['usage'] })} />
+            )}
+            {field && (
+              <FilterRange id={`filter_range_${section}`} label={fieldLabel} unit={fieldUnit} step={field === 'color' ? 1 : 0.1}
+                min={toShown(ingFilters.min)} max={toShown(ingFilters.max)} onChange={(lo, hi) => setF({ min: fromShown(lo), max: fromShown(hi) })} />
+            )}
+          </>
+        ) : undefined}
+      </ListToolbar>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end px-2 gap-4">
         <div>
@@ -321,7 +376,6 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
           <p className="text-[var(--color-text-xmuted)] text-xs font-bold">
             {visibleIngredients.length} {t('items_in_collection')}
           </p>
-          <SearchBox id={`library_search_${section}`} label={t('search_library')} value={query} onChange={setQuery} className="mt-3 w-full md:w-80" />
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -362,7 +416,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
             {t('no_items_found')}
           </div>
         ) : (
-          visibleIngredients
+          sortedIngredients
             .map(item => (
             <div key={item.id} className={`bg-[var(--color-bg)] p-8 rounded-[var(--radius)] border shadow-[var(--shadow-sm)] relative transition-all ${editingId === item.id ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent-light)]' : selectedIds.includes(item.id) ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent-light)]' : 'border-[var(--color-border)]'}`}>
 
