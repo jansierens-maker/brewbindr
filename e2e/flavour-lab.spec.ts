@@ -98,8 +98,8 @@ test.describe('Flavour Lab', () => {
       // The recipe now holds the spice as MISC
       await page.locator('aside button:has(i.fa-flask)').first().click();
       await recipeCard(page, name).first().getByRole('button', { name: EDIT }).click();
-      const miscNames = () => page.locator('select[id^="misc-select-"]').evaluateAll((els) =>
-        (els as HTMLSelectElement[]).map(e => e.options[e.selectedIndex]?.text ?? ''));
+      const miscNames = () => page.locator('input[id^="misc-select-"]').evaluateAll((els) =>
+        (els as HTMLInputElement[]).map(e => e.value));
       await expect.poll(miscNames, { timeout: 15000 }).toContainEqual(expect.stringMatching(CORIANDER));
       await page.locator('aside button:has(i.fa-flask)').first().click();
     } finally {

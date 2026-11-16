@@ -130,9 +130,9 @@ test.describe('BeerXML import', () => {
       await expect(recipeCard(page, name)).toHaveCount(1, { timeout: 15000 });
       await recipeCard(page, name).first().getByRole('button', { name: EDIT }).click();
 
-      const selected = (id: string) => page.locator(id).evaluate((e: HTMLSelectElement) => e.options[e.selectedIndex]?.text ?? '');
-      await expect.poll(() => selected('#chem_source')).toBe('E2E basiswater');
-      await expect.poll(() => selected('#chem_target')).toBe('E2E doelprofiel');
+      // Searchable choice fields show the chosen profile's name
+      await expect(page.locator('#chem_source')).toHaveValue('E2E basiswater');
+      await expect(page.locator('#chem_target')).toHaveValue('E2E doelprofiel');
       // Back to the list without saving
       await page.locator('aside button:has(i.fa-flask)').first().click();
     } finally {
