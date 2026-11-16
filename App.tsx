@@ -31,7 +31,9 @@ import { BottomNav } from './components/BottomNav';
 import { InfoBanner } from './components/InfoBanner';
 import { StageBadge } from './components/RecipeLifecycle';
 const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
-import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from './types';
+import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient, View } from './types';
+import { initialRoute } from './services/routes';
+import { useUrlSync } from './services/useUrlSync';
 import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment, ownInstallations, hasSpecs, calculatedSpecs } from './services/calculations';
 import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes, canPublish } from './services/permissions';
 import { Taster, batchNumbers, memberName } from './services/tasting';
@@ -46,7 +48,6 @@ import { breweryService } from './services/breweryService';
 import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
-type View = 'dashboard' | 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'library_mash' | 'library_styles' | 'library_equipment' | 'library_water' | 'own_mash' | 'own_water' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities' | 'flavour_lab';
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
 
 interface LanguageContextType {
@@ -132,7 +133,9 @@ const AppContent: React.FC = () => {
     [user?.id, profile?.brewery_id, profile?.brewery_role, isAdmin],
   );
   const lang = preferences.language;
-  const [view, setView] = useState<View>('recipes');
+  // The screen of the URL the app was opened on (a refresh or a shared link)
+  const openedOn = useRef(initialRoute(window.location.pathname));
+  const [view, setView] = useState<View>(openedOn.current.view);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [brewLogs, setBrewLogs] = useState<BrewLogEntry[]>([]);
   const [tastingNotes, setTastingNotes] = useState<TastingNote[]>([]);
@@ -156,7 +159,8 @@ const AppContent: React.FC = () => {
   const [rlsStatus, setRlsStatus] = useState<{ enabled: boolean, reason?: string } | null>(null);
   const [allowLocalStorage, setAllowLocalStorage] = useState(true);
   const [importStatus, setImportStatus] = useState<ImportStatus | 'complete'>('idle');
-  const [libraryView, setLibraryView] = useState<'personal' | 'public'>('personal');
+  const [libraryView, setLibraryView] = useState<'personal' | 'public'>(openedOn.current.lib ?? 'personal');
+  const { redirect } = useUrlSync(view, libraryView, setView, setLibraryView);
   const [importQueue, setImportQueue] = useState<ImportItem[]>([]);
   // Water profiles saved during an import, per imported recipe: linked to its water treatment
   const importWaterLinks = useRef<Record<string, Partial<Record<WaterRole, string>>>>({});
@@ -379,10 +383,16 @@ const AppContent: React.FC = () => {
   // Handle redirect if stock management is disabled while on Voorraad view
   useEffect(() => {
     if (!preferences.enableStockManagement && view === 'voorraad') {
-      setView('recipes');
-      setLibraryView('personal');
+      redirect('recipes', 'personal');
     }
-  }, [preferences.enableStockManagement, view]);
+  }, [preferences.enableStockManagement, view, redirect]);
+
+  // Screens that need a recipe or brew chosen first (e.g. reached with back/forward after
+  // that choice was cleared): back to the list they are opened from
+  useEffect(() => {
+    if (view === 'log' && !selectedRecipe) redirect('brouwlogboek');
+    else if (view === 'tasting' && !(selectedRecipe && selectedBrewLog)) redirect('proefnotities');
+  }, [view, selectedRecipe, selectedBrewLog, redirect]);
 
   useEffect(() => {
     if (profile?.brewery_id) {
@@ -543,16 +553,24 @@ const AppContent: React.FC = () => {
         startScreenFor.current = identity;
 
         if (previousIdentity !== identity) {
-          if (user) {
+          // App opened on a link to a screen (not the start page): stay there if allowed
+          const deepLink = previousIdentity === null && openedOn.current.path !== '/' ? openedOn.current : null;
+          if (deepLink && (user || deepLink.public)) {
+            // Keep the screen of the link
+          } else if (user) {
             // App start while logged in, or just logged in: the dashboard
-            setView('dashboard');
-            setLibraryView('personal');
+            if (previousIdentity === null) redirect('dashboard', 'personal');
+            else { setView('dashboard'); setLibraryView('personal'); }
           } else if (previousIdentity !== null) {
-            // Just logged out: public recipes. (On a fresh start, guests already
-            // begin there, and may have clicked elsewhere while this loads.)
+            // Just logged out: public recipes
             setView('recipes');
             setLibraryView('public');
+          } else if (deepLink) {
+            // Guest on a link to a screen that needs signing in: the public recipes
+            redirect('recipes', 'public');
           }
+          // (On a fresh start without a link, guests already begin on the recipes,
+          // and may have clicked elsewhere while this loads.)
         }
 
         if (!user) {

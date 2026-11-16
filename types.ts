@@ -364,3 +364,9 @@ export interface BreweryDeletion {
   deleted: Record<string, number>;
   kept_public: number;
 }
+
+/** The screens of the app (see services/routes.ts for their URLs) */
+export type View = 'dashboard' | 'recipes' | 'create' | 'log' | 'tasting' | 'library' | 'library_mash' | 'library_styles' | 'library_equipment' | 'library_water' | 'own_mash' | 'own_water' | 'admin' | 'settings' | 'auth' | 'help' | 'voorraad' | 'team' | 'importeren' | 'brouwinstallatie' | 'brouwlogboek' | 'proefnotities' | 'flavour_lab';
+
+/** Whether a screen shows the brewery's own items or the public library */
+export type LibraryView = 'personal' | 'public';
