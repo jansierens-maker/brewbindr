@@ -12,6 +12,8 @@ import WaterChemistryCard from './WaterChemistryCard';
 import { LifecyclePanel } from './RecipeLifecycle';
 import EfficiencyBanner from './EfficiencyBanner';
 import TargetGravityInput from './TargetGravityInput';
+import Combobox from './Combobox';
+import { libraryOptions } from './libraryOptions';
 import { RecipeStage, needsNewVersion } from '../services/lifecycle';
 import { IngredientKind, newIngredient, fromLibraryItem, replaceIngredient, addIngredient as addIngredientTo } from '../services/ingredientEdit';
 
@@ -141,6 +143,15 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
     }
     return grouped;
   }, [library]);
+  // Choices with search, and what helps to pick (colour, alpha acid, attenuation, category)
+  const options = useMemo(() => ({
+    fermentable: libraryOptions(libraryByType.fermentable, preferences, lang),
+    hop: libraryOptions(libraryByType.hop, preferences, lang),
+    culture: libraryOptions(libraryByType.culture, preferences, lang),
+    misc: libraryOptions(libraryByType.misc, preferences, lang),
+    style: libraryOptions(libraryByType.style, preferences, lang),
+    mash_profile: libraryOptions(libraryByType.mash_profile, preferences, lang),
+  }), [libraryByType, preferences, lang]);
 
   const selectedStyleGuideline = useMemo(() => {
     if (!recipe.style?.libraryId) return null;
@@ -400,10 +411,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           </div>
           <div className="md:col-span-2">
             <label htmlFor="recipe_style" className="text-xs font-bold text-stone-400 uppercase">{t('style_label')}</label>
-            <select id="recipe_style" name="style" className="w-full p-3 bg-stone-50 border rounded-xl font-bold" value={recipe.style?.libraryId || ""} onChange={e => handleLibrarySelect('style', 0, e.target.value)}>
-              <option value="">-- Choose Style --</option>
-              {libraryByType.style.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
+            <Combobox id="recipe_style" name="style" label={t('style_label')} value={recipe.style?.libraryId || ''} options={options.style}
+              fallbackText={recipe.style?.name} placeholder={t('combo_choose_style')} onChange={v => handleLibrarySelect('style', 0, v)} />
           </div>
           <div>
             <label htmlFor="batch_size" className="text-xs font-bold text-stone-400 uppercase">{t('batch_size')}</label>
@@ -485,10 +494,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <div key={i} className="flex flex-wrap gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
                 <div className="flex-1 min-w-[12rem]">
                   <label htmlFor={`ferm-select-${i}`} className="sr-only">{t('select_fermentable')}</label>
-                  <select id={`ferm-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={f.libraryId || ""} onChange={e => handleLibrarySelect('fermentable', i, e.target.value)}>
-                    <option value="">{f.name || '-- Select Malt --'}</option>
-                    {libraryByType.fermentable.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                  </select>
+                  <Combobox id={`ferm-select-${i}`} name={`ferm_select_${i}`} label={t('select_fermentable')} value={f.libraryId || ''} options={options.fermentable}
+                    fallbackText={f.name} onChange={v => handleLibrarySelect('fermentable', i, v)} />
                 </div>
                 <div>
                   <label htmlFor={`ferm-type-${i}`} className="sr-only">{t('fermentable_type')}</label>
@@ -534,10 +541,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <div key={i} className="flex flex-wrap gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
                 <div className="flex-1 min-w-[12rem]">
                   <label htmlFor={`hop-select-${i}`} className="sr-only">{t('select_hop')}</label>
-                  <select id={`hop-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={h.libraryId || ""} onChange={e => handleLibrarySelect('hop', i, e.target.value)}>
-                    <option value="">{h.name || '-- Select Hop --'}</option>
-                    {libraryByType.hop.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                  </select>
+                  <Combobox id={`hop-select-${i}`} name={`hop_select_${i}`} label={t('select_hop')} value={h.libraryId || ''} options={options.hop}
+                    fallbackText={h.name} onChange={v => handleLibrarySelect('hop', i, v)} />
                 </div>
                 <div className="flex items-center gap-2">
                   <label htmlFor={`hop-use-${i}`} className="sr-only">{t('hop_use')}</label>
@@ -613,10 +618,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <div key={i} className="flex gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
                 <div className="flex-1">
                   <label htmlFor={`culture-select-${i}`} className="sr-only">{t('select_yeast')}</label>
-                  <select id={`culture-select-${i}`} className="flex-1 p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={c.libraryId || ""} onChange={e => handleLibrarySelect('culture', i, e.target.value)}>
-                    <option value="">{c.name || '-- Select Yeast --'}</option>
-                    {libraryByType.culture.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                  </select>
+                  <Combobox id={`culture-select-${i}`} name={`culture_select_${i}`} label={t('select_yeast')} value={c.libraryId || ''} options={options.culture}
+                    fallbackText={c.name} className="flex-1" onChange={v => handleLibrarySelect('culture', i, v)} />
                 </div>
                 <div className="flex items-center gap-2">
                   <label htmlFor={`culture-att-${i}`} className="sr-only">{t('attenuation_pct')}</label>
@@ -643,10 +646,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
               <div key={i} className="flex flex-wrap gap-3 p-4 bg-stone-50 rounded-2xl border border-stone-100 items-center">
                 <div className="flex-1 min-w-[12rem]">
                   <label htmlFor={`misc-select-${i}`} className="sr-only">{t('select_misc')}</label>
-                  <select id={`misc-select-${i}`} name={`misc-select-${i}`} className="w-full p-2.5 bg-white border border-stone-200 rounded-xl text-stone-900 text-sm font-medium" value={m.libraryId || ""} onChange={e => handleLibrarySelect('misc', i, e.target.value)}>
-                    <option value="">{m.name || t('select_misc')}</option>
-                    {libraryByType.misc.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                  </select>
+                  <Combobox id={`misc-select-${i}`} name={`misc-select-${i}`} label={t('select_misc')} value={m.libraryId || ''} options={options.misc}
+                    fallbackText={m.name} onChange={v => handleLibrarySelect('misc', i, v)} />
                 </div>
                 <div className="flex items-center gap-2">
                   <label htmlFor={`misc-use-${i}`} className="sr-only">{t('hop_use')}</label>
@@ -694,10 +695,8 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
             <h4 className="font-bold uppercase text-stone-900 flex items-center gap-2"><i className="fas fa-thermometer-half text-red-600"></i> {t('mash_profile')}</h4>
             <div className="flex flex-wrap gap-3">
               <label htmlFor="load_mash_profile" className="sr-only">{t('load_mash_profile')}</label>
-              <select id="load_mash_profile" className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-stone-600" value="" onChange={e => handleLibrarySelect('mash_profile', 0, e.target.value)}>
-                <option value="">{t('load_from_library')}</option>
-                {libraryByType.mash_profile.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-              </select>
+              <Combobox id="load_mash_profile" name="load_mash_profile" label={t('load_mash_profile')} value="" options={options.mash_profile}
+                placeholder={t('load_from_library')} className="min-w-[14rem]" onChange={v => handleLibrarySelect('mash_profile', 0, v)} />
               <button onClick={addMashStep} className="bg-stone-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-black transition-all">+ {t('add_mash_step')}</button>
             </div>
           </div>

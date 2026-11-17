@@ -3,6 +3,8 @@ import { Culture, Fermentable, Hop, LibraryIngredient, Misc, Recipe } from '../t
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { formatBrewNumber, isPrivateItem } from '../services/calculations';
+import Combobox from './Combobox';
+import { libraryOptions } from './libraryOptions';
 import { IngredientKind, addIngredient, fromLibraryItem, newIngredient, removeIngredient, replaceIngredient } from '../services/ingredientEdit';
 
 interface Props {
@@ -57,16 +59,9 @@ const BrewIngredients: React.FC<Props> = ({ ingredients, library, measuredAlpha,
     return (
       <>
         <label htmlFor={`brew-${kind}-${idx}-name`} className="sr-only">{t('brew_ingredient_choose')}</label>
-        <select
-          id={`brew-${kind}-${idx}-name`}
-          name={`brew_${kind}_${idx}_name`}
-          className="w-full p-2 bg-white border border-stone-200 rounded-lg font-bold text-stone-900"
-          value={linked ? current.libraryId : ''}
-          onChange={e => pick(kind, idx, current, e.target.value)}
-        >
-          <option value="">{current.name || t('brew_ingredient_choose')}</option>
-          {options.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-        </select>
+        <Combobox id={`brew-${kind}-${idx}-name`} name={`brew_${kind}_${idx}_name`} label={t('brew_ingredient_choose')}
+          value={linked ? current.libraryId! : ''} options={libraryOptions(options, preferences, lang)}
+          fallbackText={current.name} placeholder={t('brew_ingredient_choose')} onChange={v => pick(kind, idx, current, v)} />
       </>
     );
   };

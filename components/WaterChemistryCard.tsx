@@ -4,6 +4,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { formatBrewNumber, roundTo, waterPlan, normalizeFermentableType, defaultWaterProfile } from '../services/calculations';
 import { WaterKind, resolveWater, waterOptions } from '../services/waterProfiles';
+import Combobox, { ComboOption } from './Combobox';
 import {
   CaCl2Form, ION_KEYS, Ions, SALTS, SaltId, ionsOf, ratioCharacter, residualAlkalinity,
   suggestSalts, sulfateChlorideRatio, treatedWater, estimateMashPh, lacticAcidFor, DEFAULT_TARGET_MASH_PH, MashMalt,
@@ -92,25 +93,16 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
   const field = 'w-full p-2 bg-white border border-stone-200 rounded-lg text-sm font-bold';
   // Base water lists base waters, target lists target profiles (#174): own ones first, then the public library.
   // A profile the recipe already uses stays selectable, also when it is of the other kind.
-  const profileOptions = (kind: WaterKind, current: string | undefined) => {
+  // The same choices for the searchable field: own profiles first, then the public library
+  const comboOptions = (kind: WaterKind, current: string | undefined): ComboOption[] => {
     const { own, public: pub } = options[kind];
     const listed = [...own, ...pub].some(w => w.id === current || (current?.startsWith('preset:') && w.preset_key === current.slice(7)));
     const extra = current && !listed ? resolve(current) : undefined;
-    return (
-      <>
-        {extra && <option value={current}>{extra.name}</option>}
-        {own.length > 0 && (
-          <optgroup label={t('water_own_profiles')}>
-            {own.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-          </optgroup>
-        )}
-        {pub.length > 0 && (
-          <optgroup label={t('public_library')}>
-            {pub.map(w => <option key={w.id} value={w.preset_key && current === `preset:${w.preset_key}` ? current : w.id}>{w.name}</option>)}
-          </optgroup>
-        )}
-      </>
-    );
+    return [
+      ...(extra && current ? [{ value: current, label: extra.name }] : []),
+      ...own.map(w => ({ value: w.id, label: w.name, group: t('water_own_profiles') })),
+      ...pub.map(w => ({ value: w.preset_key && current === `preset:${w.preset_key}` ? current : w.id, label: w.name, group: t('public_library') })),
+    ];
   };
   const saltIds: SaltId[] = ['gypsum', cacl2Form, 'epsom', 'nacl', 'nahco3'];
   const usedSalts = (Object.keys(salts) as SaltId[]).filter(id => (salts[id] || 0) > 0);
@@ -125,10 +117,8 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <label htmlFor="chem_source" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('water_source')}</label>
-            <select id="chem_source" name="chem_source" className={field} value={chem.source ?? ''} onChange={e => update({ source: e.target.value || undefined })}>
-              <option value="">{defaultSource ? t('equipment_default').replace('{name}', defaultSource.name) : t('water_choose')}</option>
-              {profileOptions('base', chem.source)}
-            </select>
+            <Combobox id="chem_source" name="chem_source" label={t('water_source')} value={chem.source ?? ''} options={comboOptions('base', chem.source)}
+              emptyLabel={defaultSource ? t('equipment_default').replace('{name}', defaultSource.name) : t('water_choose')} onChange={v => update({ source: v || undefined })} />
           </div>
           <div>
             <label htmlFor="chem_dilution" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('water_dilution')}</label>
@@ -139,10 +129,8 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
           </div>
           <div>
             <label htmlFor="chem_target" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('water_target')}</label>
-            <select id="chem_target" name="chem_target" className={field} value={chem.target ?? ''} onChange={e => update({ target: e.target.value || undefined })}>
-              <option value="">{t('water_no_target')}</option>
-              {profileOptions('target', chem.target)}
-            </select>
+            <Combobox id="chem_target" name="chem_target" label={t('water_target')} value={chem.target ?? ''} options={comboOptions('target', chem.target)}
+              emptyLabel={t('water_no_target')} onChange={v => update({ target: v || undefined })} />
           </div>
           <div>
             <label htmlFor="chem_cacl2_form" className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('salt_cacl2_form')}</label>
