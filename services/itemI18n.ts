@@ -54,3 +54,10 @@ export const missingLanguages = (item: LibraryIngredient, what: 'name' | ItemTex
   if (!base && !ITEM_LANGS.some(l => item.i18n?.[l]?.[what])) return []; // nothing to translate
   return ITEM_LANGS.filter(l => !item.i18n?.[l]?.[what]?.trim());
 };
+
+/** The descriptions a type has (only these are translated and shown). */
+export const textFieldsFor = (type: string): ItemTextField[] =>
+  type === 'style' ? ['profile', 'examples', 'notes']
+    : type === 'misc' ? ['use_for', 'notes']
+    : type === 'equipment' || type === 'mash_profile' ? ['description', 'notes']
+    : ['notes'];

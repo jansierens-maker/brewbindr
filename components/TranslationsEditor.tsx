@@ -2,19 +2,18 @@ import React, { useState } from 'react';
 import { useTranslation } from '../App';
 import type { LibraryIngredient } from '../types';
 import type { Language } from '../services/i18n';
-import { ITEM_LANGS, ItemTextField, missingLanguages } from '../services/itemI18n';
+import { ITEM_LANGS, ItemTextField, missingLanguages, textFieldsFor } from '../services/itemI18n';
+export { textFieldsFor };
 
-/** The descriptions a type has (the others are not shown). */
-export const textFieldsFor = (type: string): ItemTextField[] =>
-  type === 'style' ? ['profile', 'examples', 'notes']
-    : type === 'misc' ? ['use_for', 'notes']
-    : type === 'equipment' || type === 'mash_profile' ? ['description', 'notes']
-    : ['notes'];
 
 interface Props {
   idPrefix: string;
   item: Partial<LibraryIngredient> & { type?: string };
   onChange: (patch: Partial<LibraryIngredient>) => void;
+  /** Only the descriptions (the names are edited elsewhere, e.g. in the review table) */
+  textsOnly?: boolean;
+  /** Open from the start */
+  open?: boolean;
 }
 
 const LANG_LABEL: Record<Language, string> = { nl: 'Nederlands', fr: 'Français', en: 'English' };
@@ -23,7 +22,7 @@ const LANG_LABEL: Record<Language, string> = { nl: 'Nederlands', fr: 'Français'
  * "Translations" in an edit form: product name or not, the name per language, aliases and
  * the descriptions per language. Folded away; the summary says what is still missing.
  */
-const TranslationsEditor: React.FC<Props> = ({ idPrefix, item, onChange }) => {
+const TranslationsEditor: React.FC<Props> = ({ idPrefix, item, onChange, textsOnly, open }) => {
   const { t } = useTranslation();
   // The aliases as typed ("a, b, "): parsed into a clean list on every change
   const [aliasText, setAliasText] = useState((item.aliases ?? []).join(', '));
@@ -47,14 +46,15 @@ const TranslationsEditor: React.FC<Props> = ({ idPrefix, item, onChange }) => {
   };
 
   return (
-    <details className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-bg)] group/tr">
+    <details open={open} className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-bg)] group/tr">
       <summary className="cursor-pointer select-none px-3 py-2 flex items-center justify-between gap-2 text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]">
-        <span><i className="fas fa-language mr-1.5" aria-hidden="true"></i>{t('tr_title')}</span>
-        <span className="normal-case tracking-normal font-bold text-[10px] text-[var(--color-text-xmuted)]">
+        <span><i className="fas fa-language mr-1.5" aria-hidden="true"></i>{t(textsOnly ? 'tr_texts' : 'tr_title')}</span>
+        <span className={`normal-case tracking-normal font-bold text-[10px] text-[var(--color-text-xmuted)] ${textsOnly ? 'hidden' : ''}`}>
           {product ? t('tr_product_short') : missing.length ? t('tr_missing').replace('{langs}', missing.map(l => l.toUpperCase()).join(', ')) : t('tr_complete')}
         </span>
       </summary>
       <div className="p-3 pt-1 space-y-3">
+        {!textsOnly && <>
         <div>
           <label htmlFor={`${idPrefix}-name-kind`} className={label}>{t('tr_name_kind')}</label>
           <select id={`${idPrefix}-name-kind`} name="name_kind" className={field} value={item.name_kind ?? 'generic'}
@@ -91,6 +91,7 @@ const TranslationsEditor: React.FC<Props> = ({ idPrefix, item, onChange }) => {
             }} />
         </div>
 
+        </>}
         {fields.map(f => (
           <fieldset key={f} className="space-y-2">
             <legend className={label}>{t(`tr_field_${f}` as any)}</legend>
