@@ -19,7 +19,8 @@ import { authService } from './services/authService';
 import { copyRecipe } from './services/recipeCopy';
 import { RecipeStage, ARCHIVED, RECIPE_STAGES, stageOf, moveToStage, brewStart, needsNewVersion, newVersion, otherProductionVersions, freshLifecycle, contentChanged } from './services/lifecycle';
 import { matchesQuery, recipeSearchText } from './services/search';
-import SearchBox from './components/SearchBox';
+import ListToolbar, { FilterRange, FilterSelect, FilterChip, rangeText } from './components/ListToolbar';
+import { RecipeFilters, RecipeSort, RECIPE_SORTS, lastBrewedByRecipe, recipeMatches, sortRecipes } from './services/filters';
 import { applyStockChange } from './services/stock';
 const Settings = lazy(() => import('./components/Settings'));
 const HelpView = lazy(() => import('./components/HelpView'));
@@ -34,7 +35,7 @@ const BrewerySettings = lazy(() => import('./components/BrewerySettings'));
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient, View } from './types';
 import { initialRoute, needsLookup, type Match, type Params } from './services/routes';
 import { useUrlSync } from './services/useUrlSync';
-import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment, ownInstallations, hasSpecs, calculatedSpecs } from './services/calculations';
+import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normalizeRecipe, resolveEquipment, ownInstallations, hasSpecs, calculatedSpecs, srmToEbc, ebcToSrm, roundTo } from './services/calculations';
 import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes, canPublish } from './services/permissions';
 import { Taster, batchNumbers, memberName } from './services/tasting';
 import { URL_IMPORT_ENABLED } from './services/features';
@@ -175,6 +176,8 @@ const AppContent: React.FC = () => {
   // Lifecycle filter of the brewery's recipes: the active stages, one stage, or the archive
   const [stageFilter, setStageFilter] = useState<'active' | 'archived' | RecipeStage>('active');
   const [recipeQuery, setRecipeQuery] = useState('');
+  const [recipeFilters, setRecipeFilters] = useState<RecipeFilters>({});
+  const [recipeSort, setRecipeSort] = useState<RecipeSort>('name');
   const deferredRecipeQuery = useDeferredValue(recipeQuery);
   const [teamCount, setTeamCount] = useState(1);
   const [members, setMembers] = useState<Taster[]>([]);
@@ -224,8 +227,9 @@ const AppContent: React.FC = () => {
     return Object.values(deduplicated).sort((a, b) => a.name.localeCompare(b.name));
   }, [library]);
 
+  const lastBrewed = useMemo(() => lastBrewedByRecipe(brewLogs), [brewLogs]);
   const processedRecipes = useMemo(() => {
-    return recipes
+    const list = recipes
       .filter(r => {
         if (libraryView === 'public') return r.status === 'approved';
         const isOwner = (!r.user_id || r.user_id === user?.id) || (profile?.brewery_id && r.brewery_id === profile.brewery_id);
@@ -249,8 +253,14 @@ const AppContent: React.FC = () => {
         return stage === stageFilter;
       })
       .filter(({ recipe: r }) => matchesQuery(recipeSearchText(r), deferredRecipeQuery))
-      .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name));
-  }, [recipes, libraryView, user?.id, profile?.brewery_id, recipeTab, preferences.enableStockManagement, preferences.abvFormula, library, stageFilter, deferredRecipeQuery]);
+      .filter(({ recipe: r, specs }) => recipeMatches(r, specs, recipeFilters, lastBrewed));
+    return sortRecipes(list, recipeSort, lastBrewed);
+  }, [recipes, libraryView, user?.id, profile?.brewery_id, recipeTab, preferences.enableStockManagement, preferences.abvFormula, library, stageFilter, deferredRecipeQuery, recipeFilters, recipeSort, lastBrewed]);
+
+  // Recipe filters: colour is kept in SRM and shown in the user's scale
+  const colorIn = (srm?: number) => (srm === undefined ? undefined : roundTo(preferences.colorScale === 'ebc' ? srmToEbc(srm) : srm, 0));
+  const colorOut = (v?: number) => (v === undefined ? undefined : preferences.colorScale === 'ebc' ? ebcToSrm(v) : v);
+  const recipeStyles = useMemo(() => [...new Set(recipes.map(r => r.style?.name).filter((n): n is string => !!n))].sort((a, b) => a.localeCompare(b)), [recipes]);
 
   // How many of the brewery's recipes are in each stage (for the filter)
   const stageCounts = useMemo(() => {
@@ -284,6 +294,15 @@ const AppContent: React.FC = () => {
   const t = (key: keyof typeof translations['en']): string => {
     return translations[lang][key] || translations['en'][key] || key;
   };
+  const recipeChips: FilterChip[] = [
+    ...(recipeFilters.style ? [{ key: 'style', label: `${t('style_label')}: ${recipeFilters.style}`, onRemove: () => setRecipeFilters(f => ({ ...f, style: undefined })) }] : []),
+    ...(recipeFilters.abvMin !== undefined || recipeFilters.abvMax !== undefined
+      ? [{ key: 'abv', label: `ABV ${rangeText(recipeFilters.abvMin, recipeFilters.abvMax)} %`, onRemove: () => setRecipeFilters(f => ({ ...f, abvMin: undefined, abvMax: undefined })) }] : []),
+    ...(recipeFilters.colorMin !== undefined || recipeFilters.colorMax !== undefined
+      ? [{ key: 'color', label: `${t('color')} ${rangeText(colorIn(recipeFilters.colorMin), colorIn(recipeFilters.colorMax))} ${preferences.colorScale.toUpperCase()}`, onRemove: () => setRecipeFilters(f => ({ ...f, colorMin: undefined, colorMax: undefined })) }] : []),
+    ...(recipeFilters.brewed ? [{ key: 'brewed', label: t(recipeFilters.brewed === 'never' ? 'filters_brewed_never' : 'filters_brewed_yes'), onRemove: () => setRecipeFilters(f => ({ ...f, brewed: undefined })) }] : []),
+    ...(recipeTab === 'brewable' && preferences.enableStockManagement ? [{ key: 'brewable', label: t('tab_brewable'), onRemove: () => setRecipeTab('all') }] : []),
+  ];
 
   const syncIngredientsWithLibrary = (recipe: Recipe, targetStatus: 'private' | 'submitted', currentLib: LibraryIngredient[]) => {
     const newIngredients: LibraryIngredient[] = [];
@@ -1887,55 +1906,35 @@ const AppContent: React.FC = () => {
                       <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)] mb-1">{libraryView === 'personal' ? t('nav_section_brewery') : t('public_library')}</p>
                       <h2 className="text-4xl font-black text-[var(--color-text)] font-[var(--font-display)]">{t('nav_recipes')}</h2>
                     </div>
+                    {user && libraryView === 'personal' && recipeManager && (
+                      <button type="button" onClick={() => { setSelectedRecipe(null); setView('create'); }} title={t('ai_banner_desc')}
+                        className="self-start md:self-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-sm)] bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-black uppercase tracking-widest shadow-sm hover:from-amber-600 hover:to-amber-700">
+                        <i className="fas fa-magic" aria-hidden="true"></i> {t('ai_recipe_button')}
+                      </button>
+                    )}
                   </div>
 
-                  {user && libraryView === 'personal' && (
-                    <>
-                      {/* AI Promo Banner */}
-                      <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-[var(--radius)] p-6 text-white shadow-lg relative overflow-hidden group">
-                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                          <div className="space-y-1">
-                            <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
-                              <i className="fas fa-magic"></i> {t('ai_banner_title')}
-                            </h3>
-                            <p className="text-sm font-medium opacity-90 max-w-2xl">
-                              {t('ai_banner_desc')}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => { setSelectedRecipe(null); setView('create'); }}
-                            className="bg-white text-amber-600 px-8 py-3 rounded-[var(--radius-sm)] font-black text-xs uppercase tracking-widest hover:bg-amber-50 transition-colors shadow-md whitespace-nowrap"
-                          >
-                            {t('ai_banner_btn')}
-                          </button>
-                        </div>
-                        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
-                      </div>
-
-                      {preferences.enableStockManagement && (
-                        <div className="flex border-b border-[var(--color-border)] gap-8 overflow-x-auto custom-scrollbar">
-                          {([
-                            { id: 'all', label: t('tab_all') },
-                            { id: 'brewable', label: t('tab_brewable') },
-                          ] as const).map((tab) => (
-                            <button
-                              key={tab.id}
-                              type="button"
-                              onClick={() => setRecipeTab(tab.id)}
-                              aria-pressed={recipeTab === tab.id}
-                              className={`pb-4 text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${recipeTab === tab.id ? 'text-[var(--color-text)]' : 'text-[var(--color-text-xmuted)] hover:text-[var(--color-text-muted)]'}`}
-                            >
-                              {tab.label}
-                              {recipeTab === tab.id && (
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--color-accent)] rounded-t-full"></div>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                  <SearchBox id="recipe_search" label={t('search_recipes')} value={recipeQuery} onChange={setRecipeQuery} className="max-w-xl" />
+                  <ListToolbar
+                    search={{ id: 'recipe_search', label: t('search_recipes'), value: recipeQuery, onChange: setRecipeQuery }}
+                    sort={{ id: 'recipe_sort', value: recipeSort, onChange: v => setRecipeSort(v as RecipeSort), options: RECIPE_SORTS.map(v => ({ value: v, label: t(`sort_recipe_${v}` as any) })) }}
+                    chips={recipeChips}
+                    onClearAll={() => { setRecipeFilters({}); setRecipeTab('all'); }}
+                  >
+                    <FilterSelect id="filter_style" label={t('style_label')} anyLabel={t('filters_any')} value={recipeFilters.style ?? ''}
+                      options={recipeStyles.map(s => ({ value: s, label: s }))} onChange={v => setRecipeFilters(f => ({ ...f, style: v || undefined }))} />
+                    <FilterRange id="filter_abv" label="ABV" unit="%" min={recipeFilters.abvMin} max={recipeFilters.abvMax}
+                      onChange={(abvMin, abvMax) => setRecipeFilters(f => ({ ...f, abvMin, abvMax }))} />
+                    <FilterRange id="filter_color" label={t('color')} unit={preferences.colorScale.toUpperCase()} step={1}
+                      min={colorIn(recipeFilters.colorMin)} max={colorIn(recipeFilters.colorMax)}
+                      onChange={(lo, hi) => setRecipeFilters(f => ({ ...f, colorMin: colorOut(lo), colorMax: colorOut(hi) }))} />
+                    <FilterSelect id="filter_brewed" label={t('filters_brewed')} anyLabel={t('filters_any')} value={recipeFilters.brewed ?? ''}
+                      options={[{ value: 'brewed', label: t('filters_brewed_yes') }, { value: 'never', label: t('filters_brewed_never') }]}
+                      onChange={v => setRecipeFilters(f => ({ ...f, brewed: (v || undefined) as RecipeFilters['brewed'] }))} />
+                    {user && libraryView === 'personal' && preferences.enableStockManagement && (
+                      <FilterSelect id="filter_brewable" label={t('nav_stock')} anyLabel={t('filters_any')} value={recipeTab === 'brewable' ? 'brewable' : ''}
+                        options={[{ value: 'brewable', label: t('tab_brewable') }]} onChange={v => setRecipeTab(v ? 'brewable' : 'all')} />
+                    )}
+                  </ListToolbar>
                   {libraryView === 'personal' && (
                     <div role="group" aria-label={t('lc_filter_label')} className="flex flex-wrap gap-2">
                       {(['active', ...RECIPE_STAGES.filter(s => !ARCHIVED.includes(s)), 'archived'] as const).map(f => (
@@ -1947,8 +1946,8 @@ const AppContent: React.FC = () => {
                       ))}
                     </div>
                   )}
-                  {deferredRecipeQuery.trim() && processedRecipes.length === 0 && (
-                    <p role="status" className="text-[var(--color-text-muted)] font-bold">{t('search_no_results').replace('{q}', deferredRecipeQuery.trim())}</p>
+                  {(deferredRecipeQuery.trim() || recipeChips.length > 0) && processedRecipes.length === 0 && (
+                    <p role="status" className="text-[var(--color-text-muted)] font-bold">{deferredRecipeQuery.trim() ? t('search_no_results').replace('{q}', deferredRecipeQuery.trim()) : t('filters_no_recipes')}</p>
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       <>
@@ -2092,7 +2091,7 @@ const AppContent: React.FC = () => {
                 </div>
               )}
               {view === 'brouwlogboek' && (
-                <BrewLogView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} canManageBrews={brewManager} canAddNotes={!!user} onToggleFinished={handleToggleFinished} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => openTasting(logId, 'brouwlogboek')} onViewNotes={(logId) => { setView('proefnotities'); setNotesBatch(logId); }} onPrintReport={handlePrintBrewReport} />
+                <BrewLogView logs={brewLogs} recipes={recipes} tastingNotes={tastingNotes} installations={ownInstallations(deduplicatedLibrary)} canManageBrews={brewManager} canAddNotes={!!user} onToggleFinished={handleToggleFinished} onEditLog={(logId) => { const log = brewLogs.find(l => l.id === logId); const recipe = recipes.find(r => r.id === log?.recipeId); if (log && recipe) { setSelectedBrewLog(log); setSelectedRecipe(recipe); setView('log'); } }} onAddTasting={(logId) => openTasting(logId, 'brouwlogboek')} onViewNotes={(logId) => { setView('proefnotities'); setNotesBatch(logId); }} onPrintReport={handlePrintBrewReport} />
               )}
               {view === 'proefnotities' && (
                 <TastingNotesView
@@ -2200,6 +2199,7 @@ const AppContent: React.FC = () => {
                   section={librarySection}
                   ingredients={library}
                   libraryView={publicOnlySection ? 'public' : libraryView}
+                  recipes={recipes.filter(r => r.status !== 'approved' && (!r.brewery_id || r.brewery_id === profile?.brewery_id))}
                   onReplace={setLibrary}
                   onUpdate={async (newLib) => {
                     // Track and handle deletions for Supabase sync
