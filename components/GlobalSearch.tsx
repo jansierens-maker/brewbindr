@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { displayName } from '../services/itemI18n';
 import { useTranslation } from '../App';
 import { BrewLogEntry, LibraryIngredient, Recipe } from '../types';
 import { matchesQuery, recipeSearchText, brewSearchText, ingredientSearchText } from '../services/search';
@@ -64,11 +65,11 @@ const GlobalSearch: React.FC<Props> = ({ open, onClose, recipes, logs, library, 
     const seen = new Set<string>();
     const ingredientHits: Hit[] = library
       .filter(i => SEARCHED_TYPES.includes(i.type) && matchesQuery(ingredientSearchText(i), q))
-      .sort((a, b) => Number(isOwn(b)) - Number(isOwn(a)) || a.name.localeCompare(b.name))
+      .sort((a, b) => Number(isOwn(b)) - Number(isOwn(a)) || displayName(a, lang).localeCompare(displayName(b, lang)))
       // The same name once (own copy first)
       .filter(i => { const k = `${i.type}:${i.name.toLowerCase()}`; if (seen.has(k)) return false; seen.add(k); return true; })
       .slice(0, PER_GROUP)
-      .map(i => ({ kind: 'ingredient', key: `i-${i.id}`, label: i.name, sub: [typeLabel[i.type], isOwn(i) ? '' : t('public_library')].filter(Boolean).join(' · '), item: i }));
+      .map(i => ({ kind: 'ingredient', key: `i-${i.id}`, label: displayName(i, lang), sub: [typeLabel[i.type], isOwn(i) ? '' : t('public_library')].filter(Boolean).join(' · '), item: i }));
     return [
       { title: t('nav_recipes'), hits: recipeHits },
       { title: t('nav_brews'), hits: brewHits },

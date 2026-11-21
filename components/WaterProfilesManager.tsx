@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { displayName } from '../services/itemI18n';
 import { LibraryIngredient } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -37,7 +38,7 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
   const waters = useMemo(
     () => library.filter(i => i.type === 'water' && (scope === 'public'
       ? i.status === 'approved'
-      : isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id))).sort((a, b) => a.name.localeCompare(b.name)),
+      : isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id))).sort((a, b) => displayName(a, lang).localeCompare(displayName(b, lang))),
     [library, profile?.brewery_id, user?.id, scope],
   );
 
@@ -170,7 +171,7 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
           <div key={w.id} className="bg-[var(--color-bg)] p-5 rounded-[var(--radius)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
             <div className="flex justify-between items-start gap-3">
               <h4 className="font-black text-[var(--color-text)]">
-                {w.name}
+                {displayName(w, lang)}
                 {w.is_default && <span className="ml-2 align-middle text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full uppercase tracking-widest">{t('default_equipment_badge')}</span>}
               </h4>
               <div className="flex gap-3">

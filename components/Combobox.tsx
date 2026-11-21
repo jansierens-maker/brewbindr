@@ -9,6 +9,8 @@ export interface ComboOption {
   hint?: string;
   /** Options with the same group are listed under that heading */
   group?: string;
+  /** Searched but not shown (e.g. the names in other languages) */
+  keywords?: string;
 }
 
 interface Props {
@@ -52,7 +54,7 @@ const Combobox: React.FC<Props> = ({ id, name, label, value, options, onChange, 
     [options, emptyLabel],
   );
   const filtered = useMemo(
-    () => all.filter(o => matchesQuery(`${o.label} ${o.hint ?? ''} ${o.group ?? ''}`, query)).slice(0, MAX_SHOWN),
+    () => all.filter(o => matchesQuery(`${o.label} ${o.hint ?? ''} ${o.group ?? ''} ${o.keywords ?? ''}`, query)).slice(0, MAX_SHOWN),
     [all, query],
   );
 

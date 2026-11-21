@@ -61,6 +61,14 @@ export interface LibraryIngredient {
   brewery_id?: string;
   status?: ItemStatus;
   name: string;
+  /** 'product': a brand or product name (Saaz, WLP500) that is not translated, only given aliases */
+  name_kind?: 'generic' | 'product';
+  /** The name per language; `name` is the main name (English for public items) and the fallback */
+  names?: Partial<Record<'nl' | 'fr' | 'en', string>>;
+  /** Other spellings, in any language, also matched when importing and searching */
+  aliases?: string[];
+  /** Descriptions per language; the plain fields are the fallback */
+  i18n?: Partial<Record<'nl' | 'fr' | 'en', Partial<Record<'description' | 'profile' | 'examples' | 'notes' | 'use_for', string>>>>;
   type: string; // 'fermentable' | 'hop' | 'culture' | 'mash_profile' | 'misc' | 'style'
   color?: number;
   yield?: number;
