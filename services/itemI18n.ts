@@ -61,3 +61,23 @@ export const textFieldsFor = (type: string): ItemTextField[] =>
     : type === 'misc' ? ['use_for', 'notes']
     : type === 'equipment' || type === 'mash_profile' ? ['description', 'notes']
     : ['notes'];
+
+/**
+ * The name of a recipe's ingredient (or style) in the reader's language: through its link to the
+ * library, else a library item with that name (exact main name first), else the name as written.
+ */
+export const localName = (
+  ing: { name?: string; libraryId?: string } | undefined,
+  library: LibraryIngredient[],
+  lang: Language | string,
+  type?: string,
+): string => {
+  if (!ing?.name) return ing?.name ?? '';
+  const pool = type ? library.filter(l => l.type === type) : library;
+  const linked = ing.libraryId ? pool.find(l => l.id === ing.libraryId) : undefined;
+  const key = normalizeText(ing.name.trim());
+  const item = linked
+    ?? pool.find(l => normalizeText(l.name.trim()) === key && (l.names || l.i18n))
+    ?? pool.find(l => hasName(l, ing.name));
+  return item ? displayName(item, lang) : ing.name;
+};

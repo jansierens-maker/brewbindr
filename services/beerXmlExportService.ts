@@ -1,5 +1,7 @@
 
 import { Recipe, LibraryIngredient } from "../types";
+import { displayName, localName } from './itemI18n';
+import type { Language } from './i18n';
 import { calculateRecipeStats, normalizeFermentableType, resolveEquipment } from './calculations';
 import { chemToWaterAgents, coveredByChem } from './beerXmlWater';
 import { PRESET_WATERS } from './waterProfiles';
@@ -35,7 +37,9 @@ const findWater = (ref: string | undefined, library: LibraryIngredient[]): Libra
  * "Water Agent"; dilution and target mash pH as <WATER_DILUTION_PCT> and <TARGET_MASH_PH>.
  * Other programs ignore the unknown tags. `library` resolves the recipe's water profiles.
  */
-export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = []): string => {
+export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [], opts: { lang?: Language } = {}): string => {
+  // Names in the chosen language (#212); without one, as written in the recipe
+  const nm = (ing: { name?: string; libraryId?: string }, type: string) => sanitize(opts.lang ? localName(ing, library, opts.lang, type) : ing.name ?? '');
   const xmlParts: string[] = [];
   
   xmlParts.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -47,7 +51,7 @@ export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [
   
   if (recipe.style) {
     xmlParts.push('    <STYLE>');
-    xmlParts.push(`      <NAME>${sanitize(recipe.style.name)}</NAME>`);
+    xmlParts.push(`      <NAME>${nm(recipe.style, 'style')}</NAME>`);
     xmlParts.push(`      <CATEGORY>${sanitize(recipe.style.category || "")}</CATEGORY>`);
     xmlParts.push('      <VERSION>1</VERSION>');
     xmlParts.push('    </STYLE>');
@@ -62,7 +66,7 @@ export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [
   xmlParts.push('    <FERMENTABLES>');
   recipe.ingredients.fermentables.forEach(f => {
     xmlParts.push('      <FERMENTABLE>');
-    xmlParts.push(`        <NAME>${sanitize(f.name)}</NAME>`);
+    xmlParts.push(`        <NAME>${nm(f, 'fermentable')}</NAME>`);
     xmlParts.push(`        <TYPE>${FERMENTABLE_TYPE_XML[normalizeFermentableType(f.type)]}</TYPE>`);
     xmlParts.push(`        <AMOUNT>${f.amount.unit === 'pounds' ? f.amount.value * 0.453592 : f.amount.value}</AMOUNT>`);
     if (f.yield?.potential?.value) xmlParts.push(`        <POTENTIAL>${f.yield.potential.value}</POTENTIAL>`);
@@ -74,7 +78,7 @@ export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [
   xmlParts.push('    <HOPS>');
   recipe.ingredients.hops.forEach(h => {
     xmlParts.push('      <HOP>');
-    xmlParts.push(`        <NAME>${sanitize(h.name)}</NAME>`);
+    xmlParts.push(`        <NAME>${nm(h, 'hop')}</NAME>`);
     xmlParts.push(`        <ALPHA>${h.alpha_acid?.value || 0}</ALPHA>`);
     xmlParts.push(`        <AMOUNT>${(h.amount.unit === 'ounces' ? h.amount.value * 28.3495 : h.amount.value) / 1000}</AMOUNT>`);
     xmlParts.push(`        <USE>${HOP_USE_XML[h.use] || 'Boil'}</USE>`);
@@ -92,7 +96,7 @@ export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [
     xmlParts.push('    <MISCS>');
     miscs.forEach(m => {
       xmlParts.push('      <MISC>');
-      xmlParts.push(`        <NAME>${sanitize(m.name)}</NAME>`);
+      xmlParts.push(`        <NAME>${nm(m, 'misc')}</NAME>`);
       xmlParts.push(`        <AMOUNT>${m.amount.value / 1000}</AMOUNT>`);
       xmlParts.push(`        <TYPE>${sanitize(m.type)}</TYPE>`);
       xmlParts.push(`        <USE>${sanitize(m.use)}</USE>`);
@@ -119,7 +123,7 @@ export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [
     xmlParts.push('    <YEASTS>');
     recipe.ingredients.cultures.forEach(c => {
       xmlParts.push('      <YEAST>');
-      xmlParts.push(`        <NAME>${sanitize(c.name)}</NAME>`);
+      xmlParts.push(`        <NAME>${nm(c, 'culture')}</NAME>`);
       xmlParts.push('        <VERSION>1</VERSION>');
       xmlParts.push(`        <TYPE>${YEAST_TYPE_XML[c.type] || 'Ale'}</TYPE>`);
       xmlParts.push(`        <FORM>${YEAST_FORM_XML[c.form] || 'Dry'}</FORM>`);
@@ -168,7 +172,7 @@ export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [
     xmlParts.push('    <WATERS>');
     waters.forEach(({ kind, water: w }) => {
       xmlParts.push('      <WATER>');
-      xmlParts.push(`        <NAME>${sanitize(w.name)}</NAME>`);
+      xmlParts.push(`        <NAME>${sanitize(opts.lang ? displayName(w, opts.lang) : w.name)}</NAME>`);
       xmlParts.push('        <VERSION>1</VERSION>');
       xmlParts.push(`        <AMOUNT>${num(w.amount)}</AMOUNT>`);
       xmlParts.push(`        <CALCIUM>${num(w.calcium)}</CALCIUM>`);
@@ -210,14 +214,15 @@ export const exportToBeerXml = (recipe: Recipe, library: LibraryIngredient[] = [
   return xmlParts.join('\n');
 };
 
-export const exportLibraryToBeerXml = (ingredients: LibraryIngredient[]): string => {
+export const exportLibraryToBeerXml = (ingredients: LibraryIngredient[], opts: { lang?: Language } = {}): string => {
+  const nm = (i: LibraryIngredient) => sanitize(opts.lang ? displayName(i, opts.lang) : i.name);
   const xmlParts: string[] = [];
   xmlParts.push('<?xml version="1.0" encoding="UTF-8"?>');
   xmlParts.push('<BREW_LIBRARY>');
   
   ingredients.filter(i => i.type === 'fermentable').forEach(f => {
     xmlParts.push('  <FERMENTABLE>');
-    xmlParts.push(`    <NAME>${sanitize(f.name)}</NAME>`);
+    xmlParts.push(`    <NAME>${nm(f)}</NAME>`);
     xmlParts.push(`    <TYPE>Malt</TYPE>`);
     xmlParts.push(`    <AMOUNT>0</AMOUNT>`);
     xmlParts.push(`    <YIELD>${f.yield ? (1 + (f.yield * 0.046 / 100)).toFixed(3) : 1.036}</YIELD>`);
@@ -227,7 +232,7 @@ export const exportLibraryToBeerXml = (ingredients: LibraryIngredient[]): string
 
   ingredients.filter(i => i.type === 'hop').forEach(h => {
     xmlParts.push('  <HOP>');
-    xmlParts.push(`    <NAME>${sanitize(h.name)}</NAME>`);
+    xmlParts.push(`    <NAME>${nm(h)}</NAME>`);
     xmlParts.push(`    <ALPHA>${h.alpha || 0}</ALPHA>`);
     xmlParts.push(`    <AMOUNT>0</AMOUNT>`);
     xmlParts.push(`    <USE>Boil</USE>`);
@@ -237,7 +242,7 @@ export const exportLibraryToBeerXml = (ingredients: LibraryIngredient[]): string
 
   ingredients.filter(i => i.type === 'culture').forEach(y => {
     xmlParts.push('  <YEAST>');
-    xmlParts.push(`    <NAME>${sanitize(y.name)}</NAME>`);
+    xmlParts.push(`    <NAME>${nm(y)}</NAME>`);
     xmlParts.push(`    <TYPE>${sanitize(y.form || "Ale")}</TYPE>`);
     xmlParts.push(`    <FORM>${sanitize(y.form || "Dry")}</FORM>`);
     xmlParts.push(`    <ATTENUATION>${y.attenuation || 75}</ATTENUATION>`);
@@ -246,7 +251,7 @@ export const exportLibraryToBeerXml = (ingredients: LibraryIngredient[]): string
 
   ingredients.filter(i => i.type === 'misc').forEach(m => {
     xmlParts.push('  <MISC>');
-    xmlParts.push(`    <NAME>${sanitize(m.name)}</NAME>`);
+    xmlParts.push(`    <NAME>${nm(m)}</NAME>`);
     xmlParts.push(`    <TYPE>${sanitize(m.misc_type || "Other")}</TYPE>`);
     xmlParts.push(`    <USE>${sanitize(m.misc_use || "Boil")}</USE>`);
     xmlParts.push('  </MISC>');
@@ -254,7 +259,7 @@ export const exportLibraryToBeerXml = (ingredients: LibraryIngredient[]): string
 
   ingredients.filter(i => i.type === 'style').forEach(s => {
     xmlParts.push('  <STYLE>');
-    xmlParts.push(`    <NAME>${sanitize(s.name)}</NAME>`);
+    xmlParts.push(`    <NAME>${nm(s)}</NAME>`);
     xmlParts.push(`    <CATEGORY>${sanitize(s.category || "")}</CATEGORY>`);
     xmlParts.push(`    <VERSION>1</VERSION>`);
     xmlParts.push(`    <OG_MIN>${s.og_min || 0}</OG_MIN>`);
@@ -266,7 +271,7 @@ export const exportLibraryToBeerXml = (ingredients: LibraryIngredient[]): string
 
   ingredients.filter(i => i.type === 'equipment').forEach(e => {
     xmlParts.push('  <EQUIPMENT>');
-    xmlParts.push(`    <NAME>${sanitize(e.name)}</NAME>`);
+    xmlParts.push(`    <NAME>${nm(e)}</NAME>`);
     xmlParts.push(`    <VERSION>1</VERSION>`);
     xmlParts.push(`    <BATCH_SIZE>${e.batch_size || 20}</BATCH_SIZE>`);
     xmlParts.push(`    <BOIL_SIZE>${e.boil_size || 25}</BOIL_SIZE>`);
@@ -283,7 +288,7 @@ export const exportLibraryToBeerXml = (ingredients: LibraryIngredient[]): string
 
   ingredients.filter(i => i.type === 'mash_profile').forEach(m => {
     xmlParts.push('  <MASH>');
-    xmlParts.push(`    <NAME>${sanitize(m.name)}</NAME>`);
+    xmlParts.push(`    <NAME>${nm(m)}</NAME>`);
     xmlParts.push(`    <VERSION>1</VERSION>`);
     xmlParts.push(`    <GRAIN_TEMP>${m.grain_temp || 20}</GRAIN_TEMP>`);
     xmlParts.push('    <MASH_STEPS>');
@@ -302,7 +307,7 @@ export const exportLibraryToBeerXml = (ingredients: LibraryIngredient[]): string
 
   ingredients.filter(i => i.type === 'water').forEach(w => {
     xmlParts.push('  <WATER>');
-    xmlParts.push(`    <NAME>${sanitize(w.name)}</NAME>`);
+    xmlParts.push(`    <NAME>${nm(w)}</NAME>`);
     xmlParts.push(`    <VERSION>1</VERSION>`);
     xmlParts.push(`    <AMOUNT>${w.amount || 0}</AMOUNT>`);
     xmlParts.push(`    <NOTES>${sanitize(w.notes || "")}</NOTES>`);

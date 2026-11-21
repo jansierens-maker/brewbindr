@@ -78,6 +78,16 @@ describe('exportToBeerXml', () => {
     ]);
   });
 
+  it('writes the names in the chosen language', () => {
+    const original = parseBeerXml(xml).recipes[0];
+    const first = original.ingredients.fermentables[0];
+    const library = [{ id: 'lib-f', type: 'fermentable', name: first.name, names: { nl: 'Pilsmout', fr: 'Malt pils' } }] as LibraryIngredient[];
+    const linked = { ...original, ingredients: { ...original.ingredients, fermentables: [{ ...first, libraryId: 'lib-f' }, ...original.ingredients.fermentables.slice(1)] } };
+    expect(exportToBeerXml(linked, library, { lang: 'fr' })).toContain('<NAME>Malt pils</NAME>');
+    expect(exportToBeerXml(linked, library, { lang: 'en' })).toContain(`<NAME>${first.name}</NAME>`);
+    expect(exportToBeerXml(linked, library)).toContain(`<NAME>${first.name}</NAME>`);
+  });
+
   it('keeps the recipe target', () => {
     const original = { ...parseBeerXml(xml).recipes[0], target: { og: 1.056, fg: 1.01, ibu: 45, color: 4.1 } };
     expect(parseBeerXml(exportToBeerXml(original)).recipes[0].target).toEqual({ og: 1.056, fg: 1.01, ibu: 45, color: 4.1 });

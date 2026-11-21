@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { localName } from '../services/itemI18n';
 import { Culture, Fermentable, Hop, LibraryIngredient, Misc, Recipe } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -61,7 +62,7 @@ const BrewIngredients: React.FC<Props> = ({ ingredients, library, measuredAlpha,
         <label htmlFor={`brew-${kind}-${idx}-name`} className="sr-only">{t('brew_ingredient_choose')}</label>
         <Combobox id={`brew-${kind}-${idx}-name`} name={`brew_${kind}_${idx}_name`} label={t('brew_ingredient_choose')}
           value={linked ? current.libraryId! : ''} options={libraryOptions(options, preferences, lang)}
-          fallbackText={current.name} placeholder={t('brew_ingredient_choose')} onChange={v => pick(kind, idx, current, v)} />
+          fallbackText={localName(current, library, lang, kind)} placeholder={t('brew_ingredient_choose')} onChange={v => pick(kind, idx, current, v)} />
       </>
     );
   };
