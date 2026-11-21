@@ -134,8 +134,8 @@ export const ingredientMatches = (i: LibraryIngredient, f: IngredientFilters, us
     && (!field || inRange(i[field], f.min, f.max));
 };
 
-export const sortIngredients = (items: LibraryIngredient[], sort: IngredientSort): LibraryIngredient[] => {
-  const byName = (a: LibraryIngredient, b: LibraryIngredient) => a.name.localeCompare(b.name);
+export const sortIngredients = (items: LibraryIngredient[], sort: IngredientSort, nameOf: (i: LibraryIngredient) => string = i => i.name): LibraryIngredient[] => {
+  const byName = (a: LibraryIngredient, b: LibraryIngredient) => nameOf(a).localeCompare(nameOf(b));
   if (sort === 'name') return [...items].sort(byName);
   const v = (i: LibraryIngredient) => { const f = rangeField(i.type); return f ? i[f] ?? 0 : 0; };
   return [...items].sort((a, b) => (sort === 'value_asc' ? v(a) - v(b) : v(b) - v(a)) || byName(a, b));

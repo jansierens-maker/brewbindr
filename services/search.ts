@@ -1,4 +1,5 @@
 import type { BrewLogEntry, LibraryIngredient, Recipe } from '../types';
+import { allNames, allTexts } from './itemI18n';
 
 /** Lower case without accents, so "tripel" finds "Trípel" and "creme" finds "crème". */
 export const normalizeText = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -42,4 +43,4 @@ export const brewSearchText = (log: BrewLogEntry, recipe: Recipe | undefined, ba
 
 /** What a library item is found by: name and its descriptive fields. */
 export const ingredientSearchText = (i: LibraryIngredient) =>
-  join([i.name, i.category, i.style_guide, i.profile, i.examples, i.description, i.use_for, i.form, i.preset]);
+  join([...allNames(i), i.category, i.style_guide, ...allTexts(i), i.form, i.preset]);

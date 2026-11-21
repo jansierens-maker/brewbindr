@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { matchesQuery, ingredientSearchText } from '../services/search';
+import { displayName } from '../services/itemI18n';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { LibraryIngredient } from '../types';
@@ -30,7 +32,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
 
   const filteredIngredients = useMemo(() => {
     let result = stockableIngredients.filter(ing => {
-      const matchesSearch = ing.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = matchesQuery(ingredientSearchText(ing), searchTerm);
       const matchesType = activeTypes.includes(ing.type);
       return matchesSearch && matchesType;
     });
@@ -40,9 +42,9 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
         const typeOrder: Record<string, number> = { fermentable: 1, hop: 2, culture: 3, misc: 4 };
         const diff = (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
         if (diff !== 0) return diff;
-        return a.name.localeCompare(b.name);
+        return displayName(a, lang).localeCompare(displayName(b, lang));
       } else if (sortOption === 'name') {
-        return a.name.localeCompare(b.name);
+        return displayName(a, lang).localeCompare(displayName(b, lang));
       } else if (sortOption === 'stock_low' || sortOption === 'stock_high') {
         const getPct = (ing: LibraryIngredient) => {
           if (!ing.stock?.stock_target) return -1;
@@ -236,7 +238,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                   showPct={showPct}
                 />
                 <div className="text-center mt-1">
-                  <div className="text-xs font-black text-[var(--color-text)] line-clamp-2 leading-tight min-h-[2em]">{ing.name}</div>
+                  <div className="text-xs font-black text-[var(--color-text)] line-clamp-2 leading-tight min-h-[2em]">{displayName(ing, lang)}</div>
                   <div className="text-[10px] font-bold text-[var(--color-text-xmuted)] mt-1">
                     {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)} ${ing.stock.unit}` : '0 -'}
                   </div>
@@ -266,7 +268,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                     className="border-b border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3">
-                      <div className="text-sm font-bold text-[var(--color-text)]">{ing.name}</div>
+                      <div className="text-sm font-bold text-[var(--color-text)]">{displayName(ing, lang)}</div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{ing.type}</div>
@@ -303,7 +305,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
               <div>
                 <label className="block text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest mb-1.5">{t('name_label')}</label>
                 <div className="text-sm font-bold text-[var(--color-text)] bg-[var(--color-bg-subtle)] p-3 rounded-[var(--radius-sm)] border border-[var(--color-border)]">
-                  {editingIngredient.name}
+                  {displayName(editingIngredient, lang)}
                 </div>
               </div>
 

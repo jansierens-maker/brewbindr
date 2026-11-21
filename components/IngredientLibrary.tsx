@@ -1,4 +1,5 @@
 
+import { displayName } from '../services/itemI18n';
 import React, { useState, useMemo, useDeferredValue } from 'react';
 import ListToolbar, { FilterChip, FilterRange, FilterSelect, rangeText } from './ListToolbar';
 import { IngredientFilters, IngredientSort, ingredientMatches, rangeField, sortIngredients, usedInRecipes } from '../services/filters';
@@ -276,7 +277,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
     // A new, still empty item stays visible while searching
     .filter(i => i.id === unsavedNewId || i.id === editingId || (matchesQuery(ingredientSearchText(i), deferredQuery) && ingredientMatches(i, ingFilters, used))),
   [ingredients, filter, libraryView, user?.id, profile?.brewery_id, deferredQuery, unsavedNewId, editingId, ingFilters, used]);
-  const sortedIngredients = useMemo(() => sortIngredients(visibleIngredients, ingSort), [visibleIngredients, ingSort]);
+  const sortedIngredients = useMemo(() => sortIngredients(visibleIngredients, ingSort, i => displayName(i, lang)), [visibleIngredients, ingSort, lang]);
 
   // Filters: stock (own items), use in recipes, and the type's own number
   const field = rangeField(filter);
@@ -304,7 +305,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
               <i className="fas fa-trash-alt text-2xl text-red-600"></i>
             </div>
             <h3 className="text-2xl font-black text-[var(--color-text)] mb-2">{t('delete_ingredient')}?</h3>
-            <p className="text-[var(--color-text-muted)] font-medium mb-1 text-sm">"{itemToDelete.name}"</p>
+            <p className="text-[var(--color-text-muted)] font-medium mb-1 text-sm">"{displayName(itemToDelete, lang)}"</p>
             <p className="text-[var(--color-text-xmuted)] text-xs mb-8">
               {t('confirm_delete')}
             </p>
@@ -431,8 +432,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                    <button
                     onClick={() => toggleSelection(item.id)}
                     aria-pressed={selectedIds.includes(item.id)}
-                    aria-label={item.name}
-                    title={item.name}
+                    aria-label={displayName(item, lang)}
+                    title={displayName(item, lang)}
                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.includes(item.id) ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-200 text-transparent'}`}
                    >
                      <i className="fas fa-check text-[10px]"></i>
@@ -442,7 +443,7 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                    {!readOnlyType && (libraryView === 'public'
                      ? isAdmin && item.status === 'approved'
                      : ((!item.user_id || item.user_id === user?.id) || (item.brewery_id === profile?.brewery_id)) && canEdit) && (
-                      <button type="button" onClick={() => startEditing(item)} aria-label={`${t('edit_btn')}: ${item.name}`} title={t('edit_btn')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors">
+                      <button type="button" onClick={() => startEditing(item)} aria-label={`${t('edit_btn')}: ${displayName(item, lang)}`} title={t('edit_btn')} className="text-[var(--color-text-xmuted)] hover:text-[var(--color-accent)] transition-colors">
                         <i className="fas fa-edit text-xs" aria-hidden="true"></i>
                       </button>
                     )}
@@ -638,7 +639,8 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                 <>
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex flex-col pr-14">
-                      <h4 className="font-black text-lg text-[var(--color-text)] leading-tight">{item.name}</h4>
+                      <h4 className="font-black text-lg text-[var(--color-text)] leading-tight">{displayName(item, lang)}</h4>
+                      {displayName(item, lang) !== item.name && <p className="text-[10px] font-bold text-[var(--color-text-xmuted)] -mt-0.5">{item.name}</p>}
                       {item.status === 'approved' && <span className="text-[8px] font-black text-green-600 uppercase tracking-widest mt-1"><i className="fas fa-check-circle mr-1" aria-hidden="true"></i>{t('public_library')}</span>}
                       {item.status === 'submitted' && <span className="text-[8px] font-black text-[var(--color-accent)] uppercase tracking-widest mt-1"><i className="fas fa-clock mr-1" aria-hidden="true"></i>{t('pending_review')}</span>}
                     </div>
