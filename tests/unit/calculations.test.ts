@@ -7,7 +7,7 @@ import {
   pitchRate, cellsNeeded, liquidViability, starterGrowth, starterFor, DRY_CELLS_PER_GRAM,
   waterPlan, resolveEquipment, defaultEquipment,
   roundTo, roundByUnit, normalizeRecipe, normalizeLibraryItem, formatBrewNumber, formatStockAmount, srmToEbc,
-  effectiveEfficiency, efficiencyMismatch, adaptToEfficiency, hasSpecs, calculatedSpecs, withTarget,
+  checkRecipeStock, effectiveEfficiency, efficiencyMismatch, adaptToEfficiency, hasSpecs, calculatedSpecs, withTarget,
 } from '../../services/calculations';
 import type { Recipe, LibraryIngredient } from '../../types';
 
@@ -581,5 +581,15 @@ describe('recipe target', () => {
     expect(withTarget(a, { fg: 1.01 }).target).toEqual({ og: 1.056, fg: 1.01 });
     expect('target' in withTarget(a, { og: undefined })).toBe(false);
     expect(withTarget(r, { ibu: 45, color: 0 }).target).toEqual({ ibu: 45 });
+  });
+});
+
+describe('stock check by any name (#212)', () => {
+  it('finds the stock of an ingredient under its translation', () => {
+    const lib = [{ id: 'f1', type: 'fermentable', name: 'Pilsner malt', names: { nl: 'Pilsmout' }, status: 'private', stock: { amount: 5, unit: 'kilograms' } }] as unknown as LibraryIngredient[];
+    const r = reference();
+    r.ingredients.fermentables = [{ name: 'Pilsmout', amount: { unit: 'kilograms', value: 4 } } as never];
+    r.ingredients.hops = []; r.ingredients.cultures = [];
+    expect(checkRecipeStock(r, lib).isBrewable).toBe(true);
   });
 });

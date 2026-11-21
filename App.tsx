@@ -40,7 +40,7 @@ import { getSRMColor, formatBrewNumber, formatGravity, checkRecipeStock, normali
 import { canEditRecipe, canManageBrews, canManageLibrary, canManageRecipes, canPublish } from './services/permissions';
 import { Taster, batchNumbers, memberName } from './services/tasting';
 import { URL_IMPORT_ENABLED } from './services/features';
-import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey, findPrivateIngredient } from './services/duplicates';
+import { findDuplicateRecipes, approvedKeys, uniqueName, privateRecipeNames, privateLibraryNames, isUniqueViolation, nameKey, findPrivateIngredient, findByName, sharesName, goesByName } from './services/duplicates';
 import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { WaterRole, isSameWater, withWaterLinks } from './services/beerXmlWater';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
@@ -318,18 +318,18 @@ const AppContent: React.FC = () => {
 
       // 2. Try to find by name and type with the target status
       if (targetStatus === 'private') {
-        return updatedLib.find(l =>
-          nameKey(l.name) === nameKey(name) &&
+        return findByName(updatedLib.filter(l =>
           l.type === type &&
           l.status === 'private' && (
             (!l.user_id || l.user_id === user?.id) ||
             (profile?.brewery_id && l.brewery_id === profile.brewery_id)
           )
-        );
+        ), name);
       } else {
-        const approved = updatedLib.find(l => l.name.toLowerCase() === name.toLowerCase() && l.type === type && l.status === 'approved');
+        // Also by a translation or alias: "Koriander" is the public "Coriander" (#212)
+        const approved = findByName(updatedLib.filter(l => l.type === type && l.status === 'approved'), name);
         if (approved) return approved;
-        return updatedLib.find(l => l.name.toLowerCase() === name.toLowerCase() && l.type === type && l.status === 'submitted' && l.user_id === user?.id);
+        return findByName(updatedLib.filter(l => l.type === type && l.status === 'submitted' && l.user_id === user?.id), name);
       }
     };
 
@@ -1119,7 +1119,8 @@ const AppContent: React.FC = () => {
       isDuplicate = personalLib.some(l => nameKey(l.name) === nameKey(next.data.name) && l.type === 'water');
     } else {
       exactMatches = personalLib.filter(l => l.type === next.data.type && isExactlySame(l, next.data));
-      isDuplicate = personalLib.some(l => nameKey(l.name) === nameKey(next.data.name) && l.type === next.data.type);
+      // Also when the name is a translation or alias of an own item ("Coriander" → "Koriander", #212)
+      isDuplicate = personalLib.some(l => l.type === next.data.type && sharesName(l, next.data));
     }
     
     if (exactMatches.length > 0) {
@@ -1232,8 +1233,15 @@ const AppContent: React.FC = () => {
         updatedLib = library.map(l => {
           const isOwnOrBrewery = (!l.status || l.status === 'private') &&
             ((!l.user_id || l.user_id === user?.id) || (profile?.brewery_id && l.brewery_id === profile.brewery_id));
-          if (isOwnOrBrewery && nameKey(l.name) === nameKey(currentDuplicate.data.name) && l.type === currentDuplicate.data.type) {
-             const updated = { ...currentDuplicate.data, id: l.id, user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private' } as LibraryIngredient;
+          if (isOwnOrBrewery && l.type === currentDuplicate.data.type && sharesName(l, currentDuplicate.data)) {
+             // The file's values, but the own item's names and translations stay; the file's name becomes an alias
+             const incoming = currentDuplicate.data as LibraryIngredient;
+             const aliases = [...new Set([...(l.aliases ?? []), ...(goesByName(l, incoming.name) ? [] : [incoming.name])])];
+             const updated = {
+               ...incoming, id: l.id, user_id: user?.id, brewery_id: profile?.brewery_id, status: 'private',
+               name: l.name, ...(l.names ? { names: l.names } : {}), ...(l.i18n ? { i18n: l.i18n } : {}), ...(l.name_kind ? { name_kind: l.name_kind } : {}),
+               ...(aliases.length ? { aliases } : {}),
+             } as LibraryIngredient;
              targetItem = updated;
              return updated;
           }
@@ -1271,7 +1279,7 @@ const AppContent: React.FC = () => {
       nextSummary.ignored += 1;
       // Ignored: a recipe's water links to the existing profile with that name
       if (currentDuplicate.type === 'library') {
-        const shown = deduplicatedLibrary.find(l => l.type === currentDuplicate.data.type && nameKey(l.name) === nameKey(currentDuplicate.data.name) && l.status === 'private');
+        const shown = findByName(deduplicatedLibrary.filter(l => l.type === currentDuplicate.data.type && l.status === 'private'), currentDuplicate.data.name);
         const existing = shown ?? findPrivateIngredient(library, currentDuplicate.data.name, currentDuplicate.data.type, profile?.brewery_id, user?.id);
         linkImportedWater(currentDuplicate, existing?.id);
       }
