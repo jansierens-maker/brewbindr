@@ -1,4 +1,5 @@
 import { LibraryIngredient, Recipe } from '../types';
+import { allNames } from './itemI18n';
 
 /** Normalised name for duplicate checks: case-, space- and accent-insensitive. */
 export const nameKey = (name?: string): string =>
@@ -9,6 +10,21 @@ export const nameKey = (name?: string): string =>
     .toLowerCase()
     .replace(/\s+/g, ' ');
 
+type Named = Pick<LibraryIngredient, 'name' | 'names' | 'aliases' | 'name_kind'>;
+
+/** Whether an item goes by this name: its main name, a translation or an alias (#212). */
+export const goesByName = (item: Named, name?: string): boolean => {
+  const k = nameKey(name);
+  return !!k && allNames(item).some(n => nameKey(n) === k);
+};
+
+/** Whether two items share any name (in any language or as an alias). */
+export const sharesName = (a: Named, b: Named): boolean => allNames(b).some(n => goesByName(a, n));
+
+/** The item called exactly `name` first, else one that goes by it in another language or as an alias. */
+export const findByName = <T extends Named>(items: T[], name: string): T | undefined =>
+  items.find(i => nameKey(i.name) === nameKey(name)) ?? items.find(i => goesByName(i, name));
+
 const isShared = (status?: string) => status === 'approved' || status === 'submitted';
 
 /** Public or pending recipes (other than `exceptId`) with the same name. */
@@ -16,14 +32,15 @@ export const findDuplicateRecipes = (name: string, recipes: Recipe[], exceptId?:
   recipes.filter(r => r.id !== exceptId && isShared(r.status) && nameKey(r.name) === nameKey(name));
 
 /** Public or pending library items of the same type with the same name. */
-export const findDuplicateIngredients = (item: Pick<LibraryIngredient, 'name' | 'type' | 'id'>, library: LibraryIngredient[]): LibraryIngredient[] =>
-  library.filter(l => l.id !== item.id && l.type === item.type && isShared(l.status) && nameKey(l.name) === nameKey(item.name));
+export const findDuplicateIngredients = (item: Pick<LibraryIngredient, 'name' | 'type' | 'id' | 'names' | 'aliases' | 'name_kind'>, library: LibraryIngredient[]): LibraryIngredient[] =>
+  library.filter(l => l.id !== item.id && l.type === item.type && isShared(l.status) && sharesName(l, item));
 
 /** Keys of everything already in the public library, for flagging pending submissions. */
 export const approvedKeys = (recipes: Recipe[], library: LibraryIngredient[]): Set<string> =>
   new Set([
     ...recipes.filter(r => r.status === 'approved').map(r => `recipe:${nameKey(r.name)}`),
-    ...library.filter(l => l.status === 'approved').map(l => `${l.type}:${nameKey(l.name)}`),
+    // Every name of a public item: a submission called "Koriander" matches the public "Coriander"
+    ...library.filter(l => l.status === 'approved').flatMap(l => allNames(l).map(n => `${l.type}:${nameKey(n)}`)),
   ]);
 
 /** Key of a pending submission as returned by fetchPendingSubmissions(). */
@@ -64,4 +81,4 @@ export const privateLibraryNames = (library: LibraryIngredient[], type: string, 
 
 /** The brewery's own private item with this name and type, if any. */
 export const findPrivateIngredient = (library: LibraryIngredient[], name: string, type: string, breweryId?: string | null, userId?: string): LibraryIngredient | undefined =>
-  library.find(l => l.type === type && isOwnPrivate(l, breweryId, userId) && nameKey(l.name) === nameKey(name));
+  findByName(library.filter(l => l.type === type && isOwnPrivate(l, breweryId, userId)), name);

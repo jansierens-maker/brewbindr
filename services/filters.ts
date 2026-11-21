@@ -1,4 +1,5 @@
 import type { BrewLogEntry, LibraryIngredient, Recipe } from '../types';
+import { allNames } from './itemI18n';
 
 /**
  * Filters and sort orders for the lists (recipes, brews, library items). Pure functions:
@@ -128,7 +129,7 @@ export const usedInRecipes = (recipes: Recipe[]) => {
 export const ingredientMatches = (i: LibraryIngredient, f: IngredientFilters, used: Set<string>) => {
   const field = rangeField(i.type);
   const hasStock = (i.stock?.amount ?? 0) > 0;
-  const isUsed = used.has(i.id) || used.has(i.name.toLowerCase());
+  const isUsed = used.has(i.id) || allNames(i).some(n => used.has(n.toLowerCase()));
   return (!f.stock || (f.stock === 'in') === hasStock)
     && (!f.usage || (f.usage === 'used') === isUsed)
     && (!field || inRange(i[field], f.min, f.max));
