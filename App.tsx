@@ -9,6 +9,7 @@ const FlavourLab = lazy(() => import('./components/FlavourLab'));
 const TastingNotesView = lazy(() => import('./components/TastingNotesView'));
 const IngredientLibrary = lazy(() => import('./components/IngredientLibrary'));
 const GlobalSearch = lazy(() => import('./components/GlobalSearch'));
+const ExportLanguageDialog = lazy(() => import('./components/ExportLanguageDialog'));
 import type { LibrarySection } from './components/IngredientLibrary';
 const PrintView = lazy(() => import('./components/PrintView'));
 const AdminView = lazy(() => import('./components/AdminView'));
@@ -1003,8 +1004,11 @@ const AppContent: React.FC = () => {
     setView('brouwlogboek');
   };
 
-  const handleExportRecipeBeerXml = (recipe: Recipe) => {
-    const xml = exportToBeerXml(recipe, deduplicatedLibrary);
+  // A BeerXML export first asks in which language to write the names (#212)
+  const [exportAsk, setExportAsk] = useState<{ kind: 'recipe'; recipe: Recipe } | { kind: 'library' } | null>(null);
+  const handleExportRecipeBeerXml = (recipe: Recipe, exportLang?: Language) => {
+    if (!exportLang) { setExportAsk({ kind: 'recipe', recipe }); return; }
+    const xml = exportToBeerXml(recipe, deduplicatedLibrary, { lang: exportLang });
     const blob = new Blob([xml], { type: 'text/xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1028,8 +1032,9 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const handleExportLibraryBeerXml = () => {
-    const xml = exportLibraryToBeerXml(library);
+  const handleExportLibraryBeerXml = (exportLang?: Language) => {
+    if (!exportLang) { setExportAsk({ kind: 'library' }); return; }
+    const xml = exportLibraryToBeerXml(library, { lang: exportLang });
     const blob = new Blob([xml], { type: 'text/xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1764,7 +1769,7 @@ const AppContent: React.FC = () => {
             <div className="p-4 md:p-8">
               <div className="max-w-4xl mx-auto bg-white shadow-2xl ring-1 ring-stone-200 print:shadow-none print:ring-0">
                 <Suspense fallback={<ScreenLoading />}>
-                  <PrintView recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} batchNumber={printData.batchNumber} equipment={printData.recipe ? resolveEquipment(printData.recipe, deduplicatedLibrary, printData.log?.equipmentId) : undefined} />
+                  <PrintView library={library} recipe={printData.recipe} log={printData.log} tastingNote={printData.tastingNote} batchNumber={printData.batchNumber} equipment={printData.recipe ? resolveEquipment(printData.recipe, deduplicatedLibrary, printData.log?.equipmentId) : undefined} />
                 </Suspense>
               </div>
             </div>
@@ -1862,6 +1867,14 @@ const AppContent: React.FC = () => {
               onAuth={() => handleAuthRedirect('signin')}
               onSearch={() => setGlobalSearchOpen(true)}
             />
+            {exportAsk && (
+              <Suspense fallback={null}>
+                <ExportLanguageDialog
+                  what={exportAsk.kind === 'recipe' ? exportAsk.recipe.name : t('export_lang_library')}
+                  onClose={() => setExportAsk(null)}
+                  onExport={l => { const ask = exportAsk; setExportAsk(null); if (ask.kind === 'recipe') handleExportRecipeBeerXml(ask.recipe, l); else handleExportLibraryBeerXml(l); }} />
+              </Suspense>
+            )}
             {globalSearchOpen && (
               <Suspense fallback={null}>
                 <GlobalSearch open={globalSearchOpen} onClose={() => setGlobalSearchOpen(false)}
@@ -2334,7 +2347,7 @@ const AppContent: React.FC = () => {
               {view === 'importeren' && (
                 <ImportView
                   onFileImport={handleFileImport}
-                  onExportBeerXml={handleExportLibraryBeerXml}
+                  onExportBeerXml={() => handleExportLibraryBeerXml()}
                   importStatus={importStatus}
                   xmlUrl={xmlUrl}
                   onXmlUrlChange={setXmlUrl}

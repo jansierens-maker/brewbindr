@@ -38,3 +38,18 @@ describe('library items in several languages', () => {
     expect(missingLanguages(coriander, 'profile')).toEqual([]);
   });
 });
+
+describe('recipe ingredients in the reader\'s language', () => {
+  const lib: LibraryIngredient[] = [
+    { id: 'm1', type: 'misc', name: 'Coriander', names: { nl: 'Koriander', fr: 'Coriandre' } },
+    { id: 'h1', type: 'hop', name: 'Saaz', name_kind: 'product' },
+  ];
+  it('uses the link, else the name in any language, else the name as written', async () => {
+    const { localName } = await import('../../services/itemI18n');
+    expect(localName({ name: 'Coriander', libraryId: 'm1' }, lib, 'fr')).toBe('Coriandre');
+    expect(localName({ name: 'koriander' }, lib, 'fr', 'misc')).toBe('Coriandre');
+    expect(localName({ name: 'Saaz' }, lib, 'nl', 'hop')).toBe('Saaz');
+    expect(localName({ name: 'Komijn' }, lib, 'fr')).toBe('Komijn');
+    expect(localName({ name: 'Coriander' }, lib, 'nl', 'hop')).toBe('Coriander');
+  });
+});
