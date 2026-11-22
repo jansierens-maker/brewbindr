@@ -37,3 +37,37 @@ describe('translation proposals (API)', () => {
     expect(parseResult('not json', items)).toEqual([]);
   });
 });
+
+describe('calling Gemini with retries (#215)', () => {
+  const noWait = async () => {};
+  it('tries the model twice, then the lighter one, on an overloaded model', async () => {
+    const { callWithRetry, PRIMARY_MODEL, FALLBACK_MODEL } = await import('../../api/_lib/translate');
+    const seen: string[] = [];
+    const busy = '{"error":{"code":503,"message":"This model is currently experiencing high demand.","status":"UNAVAILABLE"}}';
+    const r = await callWithRetry(async m => { seen.push(m); if (seen.length < 3) throw new Error(busy); return { text: '{"items":[]}' }; }, noWait);
+    expect(seen).toEqual([PRIMARY_MODEL, PRIMARY_MODEL, FALLBACK_MODEL]);
+    expect(r.model).toBe(FALLBACK_MODEL);
+    expect(r.attempts.map(a => a.ok)).toEqual([false, false, true]);
+  });
+
+  it('stops at an error that is not worth retrying, and after the last attempt', async () => {
+    const { callWithRetry, clientMessage } = await import('../../api/_lib/translate');
+    const bad = await callWithRetry(async () => { throw new Error('{"error":{"code":400,"message":"Invalid argument"}}'); }, noWait);
+    expect(bad.attempts).toHaveLength(1);
+    expect(clientMessage(bad.error!)).toBe('Invalid argument');
+    const slow = await callWithRetry(async () => { throw new Error('Timed out after 45 s'); }, noWait);
+    expect(slow.attempts).toHaveLength(3);
+    expect(slow.answer).toBeUndefined();
+  });
+
+  it('reports missing items and a cut-off answer', async () => {
+    const { parseWithReport } = await import('../../api/_lib/translate');
+    const r = parseWithReport('{"items":[{"id":"m1","name_kind":"generic","names":{"nl":"Koriander"}}', items, 'MAX_TOKENS');
+    expect(r.truncated).toBe(true);
+    expect(r.jsonError).toBeTruthy();
+    expect(r.missingIds).toEqual(['m1', 'h1']);
+    const ok = parseWithReport('{"items":[{"id":"m1","name_kind":"generic"}]}', items, 'STOP');
+    expect(ok).toMatchObject({ truncated: false, missingIds: ['h1'] });
+    expect(ok.jsonError).toBeUndefined();
+  });
+});

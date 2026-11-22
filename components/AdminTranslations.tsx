@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../App';
 import type { LibraryIngredient } from '../types';
 import type { Language } from '../services/i18n';
 import { ITEM_LANGS, textFieldsFor } from '../services/itemI18n';
-import { BATCH_SIZE, TRANSLATABLE_TYPES, applyProposal, coverage, needsTranslation, requestProposals } from '../services/translationAdmin';
+import { Proposal, RequestLog, TRANSLATABLE_TYPES, applyProposal, coverage, needsTranslation, planBatches, requestProposals } from '../services/translationAdmin';
 import TranslationsEditor from './TranslationsEditor';
 
 interface Props {
@@ -29,8 +29,19 @@ const AdminTranslations: React.FC<Props> = ({ library, onSave }) => {
   const [type, setType] = useState('');
   const [lang, setLang] = useState<Language | 'any'>('any');
   const [what, setWhat] = useState<'name' | 'text' | 'any'>('any');
-  const [limit, setLimit] = useState(BATCH_SIZE);
-  const [busy, setBusy] = useState<{ done: number; total: number } | null>(null);
+  const [limit, setLimit] = useState(50);
+  const [busy, setBusy] = useState<{ batch: number; batches: number; done: number; total: number; since: number } | null>(null);
+  const [, tick] = useState(0);
+  const [debug, setDebug] = useState(false);
+  const [logs, setLogs] = useState<RequestLog[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const stopper = useRef<AbortController | null>(null);
+  // The elapsed time while a request runs
+  useEffect(() => {
+    if (!busy) return;
+    const id = setInterval(() => tick(n => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [busy]);
   const [error, setError] = useState('');
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
@@ -50,14 +61,27 @@ const AdminTranslations: React.FC<Props> = ({ library, onSave }) => {
   const todo = candidates.filter(i => !inReview.has(i.id)).slice(0, Math.max(1, limit));
 
   const ask = async () => {
-    setError(''); setMessage('');
-    setBusy({ done: 0, total: todo.length });
-    const { proposals, error: err } = await requestProposals(todo, (done, total) => setBusy({ done, total }));
-    const byId = new Map(proposals.map(p => [p.id, p]));
-    const added: Row[] = todo.filter(i => byId.has(i.id)).map(i => ({ item: applyProposal(i, byId.get(i.id)!), doubt: byId.get(i.id)!.doubt, selected: !byId.get(i.id)!.doubt }));
-    setRows(r => [...r, ...added]);
+    setError(''); setMessage(''); setWarnings([]);
+    const batch = todo;
+    const stop = new AbortController();
+    stopper.current = stop;
+    const since = Date.now();
+    setBusy({ batch: 1, batches: planBatches(batch).length, done: 0, total: batch.length, since });
+    const byId = new Map(batch.map(i => [i.id, i]));
+    const addRows = (proposals: Proposal[]) => setRows(r => [
+      ...r,
+      ...proposals.filter(p => byId.has(p.id)).map(p => ({ item: applyProposal(byId.get(p.id)!, p), doubt: p.doubt, selected: !p.doubt })),
+    ]);
+    const result = await requestProposals(batch, {
+      debug, stop: stop.signal, onProposals: addRows,
+      onProgress: (b, n, done, total) => setBusy({ batch: b, batches: n, done, total, since: Date.now() }),
+      onLog: entry => setLogs(l => [...l, entry]),
+    });
+    stopper.current = null;
     setBusy(null);
-    if (err) setError(err);
+    setWarnings(result.warnings);
+    if (result.stopped) setMessage(t('tra_stopped'));
+    if (result.error) setError(result.error);
   };
 
   const update = (id: string, patch: Partial<LibraryIngredient>) =>
@@ -147,20 +171,42 @@ const AdminTranslations: React.FC<Props> = ({ library, onSave }) => {
         </div>
         <div>
           <label htmlFor="tra_limit" className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">{t('tra_limit')}</label>
-          <input id="tra_limit" name="tra_limit" type="number" min={1} max={500} step={BATCH_SIZE} className={cell} maxLength={3}
-            value={limit} onChange={e => setLimit(Math.max(1, Math.min(500, parseInt(e.target.value, 10) || BATCH_SIZE)))} />
+          <input id="tra_limit" name="tra_limit" type="number" min={1} max={500} step={10} className={cell} maxLength={3}
+            value={limit} onChange={e => setLimit(Math.max(1, Math.min(500, parseInt(e.target.value, 10) || 50)))} />
         </div>
-        <button type="button" onClick={ask} disabled={!!busy || todo.length === 0}
-          className="px-4 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-black uppercase tracking-widest disabled:opacity-40">
-          <i className="fas fa-wand-magic-sparkles mr-1.5" aria-hidden="true"></i>
-          {busy ? t('tra_busy').replace('{done}', String(busy.done)).replace('{total}', String(busy.total)) : t('tra_ask').replace('{n}', String(todo.length))}
-        </button>
+        {busy ? (
+          <button type="button" onClick={() => stopper.current?.abort()}
+            className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-xs font-black uppercase tracking-widest">
+            <i className="fas fa-stop mr-1.5" aria-hidden="true"></i>{t('tra_stop')}
+          </button>
+        ) : (
+          <button type="button" onClick={ask} disabled={todo.length === 0}
+            className="px-4 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-black uppercase tracking-widest disabled:opacity-40">
+            <i className="fas fa-wand-magic-sparkles mr-1.5" aria-hidden="true"></i>{t('tra_ask').replace('{n}', String(todo.length))}
+          </button>
+        )}
       </div>
-      <p className="text-[11px] text-stone-400 -mt-4">
-        {t('tra_found').replace('{n}', String(candidates.length))} {t('tra_requests').replace('{n}', String(Math.ceil(todo.length / BATCH_SIZE)))}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3 -mt-4">
+        <p className="text-[11px] text-stone-400">
+          {t('tra_found').replace('{n}', String(candidates.length))} {t('tra_requests').replace('{n}', String(planBatches(todo).length))}
+        </p>
+        <label htmlFor="tra_debug" className="flex items-center gap-2 text-xs font-bold text-stone-600 cursor-pointer">
+          <input id="tra_debug" name="tra_debug" type="checkbox" checked={debug} onChange={e => setDebug(e.target.checked)} disabled={!!busy} />
+          {t('tra_debug')}
+        </label>
+      </div>
+      {busy && (
+        <p role="status" aria-live="polite" className="text-sm font-bold text-sky-800">
+          <i className="fas fa-spinner fa-spin mr-2" aria-hidden="true"></i>
+          {t('tra_busy_batch').replace('{batch}', String(busy.batch)).replace('{batches}', String(busy.batches))
+            .replace('{done}', String(busy.done)).replace('{total}', String(busy.total)).replace('{s}', String(Math.round((Date.now() - busy.since) / 1000)))}
+        </p>
+      )}
       {error && <p role="alert" className="text-sm font-bold text-red-700">{error}</p>}
+      {warnings.map(w => <p key={w} className="text-sm font-bold text-amber-700">{w}</p>)}
       {message && <p role="status" className="text-sm font-bold text-green-700">{message}</p>}
+
+      {debug && logs.length > 0 && <DebugLog logs={logs} onClear={() => setLogs([])} />}
 
       {/* Review */}
       {rows.length > 0 && (
@@ -250,3 +296,68 @@ const AdminTranslations: React.FC<Props> = ({ library, onSave }) => {
 };
 
 export default AdminTranslations;
+
+/** Debug mode: every request with its attempts, timings, tokens, the prompt and Gemini's raw answer. */
+const DebugLog: React.FC<{ logs: RequestLog[]; onClear: () => void }> = ({ logs, onClear }) => {
+  const { t } = useTranslation();
+  const download = () => {
+    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), requests: logs }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `brewbindr-translate-debug-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+  const sec = (ms?: number) => (ms === undefined ? '–' : `${(ms / 1000).toFixed(1)} s`);
+  return (
+    <section aria-labelledby="tra_debug_title" className="border border-stone-300 rounded-2xl bg-stone-50 p-4 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 id="tra_debug_title" className="text-sm font-black uppercase tracking-widest text-stone-700"><i className="fas fa-bug mr-2" aria-hidden="true"></i>{t('tra_debug_log')}</h4>
+        <div className="flex gap-2">
+          <button type="button" onClick={download} className="px-3 py-1.5 rounded-lg bg-stone-900 text-white text-[11px] font-black uppercase tracking-widest">{t('tra_debug_download')}</button>
+          <button type="button" onClick={onClear} className="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-stone-600 text-[11px] font-black uppercase tracking-widest">{t('tra_debug_clear')}</button>
+        </div>
+      </div>
+      {logs.map((l, i) => {
+        const d = (l.debug ?? {}) as { attempts?: { model: string; durationMs: number; ok: boolean; error?: string; startedAt: string }[]; usage?: Record<string, number>; finishReason?: string; prompt?: string; raw?: string; missingIds?: string[]; truncated?: boolean; jsonError?: string };
+        return (
+          <details key={i} className="bg-white border border-stone-200 rounded-xl">
+            <summary className="cursor-pointer px-3 py-2 text-xs font-mono flex flex-wrap gap-x-4 gap-y-1">
+              <span className="font-black">#{l.batch}/{l.batches}</span>
+              <span>{new Date(l.startedAt).toLocaleTimeString()}</span>
+              <span>{l.items.length} items · {l.chars} chars</span>
+              <span>{sec(l.durationMs)}</span>
+              <span className={l.error ? 'text-red-700 font-bold' : 'text-green-700 font-bold'}>{l.status ?? '–'}</span>
+              {l.model && <span>{l.model}</span>}
+              {d.finishReason && <span>finish: {d.finishReason}</span>}
+              {d.usage && <span>tokens in {d.usage.prompt ?? '?'} / out {d.usage.output ?? '?'}{d.usage.thoughts ? ` / thinking ${d.usage.thoughts}` : ''}</span>}
+              {l.error && <span className="text-red-700">{l.error}</span>}
+              {l.warning && <span className="text-amber-700">{l.warning}</span>}
+            </summary>
+            <div className="px-3 pb-3 space-y-3 text-xs">
+              <p><b>Items:</b> {l.items.map(x => x.name).join(', ')}</p>
+              {d.attempts && (
+                <table className="font-mono">
+                  <thead><tr className="text-left text-stone-400"><th className="pr-3">{t('tra_debug_attempt')}</th><th className="pr-3">model</th><th className="pr-3">start</th><th className="pr-3">{t('tra_debug_duration')}</th><th>{t('tra_debug_result')}</th></tr></thead>
+                  <tbody>{d.attempts.map((a, j) => (
+                    <tr key={j}><td className="pr-3">{j + 1}</td><td className="pr-3">{a.model}</td><td className="pr-3">{new Date(a.startedAt).toLocaleTimeString()}</td><td className="pr-3">{sec(a.durationMs)}</td>
+                      <td className={a.ok ? 'text-green-700' : 'text-red-700'}>{a.ok ? 'OK' : a.error}</td></tr>
+                  ))}</tbody>
+                </table>
+              )}
+              {(d.missingIds?.length || d.truncated || d.jsonError) ? (
+                <p className="text-amber-800">
+                  {d.truncated && <>{t('tra_debug_truncated')} </>}
+                  {d.jsonError && <>JSON: {d.jsonError}. </>}
+                  {d.missingIds?.length ? <>{t('tra_debug_missing')}: {d.missingIds.map(id => l.items.find(x => x.id === id)?.name ?? id).join(', ')}</> : null}
+                </p>
+              ) : null}
+              {d.prompt && <details><summary className="cursor-pointer font-bold">{t('tra_debug_prompt')} ({d.prompt.length} chars)</summary><pre className="mt-2 p-2 bg-stone-900 text-stone-100 rounded-lg overflow-auto max-h-96 whitespace-pre-wrap">{d.prompt}</pre></details>}
+              {d.raw !== undefined && <details open={!!(d.truncated || d.jsonError)}><summary className="cursor-pointer font-bold">{t('tra_debug_raw')} ({(d.raw ?? '').length} chars)</summary><pre className="mt-2 p-2 bg-stone-900 text-stone-100 rounded-lg overflow-auto max-h-96 whitespace-pre-wrap">{d.raw}</pre></details>}
+              {!l.debug && <p className="text-stone-500">{t('tra_debug_none')}</p>}
+            </div>
+          </details>
+        );
+      })}
+    </section>
+  );
+};
