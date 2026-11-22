@@ -23,7 +23,7 @@
 - Every schema change is a new migration in `supabase/migrations/` named `<YYYYMMDDHHMMSS>_<description>.sql` (`npx supabase migration new <description>`). Never change an existing migration file.
 - Migrations must be idempotent (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP ... IF EXISTS`) and backward compatible with the app version currently in production: the migration is applied on merge, while Vercel deploys the app at the same time.
 - Add or update a pgTAP test in `supabase/tests/database/` for new rules (constraints, RLS, triggers, functions).
-- Also append the same SQL to `schema_update.sql`: the full, idempotent setup script for new databases. The app loads this file on demand in the Connection Details dialog; there is no second copy.
+- Also append the same SQL to `schema_update.sql`: the full, idempotent setup script for new databases. The app loads this file on demand in the Connection Details section under Beheer (admin); there is no second copy.
 - Do not apply migrations to production by hand: the `Database` workflow tests them on a fresh database in the PR, applies them to the staging database (used by the Vercel previews) and applies them to production on merge to `main`. See `docs/environments.md`.
 - Previews and their E2E tests use the staging database; E2E tests that write data are tagged `@writes` and do not run against production.
 - Run the unit tests with `npm test` before opening a PR.

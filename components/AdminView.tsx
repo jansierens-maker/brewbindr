@@ -5,6 +5,7 @@ import { useUser } from '../services/userContext';
 import { submissionKey } from '../services/duplicates';
 import AdminBreweries from './AdminBreweries';
 import BackupRestore from './BackupRestore';
+import ConnectionDetails from './ConnectionDetails';
 import AdminTranslations from './AdminTranslations';
 import type { LibraryIngredient } from '../types';
 
@@ -16,6 +17,8 @@ interface AdminViewProps {
   publicKeys?: Set<string>;
   onApprove: (id: string, type: string, table?: string) => void;
   onReject: (id: string, type: string, table?: string) => void;
+  /** Loads all data again (connection details); true when it worked */
+  onResync?: () => Promise<boolean>;
   /** For translating the public library */
   library?: LibraryIngredient[];
   onSaveTranslations?: (items: LibraryIngredient[]) => Promise<string[]>;
@@ -28,6 +31,7 @@ const AdminView: React.FC<AdminViewProps> = ({
   publicKeys,
   onApprove,
   onReject,
+  onResync,
   library = [],
   onSaveTranslations
 }) => {
@@ -129,6 +133,9 @@ const AdminView: React.FC<AdminViewProps> = ({
         {/* Full backup and restore (app admin) */}
         {isAdmin && <BackupRestore mode="full" />}
       </div>
+
+      {/* Connection and database: the technical checks, with the translation debug mode under Beheer */}
+      {isAdmin && onResync && <ConnectionDetails onResync={onResync} />}
     </div>
   );
 };

@@ -48,7 +48,7 @@ import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExpor
 import { translations, Language } from './services/i18n';
 import { supabaseService } from './services/supabaseService';
 import { breweryService } from './services/breweryService';
-import { supabase, getSupabaseConfigInfo } from './services/supabaseClient';
+import { supabase } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
 
 type ImportStatus = 'idle' | 'fetching' | 'parsing' | 'resolving';
@@ -159,9 +159,6 @@ const AppContent: React.FC = () => {
   
   const [xmlUrl, setXmlUrl] = useState('');
   const [showFallbackModal, setShowFallbackModal] = useState(false);
-  const [showSyncDetails, setShowSyncDetails] = useState(false);
-  const [tableStatus, setTableStatus] = useState<Record<string, boolean | 'timeout' | 'error'>>({});
-  const [rlsStatus, setRlsStatus] = useState<{ enabled: boolean, reason?: string } | null>(null);
   const [allowLocalStorage, setAllowLocalStorage] = useState(true);
   const [importStatus, setImportStatus] = useState<ImportStatus | 'complete'>('idle');
   const [libraryView, setLibraryView] = useState<'personal' | 'public'>(openedOn.current.route.lib ?? 'personal');
@@ -691,8 +688,9 @@ const AppContent: React.FC = () => {
           if (cancelled) return;
           const allOk = Object.values(health).every(v => v === true);
           if (!allOk) {
-            // Tables missing or error, show connection details
-            setShowSyncDetails(true);
+            // Tables missing or error: the status shows it; details are under Beheer
+            console.error('Database check failed:', Object.entries(health).filter(([, v]) => v !== true).map(([k]) => k).join(', '));
+            setSyncError(true);
           }
         }
 
@@ -714,8 +712,7 @@ const AppContent: React.FC = () => {
       } catch (err) {
         if (cancelled) return;
         console.error("Initial connection failed:", err);
-        if (user) setSyncError(true);
-        else setShowSyncDetails(true);
+        setSyncError(true);
       }
 
       if (cancelled) return;
@@ -1505,24 +1502,20 @@ const AppContent: React.FC = () => {
     setView('auth');
   };
 
-  const handleOpenSyncDetails = async () => {
-    setShowSyncDetails(true);
-    setTableStatus({});
-    setRlsStatus(null);
-
-    if (supabase) {
-      const status = await supabaseService.checkTableHealth();
-      setTableStatus(status);
-      if (user?.id) {
-        const rls = await supabaseService.checkRLSHealth(user.id);
-        setRlsStatus(rls);
-      } else {
-        setRlsStatus({ enabled: false, reason: 'Log in to check RLS' });
-      }
-    } else {
-      setTableStatus({ 'N/A': false });
-      setRlsStatus({ enabled: false, reason: 'Supabase not configured' });
-    }
+  // Connection details live under Beheer (admin): the status in the top bar leads there
+  const handleOpenSyncDetails = () => {
+    setView('admin');
+    setTimeout(() => document.getElementById('connection')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+  };
+  const resyncAll = async (): Promise<boolean> => {
+    const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id);
+    if (!remoteData) { setSyncError(true); return false; }
+    setRecipes(withoutDeleted(remoteData.recipes));
+    setBrewLogs(remoteData.brewLogs);
+    setTastingNotes(remoteData.tastingNotes);
+    setLibrary(remoteData.library);
+    setSyncError(false);
+    return true;
   };
 
   const getPageTitle = () => {
@@ -1588,13 +1581,6 @@ const AppContent: React.FC = () => {
     // State will be updated via Realtime
   };
 
-  // Full setup SQL (schema_update.sql), loaded only when the connection dialog opens
-  const [schemaSql, setSchemaSql] = useState('');
-  useEffect(() => {
-    if (showSyncDetails && !schemaSql) {
-      import('./schema_update.sql?raw').then(m => setSchemaSql(m.default)).catch(() => setSchemaSql(''));
-    }
-  }, [showSyncDetails, schemaSql]);
 
   const handleDismissFallback = () => {
     setShowFallbackModal(false);
@@ -1608,120 +1594,6 @@ const AppContent: React.FC = () => {
     <LanguageContext.Provider value={{ lang, setLang, t }}>
       <div className="min-h-screen bg-transparent text-[var(--color-text)] font-[var(--font-body)] print:bg-white print:p-0">
         <Bubbles />
-        {showSyncDetails && (
-          <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[250] flex items-center justify-center p-6">
-            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-black text-stone-900">{t('sync_details')}</h3>
-                <button
-                  onClick={() => setShowSyncDetails(false)}
-                  className="text-stone-300 hover:text-stone-900 transition-colors"
-                  aria-label={t('close_sync_details')}
-                >
-                  <i className="fas fa-times text-xl"></i>
-                </button>
-              </div>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('connection_status')}</p>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${supabase ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      <span className="font-bold text-sm">{supabase ? 'Connected' : 'Not Configured'}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('supabase_config')}</p>
-                    <div className="text-[10px] font-bold text-stone-600 space-y-0.5">
-                      <p>URL: {getSupabaseConfigInfo().url}</p>
-                      <p>API Key: {getSupabaseConfigInfo().hasKey ? 'Present' : 'Missing'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {supabase && (
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('table_status')}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {Object.keys(tableStatus).length > 0 ? Object.entries(tableStatus).map(([table, status]) => (
-                          <div key={table} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100">
-                            <span className="text-[10px] font-bold text-stone-600 truncate mr-2">{table}</span>
-                            <span className={`text-[9px] font-black uppercase flex-shrink-0 ${status === true ? 'text-green-600' : status === 'timeout' ? 'text-amber-500' : 'text-red-500'}`}>
-                              {status === true ? t('found') : status === 'timeout' ? 'Timeout' : status === 'error' ? 'Error' : t('not_found')}
-                            </span>
-                          </div>
-                        )) : (
-                          <div className="col-span-full py-4 text-center text-xs text-stone-400 italic">{t('checking_status')}</div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">{t('rls_status')}</p>
-                      {rlsStatus ? (
-                        <div className={`p-4 rounded-2xl border flex items-center gap-3 ${rlsStatus.enabled ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
-                          <i className={`fas ${rlsStatus.enabled ? 'fa-shield-check' : 'fa-shield-exclamation'} text-xl`}></i>
-                          <div>
-                            <p className="text-xs font-black uppercase tracking-widest">{rlsStatus.enabled ? 'RLS Active' : 'RLS Check Failed'}</p>
-                            {rlsStatus.reason && <p className="text-[10px] font-bold opacity-70">{rlsStatus.reason}</p>}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="py-4 text-center text-xs text-stone-400 italic">{t('checking_rls')}</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('manual_sync')}</p>
-                    <button
-                      onClick={async () => {
-                        const remoteData = await supabaseService.fetchAppData(user?.id);
-                        if (remoteData) {
-                          setRecipes(withoutDeleted(remoteData.recipes));
-                          setBrewLogs(remoteData.brewLogs);
-                          setTastingNotes(remoteData.tastingNotes);
-                          setLibrary(remoteData.library);
-                          setSyncError(false);
-                          alert(t('resync_ok'));
-                        } else {
-                          setSyncError(true);
-                          alert(t('resync_failed_permissions'));
-                        }
-                      }}
-                      className="text-amber-600 font-black text-[10px] uppercase hover:underline"
-                    >
-                      {t('retry_sync')}
-                    </button>
-                  </div>
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{t('sql_instructions')}</p>
-                    <button
-                      onClick={() => { navigator.clipboard.writeText(schemaSql); alert(t('sql_copied')); }}
-                      className="text-amber-600 font-black text-[10px] uppercase hover:underline"
-                    >
-                      {t('copy_sql')}
-                    </button>
-                  </div>
-                  <pre className="bg-stone-900 text-stone-100 p-4 rounded-xl text-[10px] font-mono overflow-x-auto h-40">
-                    {schemaSql || t('loading_short')}
-                  </pre>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowSyncDetails(false)}
-                className="w-full mt-8 py-4 bg-stone-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg"
-              >
-                {t('close_btn')}
-              </button>
-            </div>
-          </div>
-        )}
 
         {showFallbackModal && (
           <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[250] flex items-center justify-center p-6">
@@ -1862,7 +1734,7 @@ const AppContent: React.FC = () => {
               syncError={syncError}
               onRefresh={handleRefreshAppData}
               onShowHelp={() => setView('help')}
-              onOpenSyncDetails={handleOpenSyncDetails}
+              onOpenSyncDetails={isAdmin ? handleOpenSyncDetails : undefined}
               onNewRecipe={() => { setSelectedRecipe(null); setView('create'); }}
               onAuth={() => handleAuthRedirect('signin')}
               onSearch={() => setGlobalSearchOpen(true)}
@@ -2298,6 +2170,7 @@ const AppContent: React.FC = () => {
                   publicKeys={publicKeys}
                   onApprove={handleApprove}
                   onReject={handleReject}
+                  onResync={resyncAll}
                   library={library}
                   onSaveTranslations={async (items) => {
                     // Public items keep their owner; saved one by one, the ids that succeeded are returned

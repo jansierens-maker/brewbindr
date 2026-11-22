@@ -42,16 +42,27 @@ export const Topbar: React.FC<TopbarProps> = ({
       <div className="flex items-center gap-1.5 md:gap-2">
         {/* Status Indicator & Refresh */}
         <div className="flex items-center bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-[4px_8px] md:p-[6px_12px] gap-2">
-          <button
-            onClick={onOpenSyncDetails}
-            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
-            title={t('sync_details')}
-          >
+          {/* The admin goes to the connection details under Beheer; others only see the state */}
+          {onOpenSyncDetails ? (
+            <button
+              type="button"
+              onClick={onOpenSyncDetails}
+              className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+              title={t('sync_details')}
+            >
             <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
             <span className={`hidden sm:inline text-[10px] md:text-[11px] font-black uppercase tracking-widest ${syncError ? 'text-red-600' : 'text-green-600'}`}>
               {syncError ? t('cloud_unavailable') : t('cloud_sync')}
             </span>
           </button>
+          ) : (
+            <span className="flex items-center gap-1.5" role="status" title={syncError ? t('cloud_unavailable') : t('cloud_sync')}>
+            <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
+            <span className={`hidden sm:inline text-[10px] md:text-[11px] font-black uppercase tracking-widest ${syncError ? 'text-red-600' : 'text-green-600'}`}>
+              {syncError ? t('cloud_unavailable') : t('cloud_sync')}
+            </span>
+          </span>
+          )}
 
           <div className="w-px h-3 bg-[var(--color-border-strong)] hidden sm:block"></div>
 
