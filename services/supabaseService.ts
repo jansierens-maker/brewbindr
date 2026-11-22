@@ -23,6 +23,18 @@ const TABLE_MAP: Record<string, string> = {
 };
 
 
+/**
+ * Which tables the last full load could not read (empty: all fine). The top bar shows a
+ * red notice while this is not empty.
+ */
+type ReadHealthListener = (failedTables: string[]) => void;
+const readHealthListeners = new Set<ReadHealthListener>();
+const notifyReadHealth = (failed: string[]) => readHealthListeners.forEach(l => l(failed));
+export const onReadHealth = (listener: ReadHealthListener) => {
+  readHealthListeners.add(listener);
+  return () => { readHealthListeners.delete(listener); };
+};
+
 export const supabaseService = {
   async checkTableHealth() {
     const client = supabase;
@@ -150,6 +162,11 @@ export const supabaseService = {
         new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
       ]);
       const data: any = {};
+
+      // Tables that could not be read are reported (the list stays empty for them)
+      const failed = tableList.filter((_, idx) => responses[idx].error);
+      failed.forEach(table => console.error(`Read error for ${table}:`, responses[tableList.indexOf(table)].error.message));
+      notifyReadHealth(failed);
 
       tableList.forEach((table, idx) => {
         data[table] = responses[idx].data?.map((r: any) => {

@@ -46,7 +46,7 @@ import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { WaterRole, isSameWater, withWaterLinks } from './services/beerXmlWater';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
-import { supabaseService } from './services/supabaseService';
+import { supabaseService, onReadHealth } from './services/supabaseService';
 import { breweryService } from './services/breweryService';
 import { supabase } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
@@ -207,6 +207,9 @@ const AppContent: React.FC = () => {
   };
   const { redirect } = useUrlSync({ view, libraryView, params: screenParams }, !!pendingLookup, handleUrlNavigate, setView, setLibraryView);
   const [syncError, setSyncError] = useState(false);
+  // Tables the last load could not read: also a problem worth the red notice
+  const [failedTables, setFailedTables] = useState<string[]>([]);
+  useEffect(() => onReadHealth(setFailedTables), []);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote, batchNumber?: number } | null>(null);
@@ -1482,31 +1485,11 @@ const AppContent: React.FC = () => {
     setView('create');
   };
 
-  const handleRefreshAppData = async () => {
-    setSyncError(false);
-    const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
-    if (remoteData) {
-      setRecipes(withoutDeleted(remoteData.recipes));
-      setBrewLogs(remoteData.brewLogs);
-      setTastingNotes(remoteData.tastingNotes);
-      setLibrary(remoteData.library);
-      alert(t('resync_ok'));
-    } else {
-      setSyncError(true);
-      alert(t('resync_failed'));
-    }
-  };
-
   const handleAuthRedirect = (mode: 'signin' | 'signup' = 'signin') => {
     setAuthMode(mode);
     setView('auth');
   };
 
-  // Connection details live under Beheer (admin): the status in the top bar leads there
-  const handleOpenSyncDetails = () => {
-    setView('admin');
-    setTimeout(() => document.getElementById('connection')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
-  };
   const resyncAll = async (): Promise<boolean> => {
     const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id);
     if (!remoteData) { setSyncError(true); return false; }
@@ -1729,13 +1712,11 @@ const AppContent: React.FC = () => {
           <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-w)]">
             <Topbar
               title={getPageTitle()}
-              showNewRecipeButton={(view === 'dashboard' || (view === 'recipes' && libraryView === 'personal')) && recipeManager}
               isGuest={!user}
-              syncError={syncError}
-              onRefresh={handleRefreshAppData}
               onShowHelp={() => setView('help')}
-              onOpenSyncDetails={isAdmin ? handleOpenSyncDetails : undefined}
-              onNewRecipe={() => { setSelectedRecipe(null); setView('create'); }}
+              syncError={syncError || failedTables.length > 0}
+              syncDetail={failedTables.length ? failedTables.join(', ') : undefined}
+              onRetrySync={async () => { if (!(await resyncAll())) alert(t('resync_failed')); }}
               onAuth={() => handleAuthRedirect('signin')}
               onSearch={() => setGlobalSearchOpen(true)}
             />

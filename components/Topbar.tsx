@@ -4,29 +4,27 @@ import { useTranslation } from '../App';
 
 interface TopbarProps {
   title: string;
-  showNewRecipeButton: boolean;
   isGuest?: boolean;
-  syncError?: boolean;
-  onRefresh?: () => void;
   onShowHelp?: () => void;
-  onOpenSyncDetails?: () => void;
-  onNewRecipe?: () => void;
   onAuth?: () => void;
   /** Opens the search over everything (Ctrl+K) */
   onSearch?: () => void;
+  /** Loading or saving failed: a small red notice that tries again when clicked */
+  syncError?: boolean;
+  /** What failed, e.g. the tables that could not be read */
+  syncDetail?: string;
+  onRetrySync?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
   title,
-  showNewRecipeButton,
   isGuest,
-  syncError,
-  onRefresh,
   onShowHelp,
-  onOpenSyncDetails,
-  onNewRecipe,
   onAuth,
-  onSearch
+  onSearch,
+  syncError,
+  syncDetail,
+  onRetrySync
 }) => {
   const { t } = useTranslation();
   const shortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : 'Ctrl K';
@@ -40,42 +38,16 @@ export const Topbar: React.FC<TopbarProps> = ({
       <PhaseBadge phase="beta" className="lg:hidden" />
 
       <div className="flex items-center gap-1.5 md:gap-2">
-        {/* Status Indicator & Refresh */}
-        <div className="flex items-center bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-[4px_8px] md:p-[6px_12px] gap-2">
-          {/* The admin goes to the connection details under Beheer; others only see the state */}
-          {onOpenSyncDetails ? (
-            <button
-              type="button"
-              onClick={onOpenSyncDetails}
-              className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
-              title={t('sync_details')}
-            >
-            <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
-            <span className={`hidden sm:inline text-[10px] md:text-[11px] font-black uppercase tracking-widest ${syncError ? 'text-red-600' : 'text-green-600'}`}>
-              {syncError ? t('cloud_unavailable') : t('cloud_sync')}
-            </span>
+        {/* Only when something is wrong: the connection to the database failed */}
+        {syncError && (
+          <button type="button" onClick={onRetrySync} role="alert" title={syncDetail ? `${t('sync_problem_tables').replace('{tables}', syncDetail)} ${t('sync_problem_retry')}` : t('sync_problem_hint')}
+            aria-label={`${t(syncDetail ? 'sync_problem_partial' : 'cloud_unavailable')}: ${syncDetail ? t('sync_problem_tables').replace('{tables}', syncDetail) : t('sync_problem_hint')}`}
+            className="flex items-center gap-1.5 px-2 py-1 md:px-2.5 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
+            <span className="hidden sm:inline text-[10px] md:text-[11px] font-black uppercase tracking-widest">{t(syncDetail ? 'sync_problem_partial' : 'cloud_unavailable')}</span>
+            <i className="fas fa-rotate-right text-[10px]" aria-hidden="true"></i>
           </button>
-          ) : (
-            <span className="flex items-center gap-1.5" role="status" title={syncError ? t('cloud_unavailable') : t('cloud_sync')}>
-            <div className={`w-2 h-2 rounded-full ${syncError ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
-            <span className={`hidden sm:inline text-[10px] md:text-[11px] font-black uppercase tracking-widest ${syncError ? 'text-red-600' : 'text-green-600'}`}>
-              {syncError ? t('cloud_unavailable') : t('cloud_sync')}
-            </span>
-          </span>
-          )}
-
-          <div className="w-px h-3 bg-[var(--color-border-strong)] hidden sm:block"></div>
-
-          <button
-            onClick={onRefresh}
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors p-0.5"
-            title={t('refresh_data')}
-            aria-label={t('refresh_data')}
-          >
-            <i className="fas fa-sync-alt text-[10px] md:text-xs"></i>
-          </button>
-        </div>
-
+        )}
         {onSearch && (
           <button type="button" onClick={onSearch} aria-label={t('global_search_title')} title={`${t('global_search_title')} (${shortcut})`}
             className="w-8 h-8 md:w-auto md:h-9 md:px-3 flex items-center justify-center gap-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)] md:border md:border-[var(--color-border)] transition-all">
@@ -94,8 +66,8 @@ export const Topbar: React.FC<TopbarProps> = ({
           <i className="fas fa-question-circle text-sm md:text-base"></i>
         </button>
 
-        {/* Auth/New Recipe Button */}
-        {isGuest ? (
+        {/* Sign in (guests); a new recipe starts from the "New" tile on Recipes */}
+        {isGuest && (
           <button
             onClick={onAuth}
             className="bg-[var(--color-accent)] text-white flex items-center gap-1.5 p-[6px_12px] md:p-[7px_14px] rounded-[var(--radius-sm)] text-[12px] md:text-[13px] font-bold hover:opacity-90 transition-all shadow-sm active:scale-95"
@@ -103,16 +75,6 @@ export const Topbar: React.FC<TopbarProps> = ({
             <i className="fas fa-user text-[10px] md:text-xs"></i>
             <span>{t('sign_in_nav_label')}</span>
           </button>
-        ) : (
-          showNewRecipeButton && (
-            <button
-              onClick={onNewRecipe}
-              className="bg-[var(--color-text)] text-white flex items-center gap-1.5 p-[6px_12px] md:p-[7px_14px] rounded-[var(--radius-sm)] text-[12px] md:text-[13px] font-semibold hover:bg-[#1e3251] transition-all shadow-sm active:scale-95"
-            >
-              <i className="fas fa-plus text-[10px] md:text-xs"></i>
-              <span className="hidden xs:inline">{t('nav_new')}</span>
-            </button>
-          )
         )}
       </div>
     </header>
