@@ -2277,6 +2277,19 @@ const AppContent: React.FC = () => {
                   publicKeys={publicKeys}
                   onApprove={handleApprove}
                   onReject={handleReject}
+                  library={library}
+                  onSaveTranslations={async (items) => {
+                    // Public items keep their owner; saved one by one, the ids that succeeded are returned
+                    const saved: string[] = [];
+                    for (const item of items) {
+                      const result = await trackWrite(() => supabaseService.saveLibraryIngredient(item));
+                      if (result?.error) { console.error('Translation save failed:', result.error.message); continue; }
+                      saved.push(item.id);
+                    }
+                    const byId = new Map(items.filter(i => saved.includes(i.id)).map(i => [i.id, i]));
+                    setLibrary(lib => lib.map(l => byId.get(l.id) ?? l));
+                    return saved;
+                  }}
                 />
               )}
               {/* signIn resolves only after the profile has loaded; by then the start screen is already

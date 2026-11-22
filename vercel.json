@@ -61,5 +61,10 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/translate-items.ts": {
+      "maxDuration": 180
+    }
+  }
 }

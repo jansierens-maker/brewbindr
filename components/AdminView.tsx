@@ -5,6 +5,8 @@ import { useUser } from '../services/userContext';
 import { submissionKey } from '../services/duplicates';
 import AdminBreweries from './AdminBreweries';
 import BackupRestore from './BackupRestore';
+import AdminTranslations from './AdminTranslations';
+import type { LibraryIngredient } from '../types';
 
 interface AdminViewProps {
   onUrlImport: () => void;
@@ -14,6 +16,9 @@ interface AdminViewProps {
   publicKeys?: Set<string>;
   onApprove: (id: string, type: string, table?: string) => void;
   onReject: (id: string, type: string, table?: string) => void;
+  /** For translating the public library */
+  library?: LibraryIngredient[];
+  onSaveTranslations?: (items: LibraryIngredient[]) => Promise<string[]>;
 }
 
 const AdminView: React.FC<AdminViewProps> = ({ 
@@ -22,7 +27,9 @@ const AdminView: React.FC<AdminViewProps> = ({
   pendingSubmissions,
   publicKeys,
   onApprove,
-  onReject
+  onReject,
+  library = [],
+  onSaveTranslations
 }) => {
   const { t } = useTranslation();
   const { isAdmin, user } = useUser();
@@ -87,6 +94,8 @@ const AdminView: React.FC<AdminViewProps> = ({
       )}
 
       {isAdmin && <AdminBreweries />}
+
+      {isAdmin && onSaveTranslations && <AdminTranslations library={library} onSave={onSaveTranslations} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Management Tools */}
