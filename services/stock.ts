@@ -7,7 +7,23 @@ export interface StockRow {
   amount: number | string;
   unit: string;
   target: number | string | null;
+  /** Ordered, not delivered yet (added later: absent before the migration) */
+  ordered?: number | string | null;
+  ordered_at?: string | null;
 }
+
+/** The stock fields of a row (amount, unit, desired stock, what is on order). */
+const stockOf = (row: Partial<StockRow>) => {
+  const target = row.target === null || row.target === undefined ? undefined : Number(row.target);
+  const ordered = row.ordered === null || row.ordered === undefined ? undefined : Number(row.ordered);
+  return {
+    amount: Number(row.amount) || 0,
+    unit: row.unit || '',
+    ...(target !== undefined ? { stock_target: target } : {}),
+    ...(ordered ? { ordered } : {}),
+    ...(ordered && row.ordered_at ? { ordered_at: row.ordered_at } : {}),
+  };
+};
 
 export const STOCK_TYPES = ['fermentable', 'hop', 'culture', 'misc'];
 
@@ -25,11 +41,7 @@ export const applyStock = (library: LibraryIngredient[], rows: StockRow[] | null
     const { stock: _old, ...rest } = item;
     const row = byKey.get(`${item.type}:${item.id}`);
     if (!row) return rest as LibraryIngredient;
-    const target = row.target === null || row.target === undefined ? undefined : Number(row.target);
-    return {
-      ...rest,
-      stock: { amount: Number(row.amount) || 0, unit: row.unit, ...(target !== undefined ? { stock_target: target } : {}) },
-    } as LibraryIngredient;
+    return { ...rest, stock: stockOf(row) } as LibraryIngredient;
   });
 };
 
@@ -51,6 +63,8 @@ export const stockRowFor = (item: LibraryIngredient, breweryId?: string | null) 
     amount: Number(item.stock.amount) || 0,
     unit: item.stock.unit || (item.type === 'hop' || item.type === 'misc' ? 'g' : 'kg'),
     target: item.stock.stock_target ?? null,
+    ordered: item.stock.ordered && item.stock.ordered > 0 ? item.stock.ordered : null,
+    ordered_at: item.stock.ordered && item.stock.ordered > 0 ? item.stock.ordered_at ?? null : null,
   };
 };
 
@@ -64,7 +78,6 @@ export const applyStockChange = (
   return library.map(item => {
     if (item.id !== row.ingredient_id || item.type !== row.ingredient_type) return item;
     if (event === 'DELETE') return withoutStock(item);
-    const target = row.target === null || row.target === undefined ? undefined : Number(row.target);
-    return { ...item, stock: { amount: Number(row.amount) || 0, unit: row.unit || '', ...(target !== undefined ? { stock_target: target } : {}) } };
+    return { ...item, stock: stockOf(row) };
   });
 };

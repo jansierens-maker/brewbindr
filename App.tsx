@@ -434,11 +434,14 @@ const AppContent: React.FC = () => {
     deletedRecipeIds.current.size ? list.filter(r => !r.id || !deletedRecipeIds.current.has(r.id)) : list;
 
   // Handle redirect if stock management is disabled while on Voorraad view
+  // (only once the profile is known: before that the preferences are the defaults, and a
+  // link to /stock would always end on the recipes)
   useEffect(() => {
+    if (authLoading || (user && !profile)) return;
     if (!preferences.enableStockManagement && view === 'voorraad') {
       redirect('recipes', 'personal');
     }
-  }, [preferences.enableStockManagement, view, redirect]);
+  }, [preferences.enableStockManagement, view, redirect, authLoading, user, profile]);
 
   // Screens that need a recipe or brew chosen first (e.g. reached with back/forward after
   // that choice was cleared): back to the list they are opened from
@@ -2188,6 +2191,7 @@ const AppContent: React.FC = () => {
               {view === 'voorraad' && (
                 <VoorraadView
                   ingredients={library}
+                  recipes={recipes.filter(r => r.status !== 'approved' && (!r.brewery_id || r.brewery_id === profile?.brewery_id))}
                   readOnly={!libraryManager}
                   onUpdate={async (item) => {
                     setLibrary(prev => prev.map(l => l.id === item.id ? item : l));

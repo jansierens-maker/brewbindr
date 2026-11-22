@@ -1,9 +1,12 @@
 import React, { useState, useMemo } from 'react';
+import { isListed, receive, stockStatus, StockStatus } from '../services/stockPlanning';
+import Combobox from './Combobox';
+import ShoppingListDialog from './ShoppingListDialog';
 import { matchesQuery, ingredientSearchText } from '../services/search';
 import { displayName } from '../services/itemI18n';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
-import { LibraryIngredient } from '../types';
+import { LibraryIngredient, Recipe } from '../types';
 import { GlassIndicator, MiniGlassBar } from './GlassIndicator';
 import { formatStockAmount } from '../services/calculations';
 
@@ -12,12 +15,14 @@ interface VoorraadViewProps {
   onUpdate: (ingredient: LibraryIngredient) => void;
   /** Brewers and tasters see the stock but cannot change it */
   readOnly?: boolean;
+  /** The brewery's recipes, for the shopping list */
+  recipes?: Recipe[];
 }
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'type' | 'name' | 'stock_low' | 'stock_high';
 
-export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdate, readOnly = false }) => {
+export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdate, readOnly = false, recipes = [] }) => {
   const { t, lang } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTypes, setActiveTypes] = useState<string[]>(['fermentable', 'hop', 'culture', 'misc']);
@@ -26,9 +31,14 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
   const [editingIngredient, setEditingIngredient] = useState<LibraryIngredient | null>(null);
   const startEdit = (ing: LibraryIngredient) => { if (!readOnly) setEditingIngredient(ing); };
 
-  const stockableIngredients = useMemo(() => {
-    return ingredients.filter(ing => ['fermentable', 'hop', 'culture', 'misc'].includes(ing.type));
-  }, [ingredients]);
+  // Only the brewery's own items hold stock; shown when there is some, a desired stock or an order
+  const [showAll, setShowAll] = useState(false);
+  const [shopping, setShopping] = useState(false);
+  const ownStockable = useMemo(
+    () => ingredients.filter(ing => ['fermentable', 'hop', 'culture', 'misc'].includes(ing.type) && (!ing.status || ing.status === 'private')),
+    [ingredients]);
+  const stockableIngredients = useMemo(() => (showAll ? ownStockable : ownStockable.filter(isListed)), [ownStockable, showAll]);
+  const addable = useMemo(() => ownStockable.filter(i => !isListed(i)), [ownStockable]);
 
   const filteredIngredients = useMemo(() => {
     let result = stockableIngredients.filter(ing => {
@@ -109,13 +119,16 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
     const amount = parseFloat(formData.get('amount') as string) || 0;
     const unit = formData.get('unit') as string;
     const target = parseFloat(formData.get('target') as string) || undefined;
+    const ordered = parseFloat(formData.get('ordered') as string) || undefined;
+    const orderedAt = (formData.get('ordered_at') as string) || undefined;
 
     onUpdate({
       ...editingIngredient,
       stock: {
         amount,
         unit,
-        stock_target: target
+        stock_target: target,
+        ...(ordered && ordered > 0 ? { ordered, ordered_at: orderedAt ?? new Date().toISOString().slice(0, 10) } : {}),
       }
     });
     setEditingIngredient(null);
@@ -211,83 +224,118 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
         </div>
       </div>
 
-      <div className="text-xs font-bold text-[var(--color-text-xmuted)]">
-        <strong className="text-[var(--color-text)]">{filteredIngredients.length}</strong> {t('ingredients_header')}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="text-xs font-bold text-[var(--color-text-xmuted)] mr-auto">
+          <strong className="text-[var(--color-text)]">{filteredIngredients.length}</strong> {t('ingredients_header')}
+        </div>
+        {!readOnly && addable.length > 0 && (
+          <div className="w-full sm:w-72">
+            <Combobox id="stock_add" name="stock_add" label={t('stock_add')} value="" placeholder={`+ ${t('stock_add')}`}
+              options={addable.map(i => ({ value: i.id, label: displayName(i, lang), group: t(({ fermentable: 'fermentables_label', hop: 'hops_label', culture: 'cultures_label', misc: 'misc_label' } as Record<string, string>)[i.type] as any) }))}
+              onChange={id => { const i = addable.find(x => x.id === id); if (i) startEdit(i); }} />
+          </div>
+        )}
+        <label htmlFor="stock_show_all" className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-muted)] cursor-pointer">
+          <input id="stock_show_all" name="stock_show_all" type="checkbox" checked={showAll} onChange={e => setShowAll(e.target.checked)} />
+          {t('stock_show_all')}
+        </label>
+        <button type="button" onClick={() => setShopping(true)}
+          className="px-3 py-2 rounded-[var(--radius-sm)] bg-[var(--color-text)] text-white text-xs font-black uppercase tracking-widest">
+          <i className="fas fa-cart-shopping mr-1.5" aria-hidden="true"></i>{t('shopping_list')}
+        </button>
       </div>
 
-      {/* Main Content */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-          {filteredIngredients.map(ing => {
-            const pct = ing.stock?.stock_target ? (ing.stock.amount / ing.stock.stock_target) * 100 : 0;
-            const showPct = !!ing.stock?.stock_target;
-            return (
-              <button
-                key={ing.id}
-                onClick={() => startEdit(ing)}
-                className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] p-4 flex flex-col items-center gap-2 hover:shadow-[var(--shadow)] hover:-translate-y-0.5 transition-all group text-left cursor-pointer"
-              >
-                <div className={`w-1.5 h-1.5 rounded-full self-start mb-1 ${
-                  ing.type === 'fermentable' ? 'bg-[#F59E0B]' :
-                  ing.type === 'hop' ? 'bg-[#10B981]' :
-                  ing.type === 'culture' ? 'bg-[#3B82F6]' : 'bg-[#7C3AED]'
-                }`}></div>
-                <GlassIndicator
-                  pct={pct}
-                  size={48}
-                  showPct={showPct}
-                />
-                <div className="text-center mt-1">
-                  <div className="text-xs font-black text-[var(--color-text)] line-clamp-2 leading-tight min-h-[2em]">{displayName(ing, lang)}</div>
-                  <div className="text-[10px] font-bold text-[var(--color-text-xmuted)] mt-1">
-                    {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)} ${ing.stock.unit}` : '0 -'}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] overflow-hidden shadow-[var(--shadow-sm)]">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[var(--color-bg-subtle)] border-b border-[var(--color-border)]">
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('name_label')}</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('misc_type')}</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('nav_stock')}</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('stock_amount')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredIngredients.map(ing => {
+      {/* Main Content: to reorder, ordered, in stock */}
+      {SECTIONS.map(sec => {
+        const list = filteredIngredients.filter(i => (stockStatus(i) === 'none' ? 'in_stock' : stockStatus(i)) === sec.status);
+        if (!list.length) return null;
+        return (
+          <section key={sec.status} aria-labelledby={`stock-sec-${sec.status}`} className="space-y-3">
+            <h3 id={`stock-sec-${sec.status}`} className={`text-xs font-black uppercase tracking-widest ${sec.className}`}>
+              <i className={`fas ${sec.icon} mr-2`} aria-hidden="true"></i>{t(sec.label as any)} <span className="tabular-nums">({list.length})</span>
+            </h3>
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+              {list.map(ing => {
                 const pct = ing.stock?.stock_target ? (ing.stock.amount / ing.stock.stock_target) * 100 : 0;
+                const showPct = !!ing.stock?.stock_target;
                 return (
-                  <tr
+                  <button
                     key={ing.id}
                     onClick={() => startEdit(ing)}
-                    className="border-b border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] transition-colors cursor-pointer"
+                    className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] p-4 flex flex-col items-center gap-2 hover:shadow-[var(--shadow)] hover:-translate-y-0.5 transition-all group text-left cursor-pointer"
                   >
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-bold text-[var(--color-text)]">{displayName(ing, lang)}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{ing.type}</div>
-                    </td>
-                    <td className="px-4 py-3 min-w-[150px]">
-                      <MiniGlassBar pct={pct} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-bold text-[var(--color-text)]">
+                    <div className={`w-1.5 h-1.5 rounded-full self-start mb-1 ${
+                      ing.type === 'fermentable' ? 'bg-[#F59E0B]' :
+                      ing.type === 'hop' ? 'bg-[#10B981]' :
+                      ing.type === 'culture' ? 'bg-[#3B82F6]' : 'bg-[#7C3AED]'
+                    }`}></div>
+                    <GlassIndicator
+                      pct={pct}
+                      size={48}
+                      showPct={showPct}
+                    />
+                    <div className="text-center mt-1">
+                      <div className="text-xs font-black text-[var(--color-text)] line-clamp-2 leading-tight min-h-[2em]">{displayName(ing, lang)}</div>
+                      <div className="text-[10px] font-bold text-[var(--color-text-xmuted)] mt-1">
                         {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)} ${ing.stock.unit}` : '0 -'}
-                        {ing.stock?.stock_target && <span className="text-[var(--color-text-xmuted)] font-medium ml-1">/ {ing.stock.stock_target} {ing.stock.unit}</span>}
                       </div>
-                    </td>
-                  </tr>
+                      {ing.stock?.ordered ? (
+                        <div className="text-[10px] font-bold text-sky-700 mt-0.5">{t('stock_ordered_short').replace('{n}', `${formatStockAmount(ing.stock.ordered, ing.stock.unit, lang)} ${ing.stock.unit}`)}</div>
+                      ) : null}
+                    </div>
+                  </button>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          ) : (
+            <div className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] overflow-hidden shadow-[var(--shadow-sm)]">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[var(--color-bg-subtle)] border-b border-[var(--color-border)]">
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('name_label')}</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('misc_type')}</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('nav_stock')}</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{t('stock_amount')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.map(ing => {
+                    const pct = ing.stock?.stock_target ? (ing.stock.amount / ing.stock.stock_target) * 100 : 0;
+                    return (
+                      <tr
+                        key={ing.id}
+                        onClick={() => startEdit(ing)}
+                        className="border-b border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] transition-colors cursor-pointer"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-bold text-[var(--color-text)]">{displayName(ing, lang)}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{ing.type}</div>
+                        </td>
+                        <td className="px-4 py-3 min-w-[150px]">
+                          <MiniGlassBar pct={pct} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-bold text-[var(--color-text)]">
+                            {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)} ${ing.stock.unit}` : '0 -'}
+                            {ing.stock?.stock_target && <span className="text-[var(--color-text-xmuted)] font-medium ml-1">/ {ing.stock.stock_target} {ing.stock.unit}</span>}
+                            {ing.stock?.ordered ? <span className="block text-[10px] font-bold text-sky-700">{t('stock_ordered_short').replace('{n}', `${formatStockAmount(ing.stock.ordered, ing.stock.unit, lang)} ${ing.stock.unit}`)}</span> : null}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          </section>
+        );
+      })}
+      {filteredIngredients.length === 0 && (
+        <p className="p-6 text-center text-sm text-[var(--color-text-muted)] bg-[var(--color-bg)] border border-dashed border-[var(--color-border)] rounded-[var(--radius)]">{t('stock_empty_hint')}</p>
       )}
 
       {/* Edit Modal */}
@@ -350,6 +398,45 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                 />
               </div>
 
+              <fieldset className="grid grid-cols-2 gap-4 pt-2 border-t border-[var(--color-border)]">
+                <legend className="sr-only">{t('stock_order')}</legend>
+                <div>
+                  <label htmlFor="ordered" className="block text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest mb-1.5 mt-3">{t('stock_ordered')}</label>
+                  <input id="ordered" name="ordered" type="number" step="any" min="0" placeholder={t('optional' as any)} maxLength={10}
+                    defaultValue={editingIngredient.stock?.ordered}
+                    className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--color-accent)] text-[var(--color-text)]" />
+                </div>
+                <div>
+                  <label htmlFor="ordered_at" className="block text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest mb-1.5 mt-3">{t('stock_ordered_at')}</label>
+                  <input id="ordered_at" name="ordered_at" type="date" maxLength={10}
+                    defaultValue={editingIngredient.stock?.ordered_at ?? new Date().toISOString().slice(0, 10)}
+                    className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-3 py-3 text-sm font-bold outline-none focus:border-[var(--color-accent)] text-[var(--color-text)]" />
+                </div>
+                <p className="col-span-2 text-[10px] text-[var(--color-text-xmuted)] -mt-2">{t('stock_ordered_hint')}</p>
+              </fieldset>
+
+              {editingIngredient.stock?.ordered ? (
+                <div className="p-3 rounded-[var(--radius-sm)] bg-sky-50 border border-sky-200 space-y-2">
+                  <label htmlFor="received" className="block text-[10px] font-black text-sky-800 uppercase tracking-widest">{t('stock_received')}</label>
+                  <div className="flex gap-2">
+                    <input id="received" name="received" type="number" step="any" min="0" maxLength={10} defaultValue={editingIngredient.stock.ordered}
+                      className="flex-1 min-w-0 bg-white border border-sky-200 rounded-[var(--radius-sm)] px-3 py-2 text-sm font-bold text-[var(--color-text)]" />
+                    <button type="button"
+                      onClick={e => {
+                        const field = (e.currentTarget.form?.elements.namedItem('received') as HTMLInputElement | null);
+                        const qty = parseFloat(field?.value ?? '');
+                        if (!(qty > 0) || !editingIngredient) return;
+                        onUpdate(receive(editingIngredient, qty));
+                        setEditingIngredient(null);
+                      }}
+                      className="px-3 py-2 rounded-[var(--radius-sm)] bg-sky-700 text-white text-xs font-black uppercase tracking-widest">
+                      {t('stock_receive')}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-sky-800">{t('stock_received_hint')}</p>
+                </div>
+              ) : null}
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -369,6 +456,17 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
           </div>
         </div>
       )}
+
+      {shopping && (
+        <ShoppingListDialog ingredients={ownStockable} recipes={recipes} readOnly={readOnly} onClose={() => setShopping(false)}
+          onMarkOrdered={items => items.forEach(onUpdate)} />
+      )}
     </div>
   );
 };
+
+const SECTIONS: { status: StockStatus; label: string; icon: string; className: string }[] = [
+  { status: 'reorder', label: 'stock_sec_reorder', icon: 'fa-triangle-exclamation', className: 'text-amber-700' },
+  { status: 'ordered', label: 'stock_sec_ordered', icon: 'fa-truck', className: 'text-sky-700' },
+  { status: 'in_stock', label: 'stock_sec_in_stock', icon: 'fa-box', className: 'text-[var(--color-text-muted)]' },
+];

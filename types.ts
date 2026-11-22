@@ -141,7 +141,12 @@ export interface LibraryIngredient {
   stock?: {
     amount: number;
     unit: string;
+    /** Desired stock: a standing level, kept until removed; below it the item is to reorder */
     stock_target?: number;
+    /** Ordered and not delivered yet, in the stock unit (deliveries lower it) */
+    ordered?: number;
+    /** When it was ordered (YYYY-MM-DD) */
+    ordered_at?: string;
   };
 }
 
