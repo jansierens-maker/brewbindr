@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { displayName } from '../services/itemI18n';
+import TranslationsEditor from './TranslationsEditor';
 import { LibraryIngredient } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -141,6 +142,7 @@ const WaterProfilesManager: React.FC<Props> = ({ library, onUpdate, canEdit, can
           <textarea id="water_notes" name="water_notes" maxLength={1000} className="w-full mt-1 p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm"
             value={form.notes || ''} onChange={e => setForm({ ...form, notes: e.target.value })} />
         </div>
+        <TranslationsEditor idPrefix="water-tr" item={{ ...form, type: 'water' }} onChange={patch => setForm(f => (f ? { ...f, ...patch } : f))} />
         <div className="flex gap-3">
           <button onClick={save} disabled={!canEdit} className="flex-[2] py-4 bg-[var(--color-accent)] text-white rounded-[var(--radius-sm)] font-black text-sm uppercase tracking-widest disabled:opacity-50">{t('save_btn')}</button>
           <button onClick={() => setForm(null)} className="flex-1 py-4 bg-[var(--color-bg-subtle)] text-[var(--color-text-xmuted)] rounded-[var(--radius-sm)] font-black text-xs uppercase tracking-widest">{t('cancel_btn')}</button>

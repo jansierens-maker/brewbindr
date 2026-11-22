@@ -1,6 +1,7 @@
 
 import { displayName } from '../services/itemI18n';
 import React, { useState, useMemo, useDeferredValue } from 'react';
+import TranslationsEditor from './TranslationsEditor';
 import ListToolbar, { FilterChip, FilterRange, FilterSelect, rangeText } from './ListToolbar';
 import { IngredientFilters, IngredientSort, ingredientMatches, rangeField, sortIngredients, usedInRecipes } from '../services/filters';
 import { ebcToSrm, srmToEbc, roundTo } from '../services/calculations';
@@ -623,6 +624,9 @@ const IngredientLibrary: React.FC<LibraryProps> = ({
                       </div>
                     </div>
                   )}
+
+                  <TranslationsEditor idPrefix={`ing-tr-${item.id}`} item={{ ...editForm, type: editForm.type ?? item.type }}
+                    onChange={patch => setEditForm(f => ({ ...f, ...patch }))} />
 
                   <div className="flex flex-col gap-2 pt-2">
                     <div className="flex gap-2">
