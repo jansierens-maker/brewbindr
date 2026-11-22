@@ -43,7 +43,7 @@ test.describe('Levenscyclus', () => {
 
     await login(page);
     try {
-      await page.locator('header button:has(i.fa-plus)').click();
+      await page.getByRole('button', { name: /create recipe|recept maken|créer une recette/i }).first().click();
       await page.locator('#recipe_name').fill(name);
       await page.getByRole('button', { name: SAVE_RECIPE }).click();
       await expect(recipeCard(page, name)).toHaveCount(1, { timeout: 15000 });

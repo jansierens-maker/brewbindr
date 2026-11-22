@@ -26,8 +26,8 @@ async function login(page: Page) {
 }
 
 async function createRecipe(page: Page, name: string) {
-  // "New" button in the top bar (shown on your own recipe list)
-  await page.locator('header button:has(i.fa-plus)').click();
+  // The "New" tile on your own recipe list
+  await page.getByRole('button', { name: /create recipe|recept maken|créer une recette/i }).first().click();
   await page.locator('#recipe_name').fill(name);
   await page.getByRole('button', { name: SAVE_RECIPE }).click();
 }

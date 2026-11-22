@@ -1482,31 +1482,11 @@ const AppContent: React.FC = () => {
     setView('create');
   };
 
-  const handleRefreshAppData = async () => {
-    setSyncError(false);
-    const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id || user?.user_metadata?.brewery_id);
-    if (remoteData) {
-      setRecipes(withoutDeleted(remoteData.recipes));
-      setBrewLogs(remoteData.brewLogs);
-      setTastingNotes(remoteData.tastingNotes);
-      setLibrary(remoteData.library);
-      alert(t('resync_ok'));
-    } else {
-      setSyncError(true);
-      alert(t('resync_failed'));
-    }
-  };
-
   const handleAuthRedirect = (mode: 'signin' | 'signup' = 'signin') => {
     setAuthMode(mode);
     setView('auth');
   };
 
-  // Connection details live under Beheer (admin): the status in the top bar leads there
-  const handleOpenSyncDetails = () => {
-    setView('admin');
-    setTimeout(() => document.getElementById('connection')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
-  };
   const resyncAll = async (): Promise<boolean> => {
     const remoteData = await supabaseService.fetchAppData(user?.id, profile?.brewery_id);
     if (!remoteData) { setSyncError(true); return false; }
@@ -1729,13 +1709,8 @@ const AppContent: React.FC = () => {
           <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-w)]">
             <Topbar
               title={getPageTitle()}
-              showNewRecipeButton={(view === 'dashboard' || (view === 'recipes' && libraryView === 'personal')) && recipeManager}
               isGuest={!user}
-              syncError={syncError}
-              onRefresh={handleRefreshAppData}
               onShowHelp={() => setView('help')}
-              onOpenSyncDetails={isAdmin ? handleOpenSyncDetails : undefined}
-              onNewRecipe={() => { setSelectedRecipe(null); setView('create'); }}
               onAuth={() => handleAuthRedirect('signin')}
               onSearch={() => setGlobalSearchOpen(true)}
             />
