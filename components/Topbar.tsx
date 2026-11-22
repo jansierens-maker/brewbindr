@@ -11,6 +11,8 @@ interface TopbarProps {
   onSearch?: () => void;
   /** Loading or saving failed: a small red notice that tries again when clicked */
   syncError?: boolean;
+  /** What failed, e.g. the tables that could not be read */
+  syncDetail?: string;
   onRetrySync?: () => void;
 }
 
@@ -21,6 +23,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onAuth,
   onSearch,
   syncError,
+  syncDetail,
   onRetrySync
 }) => {
   const { t } = useTranslation();
@@ -37,10 +40,11 @@ export const Topbar: React.FC<TopbarProps> = ({
       <div className="flex items-center gap-1.5 md:gap-2">
         {/* Only when something is wrong: the connection to the database failed */}
         {syncError && (
-          <button type="button" onClick={onRetrySync} role="alert" title={t('sync_problem_hint')} aria-label={`${t('cloud_unavailable')}: ${t('sync_problem_hint')}`}
+          <button type="button" onClick={onRetrySync} role="alert" title={syncDetail ? `${t('sync_problem_tables').replace('{tables}', syncDetail)} ${t('sync_problem_retry')}` : t('sync_problem_hint')}
+            aria-label={`${t(syncDetail ? 'sync_problem_partial' : 'cloud_unavailable')}: ${syncDetail ? t('sync_problem_tables').replace('{tables}', syncDetail) : t('sync_problem_hint')}`}
             className="flex items-center gap-1.5 px-2 py-1 md:px-2.5 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
-            <span className="hidden sm:inline text-[10px] md:text-[11px] font-black uppercase tracking-widest">{t('cloud_unavailable')}</span>
+            <span className="hidden sm:inline text-[10px] md:text-[11px] font-black uppercase tracking-widest">{t(syncDetail ? 'sync_problem_partial' : 'cloud_unavailable')}</span>
             <i className="fas fa-rotate-right text-[10px]" aria-hidden="true"></i>
           </button>
         )}

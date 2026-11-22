@@ -46,7 +46,7 @@ import { parseBeerXml, BeerXmlImportResult } from './services/beerXmlService';
 import { WaterRole, isSameWater, withWaterLinks } from './services/beerXmlWater';
 import { exportToBeerXml, exportLibraryToBeerXml } from './services/beerXmlExportService';
 import { translations, Language } from './services/i18n';
-import { supabaseService } from './services/supabaseService';
+import { supabaseService, onReadHealth } from './services/supabaseService';
 import { breweryService } from './services/breweryService';
 import { supabase } from './services/supabaseClient';
 import { UserProvider, useUser } from './services/userContext';
@@ -207,6 +207,9 @@ const AppContent: React.FC = () => {
   };
   const { redirect } = useUrlSync({ view, libraryView, params: screenParams }, !!pendingLookup, handleUrlNavigate, setView, setLibraryView);
   const [syncError, setSyncError] = useState(false);
+  // Tables the last load could not read: also a problem worth the red notice
+  const [failedTables, setFailedTables] = useState<string[]>([]);
+  useEffect(() => onReadHealth(setFailedTables), []);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
   const [printData, setPrintData] = useState<{ recipe?: Recipe, log?: BrewLogEntry, tastingNote?: TastingNote, batchNumber?: number } | null>(null);
@@ -1711,7 +1714,8 @@ const AppContent: React.FC = () => {
               title={getPageTitle()}
               isGuest={!user}
               onShowHelp={() => setView('help')}
-              syncError={syncError}
+              syncError={syncError || failedTables.length > 0}
+              syncDetail={failedTables.length ? failedTables.join(', ') : undefined}
               onRetrySync={async () => { if (!(await resyncAll())) alert(t('resync_failed')); }}
               onAuth={() => handleAuthRedirect('signin')}
               onSearch={() => setGlobalSearchOpen(true)}
