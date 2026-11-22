@@ -1,4 +1,5 @@
 
+import { displayName } from '../services/itemI18n';
 import React, { useState, useMemo } from 'react';
 import { LibraryIngredient, MashStep, Vessel } from '../types';
 import { useTranslation } from '../App';
@@ -22,7 +23,7 @@ interface Props {
 
 const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope = 'own', library, onUpdate }) => {
   const isPublic = scope === 'public';
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { user, profile, breweryRole, isAdmin } = useUser();
   const activeTab = section;
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -40,7 +41,7 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
   const visible = (i: LibraryIngredient) => (isPublic
     ? i.status === 'approved'
     : isPrivateItem(i) && (i.brewery_id === profile?.brewery_id || i.user_id === user?.id));
-  const equipment = useMemo(() => library.filter(i => i.type === 'equipment' && visible(i)).sort((a, b) => a.name.localeCompare(b.name)), [library, profile?.brewery_id, user?.id, isPublic]);
+  const equipment = useMemo(() => library.filter(i => i.type === 'equipment' && visible(i)).sort((a, b) => displayName(a, lang).localeCompare(displayName(b, lang))), [library, profile?.brewery_id, user?.id, isPublic, lang]);
   // Starting points for a new installation: the public installations (#164); the built-in list only when none could be loaded
   const startingPoints = useMemo(() => {
     const pub = library.filter(i => i.type === 'equipment' && i.status === 'approved');
@@ -50,7 +51,7 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
     const q = presetSearch.trim().toLowerCase();
     return q ? startingPoints.filter(p => p.name.toLowerCase().includes(q)) : startingPoints;
   }, [startingPoints, presetSearch]);
-  const mashProfiles = useMemo(() => library.filter(i => i.type === 'mash_profile' && visible(i)).sort((a, b) => a.name.localeCompare(b.name)), [library, profile?.brewery_id, user?.id, isPublic]);
+  const mashProfiles = useMemo(() => library.filter(i => i.type === 'mash_profile' && visible(i)).sort((a, b) => displayName(a, lang).localeCompare(displayName(b, lang))), [library, profile?.brewery_id, user?.id, isPublic, lang]);
 
   const startEditing = (item: LibraryIngredient) => {
     setEditingId(item.id);
@@ -315,7 +316,7 @@ const BrewingInstallationView: React.FC<Props> = ({ section = 'equipment', scope
                     )}
                 </div>
                 <div className="mb-4">
-                    <h4 className="font-black text-xl text-[var(--color-text)] leading-tight pr-12">{item.name}</h4>
+                    <h4 className="font-black text-xl text-[var(--color-text)] leading-tight pr-12">{displayName(item, lang)}</h4>
                     {item.equipment_type && <span className="text-[10px] font-black text-[var(--color-accent-dark)] uppercase tracking-widest mt-1 inline-block">{t(item.equipment_type as any)}</span>}
                     {activeTab === 'equipment' && item.is_default && <span className="ml-2 text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full uppercase tracking-widest inline-block">{t('default_equipment_badge')}</span>}
                 </div>

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { displayName } from '../services/itemI18n';
 import { LibraryIngredient, Recipe } from '../types';
 import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
@@ -99,9 +100,9 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
     const listed = [...own, ...pub].some(w => w.id === current || (current?.startsWith('preset:') && w.preset_key === current.slice(7)));
     const extra = current && !listed ? resolve(current) : undefined;
     return [
-      ...(extra && current ? [{ value: current, label: extra.name }] : []),
-      ...own.map(w => ({ value: w.id, label: w.name, group: t('water_own_profiles') })),
-      ...pub.map(w => ({ value: w.preset_key && current === `preset:${w.preset_key}` ? current : w.id, label: w.name, group: t('public_library') })),
+      ...(extra && current ? [{ value: current, label: displayName(extra, lang) }] : []),
+      ...own.map(w => ({ value: w.id, label: displayName(w, lang), group: t('water_own_profiles') })),
+      ...pub.map(w => ({ value: w.preset_key && current === `preset:${w.preset_key}` ? current : w.id, label: displayName(w, lang), group: t('public_library') })),
     ];
   };
   const saltIds: SaltId[] = ['gypsum', cacl2Form, 'epsom', 'nacl', 'nahco3'];
@@ -192,7 +193,7 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
               </thead>
               <tbody className="font-bold text-right">
                 <tr className="text-stone-500">
-                  <td className="text-left py-1">{source.name}{chem.dilution_pct ? ` (−${fmt(chem.dilution_pct)} %)` : ''}</td>
+                  <td className="text-left py-1">{displayName(source, lang)}{chem.dilution_pct ? ` (−${fmt(chem.dilution_pct)} %)` : ''}</td>
                   {ION_KEYS.map(k => <td key={k} className="px-2">{fmt(start![k])}</td>)}
                 </tr>
                 <tr className="text-stone-900">
@@ -201,7 +202,7 @@ const WaterChemistryCard: React.FC<Props> = ({ recipe, library, equipment, onCha
                 </tr>
                 {target && (
                   <tr className="text-teal-800">
-                    <td className="text-left py-1">{target.name}</td>
+                    <td className="text-left py-1">{displayName(target, lang)}</td>
                     {ION_KEYS.map(k => <td key={k} className="px-2">{fmt(target.ions[k])}</td>)}
                   </tr>
                 )}
