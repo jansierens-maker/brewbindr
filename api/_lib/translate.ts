@@ -115,3 +115,83 @@ export const parseResult = (raw: string, inputs: TranslateInput[]): TranslateRes
   }
   return out;
 };
+
+// ---- Calling Gemini: retries, a lighter model, a time limit per attempt, and a report ----
+
+export const PRIMARY_MODEL = 'gemini-3.5-flash';
+/** When the primary model stays overloaded: a lighter one (same output format) */
+export const FALLBACK_MODEL = 'gemini-3.5-flash-lite';
+/** Each Gemini call may take this long before it is given up */
+export const ATTEMPT_TIMEOUT_MS = 45000;
+/** Two attempts on the primary model, then one on the fallback, with these pauses in between */
+export const PLAN: { model: string; waitMs: number }[] = [
+  { model: PRIMARY_MODEL, waitMs: 0 },
+  { model: PRIMARY_MODEL, waitMs: 2000 },
+  { model: FALLBACK_MODEL, waitMs: 5000 },
+];
+
+export interface Attempt {
+  model: string;
+  startedAt: string;
+  durationMs: number;
+  ok: boolean;
+  /** The error as Gemini (or the time limit) reported it */
+  error?: string;
+}
+
+/** Worth another try: overloaded, internal error or time limit. Not: bad request, quota, safety. */
+export const isRetryable = (message: string) =>
+  /\b(503|500|504)\b|UNAVAILABLE|high demand|overloaded|INTERNAL|DEADLINE|timed? ?out|abort/i.test(message);
+
+export interface GeminiAnswer {
+  text?: string;
+  finishReason?: string;
+  usage?: { prompt?: number; output?: number; thoughts?: number; total?: number };
+}
+
+/**
+ * Runs the plan: stops at the first answer, or at an error that is not worth retrying.
+ * `call` makes one Gemini call; `sleep` waits (injected for tests).
+ */
+export const callWithRetry = async (
+  call: (model: string) => Promise<GeminiAnswer>,
+  sleep: (ms: number) => Promise<void> = ms => new Promise(r => setTimeout(r, ms)),
+  now: () => number = Date.now,
+): Promise<{ answer?: GeminiAnswer; model?: string; attempts: Attempt[]; error?: string }> => {
+  const attempts: Attempt[] = [];
+  let lastError = '';
+  for (const step of PLAN) {
+    if (attempts.length && step.waitMs) await sleep(step.waitMs);
+    const start = now();
+    try {
+      const answer = await call(step.model);
+      attempts.push({ model: step.model, startedAt: new Date(start).toISOString(), durationMs: now() - start, ok: true });
+      return { answer, model: step.model, attempts };
+    } catch (e) {
+      lastError = (e as Error)?.message || 'Unknown error';
+      attempts.push({ model: step.model, startedAt: new Date(start).toISOString(), durationMs: now() - start, ok: false, error: lastError });
+      if (!isRetryable(lastError)) break;
+    }
+  }
+  return { attempts, error: lastError };
+};
+
+/** A readable message from a Gemini error (its JSON body when there is one). */
+export const clientMessage = (raw: string) => {
+  try { const parsed = JSON.parse(raw); if (parsed?.error?.message) return parsed.error.message as string; } catch { /* plain text */ }
+  return raw || 'An error occurred while translating. Please try again later.';
+};
+
+/** The parsed items plus what went wrong: ids without a proposal, invalid or cut-off JSON. */
+export const parseWithReport = (raw: string, inputs: TranslateInput[], finishReason?: string) => {
+  const items = parseResult(raw, inputs);
+  let jsonError: string | undefined;
+  try { JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, '')); } catch (e) { jsonError = (e as Error).message; }
+  const got = new Set(items.map(i => i.id));
+  return {
+    items,
+    missingIds: inputs.map(i => i.id).filter(id => !got.has(id)),
+    truncated: finishReason === 'MAX_TOKENS',
+    ...(jsonError ? { jsonError } : {}),
+  };
+};
