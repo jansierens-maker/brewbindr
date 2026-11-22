@@ -9,6 +9,9 @@ interface TopbarProps {
   onAuth?: () => void;
   /** Opens the search over everything (Ctrl+K) */
   onSearch?: () => void;
+  /** Loading or saving failed: a small red notice that tries again when clicked */
+  syncError?: boolean;
+  onRetrySync?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -16,7 +19,9 @@ export const Topbar: React.FC<TopbarProps> = ({
   isGuest,
   onShowHelp,
   onAuth,
-  onSearch
+  onSearch,
+  syncError,
+  onRetrySync
 }) => {
   const { t } = useTranslation();
   const shortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : 'Ctrl K';
@@ -30,6 +35,15 @@ export const Topbar: React.FC<TopbarProps> = ({
       <PhaseBadge phase="beta" className="lg:hidden" />
 
       <div className="flex items-center gap-1.5 md:gap-2">
+        {/* Only when something is wrong: the connection to the database failed */}
+        {syncError && (
+          <button type="button" onClick={onRetrySync} role="alert" title={t('sync_problem_hint')} aria-label={`${t('cloud_unavailable')}: ${t('sync_problem_hint')}`}
+            className="flex items-center gap-1.5 px-2 py-1 md:px-2.5 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
+            <span className="hidden sm:inline text-[10px] md:text-[11px] font-black uppercase tracking-widest">{t('cloud_unavailable')}</span>
+            <i className="fas fa-rotate-right text-[10px]" aria-hidden="true"></i>
+          </button>
+        )}
         {onSearch && (
           <button type="button" onClick={onSearch} aria-label={t('global_search_title')} title={`${t('global_search_title')} (${shortcut})`}
             className="w-8 h-8 md:w-auto md:h-9 md:px-3 flex items-center justify-center gap-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)] md:border md:border-[var(--color-border)] transition-all">

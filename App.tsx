@@ -1711,6 +1711,8 @@ const AppContent: React.FC = () => {
               title={getPageTitle()}
               isGuest={!user}
               onShowHelp={() => setView('help')}
+              syncError={syncError}
+              onRetrySync={async () => { if (!(await resyncAll())) alert(t('resync_failed')); }}
               onAuth={() => handleAuthRedirect('signin')}
               onSearch={() => setGlobalSearchOpen(true)}
             />
