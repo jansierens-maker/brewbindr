@@ -5,6 +5,7 @@ import type { Language } from '../services/i18n';
 import { ITEM_LANGS, textFieldsFor } from '../services/itemI18n';
 import { Proposal, RequestLog, TRANSLATABLE_TYPES, applyProposal, coverage, needsTranslation, planBatches, requestProposals } from '../services/translationAdmin';
 import TranslationsEditor from './TranslationsEditor';
+import { applyImported, importTranslations, toCsv, toJson } from '../services/translationExport';
 
 interface Props {
   library: LibraryIngredient[];
@@ -82,6 +83,31 @@ const AdminTranslations: React.FC<Props> = ({ library, onSave }) => {
     setWarnings(result.warnings);
     if (result.stopped) setMessage(t('tra_stopped'));
     if (result.error) setError(result.error);
+  };
+
+  // Translating outside the app: export what matches, import the filled-in file into the review table
+  const exportFile = (kind: 'csv' | 'json') => {
+    const content = kind === 'csv' ? toCsv(candidates) : toJson(candidates);
+    const blob = new Blob([content], { type: kind === 'csv' ? 'text/csv;charset=utf-8' : 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `brewbindr-vertalingen-${type || 'alles'}-${new Date().toISOString().slice(0, 10)}.${kind}`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+  const importFile = async (file: File) => {
+    setError(''); setMessage(''); setWarnings([]);
+    const result = importTranslations(await file.text(), file.name, publicItems);
+    if (result.error) { setError(result.error); return; }
+    const byId = new Map(publicItems.map(i => [i.id, i]));
+    // Only rows that change something (an exported file usually holds untouched rows too)
+    const changed = result.proposals
+      .map(p => { const base = rows.find(r => r.item.id === p.id)?.item ?? byId.get(p.id)!; return { base, item: applyImported(base, p) }; })
+      .filter(({ base, item }) => JSON.stringify(base) !== JSON.stringify(item));
+    const ids = new Set(changed.map(c => c.item.id));
+    setRows(current => [...current.filter(r => !ids.has(r.item.id)), ...changed.map(c => ({ item: c.item, selected: true }))]);
+    setMessage(t('tra_imported').replace('{n}', String(changed.length)).replace('{same}', String(result.proposals.length - changed.length)));
+    if (result.unknown.length) setWarnings([t('tra_import_unknown').replace('{n}', String(result.unknown.length)).replace('{ids}', result.unknown.slice(0, 5).join(', '))]);
   };
 
   const update = (id: string, patch: Partial<LibraryIngredient>) =>
@@ -186,7 +212,25 @@ const AdminTranslations: React.FC<Props> = ({ library, onSave }) => {
           </button>
         )}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 -mt-4">
+      <div className="flex flex-wrap items-center gap-2 -mt-2">
+        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 mr-1">{t('tra_outside')}</span>
+        <button type="button" onClick={() => exportFile('csv')} disabled={!candidates.length}
+          className="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-stone-700 text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
+          <i className="fas fa-file-csv mr-1.5" aria-hidden="true"></i>{t('tra_export_csv').replace('{n}', String(candidates.length))}
+        </button>
+        <button type="button" onClick={() => exportFile('json')} disabled={!candidates.length}
+          className="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-stone-700 text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
+          <i className="fas fa-file-code mr-1.5" aria-hidden="true"></i>{t('tra_export_json')}
+        </button>
+        <label htmlFor="tra_import" className="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-stone-700 text-[11px] font-black uppercase tracking-widest cursor-pointer focus-within:ring-2 focus-within:ring-sky-500">
+          <i className="fas fa-file-import mr-1.5" aria-hidden="true"></i>{t('tra_import')}
+          <input id="tra_import" name="tra_import" type="file" accept=".csv,.json,.tsv,.txt,text/csv,application/json" className="sr-only" disabled={!!busy}
+            onChange={e => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ''; }} />
+        </label>
+      </div>
+      <p className="text-[11px] text-stone-400 -mt-4">{t('tra_outside_hint')}</p>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 -mt-2">
         <p className="text-[11px] text-stone-400">
           {t('tra_found').replace('{n}', String(candidates.length))} {t('tra_requests').replace('{n}', String(planBatches(todo).length))}
         </p>
