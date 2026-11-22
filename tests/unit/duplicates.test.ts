@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import type { LibraryIngredient } from '../../types';
 import {
   nameKey, uniqueName, findDuplicateRecipes, findDuplicateIngredients, approvedKeys, submissionKey,
-  privateRecipeNames, privateLibraryNames, findPrivateIngredient, isUniqueViolation,
+  privateRecipeNames, privateLibraryNames, findPrivateIngredient, isUniqueViolation, goesByName, findByName, sharesName,
 } from '../../services/duplicates';
 
 const recipes: any[] = [
@@ -74,5 +75,24 @@ describe('per-brewery names', () => {
     expect(isUniqueViolation({ code: '23505' })).toBe(true);
     expect(isUniqueViolation({ code: '42501' })).toBe(false);
     expect(isUniqueViolation(null)).toBe(false);
+  });
+});
+
+describe('names in several languages (#212)', () => {
+  const coriander = { id: 'm1', type: 'misc', name: 'Koriander', names: { fr: 'Coriandre', en: 'Coriander' }, aliases: ['coriander seed'], status: 'private' } as LibraryIngredient;
+  it('finds an item by a translation or alias, the exact name first', () => {
+    expect(goesByName(coriander, ' CORIANDER ')).toBe(true);
+    expect(goesByName(coriander, 'Coriander Seed')).toBe(true);
+    expect(goesByName(coriander, 'Cumin')).toBe(false);
+    const exact = { ...coriander, id: 'm2', name: 'Coriander', names: undefined, aliases: undefined };
+    expect(findByName([coriander, exact], 'coriander')?.id).toBe('m2');
+    expect(findByName([coriander], 'coriandre')?.id).toBe('m1');
+  });
+
+  it('sees two items with a shared name as duplicates', () => {
+    expect(sharesName(coriander, { name: 'Coriandre' })).toBe(true);
+    const pub = { ...coriander, id: 'p1', status: 'approved', name: 'Coriander', names: { nl: 'Koriander' }, aliases: [] } as LibraryIngredient;
+    expect(findDuplicateIngredients({ id: 'x', type: 'misc', name: 'Koriander' }, [pub]).map(i => i.id)).toEqual(['p1']);
+    expect(approvedKeys([], [pub]).has('misc:koriander')).toBe(true);
   });
 });

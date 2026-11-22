@@ -1,4 +1,5 @@
 
+import { findByName } from './duplicates';
 import { Recipe, UserPreferences, LibraryIngredient, MashStep, MashProfile, AbvFormula } from "../types";
 
 export const srmToEbc = (srm: number) => srm * 1.97;
@@ -787,8 +788,10 @@ export const checkRecipeStock = (recipe: Recipe, library: LibraryIngredient[]) =
 
   const check = (name: string, requiredAmount: number, requiredUnit: string, libraryId?: string) => {
     // Prioritize private items for stock checks to ensure accuracy when items are cloned for submission
-    const item = library.find(l => (l.id === libraryId || l.name.toLowerCase() === name.toLowerCase()) && l.status === 'private')
-              || library.find(l => l.id === libraryId || l.name.toLowerCase() === name.toLowerCase());
+    // By link first, then by name in any language or alias (#212); own (private) items first
+    const own = library.filter(l => l.status === 'private');
+    const item = own.find(l => l.id === libraryId) || library.find(l => l.id === libraryId)
+              || findByName(own, name) || findByName(library, name);
 
     if (!item || !item.stock) {
       missing.push(name);
