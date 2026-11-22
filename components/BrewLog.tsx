@@ -1,5 +1,6 @@
 
 import { stageOf, versionOf } from '../services/lifecycle';
+import { localName } from '../services/itemI18n';
 import { StageBadge } from './RecipeLifecycle';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Recipe, BrewLogEntry, LibraryIngredient } from '../types';
@@ -423,7 +424,7 @@ const BrewLog: React.FC<BrewLogProps> = ({ recipe: baseRecipe, initialLog, onUpd
                           <ul className="text-sm text-stone-800 space-y-1">
                             {hopRecalc.changes.map(c => (
                               <li key={c.index} className="flex justify-between gap-3 bg-white rounded-lg px-3 py-2 border border-sky-100">
-                                <span className="font-bold">{c.name}</span>
+                                <span className="font-bold">{localName({ name: c.name }, library, lang, 'hop')}</span>
                                 <span className="font-black">{formatBrewNumber(c.from, 'default', lang)} → {formatBrewNumber(c.to, 'default', lang)} {hopUnit(c.unit)}</span>
                               </li>
                             ))}

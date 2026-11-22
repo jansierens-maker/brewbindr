@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { localName } from '../services/itemI18n';
 import { Recipe, BrewLogEntry, TastingNote, LibraryIngredient } from '../types';
 import { useTranslation } from '../App';
 import { calculateABV, calculateRecipeStats, equipmentCapacity, formatBrewNumber, formatGravity, waterPlan, WaterWarning } from '../services/calculations';
@@ -8,6 +9,8 @@ import { scaleRecipe } from '../services/scaling';
 import { useUser } from '../services/userContext';
 
 interface PrintViewProps {
+  /** To show ingredient names in the reader's language (#212) */
+  library?: LibraryIngredient[];
   recipe?: Recipe;
   log?: BrewLogEntry;
   tastingNote?: TastingNote;
@@ -30,7 +33,7 @@ const WARNING_KEYS = {
   boil_over_capacity: 'water_warn_boil_over_capacity',
 } as const satisfies Record<WaterWarning, string>;
 
-const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingNote, equipment, batchNumber }) => {
+const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingNote, equipment, batchNumber, library = [] }) => {
   const { t, lang } = useTranslation();
   const { preferences } = useUser();
 
@@ -200,7 +203,7 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingN
                 <tbody>
                   {recipe.ingredients.fermentables.map((f, i) => (
                     <tr key={i} className="border-b border-stone-100">
-                      <td className="py-3 font-bold text-stone-900">{f.name}</td>
+                      <td className="py-3 font-bold text-stone-900">{localName(f, library, lang, 'fermentable')}</td>
                       <td className="py-3">{formatBrewNumber(f.amount.value, 'kg', lang, preferences)} {f.amount?.unit === 'pounds' ? 'lb' : 'kg'}</td>
                       <td className="py-3 text-right">{formatBrewNumber(f.color?.value, 'color', lang, preferences)} {preferences.colorScale.toUpperCase()}</td>
                     </tr>
@@ -223,7 +226,7 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingN
                   <tbody>
                     {recipe.ingredients.hops.map((h, i) => (
                       <tr key={i} className="border-b border-stone-100">
-                        <td className="py-3 font-bold text-stone-900">{h.name} ({h.alpha_acid?.value}%)</td>
+                        <td className="py-3 font-bold text-stone-900">{localName(h, library, lang, 'hop')} ({h.alpha_acid?.value}%)</td>
                         <td className="py-3">{h.time?.value ?? 0} min</td>
                         <td className="py-3 text-right">{formatBrewNumber(h.amount.value, 'g', lang, preferences)} {h.amount?.unit === 'ounces' ? 'oz' : 'g'}</td>
                       </tr>
@@ -244,7 +247,7 @@ const PrintView: React.FC<PrintViewProps> = ({ recipe: baseRecipe, log, tastingN
                   <tbody>
                     {recipe.ingredients.cultures.map((c, i) => (
                       <tr key={i} className="border-b border-stone-100">
-                        <td className="py-3 font-bold text-stone-900">{c.name}</td>
+                        <td className="py-3 font-bold text-stone-900">{localName(c, library, lang, 'culture')}</td>
                         <td className="py-3 text-right">{c.attenuation}%</td>
                       </tr>
                     ))}

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { localName } from '../services/itemI18n';
 import { Recipe, Fermentable, Hop, Culture, LibraryIngredient, MashStep, Misc } from '../types';
 import { GeminiService } from '../services/geminiService';
 import { calculateRecipeStats, calculateABV, withTarget, efficiencyMismatch, adaptToEfficiency, resolveEquipment, defaultEquipment as breweryDefaultEquipment, ownInstallations, getSRMColor, formatBrewNumber, formatStockAmount, srmToEbc, ebcToSrm, roundTo, formatGravity, buGuRatio, FERMENTABLE_TYPES, normalizeFermentableType, guessFermentableType, DEFAULT_WHIRLPOOL_TEMP_C } from '../services/calculations';
@@ -412,7 +413,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
           <div className="md:col-span-2">
             <label htmlFor="recipe_style" className="text-xs font-bold text-stone-400 uppercase">{t('style_label')}</label>
             <Combobox id="recipe_style" name="style" label={t('style_label')} value={recipe.style?.libraryId || ''} options={options.style}
-              fallbackText={recipe.style?.name} placeholder={t('combo_choose_style')} onChange={v => handleLibrarySelect('style', 0, v)} />
+              fallbackText={localName(recipe.style, library, lang, 'style')} placeholder={t('combo_choose_style')} onChange={v => handleLibrarySelect('style', 0, v)} />
           </div>
           <div>
             <label htmlFor="batch_size" className="text-xs font-bold text-stone-400 uppercase">{t('batch_size')}</label>
@@ -495,7 +496,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                 <div className="flex-1 min-w-[12rem]">
                   <label htmlFor={`ferm-select-${i}`} className="sr-only">{t('select_fermentable')}</label>
                   <Combobox id={`ferm-select-${i}`} name={`ferm_select_${i}`} label={t('select_fermentable')} value={f.libraryId || ''} options={options.fermentable}
-                    fallbackText={f.name} onChange={v => handleLibrarySelect('fermentable', i, v)} />
+                    fallbackText={localName(f, library, lang, 'fermentable')} onChange={v => handleLibrarySelect('fermentable', i, v)} />
                 </div>
                 <div>
                   <label htmlFor={`ferm-type-${i}`} className="sr-only">{t('fermentable_type')}</label>
@@ -542,7 +543,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                 <div className="flex-1 min-w-[12rem]">
                   <label htmlFor={`hop-select-${i}`} className="sr-only">{t('select_hop')}</label>
                   <Combobox id={`hop-select-${i}`} name={`hop_select_${i}`} label={t('select_hop')} value={h.libraryId || ''} options={options.hop}
-                    fallbackText={h.name} onChange={v => handleLibrarySelect('hop', i, v)} />
+                    fallbackText={localName(h, library, lang, 'hop')} onChange={v => handleLibrarySelect('hop', i, v)} />
                 </div>
                 <div className="flex items-center gap-2">
                   <label htmlFor={`hop-use-${i}`} className="sr-only">{t('hop_use')}</label>
@@ -619,7 +620,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                 <div className="flex-1">
                   <label htmlFor={`culture-select-${i}`} className="sr-only">{t('select_yeast')}</label>
                   <Combobox id={`culture-select-${i}`} name={`culture_select_${i}`} label={t('select_yeast')} value={c.libraryId || ''} options={options.culture}
-                    fallbackText={c.name} className="flex-1" onChange={v => handleLibrarySelect('culture', i, v)} />
+                    fallbackText={localName(c, library, lang, 'culture')} className="flex-1" onChange={v => handleLibrarySelect('culture', i, v)} />
                 </div>
                 <div className="flex items-center gap-2">
                   <label htmlFor={`culture-att-${i}`} className="sr-only">{t('attenuation_pct')}</label>
@@ -647,7 +648,7 @@ const RecipeCreator: React.FC<RecipeCreatorProps> = ({ onSave, onSubmitToPublic,
                 <div className="flex-1 min-w-[12rem]">
                   <label htmlFor={`misc-select-${i}`} className="sr-only">{t('select_misc')}</label>
                   <Combobox id={`misc-select-${i}`} name={`misc-select-${i}`} label={t('select_misc')} value={m.libraryId || ''} options={options.misc}
-                    fallbackText={m.name} onChange={v => handleLibrarySelect('misc', i, v)} />
+                    fallbackText={localName(m, library, lang, 'misc')} onChange={v => handleLibrarySelect('misc', i, v)} />
                 </div>
                 <div className="flex items-center gap-2">
                   <label htmlFor={`misc-use-${i}`} className="sr-only">{t('hop_use')}</label>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { displayName } from '../services/itemI18n';
+import { displayName, localName } from '../services/itemI18n';
 import { useTranslation } from '../App';
 import { BrewLogEntry, LibraryIngredient, Recipe } from '../types';
 import { matchesQuery, recipeSearchText, brewSearchText, ingredientSearchText } from '../services/search';
@@ -50,7 +50,7 @@ const GlobalSearch: React.FC<Props> = ({ open, onClose, recipes, logs, library, 
       .filter(r => matchesQuery(recipeSearchText(r), q))
       .sort((a, b) => Number(isOwn(b)) - Number(isOwn(a)) || a.name.localeCompare(b.name))
       .slice(0, PER_GROUP)
-      .map(r => ({ kind: 'recipe', key: `r-${r.id}`, label: r.name, sub: [r.style?.name, isOwn(r) ? '' : t('public_library')].filter(Boolean).join(' · '), recipe: r }));
+      .map(r => ({ kind: 'recipe', key: `r-${r.id}`, label: r.name, sub: [r.style ? localName(r.style, library, lang, 'style') : '', isOwn(r) ? '' : t('public_library')].filter(Boolean).join(' · '), recipe: r }));
     const brewHits: Hit[] = logs
       .map(l => {
         const recipe = recipes.find(r => r.id === l.recipeId);
