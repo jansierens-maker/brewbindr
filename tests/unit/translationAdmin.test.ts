@@ -35,3 +35,15 @@ describe('translating the public library', () => {
     expect(needsTranslation({ ...saaz, name_kind: 'product' }, 'any', 'any')).toBe(false);
   });
 });
+
+describe('small batches (#215)', () => {
+  it('splits on the number of items and on the amount of text', async () => {
+    const { planBatches } = await import('../../services/translationAdmin');
+    const short = Array.from({ length: 40 }, (_, i) => ({ id: `h${i}`, type: 'hop', name: `Hop ${i}`, status: 'approved' }) as LibraryIngredient);
+    expect(planBatches(short).map(b => b.length)).toEqual([15, 15, 10]);
+    const long = Array.from({ length: 6 }, (_, i) => ({ id: `s${i}`, type: 'style', name: `Style ${i}`, profile: 'x'.repeat(2000), status: 'approved' }) as LibraryIngredient);
+    expect(planBatches(long).map(b => b.length)).toEqual([2, 2, 2]);
+    // One item bigger than the limit still goes, on its own
+    expect(planBatches([{ ...long[0], profile: 'x'.repeat(9000) }]).map(b => b.length)).toEqual([1]);
+  });
+});

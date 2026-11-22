@@ -14,7 +14,6 @@ export interface Proposal {
   doubt?: string;
 }
 
-export const BATCH_SIZE = 50;
 
 /** The types the translation tool covers. */
 export const TRANSLATABLE_TYPES = ['fermentable', 'hop', 'culture', 'misc', 'style', 'water', 'mash_profile', 'equipment'];
@@ -58,31 +57,111 @@ export const applyProposal = (item: LibraryIngredient, p: Proposal): LibraryIngr
 const strip = <T extends object>(o: T | undefined): Partial<T> =>
   Object.fromEntries(Object.entries(o ?? {}).filter(([, v]) => typeof v === 'string' && v.trim())) as Partial<T>;
 
-/** Asks for proposals in batches of 50; reports progress; stops at the first error. */
+/** At most this many items per request, and this much text (characters of what is sent). */
+export const MAX_BATCH_ITEMS = 15;
+export const MAX_BATCH_CHARS = 5000;
+/** The browser waits this long for one request (the server tries up to three times, 45 s each). */
+export const CLIENT_TIMEOUT_MS = 160000;
+
+/**
+ * Groups items so every request stays small: few items, or fewer when they carry long
+ * descriptions (styles), so Gemini answers quickly and does not cut its answer off.
+ */
+export const planBatches = (items: LibraryIngredient[], maxItems = MAX_BATCH_ITEMS, maxChars = MAX_BATCH_CHARS): LibraryIngredient[][] => {
+  const batches: LibraryIngredient[][] = [];
+  let current: LibraryIngredient[] = [];
+  let chars = 0;
+  for (const item of items) {
+    const size = JSON.stringify(toInput(item)).length;
+    if (current.length && (current.length >= maxItems || chars + size > maxChars)) { batches.push(current); current = []; chars = 0; }
+    current.push(item);
+    chars += size;
+  }
+  if (current.length) batches.push(current);
+  return batches;
+};
+
+/** One request, as the debug log shows it. */
+export interface RequestLog {
+  batch: number;
+  batches: number;
+  items: { id: string; name: string }[];
+  chars: number;
+  startedAt: string;
+  durationMs?: number;
+  status?: number;
+  model?: string;
+  error?: string;
+  warning?: string;
+  /** What the server reports in debug mode: attempts, tokens, prompt, raw answer */
+  debug?: Record<string, unknown>;
+}
+
+/**
+ * Asks for proposals batch by batch; reports progress and every request; stops at the first
+ * error, at the time limit, or when `stop` is aborted. What came back before stays.
+ */
 export const requestProposals = async (
   items: LibraryIngredient[],
-  onProgress?: (done: number, total: number) => void,
-): Promise<{ proposals: Proposal[]; error?: string }> => {
+  opts: {
+    debug?: boolean;
+    stop?: AbortSignal;
+    onProgress?: (batch: number, batches: number, done: number, total: number) => void;
+    onLog?: (entry: RequestLog) => void;
+    /** The proposals of each batch as soon as it is in */
+    onProposals?: (proposals: Proposal[]) => void;
+  } = {},
+): Promise<{ proposals: Proposal[]; warnings: string[]; error?: string; stopped?: boolean }> => {
   const { data } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
   const token = data.session?.access_token;
+  const batches = planBatches(items);
   const proposals: Proposal[] = [];
-  for (let i = 0; i < items.length; i += BATCH_SIZE) {
-    const batch = items.slice(i, i + BATCH_SIZE);
+  const warnings: string[] = [];
+  let done = 0;
+  for (let b = 0; b < batches.length; b++) {
+    if (opts.stop?.aborted) return { proposals, warnings, stopped: true };
+    const batch = batches[b];
+    const body = JSON.stringify({ items: batch.map(toInput), ...(opts.debug ? { debug: true } : {}) });
+    const entry: RequestLog = { batch: b + 1, batches: batches.length, items: batch.map(i => ({ id: i.id, name: i.name })), chars: body.length, startedAt: new Date().toISOString() };
+    opts.onProgress?.(b + 1, batches.length, done, items.length);
+    const started = Date.now();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort('timeout'), CLIENT_TIMEOUT_MS);
+    const onStop = () => controller.abort('stopped');
+    opts.stop?.addEventListener('abort', onStop);
     try {
       const res = await fetch('/api/translate-items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ items: batch.map(toInput) }),
+        body,
+        signal: controller.signal,
       });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) return { proposals, error: body.error || `HTTP ${res.status}` };
-      proposals.push(...((body.items ?? []) as Proposal[]));
+      const json = await res.json().catch(() => ({}));
+      Object.assign(entry, { durationMs: Date.now() - started, status: res.status, model: json.model, warning: json.warning, debug: json.debug });
+      if (!res.ok) {
+        entry.error = json.error || `HTTP ${res.status}`;
+        opts.onLog?.(entry);
+        return { proposals, warnings, error: entry.error };
+      }
+      opts.onLog?.(entry);
+      const got = (json.items ?? []) as Proposal[];
+      proposals.push(...got);
+      opts.onProposals?.(got);
+      if (json.warning) warnings.push(`${b + 1}/${batches.length}: ${json.warning}`);
+      done += batch.length;
     } catch (e) {
-      return { proposals, error: (e as Error).message };
+      const reason = controller.signal.reason;
+      entry.durationMs = Date.now() - started;
+      entry.error = reason === 'stopped' ? 'Stopped' : reason === 'timeout' ? `No answer after ${CLIENT_TIMEOUT_MS / 1000} s` : (e as Error).message;
+      opts.onLog?.(entry);
+      return reason === 'stopped' ? { proposals, warnings, stopped: true } : { proposals, warnings, error: entry.error };
+    } finally {
+      clearTimeout(timer);
+      opts.stop?.removeEventListener('abort', onStop);
     }
-    onProgress?.(Math.min(i + BATCH_SIZE, items.length), items.length);
+    opts.onProgress?.(b + 1, batches.length, done, items.length);
   }
-  return { proposals };
+  return { proposals, warnings };
 };
 
 export interface Coverage {
