@@ -247,7 +247,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
 
       {/* Main Content: to reorder, ordered, in stock */}
       {SECTIONS.map(sec => {
-        const list = filteredIngredients.filter(i => (stockStatus(i) === 'none' ? 'in_stock' : stockStatus(i)) === sec.status);
+        const list = filteredIngredients.filter(i => stockStatus(i) === sec.status);
         if (!list.length) return null;
         return (
           <section key={sec.status} aria-labelledby={`stock-sec-${sec.status}`} className="space-y-3">
@@ -469,4 +469,6 @@ const SECTIONS: { status: StockStatus; label: string; icon: string; className: s
   { status: 'reorder', label: 'stock_sec_reorder', icon: 'fa-triangle-exclamation', className: 'text-amber-700' },
   { status: 'ordered', label: 'stock_sec_ordered', icon: 'fa-truck', className: 'text-sky-700' },
   { status: 'in_stock', label: 'stock_sec_in_stock', icon: 'fa-box', className: 'text-[var(--color-text-muted)]' },
+  // Only with "Show all ingredients": nothing in stock, no desired stock, nothing ordered
+  { status: 'none', label: 'stock_sec_none', icon: 'fa-box-open', className: 'text-[var(--color-text-xmuted)]' },
 ];
