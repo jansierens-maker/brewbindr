@@ -8,6 +8,7 @@ import { useTranslation } from '../App';
 import { useUser } from '../services/userContext';
 import { LibraryIngredient, Recipe } from '../types';
 import { GlassIndicator, MiniGlassBar } from './GlassIndicator';
+import StockBox from './StockBox';
 import { formatStockAmount } from '../services/calculations';
 
 interface VoorraadViewProps {
@@ -263,22 +264,26 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                   <button
                     key={ing.id}
                     onClick={() => startEdit(ing)}
-                    className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] p-4 flex flex-col items-center gap-2 hover:shadow-[var(--shadow)] hover:-translate-y-0.5 transition-all group text-left cursor-pointer"
+                    className="relative bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius)] p-4 flex flex-col items-center gap-2 hover:shadow-[var(--shadow)] hover:-translate-y-0.5 transition-all group text-left cursor-pointer"
                   >
+                    {ing.stock?.ordered ? (
+                      <i className="fas fa-truck absolute top-3 right-3 text-xs text-sky-700" aria-hidden="true" title={t('stock_sec_ordered')}></i>
+                    ) : null}
                     <div className={`w-1.5 h-1.5 rounded-full self-start mb-1 ${
                       ing.type === 'fermentable' ? 'bg-[#F59E0B]' :
                       ing.type === 'hop' ? 'bg-[#10B981]' :
                       ing.type === 'culture' ? 'bg-[#3B82F6]' : 'bg-[#7C3AED]'
                     }`}></div>
-                    <GlassIndicator
-                      pct={pct}
-                      size={48}
-                      showPct={showPct}
-                    />
+                    {/* Glass: how full compared with the desired stock; box: there is some, no desired stock */}
+                    {showPct ? (
+                      <GlassIndicator pct={pct} size={48} showPct />
+                    ) : (
+                      <StockBox type={ing.type} size={48} empty={!(ing.stock?.amount && ing.stock.amount > 0)} />
+                    )}
                     <div className="text-center mt-1">
                       <div className="text-xs font-black text-[var(--color-text)] line-clamp-2 leading-tight min-h-[2em]">{displayName(ing, lang)}</div>
                       <div className="text-[10px] font-bold text-[var(--color-text-xmuted)] mt-1">
-                        {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)} ${ing.stock.unit}` : '0 -'}
+                        {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)}${ing.stock.stock_target ? ` / ${formatStockAmount(ing.stock.stock_target, ing.stock.unit, lang)}` : ''} ${ing.stock.unit}` : '0 -'}
                       </div>
                       {ing.stock?.ordered ? (
                         <div className="text-[10px] font-bold text-sky-700 mt-0.5">{t('stock_ordered_short').replace('{n}', `${formatStockAmount(ing.stock.ordered, ing.stock.unit, lang)} ${ing.stock.unit}`)}</div>
@@ -315,7 +320,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                           <div className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-xmuted)]">{ing.type}</div>
                         </td>
                         <td className="px-4 py-3 min-w-[150px]">
-                          <MiniGlassBar pct={pct} />
+                          {ing.stock?.stock_target ? <MiniGlassBar pct={pct} /> : <StockBox type={ing.type} size={22} empty={!(ing.stock?.amount && ing.stock.amount > 0)} />}
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm font-bold text-[var(--color-text)]">
