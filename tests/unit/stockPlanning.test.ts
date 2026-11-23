@@ -63,3 +63,17 @@ describe('shopping list', () => {
     expect(text).toContain('- Saaz: 20 g (Pils)');
   });
 });
+
+describe('yeast in sachets', () => {
+  it('turns grams into whole sachets with the grams per sachet', async () => {
+    const { toStockUnit, shoppingList } = await import('../../services/stockPlanning');
+    const us05 = { id: 'c2', type: 'culture', name: 'SafAle US-05', status: 'private', pack_size: 11.5, stock: { amount: 1, unit: 'zakje', stock_target: 2 } } as LibraryIngredient;
+    expect(toStockUnit(23, 'grams', us05)).toBe(2);
+    expect(toStockUnit(12, 'grams', us05)).toBe(2);
+    expect(toStockUnit(1, 'units', us05)).toBe(1);
+    expect(toStockUnit(10, 'grams', { ...us05, pack_size: undefined })).toBeUndefined();
+    const recipe = { name: 'IPA', ingredients: { fermentables: [], hops: [], cultures: [{ name: 'SafAle US-05', amount: { value: 23, unit: 'grams' } }] } } as unknown as Recipe;
+    // desired 2 + recipe 2 - stock 1 = 3 sachets
+    expect(shoppingList([us05], [recipe], 'nl', 'norm')).toEqual([{ id: 'c2', type: 'culture', name: 'SafAle US-05', amount: 3, unit: 'zakje', reasons: ['norm', 'IPA'] }]);
+  });
+});

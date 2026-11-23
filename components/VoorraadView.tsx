@@ -9,7 +9,7 @@ import { useUser } from '../services/userContext';
 import { LibraryIngredient, Recipe } from '../types';
 import { GlassIndicator, MiniGlassBar } from './GlassIndicator';
 import StockBox from './StockBox';
-import { formatStockAmount } from '../services/calculations';
+import { formatStockAmount, formatBrewNumber } from '../services/calculations';
 
 interface VoorraadViewProps {
   ingredients: LibraryIngredient[];
@@ -30,7 +30,19 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
   const [sortOption, setSortOption] = useState<SortOption>('type');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [editingIngredient, setEditingIngredient] = useState<LibraryIngredient | null>(null);
-  const startEdit = (ing: LibraryIngredient) => { if (!readOnly) setEditingIngredient(ing); };
+  const startEdit = (ing: LibraryIngredient) => { if (!readOnly) { setEditingIngredient(ing); setEditUnit(ing.stock?.unit || getUnitOptions(ing.type)[0]); } };
+  // The unit chosen in the edit form: sachets ask for the grams per sachet
+  const [editUnit, setEditUnit] = useState('');
+  /** "3 zakjes" / "1 zakje", other units as they are */
+  const unitText = (amount: number | undefined, unit: string | undefined) =>
+    unit === 'zakje' ? t(amount === 1 ? 'unit_sachet' : 'unit_sachets') : (unit ?? '');
+  const amountText = (ing: LibraryIngredient) => {
+    const st = ing.stock;
+    if (!st) return '0 -';
+    const target = st.stock_target ? ` / ${formatStockAmount(st.stock_target, st.unit, lang)}` : '';
+    const pack = st.unit === 'zakje' && ing.pack_size ? ` · ${formatBrewNumber(ing.pack_size, 'default', lang)} g/${t('unit_sachet')}` : '';
+    return `${formatStockAmount(st.amount, st.unit, lang)}${target} ${unitText(st.stock_target ?? st.amount, st.unit)}${pack}`;
+  };
 
   // Only the brewery's own items hold stock; shown when there is some, a desired stock or an order
   const [showAll, setShowAll] = useState(false);
@@ -107,7 +119,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
     switch (type) {
       case 'fermentable': return ['kg', 'g'];
       case 'hop': return ['g'];
-      case 'culture': return ['stuk', 'g'];
+      case 'culture': return ['zakje', 'stuk', 'g'];
       case 'misc': return ['kg', 'g', 'liter', 'ml', 'stuk'];
       default: return ['kg', 'g', 'liter', 'ml', 'stuk'];
     }
@@ -122,9 +134,11 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
     const target = parseFloat(formData.get('target') as string) || undefined;
     const ordered = parseFloat(formData.get('ordered') as string) || undefined;
     const orderedAt = (formData.get('ordered_at') as string) || undefined;
+    const packSize = parseFloat(formData.get('pack_size') as string);
 
     onUpdate({
       ...editingIngredient,
+      ...(unit === 'zakje' && packSize > 0 ? { pack_size: packSize } : {}),
       stock: {
         amount,
         unit,
@@ -283,10 +297,10 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                     <div className="text-center mt-1">
                       <div className="text-xs font-black text-[var(--color-text)] line-clamp-2 leading-tight min-h-[2em]">{displayName(ing, lang)}</div>
                       <div className="text-[10px] font-bold text-[var(--color-text-xmuted)] mt-1">
-                        {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)}${ing.stock.stock_target ? ` / ${formatStockAmount(ing.stock.stock_target, ing.stock.unit, lang)}` : ''} ${ing.stock.unit}` : '0 -'}
+                        {amountText(ing)}
                       </div>
                       {ing.stock?.ordered ? (
-                        <div className="text-[10px] font-bold text-sky-700 mt-0.5">{t('stock_ordered_short').replace('{n}', `${formatStockAmount(ing.stock.ordered, ing.stock.unit, lang)} ${ing.stock.unit}`)}</div>
+                        <div className="text-[10px] font-bold text-sky-700 mt-0.5">{t('stock_ordered_short').replace('{n}', `${formatStockAmount(ing.stock.ordered, ing.stock.unit, lang)} ${unitText(ing.stock.ordered, ing.stock.unit)}`)}</div>
                       ) : null}
                     </div>
                   </button>
@@ -324,9 +338,8 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm font-bold text-[var(--color-text)]">
-                            {ing.stock ? `${formatStockAmount(ing.stock.amount, ing.stock.unit, lang)} ${ing.stock.unit}` : '0 -'}
-                            {ing.stock?.stock_target && <span className="text-[var(--color-text-xmuted)] font-medium ml-1">/ {ing.stock.stock_target} {ing.stock.unit}</span>}
-                            {ing.stock?.ordered ? <span className="block text-[10px] font-bold text-sky-700">{t('stock_ordered_short').replace('{n}', `${formatStockAmount(ing.stock.ordered, ing.stock.unit, lang)} ${ing.stock.unit}`)}</span> : null}
+                            {amountText(ing)}
+                            {ing.stock?.ordered ? <span className="block text-[10px] font-bold text-sky-700">{t('stock_ordered_short').replace('{n}', `${formatStockAmount(ing.stock.ordered, ing.stock.unit, lang)} ${unitText(ing.stock.ordered, ing.stock.unit)}`)}</span> : null}
                           </div>
                         </td>
                       </tr>
@@ -380,15 +393,29 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
                   <select
                     id="unit"
                     name="unit"
-                    defaultValue={editingIngredient.stock?.unit || getUnitOptions(editingIngredient.type)[0]}
+                    value={editUnit || getUnitOptions(editingIngredient.type)[0]}
+                    onChange={e => setEditUnit(e.target.value)}
                     className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--color-accent)] transition-colors text-[var(--color-text)]"
                   >
                     {getUnitOptions(editingIngredient.type).map(u => (
-                      <option key={u} value={u}>{u}</option>
+                      <option key={u} value={u}>{u === 'zakje' ? t('unit_sachets') : u}</option>
                     ))}
                   </select>
                 </div>
               </div>
+
+              {(editUnit || getUnitOptions(editingIngredient.type)[0]) === 'zakje' && (
+                <div>
+                  <label htmlFor="pack_size" className="block text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest mb-1.5">{t('stock_pack_size')}</label>
+                  <div className="flex items-center gap-2">
+                    <input id="pack_size" name="pack_size" type="number" step="any" min="0" maxLength={8} placeholder="11.5"
+                      defaultValue={editingIngredient.pack_size}
+                      className="flex-1 min-w-0 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--color-accent)] text-[var(--color-text)]" />
+                    <span className="text-xs font-bold text-[var(--color-text-xmuted)]">g</span>
+                  </div>
+                  <p className="text-[10px] text-[var(--color-text-xmuted)] mt-1">{t('stock_pack_size_hint')}</p>
+                </div>
+              )}
 
               <div>
                 <label htmlFor="target" className="block text-[10px] font-black text-[var(--color-text-xmuted)] uppercase tracking-widest mb-1.5">{t('stock_target_label')}</label>

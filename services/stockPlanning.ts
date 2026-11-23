@@ -45,11 +45,11 @@ export const receive = (item: LibraryIngredient, quantity: number): LibraryIngre
 
 // ---- Units ----
 
-const STOCK_UNIT: Record<string, string> = { kg: 'kilograms', g: 'grams', liter: 'liters', l: 'liters', ml: 'milliliters', stuk: 'items' };
+const STOCK_UNIT: Record<string, string> = { kg: 'kilograms', g: 'grams', liter: 'liters', l: 'liters', ml: 'milliliters', stuk: 'items', zakje: 'sachets' };
 const FACTOR: Record<string, [string, number]> = {
   kilograms: ['mass', 1000], grams: ['mass', 1], pounds: ['mass', 453.592], ounces: ['mass', 28.3495],
   liters: ['volume', 1000], milliliters: ['volume', 1], gallons: ['volume', 3785.41],
-  items: ['count', 1], each: ['count', 1], pkg: ['count', 1], packages: ['count', 1],
+  items: ['count', 1], each: ['count', 1], pkg: ['count', 1], packages: ['count', 1], units: ['count', 1], sachets: ['count', 1],
 };
 const canonical = (unit: string | undefined) => {
   const u = (unit ?? '').toLowerCase().trim();
@@ -61,7 +61,8 @@ const canonical = (unit: string | undefined) => {
   if (u === 'ml' || u.startsWith('millil')) return 'milliliters';
   if (u.startsWith('l')) return 'liters';
   if (u.startsWith('gal')) return 'gallons';
-  if (u.startsWith('item') || u.startsWith('st') || u.startsWith('pkg') || u.startsWith('pack')) return 'items';
+  if (u.startsWith('zak') || u.startsWith('sachet')) return 'sachets';
+  if (u.startsWith('item') || u.startsWith('st') || u.startsWith('unit') || u.startsWith('pkg') || u.startsWith('pack')) return 'items';
   return u;
 };
 
@@ -71,6 +72,22 @@ export const convertAmount = (value: number, from: string | undefined, to: strin
   if (!a || !b || a[0] !== b[0]) return canonical(from) === canonical(to) ? value : undefined;
   return (value * a[1]) / b[1];
 };
+
+/**
+ * An amount in the unit an item's stock is kept in. Sachets ('zakje') convert from grams with
+ * the item's grams per sachet (rounded up to whole sachets); a count (units) is one sachet each.
+ */
+export const toStockUnit = (value: number, from: string | undefined, item: Pick<LibraryIngredient, 'pack_size' | 'stock' | 'type'>): number | undefined => {
+  const unit = item.stock?.unit || defaultUnit(item.type);
+  if (canonical(unit) === 'sachets' && FACTOR[canonical(from)]?.[0] === 'mass') {
+    const grams = convertAmount(value, from, 'g');
+    return grams !== undefined && item.pack_size && item.pack_size > 0 ? Math.ceil(grams / item.pack_size - 1e-9) : undefined;
+  }
+  return convertAmount(value, from, unit);
+};
+
+/** Grams per sachet as text, e.g. "11,5 g", for showing next to a stock in sachets. */
+export const isSachets = (unit: string | undefined) => canonical(unit) === 'sachets';
 
 // ---- Shopping list ----
 
@@ -86,7 +103,7 @@ export interface ShoppingLine {
 }
 
 const defaultUnit = (type: string) => (type === 'hop' || type === 'misc' ? 'g' : type === 'culture' ? 'stuk' : 'kg');
-const round = (v: number, unit: string) => (unit === 'g' || unit === 'ml' || unit === 'stuk' ? Math.ceil(v) : Math.ceil(v * 100) / 100);
+const round = (v: number, unit: string) => (unit === 'g' || unit === 'ml' || unit === 'stuk' || unit === 'zakje' ? Math.ceil(v - 1e-9) : Math.ceil(v * 100) / 100);
 
 /**
  * What to buy: for each ingredient, what the chosen recipes need plus the desired stock,
@@ -103,7 +120,8 @@ export const shoppingList = (own: LibraryIngredient[], recipes: Recipe[], lang: 
     const uses: { type: string; name: string; libraryId?: string; value: number; unit: string }[] = [
       ...(ing?.fermentables ?? []).map(f => ({ type: 'fermentable', name: f.name, libraryId: f.libraryId, value: f.amount?.value ?? 0, unit: f.amount?.unit ?? 'kg' })),
       ...(ing?.hops ?? []).map(h => ({ type: 'hop', name: h.name, libraryId: h.libraryId, value: h.amount?.value ?? 0, unit: h.amount?.unit ?? 'g' })),
-      ...(ing?.cultures ?? []).map(c => ({ type: 'culture', name: c.name, libraryId: c.libraryId, value: 1, unit: 'items' })),
+      // Yeast: its amount (grams or units); without one, one packet
+      ...(ing?.cultures ?? []).map(c => ({ type: 'culture', name: c.name, libraryId: c.libraryId, value: c.amount?.value && c.amount.value > 0 ? c.amount.value : 1, unit: c.amount?.value && c.amount.value > 0 ? c.amount.unit : 'items' })),
       ...(ing?.miscellaneous ?? []).map(m => ({ type: 'misc', name: m.name, libraryId: m.libraryId, value: m.amount?.value ?? 0, unit: m.amount?.unit ?? 'g' })),
     ];
     for (const u of uses) {
@@ -112,7 +130,7 @@ export const shoppingList = (own: LibraryIngredient[], recipes: Recipe[], lang: 
       const item = (u.libraryId ? pool.find(i => i.id === u.libraryId) : undefined) ?? findByName(pool, u.name);
       if (item) {
         const unit = item.stock?.unit || defaultUnit(item.type);
-        const value = convertAmount(u.value, u.unit, unit) ?? (item.type === 'culture' ? 1 : undefined);
+        const value = toStockUnit(u.value, u.unit, item) ?? (item.type === 'culture' ? 1 : undefined);
         if (value === undefined) continue;
         const e = need.get(item.id) ?? { item, required: 0, reasons: [] };
         e.required += value;
@@ -141,7 +159,7 @@ export const shoppingList = (own: LibraryIngredient[], recipes: Recipe[], lang: 
     if (short <= 0.0005) continue;
     lines.push({ id: item.id, type: item.type, name: displayName(item, lang), amount: round(short, unit), unit, reasons: [...(target ? [normLabel] : []), ...reasons] });
   }
-  const SHORT: Record<string, string> = { kilograms: 'kg', grams: 'g', liters: 'liter', milliliters: 'ml', items: 'stuk', pounds: 'lb', ounces: 'oz', gallons: 'gal' };
+  const SHORT: Record<string, string> = { kilograms: 'kg', grams: 'g', liters: 'liter', milliliters: 'ml', items: 'stuk', sachets: 'zakje', pounds: 'lb', ounces: 'oz', gallons: 'gal' };
   for (const l of loose.values()) lines.push({ ...l, amount: Math.round(l.amount * 1000) / 1000, unit: SHORT[canonical(l.unit)] ?? l.unit });
   const order = (t: string) => STOCK_TYPES.indexOf(t);
   return lines.sort((a, b) => order(a.type) - order(b.type) || a.name.localeCompare(b.name));

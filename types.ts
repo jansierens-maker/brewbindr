@@ -138,6 +138,8 @@ export interface LibraryIngredient {
   steps?: MashStep[];
   notes?: string;
   amount?: number;
+  /** Yeast (or another addition) sold in sachets: grams per sachet, for stock kept in 'zakje' */
+  pack_size?: number;
   stock?: {
     amount: number;
     unit: string;

@@ -35,7 +35,7 @@ const ShoppingListDialog: React.FC<Props> = ({ ingredients, recipes, readOnly, o
 
   const typeLabel = (type: string) => t(({ fermentable: 'malt', hop: 'hops', culture: 'yeast_lib', misc: 'miscs_label' } as Record<string, string>)[type] as any);
   const fmt = (v: number, unit = '') => formatStockAmount(v, unit, lang);
-  const text = () => `${t('shopping_list')} – ${new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : `${lang}-BE`)}\n\n${shoppingText(lines, typeLabel, v => fmt(v))}`;
+  const text = () => `${t('shopping_list')} – ${new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : `${lang}-BE`)}\n\n${shoppingText(lines.map(l => (l.unit === 'zakje' ? { ...l, unit: t(l.amount === 1 ? 'unit_sachet' : 'unit_sachets') } : l)), typeLabel, v => fmt(v))}`;
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(text()); setMessage(t('shopping_copied')); } catch { setMessage(t('shopping_copy_failed')); }
@@ -109,7 +109,7 @@ const ShoppingListDialog: React.FC<Props> = ({ ingredients, recipes, readOnly, o
                             {!l.id && <span className="ml-2 text-[9px] font-black uppercase tracking-widest text-amber-700">{t('shopping_not_in_library')}</span>}
                             <span className="block text-[10px] text-[var(--color-text-muted)] truncate">{l.reasons.join(' · ')}</span>
                           </span>
-                          <span className="font-black text-sm text-[var(--color-text)] whitespace-nowrap">{fmt(l.amount, l.unit)} {l.unit}</span>
+                          <span className="font-black text-sm text-[var(--color-text)] whitespace-nowrap">{fmt(l.amount, l.unit)} {l.unit === 'zakje' ? t(l.amount === 1 ? 'unit_sachet' : 'unit_sachets') : l.unit}</span>
                         </li>
                       ))}
                     </ul>
