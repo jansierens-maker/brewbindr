@@ -1358,7 +1358,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
         <div class="section-eyebrow"><i class="fas fa-boxes-stacked"></i> Voor brouwers</div>
         <h2>Voorraadbeheer <span class="role-badge brewer">Brouwer</span></h2>
         <p>Voorraad is <b>optioneel</b> — zet het aan onder <b>Instellingen → Voorraadbeheer</b>, dan verschijnt "Voorraad" in de zijbalk onder Brouwerij. Recepten tonen dan of je ze kan brouwen met wat je hebt.</p>
-        <p>Het voorraadscherm toont je ingrediënten met de hoeveelheid die je hebt. Elk krijgt een <b>glas</b> dat zich vult volgens je voorraad. Probeer maar:</p>
+        <p>Het voorraadscherm toont je ingrediënten met de hoeveelheid die je hebt. Met een <b>gewenste voorraad</b> krijgt een ingrediënt een <b>glas</b> dat zich vult volgens hoeveel je ervan hebt (rood en oranje als het laag staat); zonder gewenste voorraad een <b>doosje</b> in de kleur van de soort: je hebt het, maar er is geen norm. Een vrachtwagentje betekent dat er een bestelling openstaat. Probeer het glas maar:</p>
         <div class="glass-demo">
           <svg class="glass-svg" viewBox="0 0 60 80" aria-hidden="true">
             <defs><clipPath id="demoClip"><path d="M10 6 h40 l-4.5 62 a5 5 0 0 1 -5 4.6 h-21 a5 5 0 0 1 -5 -4.6 Z"/></clipPath></defs>
@@ -1372,6 +1372,14 @@ NEXT_PUBLIC_SITE_URL=https://your-domain</pre>
             <div class="demo-pct"><span id="demoPct">65</span>%</div>
           </div>
         </div>
+        <h3>Wat je ziet: bij te bestellen, besteld, op voorraad</h3>
+        <p>Het scherm toont alleen ingrediënten die je <b>op voorraad</b> hebt, waarvoor je een <b>gewenste voorraad</b> opgaf, of die <b>besteld</b> zijn. Wat op 0 komt zonder gewenste voorraad verdwijnt vanzelf. Met <b>+ Toevoegen aan voorraad</b> kies je een ingrediënt uit je bibliotheek; met <b>Alle ingrediënten tonen</b> zie je alles, met de ingrediënten zonder voorraad in een aparte groep <b>Niet op voorraad</b>.</p>
+        <ul>
+          <li><b>Gewenste voorraad</b> is een vaste norm: wat je altijd in huis wilt. Ze blijft tot je ze weghaalt. Zit je eronder (ook met wat al besteld is), dan staat het ingrediënt bij <b>Bij te bestellen</b>.</li>
+          <li><b>Besteld</b> is tijdelijk: noteer de hoeveelheid en de datum. Met <b>Ontvangen</b> gaat een levering naar je voorraad; levert de leverancier minder, dan blijft de rest als bestelling staan (deellevering).</li>
+          <li>De <b>Boodschappenlijst</b> toont alles onder de gewenste voorraad, plus wat de recepten die je aanvinkt nog nodig hebben (voorraad en open bestellingen tellen mee). Kopieer of download de lijst, of noteer ze in één keer <b>als besteld</b>. Ingrediënten die een recept gebruikt maar die niet in je bibliotheek staan, krijgen het label <i>niet in je bibliotheek</i>.</li>
+          <li><b>Gist in zakjes</b>: kies als eenheid <b>zakjes</b> en vul <b>gram per zakje</b> in (bv. 11,5 g droge gist). De tegel toont dan bv. "3 / 2 zakjes · 11,5 g/zakje", en de boodschappenlijst rekent een recept in gram om naar hele zakjes (23 g = 2 zakjes).</li>
+        </ul>
         <h3>Werken met het scherm</h3>
         <ul class="doc-list">
           <li><strong>Filter</strong> op soort ingrediënt of zoek op naam.</li>

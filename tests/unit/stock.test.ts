@@ -33,7 +33,8 @@ import { stockRowFor, withoutStock, applyStockChange } from '../../services/stoc
 describe('writing stock (step 2)', () => {
   const hop = { id: 'h1', name: 'Saaz', type: 'hop', status: 'private', stock: { amount: 80, unit: 'g', stock_target: 250 } } as LibraryIngredient;
   it('a brewery ingredient gives a stock row', () => {
-    expect(stockRowFor(hop, 'b1')).toEqual({ ingredient_type: 'hop', ingredient_id: 'h1', brewery_id: 'b1', amount: 80, unit: 'g', target: 250 });
+    expect(stockRowFor(hop, 'b1')).toEqual({ ingredient_type: 'hop', ingredient_id: 'h1', brewery_id: 'b1', amount: 80, unit: 'g', target: 250, ordered: null, ordered_at: null });
+    expect(stockRowFor({ ...hop, stock: { ...hop.stock!, ordered: 500, ordered_at: '2026-11-20' } }, 'b1')).toMatchObject({ ordered: 500, ordered_at: '2026-11-20' });
   });
   it('no row for public copies, other kinds, no stock or no brewery', () => {
     expect(stockRowFor({ ...hop, status: 'submitted' }, 'b1')).toBeNull();
@@ -51,5 +52,16 @@ describe('writing stock (step 2)', () => {
     expect(up[1].stock).toEqual({ amount: 3, unit: 'kg' });
     expect(up[0]).toBe(hop);
     expect(applyStockChange(lib, 'DELETE', { ingredient_type: 'hop', ingredient_id: 'h1' })[0].stock).toBeUndefined();
+  });
+});
+
+describe('stock orders', () => {
+  it('reads the order from the table and drops an empty one', async () => {
+    const { applyStock } = await import('../../services/stock');
+    const lib = [{ id: 'h1', type: 'hop', name: 'Saaz', status: 'private' }] as LibraryIngredient[];
+    expect(applyStock(lib, [{ ingredient_type: 'hop', ingredient_id: 'h1', amount: '50', unit: 'g', target: null, ordered: '500', ordered_at: '2026-11-20' }])[0].stock)
+      .toEqual({ amount: 50, unit: 'g', ordered: 500, ordered_at: '2026-11-20' });
+    expect(applyStock(lib, [{ ingredient_type: 'hop', ingredient_id: 'h1', amount: 50, unit: 'g', target: 100, ordered: null, ordered_at: '2026-11-20' }])[0].stock)
+      .toEqual({ amount: 50, unit: 'g', stock_target: 100 });
   });
 });

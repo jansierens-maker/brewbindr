@@ -24,6 +24,17 @@ const TABLE_MAP: Record<string, string> = {
 
 
 /**
+ * Writes stock rows. Before the migration that adds the order columns is applied (it runs on
+ * merge, while the app deploys at the same time), the write is retried without them.
+ */
+type StockRowOut = NonNullable<ReturnType<typeof stockRowFor>>;
+const upsertStock = async (client: NonNullable<typeof supabase>, rows: StockRowOut[]) => {
+  const first = await client.from('stock').upsert(rows);
+  if (!first.error || !/ordered/.test(first.error.message)) return first;
+  return client.from('stock').upsert(rows.map(({ ordered: _o, ordered_at: _a, ...rest }) => rest));
+};
+
+/**
  * Which tables the last full load could not read (empty: all fine). The top bar shows a
  * red notice while this is not empty.
  */
@@ -153,8 +164,10 @@ export const supabaseService = {
       });
 
       // Stock lives in its own table (#137); null when it cannot be read (not there yet)
+      // With the order columns; before that migration is applied, without them
       const stockRequest = userId
-        ? client.from('stock').select('ingredient_type, ingredient_id, amount, unit, target')
+        ? Promise.resolve(client.from('stock').select('ingredient_type, ingredient_id, amount, unit, target, ordered, ordered_at')).then(r =>
+            r.error ? client.from('stock').select('ingredient_type, ingredient_id, amount, unit, target') : r)
         : Promise.resolve({ data: null, error: null });
 
       const responses = await Promise.race([
@@ -312,7 +325,7 @@ export const supabaseService = {
 
     const stockRow = stockRowFor({ ...item, id: payload.id, status: payload.status ?? item.status }, payload.brewery_id);
     if (stockRow) {
-      const { error: stockError } = await client.from('stock').upsert(stockRow);
+      const { error: stockError } = await upsertStock(client, [stockRow]);
       if (stockError) console.error('Stock save error:', stockError.message);
       return { error: stockError };
     }
@@ -428,7 +441,7 @@ export const supabaseService = {
         .map((i, idx) => stockRowFor({ ...i, id: payloads[idx].id, status: payloads[idx].status ?? i.status }, payloads[idx].brewery_id))
         .filter((r): r is NonNullable<typeof r> => !!r);
       if (stockRows.length > 0) {
-        const { error: stockError } = await client.from('stock').upsert(stockRows);
+        const { error: stockError } = await upsertStock(client, stockRows);
         if (stockError) console.error('Stock save error:', stockError.message);
         return { error: stockError };
       }

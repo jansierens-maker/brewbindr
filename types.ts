@@ -138,10 +138,17 @@ export interface LibraryIngredient {
   steps?: MashStep[];
   notes?: string;
   amount?: number;
+  /** Yeast (or another addition) sold in sachets: grams per sachet, for stock kept in 'zakje' */
+  pack_size?: number;
   stock?: {
     amount: number;
     unit: string;
+    /** Desired stock: a standing level, kept until removed; below it the item is to reorder */
     stock_target?: number;
+    /** Ordered and not delivered yet, in the stock unit (deliveries lower it) */
+    ordered?: number;
+    /** When it was ordered (YYYY-MM-DD) */
+    ordered_at?: string;
   };
 }
 
