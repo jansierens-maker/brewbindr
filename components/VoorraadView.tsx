@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { isListed, receive, stockStatus, StockStatus } from '../services/stockPlanning';
+import { isListed, receive, stockGroups, StockStatus } from '../services/stockPlanning';
 import Combobox from './Combobox';
 import ShoppingListDialog from './ShoppingListDialog';
 import { matchesQuery, ingredientSearchText } from '../services/search';
@@ -262,7 +262,7 @@ export const VoorraadView: React.FC<VoorraadViewProps> = ({ ingredients, onUpdat
 
       {/* Main Content: to reorder, ordered, in stock */}
       {SECTIONS.map(sec => {
-        const list = filteredIngredients.filter(i => stockStatus(i) === sec.status);
+        const list = filteredIngredients.filter(i => stockGroups(i).includes(sec.status));
         if (!list.length) return null;
         return (
           <section key={sec.status} aria-labelledby={`stock-sec-${sec.status}`} className="space-y-3">

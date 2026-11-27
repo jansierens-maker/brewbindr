@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stockStatus, isListed, receive, convertAmount, shoppingList, shoppingText } from '../../services/stockPlanning';
+import { stockStatus, stockGroups, isListed, receive, convertAmount, shoppingList, shoppingText } from '../../services/stockPlanning';
 import type { LibraryIngredient, Recipe } from '../../types';
 
 const item = (id: string, type: string, name: string, stock?: LibraryIngredient['stock']): LibraryIngredient =>
@@ -16,6 +16,18 @@ describe('stock status', () => {
     expect(stockStatus(item('a', 'hop', 'Saaz', { amount: 0, unit: 'g', ordered: 100 }))).toBe('ordered');
     expect(stockStatus(item('a', 'hop', 'Saaz', { amount: 200, unit: 'g', stock_target: 100 }))).toBe('in_stock');
     expect(isListed(item('a', 'hop', 'Saaz', { amount: 0, unit: 'g' }))).toBe(false);
+  });
+
+  it('shows an item in every group it belongs to', () => {
+    const g = (stock: LibraryIngredient['stock']) => stockGroups(item('a', 'culture', 'US-05', stock));
+    expect(g({ amount: 1, unit: 'zakje', ordered: 1 })).toEqual(['ordered', 'in_stock']);
+    expect(g({ amount: 1, unit: 'zakje', stock_target: 2, ordered: 1 })).toEqual(['ordered', 'in_stock']);
+    expect(g({ amount: 1, unit: 'zakje', stock_target: 3, ordered: 1 })).toEqual(['reorder', 'ordered', 'in_stock']);
+    expect(g({ amount: 1, unit: 'zakje', stock_target: 3 })).toEqual(['reorder', 'in_stock']);
+    expect(g({ amount: 0, unit: 'zakje', stock_target: 1 })).toEqual(['reorder']);
+    expect(g({ amount: 0, unit: 'zakje', stock_target: 1, ordered: 1 })).toEqual(['ordered']);
+    expect(g({ amount: 0, unit: 'zakje' })).toEqual(['none']);
+    expect(isListed(item('a', 'culture', 'US-05', { amount: 0, unit: 'zakje', stock_target: 1, ordered: 1 }))).toBe(true);
   });
 
   it('receives a delivery in parts', () => {

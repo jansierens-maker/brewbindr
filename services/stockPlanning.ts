@@ -28,8 +28,25 @@ export const stockStatus = (item: Pick<LibraryIngredient, 'stock'>): StockStatus
   return 'none';
 };
 
-/** Listed on the stock screen: there is some, a desired stock is set, or it is on order. */
-export const isListed = (item: Pick<LibraryIngredient, 'stock'>) => stockStatus(item) !== 'none';
+/**
+ * The groups an item shows in on the stock screen; one item can be in more than one:
+ * - reorder: a desired stock is set and stock plus what is on order stays below it
+ * - ordered: something is on order
+ * - in_stock: there is some
+ * - none: none of these (only listed with "show all")
+ */
+export const stockGroups = (item: Pick<LibraryIngredient, 'stock'>): StockStatus[] => {
+  const s = item.stock;
+  const target = n(s?.stock_target);
+  const groups: StockStatus[] = [];
+  if (target && n(s?.amount) + n(s?.ordered) < target) groups.push('reorder');
+  if (n(s?.ordered)) groups.push('ordered');
+  if (n(s?.amount)) groups.push('in_stock');
+  return groups.length ? groups : ['none'];
+};
+
+/** Listed on the stock screen: there is some, it is on order, or it is below its desired stock. */
+export const isListed = (item: Pick<LibraryIngredient, 'stock'>) => !stockGroups(item).includes('none');
 
 /** A delivery: the amount goes to the stock and off the order; a full delivery clears the order. */
 export const receive = (item: LibraryIngredient, quantity: number): LibraryIngredient => {
