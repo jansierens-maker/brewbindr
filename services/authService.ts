@@ -24,6 +24,24 @@ export const authService = {
   },
 
   /**
+   * Signs in (or signs up) with Google. The browser leaves for Google and comes back to
+   * this site signed in. An invite code is kept in localStorage and handled after the
+   * redirect, like for an existing user who signs in with an invite code.
+   */
+  async signInWithGoogle(inviteCode?: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    if (inviteCode) localStorage.setItem('pending_invite_code', inviteCode);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) {
+      if (inviteCode) localStorage.removeItem('pending_invite_code');
+      throw error;
+    }
+  },
+
+  /**
    * Sends a password reset mail. The link brings the user back to this site, signed in for
    * a password recovery (the app then asks for a new password). Says nothing about whether
    * the address has an account.

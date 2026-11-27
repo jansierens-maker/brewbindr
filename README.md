@@ -93,7 +93,18 @@ Do not apply migrations to production by hand; the Database workflow does it on 
 
 ### Security recommendations
 
-- **Leaked Password Protection**: in the Supabase Dashboard, go to **Authentication > Attack Protection** and enable it.
+- **Leaked passwords**: the app itself refuses passwords known from data breaches at sign-up and password change (`services/passwordCheck.ts`, Have I Been Pwned with k-anonymity). Supabase's own Leaked Password Protection needs the Pro plan; on that plan, also enable it under **Authentication > Attack Protection**.
+- **Minimum password length**: 12 (`MIN_PASSWORD_LENGTH`), also set under **Authentication > Providers > Email** and in `supabase/config.toml`.
+
+### Sign in with Google
+
+1. In the Google Cloud Console (Google Auth Platform): set up the consent screen (External, scopes `openid`, `email`, `profile`, publishing status *In production*) and create an OAuth client of type *Web application* with these redirect URIs:
+   - `https://<production-ref>.supabase.co/auth/v1/callback`
+   - `https://<staging-ref>.supabase.co/auth/v1/callback`
+2. In the Supabase Dashboard, for production and staging: **Authentication > Sign In / Providers > Google**, enable it and fill in the client ID and secret.
+3. Under **Authentication > URL Configuration**: Site URL is the production domain; add the production domain to the Redirect URLs, and for staging the Vercel preview URLs (wildcard).
+
+An invite code filled in on the sign-up form is kept during the redirect to Google and handled after sign-in.
 - **Row-Level Security**: the schema enables RLS on all tables. Data separation between breweries depends on these policies and the database functions, not on the frontend — keep that in mind when changing the schema.
 
 ### App administrators

@@ -42,6 +42,18 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, initialIsSignUp = false }) => {
     }
   };
 
+  const handleGoogle = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      // On success the browser leaves for Google, so loading stays on
+      await authService.signInWithGoogle(isSignUp ? inviteCode.trim() || undefined : undefined);
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : t('auth_error_generic'));
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -212,6 +224,24 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, initialIsSignUp = false }) => {
           </div>
         )}
       </form>
+
+      <div className="flex items-center gap-3 my-6" aria-hidden="true">
+        <div className="flex-1 border-t border-stone-100"></div>
+        <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t('auth_or')}</span>
+        <div className="flex-1 border-t border-stone-100"></div>
+      </div>
+      <button
+        type="button"
+        onClick={handleGoogle}
+        disabled={loading}
+        className="w-full py-3 bg-white border border-stone-200 text-stone-700 rounded-2xl font-bold text-sm hover:bg-stone-50 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+      >
+        <i className="fab fa-google" aria-hidden="true"></i>
+        {t('auth_google_btn')}
+      </button>
+      {isSignUp && (
+        <p className="text-[9px] text-stone-400 mt-2 text-center font-bold italic">{t('auth_google_invite_hint')}</p>
+      )}
 
       <div className="mt-8 pt-6 border-t border-stone-100 text-center">
         <button
